@@ -1,0 +1,13 @@
+vich_uploader:
+    db_driver: orm
+
+#By default Vich use annotations
+    metadata:
+        type: attribute
+
+    mappings:
+       upload:
+           uri_prefix: /upload
+           upload_destination: '%kernel.project_dir%/public/upload'
+           namer: Vich\UploaderBundle\Naming\SmartUniqueNamer
+           directory_namer : Vich\UploaderBundle\Naming\SubDirectoryNamer
