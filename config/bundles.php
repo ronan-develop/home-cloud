@@ -16,6 +16,9 @@ return [
 <<<<<<< HEAD
 =======
     Vich\UploaderBundle\VichUploaderBundle::class => ['all' => true],
+<<<<<<< HEAD
     Pentatrion\ViteBundle\PentatrionViteBundle::class => ['all' => true],
 >>>>>>> be5fd07 (bundle : pentatrion/vite-bundle)
+=======
+>>>>>>> 1d51808 (packages : remove pentatrion)
 ];
