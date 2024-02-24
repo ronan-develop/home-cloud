@@ -1,8 +1,7 @@
 # My-Web-App
 
-Travailler sur l'importation de fichier : 
-https://www.youtube.com/watch?v=KJ62Or94P0Eed
+Travailler sur l'importation de fichier.
 
-## VichUploader Bundle
+-Todo :
 
-La config se place dans `~/config/packages/vich_uploader.yaml`
+[ ] [symfony-vite.pentatrion.com](https://symfony-vite.pentatrion.com/fr/guide/getting-started.html)
