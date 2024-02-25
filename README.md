@@ -13,10 +13,12 @@ symfony console make:docker:database
 docker compose up -d
 # communicating with the container
 docker-compose ps
-# communicating with the database
+# communicating with the database locally
 mariadb --user=root --port=32768 --host=127.0.0.1 --password main
 # stopping the container
 docker-compose stop
+## running mysql in the container
+docker-compose exec database mysql --user root --password main
 ```
 
 [ ] Travailler sur l'importation de fichier.
