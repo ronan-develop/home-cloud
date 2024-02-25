@@ -17,8 +17,13 @@ return [
 =======
     Vich\UploaderBundle\VichUploaderBundle::class => ['all' => true],
 <<<<<<< HEAD
+<<<<<<< HEAD
     Pentatrion\ViteBundle\PentatrionViteBundle::class => ['all' => true],
 >>>>>>> be5fd07 (bundle : pentatrion/vite-bundle)
 =======
 >>>>>>> 1d51808 (packages : remove pentatrion)
+=======
+    Symfonycasts\SassBundle\SymfonycastsSassBundle::class => ['all' => true],
+    Symfonycasts\TailwindBundle\SymfonycastsTailwindBundle::class => ['all' => true],
+>>>>>>> 87b49d6 (bundles : symfonycasts/sass-bundle symfonycasts/tailwind-bundle)
 ];
