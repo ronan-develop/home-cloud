@@ -4,6 +4,8 @@
 
 [ ] @home work with Docker
 
+[ ] The asset mapper configuration
+
 generate docker file
 
 ```bash
