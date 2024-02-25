@@ -1,3 +1,7 @@
 body {
+<<<<<<< HEAD
     background-color: skyblue;
+=======
+    background-color: black;
+>>>>>>> 62eea3b (Revert "bundles : symfonycasts/sass-bundle symfonycasts/tailwind-bundle")
 }

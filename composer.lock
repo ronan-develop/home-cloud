@@ -8,6 +8,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     "content-hash": "c6202d027dbf8fde68068a693085c45f",
 =======
     "content-hash": "daf7c109a85c6a6fc2b701607b03901d",
@@ -21,6 +22,9 @@
 =======
     "content-hash": "45b18e116cc90a3bca8e2c354d6bfe36",
 >>>>>>> 87b49d6 (bundles : symfonycasts/sass-bundle symfonycasts/tailwind-bundle)
+=======
+    "content-hash": "ca885be4bc165f6627a0201a37042570",
+>>>>>>> 62eea3b (Revert "bundles : symfonycasts/sass-bundle symfonycasts/tailwind-bundle")
     "packages": [
         {
             "name": "composer/semver",
@@ -7236,115 +7240,6 @@
                 }
             ],
             "time": "2024-01-23T15:02:46+00:00"
-        },
-        {
-            "name": "symfonycasts/sass-bundle",
-            "version": "v0.5.2",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/SymfonyCasts/sass-bundle.git",
-                "reference": "29eef1b0b91c89f191b94b896f776756656a8ab5"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/SymfonyCasts/sass-bundle/zipball/29eef1b0b91c89f191b94b896f776756656a8ab5",
-                "reference": "29eef1b0b91c89f191b94b896f776756656a8ab5",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=8.1",
-                "symfony/asset-mapper": "^6.3|^7.0",
-                "symfony/console": "^5.4|^6.3|^7.0",
-                "symfony/http-client": "^5.4|^6.3|^7.0",
-                "symfony/process": "^5.4|^6.3|^7.0"
-            },
-            "require-dev": {
-                "matthiasnoback/symfony-config-test": "^5.0",
-                "phpstan/phpstan-symfony": "^1.4",
-                "symfony/filesystem": "^6.3|^7.0",
-                "symfony/framework-bundle": "^6.3|^7.0",
-                "symfony/phpunit-bridge": "^6.3|^7.0"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Symfonycasts\\SassBundle\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Mathéo Daninos",
-                    "homepage": "https://github.com/WebMamba"
-                }
-            ],
-            "description": "Delightful Sass Support for Symfony + AssetMapper",
-            "keywords": [
-                "asset-mapper",
-                "sass"
-            ],
-            "support": {
-                "issues": "https://github.com/SymfonyCasts/sass-bundle/issues",
-                "source": "https://github.com/SymfonyCasts/sass-bundle/tree/v0.5.2"
-            },
-            "time": "2024-02-20T11:52:20+00:00"
-        },
-        {
-            "name": "symfonycasts/tailwind-bundle",
-            "version": "v0.5.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/SymfonyCasts/tailwind-bundle.git",
-                "reference": "e13e544c9d0f293c3155d34c6121dcf15a827867"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/SymfonyCasts/tailwind-bundle/zipball/e13e544c9d0f293c3155d34c6121dcf15a827867",
-                "reference": "e13e544c9d0f293c3155d34c6121dcf15a827867",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=8.1",
-                "symfony/asset-mapper": "^6.3|^7.0",
-                "symfony/console": "^5.4|^6.3|^7.0",
-                "symfony/http-client": "^5.4|^6.3|^7.0",
-                "symfony/process": "^5.4|^6.3|^7.0"
-            },
-            "require-dev": {
-                "phpstan/phpstan": "1.11.x-dev",
-                "symfony/filesystem": "^6.3|^7.0",
-                "symfony/framework-bundle": "^6.3|^7.0",
-                "symfony/phpunit-bridge": "^6.3|^7.0"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Symfonycasts\\TailwindBundle\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Ryan Weaver",
-                    "homepage": "https://symfonycasts.com"
-                }
-            ],
-            "description": "Delightful Tailwind Support for Symfony + AssetMapper",
-            "keywords": [
-                "asset-mapper",
-                "tailwind"
-            ],
-            "support": {
-                "issues": "https://github.com/SymfonyCasts/tailwind-bundle/issues",
-                "source": "https://github.com/SymfonyCasts/tailwind-bundle/tree/v0.5.1"
-            },
-            "time": "2024-02-20T11:53:29+00:00"
         },
         {
             "name": "twig/extra-bundle",
