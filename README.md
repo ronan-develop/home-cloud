@@ -59,3 +59,14 @@ Commands:
   wait        Block until the first service container stops
   watch       Watch build context for service and rebuild/refresh containers when files are updated
 ```
+
+## Tailwindcss
+
+Download latest bin file on [tailwindcss](https://tailwindcss.com/blog/standalone-cli)
+website and move the binary in `./bin` folder.
+
+Now it's possible to inbitialize the project with the command :
+
+```bash
+./bin/tailwindcss init
+```
