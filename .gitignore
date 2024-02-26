@@ -22,8 +22,11 @@
 /public/assets/
 /assets/vendor/
 ###< symfony/asset-mapper ###
+<<<<<<< HEAD
 
 ###> upload ###
 public/upload/*
 !public/upload/.gitignore*
 ###< upload ###
+=======
+>>>>>>> 7b7a89a35964e7dcd46c4ccbecb230763371f4ec
