@@ -1,6 +1,27 @@
 # My-Web-App
 
--Todo :
+## How to use
+
+- Command : docker compose up -d & if you want to communicate with database type
+
+`Docker compose execute le service database avec la commande :`
+
+```SQL
+mysql -u root password=password
+```
+
+```bash
+docker-compose exec database mysql -u root --password=password
+```
+
+If you want to see databases :
+
+```SQL
+SELECT TABLE_NAME
+FROM INFORMATION_SCHEMA.TABLES
+WHERE TABLE_TYPE = 'BASE TABLE' 
+  AND TABLE_SCHEMA='home-cloud';
+```
 
 [ ] @home work with Docker
 
@@ -58,15 +79,4 @@ Commands:
   version     Show the Docker Compose version information
   wait        Block until the first service container stops
   watch       Watch build context for service and rebuild/refresh containers when files are updated
-```
-
-## Tailwindcss
-
-Download latest bin file on [tailwindcss](https://tailwindcss.com/blog/standalone-cli)
-website and move the binary in `./bin` folder.
-
-Now it's possible to inbitialize the project with the command :
-
-```bash
-./bin/tailwindcss init
 ```
