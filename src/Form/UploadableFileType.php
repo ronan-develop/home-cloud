@@ -13,6 +13,8 @@ class UploadableFileType extends AbstractType
     {
         $builder
             ->add('name')
+            ->add('createdAt')
+            ->add('uploadedAt')
         ;
     }
 
