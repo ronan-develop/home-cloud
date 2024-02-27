@@ -1,4 +1,4 @@
-# My-Web-App
+# Home Cloud
 
 ## How to use
 
@@ -25,7 +25,7 @@ WHERE TABLE_TYPE = 'BASE TABLE'
 ```
 
 ```sql
--- lists all databases on MySQL
+-- lists all databases (MySQL)
 SHOW DATABASES;
 -- or
 SELECT schema_name
@@ -36,11 +36,18 @@ OR schema_name
 LIKE 'another example%';
 ```
 
-[ ] @home work with Docker
+Voir les tables :
 
-[ ] The asset mapper configuration
+```SQL
+-- lists tables (MySQL)
+SHOW TABLES;
+```
 
-generate docker file
+[X] @home work with Docker
+
+[X] The asset mapper configuration
+
+## Generate docker file
 
 ```bash
 # generate docker compose
