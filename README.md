@@ -17,10 +17,23 @@ docker-compose exec database mysql -u root --password=password
 If you want to see databases :
 
 ```SQL
+-- lists all database on SQL Server
 SELECT TABLE_NAME
 FROM INFORMATION_SCHEMA.TABLES
 WHERE TABLE_TYPE = 'BASE TABLE' 
   AND TABLE_SCHEMA='home-cloud';
+```
+
+```sql
+-- lists all databases on MySQL
+SHOW DATABASES;
+-- or
+SELECT schema_name
+FROM information_schema.schemata
+WHERE schema_name
+LIKE 'example%' 
+OR schema_name
+LIKE 'another example%';
 ```
 
 [ ] @home work with Docker
