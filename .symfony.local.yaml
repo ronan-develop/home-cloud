@@ -1,4 +1,5 @@
-# .symfony.local.yaml
 workers:
-    sass:
-        cmd: ['symfony', 'console', 'sass:build', '--watch']
+        tailwind:
+                cmd: ['symfony', 'console', 'tailwind:build', '--watch']
+        # sass:
+        #         cmd: ['symfony', 'console', 'sass:build', '--watch']        
