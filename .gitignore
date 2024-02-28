@@ -17,13 +17,12 @@
 .phpunit.result.cache
 /phpunit.xml
 ###< symfony/phpunit-bridge ###
+###> upload ###
+public/upload/*
+!public/upload/.gitignore*
+###< upload ###
 
 ###> symfony/asset-mapper ###
 /public/assets/
 /assets/vendor/
 ###< symfony/asset-mapper ###
-
-###> upload ###
-public/upload/*
-!public/upload/.gitignore*
-###< upload ###

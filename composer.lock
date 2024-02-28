@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1652f3d1c39e28cdbf5c419b0bc550fa",
+    "content-hash": "8b5feb21a1d8f3ad0685fdd505eb93dd",
     "packages": [
         {
             "name": "composer/semver",
@@ -2124,16 +2124,16 @@
         },
         {
             "name": "symfony/asset-mapper",
-            "version": "v7.0.3",
+            "version": "v7.0.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/asset-mapper.git",
-                "reference": "537b9575df2f0a809abe9dd1117bb4ec578f7a21"
+                "reference": "7cd421551f53849f641a1a3499392ed5c81598a8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/asset-mapper/zipball/537b9575df2f0a809abe9dd1117bb4ec578f7a21",
-                "reference": "537b9575df2f0a809abe9dd1117bb4ec578f7a21",
+                "url": "https://api.github.com/repos/symfony/asset-mapper/zipball/7cd421551f53849f641a1a3499392ed5c81598a8",
+                "reference": "7cd421551f53849f641a1a3499392ed5c81598a8",
                 "shasum": ""
             },
             "require": {
@@ -2182,7 +2182,7 @@
             "description": "Maps directories of assets & makes them available in a public directory with versioned filenames.",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/asset-mapper/tree/v7.0.3"
+                "source": "https://github.com/symfony/asset-mapper/tree/v7.0.4"
             },
             "funding": [
                 {
@@ -2198,7 +2198,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-01-23T19:26:06+00:00"
+            "time": "2024-02-22T20:27:20+00:00"
         },
         {
             "name": "symfony/cache",
@@ -7282,29 +7282,29 @@
         },
         {
             "name": "symfonycasts/sass-bundle",
-            "version": "v0.5.2",
+            "version": "v0.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/SymfonyCasts/sass-bundle.git",
-                "reference": "29eef1b0b91c89f191b94b896f776756656a8ab5"
+                "reference": "aa47da8ae43136a21a764eedb1471f2a168359cb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/SymfonyCasts/sass-bundle/zipball/29eef1b0b91c89f191b94b896f776756656a8ab5",
-                "reference": "29eef1b0b91c89f191b94b896f776756656a8ab5",
+                "url": "https://api.github.com/repos/SymfonyCasts/sass-bundle/zipball/aa47da8ae43136a21a764eedb1471f2a168359cb",
+                "reference": "aa47da8ae43136a21a764eedb1471f2a168359cb",
                 "shasum": ""
             },
             "require": {
                 "php": ">=8.1",
                 "symfony/asset-mapper": "^6.3|^7.0",
                 "symfony/console": "^5.4|^6.3|^7.0",
+                "symfony/filesystem": "^5.4|^6.3|^7.0",
                 "symfony/http-client": "^5.4|^6.3|^7.0",
                 "symfony/process": "^5.4|^6.3|^7.0"
             },
             "require-dev": {
                 "matthiasnoback/symfony-config-test": "^5.0",
                 "phpstan/phpstan-symfony": "^1.4",
-                "symfony/filesystem": "^6.3|^7.0",
                 "symfony/framework-bundle": "^6.3|^7.0",
                 "symfony/phpunit-bridge": "^6.3|^7.0"
             },
@@ -7331,9 +7331,9 @@
             ],
             "support": {
                 "issues": "https://github.com/SymfonyCasts/sass-bundle/issues",
-                "source": "https://github.com/SymfonyCasts/sass-bundle/tree/v0.5.2"
+                "source": "https://github.com/SymfonyCasts/sass-bundle/tree/v0.6.0"
             },
-            "time": "2024-02-20T11:52:20+00:00"
+            "time": "2024-02-26T10:09:48+00:00"
         },
         {
             "name": "twig/extra-bundle",

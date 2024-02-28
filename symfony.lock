@@ -46,13 +46,13 @@
             "repo": "github.com/symfony/recipes",
             "branch": "main",
             "version": "6.4",
-            "ref": "4ff49f66191ce9356098e588684c27b935958b33"
+            "ref": "6c28c471640cc2c6e60812ebcb961c526ef8997f"
         },
         "files": [
-            "./assets/app.js",
-            "./assets/styles/app.css",
-            "./config/packages/asset_mapper.yaml",
-            "./importmap.php"
+            "assets/app.js",
+            "assets/styles/app.css",
+            "config/packages/asset_mapper.yaml",
+            "importmap.php"
         ]
     },
     "symfony/console": {
@@ -277,7 +277,7 @@
         ]
     },
     "symfonycasts/sass-bundle": {
-        "version": "v0.5.2"
+        "version": "v0.6.0"
     },
     "twig/extra-bundle": {
         "version": "v3.8.0"
