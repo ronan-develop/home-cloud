@@ -43,12 +43,31 @@ Voir les tables :
 SHOW TABLES;
 ```
 
-[X] @home work with Docker
+[X] home work with Docker
 
 [X] The asset mapper configuration
 
 ```bash
+# compiling importmap.php
 symfony console asset-map:compile
+```
+
+```bash
+# install bundle https://github.com/SymfonyCasts/sass-bundle
+composer require symfonycasts/sass-bundle
+```
+
+```bash
+# watching mode
+php bin/console sass:build --watch
+```
+
+```yaml
+# .symfony.local.yaml to add in symfony console
+workers:
+    # ...
+    sass:
+        cmd: ['symfony', 'console', 'sass:build', '--watch']
 ```
 
 ## Generate docker file
