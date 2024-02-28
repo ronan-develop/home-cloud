@@ -47,6 +47,10 @@ SHOW TABLES;
 
 [X] The asset mapper configuration
 
+```bash
+symfony console asset-map:compile
+```
+
 ## Generate docker file
 
 ```bash
