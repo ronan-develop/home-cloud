@@ -1,11 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+
+    --background-color-main: #52db03;
+}
+
 body {
-<<<<<<< HEAD
-<<<<<<< HEAD
-    background-color: skyblue;
-=======
-    background-color: black;
->>>>>>> 62eea3b (Revert "bundles : symfonycasts/sass-bundle symfonycasts/tailwind-bundle")
-=======
-    background-color: skyblue;
->>>>>>> c81af8c (init : (re)install)
+    background-color: var(--background-color-main);
 }
