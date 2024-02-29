@@ -1,0 +1,23 @@
+@startuml StoryClass
+
+' le signe de composition est placé sur le Parent
+' ---
+' une story a besoin d'une image mais une imalge n'a pas besoin d'une story pour
+' fonctionner correctement => Agrégation
+' les pointillés montrent la dépendance
+entity Story {
+    - String $name
+    - DateTimeImmutable $createdAt
+    - Image[] relatedImages
+}
+
+entity Image
+{
+
+    - String $name
+    - DateTimeImmutable $uploadedAt
+}
+
+Story "1" o.left. "*" Image :contains
+
+@enduml
