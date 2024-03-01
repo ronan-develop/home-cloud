@@ -1,5 +1,13 @@
 # Home Cloud
 
+## Table of content
+
+1. [How To use](#how-to-use)
+2. [Importing library](#importing-library)
+3. [Generate docker file](#generate-docker-file)
+4. [Adapt Docker Compose](#adapt-docker-compose)
+5. [tailwindcss course](./tailwindcss.md)
+
 ## How to use
 
 - Command : docker compose up -d & if you want to communicate with database type
@@ -36,7 +44,7 @@ OR schema_name
 LIKE 'another example%';
 ```
 
-Voir les tables :
+see tables :
 
 ```SQL
 -- lists tables (MySQL)
@@ -130,7 +138,7 @@ Commands:
   watch       Watch build context for service and rebuild/refresh containers when files are updated
 ```
 
-## Adaptation `docker-compose`
+## Adapt `docker-compose`
 
 Dans les services, il suffit de déclarer la propriété `database`.
 Déclarer l'environnement (le password et le nom de la database). Il faut

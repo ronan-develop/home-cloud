@@ -14,6 +14,12 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/story')]
 class StoryController extends AbstractController
 {
+    /**
+     * gett all stories. Base path
+     *
+     * @param StoryRepository $storyRepository
+     * @return Response
+     */
     #[Route('/', name: 'app_story_index', methods: ['GET'])]
     public function index(StoryRepository $storyRepository): Response
     {
@@ -22,6 +28,13 @@ class StoryController extends AbstractController
         ]);
     }
 
+    /**
+     * Create new story
+     *
+     * @param Request $request
+     * @param EntityManagerInterface $entityManager
+     * @return Response
+     */
     #[Route('/new', name: 'app_story_new', methods: ['GET', 'POST'])]
     public function new(Request $request, EntityManagerInterface $entityManager): Response
     {
@@ -42,6 +55,12 @@ class StoryController extends AbstractController
         ]);
     }
 
+    /**
+     * Show one story
+     * 
+     * @param int $id
+     * @return Response
+     */
     #[Route('/{id}', name: 'app_story_show', methods: ['GET'])]
     public function show(Story $story): Response
     {
@@ -50,6 +69,15 @@ class StoryController extends AbstractController
         ]);
     }
 
+    /**
+     * Edit one story
+     * 
+     * @param int $id
+     * @param Request $requet
+     * @param Story $story
+     * @param EntityManagerInterface $entityManager
+     * @return Response
+     */
     #[Route('/{id}/edit', name: 'app_story_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, Story $story, EntityManagerInterface $entityManager): Response
     {
@@ -68,6 +96,14 @@ class StoryController extends AbstractController
         ]);
     }
 
+    /**
+     * Delete one story
+     * 
+     * @param Requeste $request
+     * @param Story $story
+     * @param EntityManagerInterface $entityMAnager
+     * @return Response
+     */
     #[Route('/{id}', name: 'app_story_delete', methods: ['POST'])]
     public function delete(Request $request, Story $story, EntityManagerInterface $entityManager): Response
     {
