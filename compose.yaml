@@ -23,18 +23,18 @@ services:
 
 ###> PHPmyAdmin
   phpmyadmin:
-      depends_on:
-        - database
-      image: phpmyadmin/phpmyadmin
-      restart: unless-stopped
-      ports:
-        - 8081:80
-      env_file: .env.local
-      environment:
-        PMA_HOST: database
-        MYSQL_ROOT_PASSWORD: password
-      networks:
-        - home-cloud-network
+    depends_on:
+      - database
+    image: phpmyadmin/phpmyadmin
+    restart: unless-stopped
+    ports:
+      - 8081:80
+    env_file: .env.local
+    environment:
+      PMA_HOST: database
+      MYSQL_ROOT_PASSWORD: password
+    networks:
+      - home-cloud-network
 ###< PHPmyAdmin
 
 volumes:
