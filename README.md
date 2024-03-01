@@ -70,10 +70,10 @@ workers:
         cmd: ['symfony', 'console', 'sass:build', '--watch']
 ```
 
-## Importing Picocss
+## Importing library
 
 ```bash
-symfony console importmap:require @picocss/pico
+symfony console importmap:require `name on cdnjs`
 ```
 
 ## Generate docker file
