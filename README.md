@@ -129,3 +129,16 @@ Commands:
   wait        Block until the first service container stops
   watch       Watch build context for service and rebuild/refresh containers when files are updated
 ```
+
+## Adaptation `docker-compose`
+
+Dans les services, il suffit de déclarer la propriété `database`.
+Déclarer l'environnement (le password et le nom de la database). Il faut
+également saisir les ports et préciser le network qui va relier la base de
+données et PHPMyAdmin
+
+Puis déclarer le service PHPmyAdmin. En idiquant depends_on, la jonction sera
+faite avec  la base de données. Donner l'image souhaitée, le port, etc et le
+network
+
+En bas de fichier préciser le network.
