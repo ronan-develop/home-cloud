@@ -49,7 +49,7 @@ module.exports = {
 
 ## Customize (configuration)
 
-[Part](https://youtu.be/ft30zcMlFao?t=1758)
+[Part](https://youtu.be/ft30zcMlFao?t=3928)
 
 Example :
 
