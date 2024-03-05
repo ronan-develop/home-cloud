@@ -125,3 +125,8 @@ module.exports = {
 ```
 
 ## Typography
+
+- [font size text-sm](https://youtu.be/ft30zcMlFao?t=2680)
+- [configure fontsize](https://youtu.be/ft30zcMlFao)
+- [import font](https://youtu.be/ft30zcMlFao?t=3023)
+
