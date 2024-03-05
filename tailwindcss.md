@@ -109,3 +109,19 @@ module.exports = {
   },
 }
 ```
+
+## Plugin
+
+ Apply code all over the page.
+
+```js
+@layer base {
+  html {
+
+    @apply: bg-slate-600;
+    @apply: text-white;
+  }
+}
+```
+
+## Typography
