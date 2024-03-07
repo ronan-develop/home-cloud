@@ -1,12 +1,17 @@
 # Home Cloud
 
+> (optional)
+>
+> sudo service wsl-vpnkit status
+
 ## Table of content
 
-1. [How To use](#how-to-use)
-2. [Importing library](#importing-library)
-3. [Generate docker file](#generate-docker-file)
-4. [Adapt Docker Compose](#adapt-docker-compose)
-5. [tailwindcss course](./tailwindcss.md)
+- [Home Cloud](#home-cloud)
+  - [Table of content](#table-of-content)
+  - [How to use](#how-to-use)
+  - [Importing library](#importing-library)
+  - [Generate docker file](#generate-docker-file)
+  - [Adapt `docker-compose`](#adapt-docker-compose)
 
 ## How to use
 
