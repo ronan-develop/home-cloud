@@ -1,0 +1,67 @@
+@startuml entities
+
+class User {
+
+    + id: int
+    + name: string
+    + email: string
+    + password: string
+    + created_at: datetime
+    + updated_at: datetime
+}
+
+class Photo {
+
+    + id: int
+    + user_id: int
+    + url: string
+    + created_at: datetime
+    + updated_at: datetime
+    + tags: string
+}
+
+class Album {
+
+    + id: int
+    + user_id: int
+    + name: string
+    + created_at: datetime
+    + updated_at: datetime
+}
+
+class Tag {
+
+    + id: int
+    + name: string
+    + created_at: datetime
+    + updated_at: datetime
+}
+
+class Comment {
+
+    + id: int
+    + user_id: int
+    + photo_id: int
+    + content: string
+    + created_at: datetime
+    + updated_at: datetime
+}
+
+class Sharing {
+
+    + id: int
+    + user_id: int
+    + photo_id: int
+    + created_at: datetime
+    + updated_at: datetime
+}
+
+User "1" -- "0..*" Photo : owns
+User "1" -- "0..*" Album : owns
+Photo "1" -- "0..*" Tag : has
+User "1" -- "0..*" Comment : writes
+Photo "1" -- "0..*" Comment : has
+User "1" -- "0..*" Sharing : shares
+Photo "1" -- "0..*" Sharing : is shared
+
+@enduml
