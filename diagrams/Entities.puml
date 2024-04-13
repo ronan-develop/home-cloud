@@ -2,58 +2,76 @@
 
 class User {
 
-    + id: int
-    + name: string
-    + email: string
-    + password: string
-    + created_at: datetime
-    + updated_at: datetime
+    - id: int
+    - name: string
+    - email: string
+    - password: string
+    - created_at: datetime
+    - updated_at: datetime
+==
+    ~ getter
+    ~ setter
 }
 
 class Photo {
 
-    + id: int
-    + user_id: int
-    + url: string
-    + created_at: datetime
-    + updated_at: datetime
-    + tags: string
+    - id: int
+    - user_id: int
+    - url: string
+    - created_at: datetime
+    - updated_at: datetime
+    - tags: string
+==
+    ~ getter
+    ~ setter
 }
 
 class Album {
 
-    + id: int
-    + user_id: int
-    + name: string
-    + created_at: datetime
-    + updated_at: datetime
+    - id: int
+    - user_id: int
+    - name: string
+    - created_at: datetime
+    - updated_at: datetime
+==
+    ~ getter
+    ~ setter
 }
 
 class Tag {
 
-    + id: int
-    + name: string
-    + created_at: datetime
-    + updated_at: datetime
+    - id: int
+    - name: string
+    - created_at: datetime
+    - updated_at: datetime
+==
+    ~ getter
+    ~ setter
 }
 
 class Comment {
 
-    + id: int
-    + user_id: int
-    + photo_id: int
-    + content: string
-    + created_at: datetime
-    + updated_at: datetime
+    - id: int
+    - user_id: int
+    - photo_id: int
+    - content: string
+    - created_at: datetime
+    - updated_at: datetime
+==
+    ~ getter
+    ~ setter
 }
 
 class Sharing {
 
-    + id: int
-    + user_id: int
-    + photo_id: int
-    + created_at: datetime
-    + updated_at: datetime
+    - id: int
+    - user_id: int
+    - photo_id: int
+    - created_at: datetime
+    - updated_at: datetime
+==
+    ~ getter
+    ~ setter
 }
 
 User "1" -- "0..*" Photo : owns
