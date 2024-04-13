@@ -21,6 +21,8 @@ services:
       MYSQL_PASSWORD: symfony
     networks:
       - home-cloud-network
+    ports:
+      - 3307:3306
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
