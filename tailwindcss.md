@@ -2,11 +2,23 @@
 
 ## Table of contents
 
-1. [Colors](#colors)
-  
-    1.1 [Color customization](#customize-color)
-
-2. [Customization](#customize-configuration)
+- [Tailwind course v3.4.1](#tailwind-course-v341)
+  - [Table of contents](#table-of-contents)
+  - [Colors](#colors)
+    - [Customize color](#customize-color)
+  - [Customize (configuration)](#customize-configuration)
+  - [Plugin](#plugin)
+  - [Typography](#typography)
+  - [Spacing](#spacing)
+  - [Flex](#flex)
+  - [Grid](#grid)
+  - [layouts](#layouts)
+  - [Borders](#borders)
+  - [Effects \& Filters](#effects--filters)
+  - [Animations](#animations)
+  - [Design system](#design-system)
+  - [Core concept](#core-concept)
+  - [Dark mode](#dark-mode)
 
 ## Colors
 
@@ -49,7 +61,7 @@ module.exports = {
 
 ## Customize (configuration)
 
-[Part](https://youtu.be/ft30zcMlFao?t=1758)
+[Part](https://youtu.be/ft30zcMlFao?t=3928)
 
 Example :
 
@@ -109,3 +121,49 @@ module.exports = {
   },
 }
 ```
+
+## Plugin
+
+ Apply code all over the page.
+
+```js
+@layer base {
+  html {
+
+    @apply: bg-slate-600;
+    @apply: text-white;
+  }
+}
+```
+
+## Typography
+
+- [font size text-sm](https://youtu.be/ft30zcMlFao?t=2680)
+
+- [configure fontsize](https://youtu.be/ft30zcMlFao)
+
+- [import font](https://youtu.be/ft30zcMlFao?t=3023)
+
+## Spacing
+
+-[spacing section](https://youtu.be/ft30zcMlFao?t=4251)
+
+-[sizes](https://youtu.be/ft30zcMlFao?t=4633)
+
+## Flex
+
+## Grid
+
+## layouts
+
+## Borders
+
+## Effects & Filters
+
+## Animations
+
+## Design system
+
+## Core concept
+
+## Dark mode
