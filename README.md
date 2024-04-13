@@ -1,5 +1,13 @@
 # Home Cloud
 
+Git :
+
+- 🛠 fixes
+
+- 🗹 finished
+
+- 🛇 bug
+
 > (optional)
 >
 > sudo service wsl-vpnkit status
