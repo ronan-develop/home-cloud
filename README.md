@@ -1,5 +1,17 @@
 # Home Cloud
 
+TODO : placer le formulaire de connexion sur la page d'accueil
+
+Git :
+
+- 🛠 fixes
+
+- 🗹 finished
+
+- 🛇 bug
+
+- 🗑 delete
+
 > (optional)
 >
 > sudo service wsl-vpnkit status
@@ -105,8 +117,6 @@ docker-compose stop
 ## running mysql in the container
 docker-compose exec database mysql --user root --password home-cloud
 ```
-
-[ ] Travailler sur l'importation de fichier.
 
 ```properties
 # docker compose --help

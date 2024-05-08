@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Hello UserController!{% endblock %}
+
+{% block body %}
+    {% if app.session.flashBag.has('success') %}
+
+        <div class="alert alert-success">
+            {{ app.session.flashBag.get('success')[0] }}
+        </div>
+
+    {% endif %}
+
+    {% if app.user %}
+
+
+    {% endif %}
+
+    {% include 'partials/_navbar.html.twig' %}
+<div class="example-wrapper">
+
+        <div class="container mx-auto mt-16">
+            <h1 class="text-4xl text-center">Home-Cloud</h1>
+        </div>
+    <h1>Hello {{ app.user }}! ✅</h1>
+</div>
+{% endblock %}

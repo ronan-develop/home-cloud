@@ -19,7 +19,6 @@ class Photo {
     - user_id: int
     - url: string
     - created_at: datetime
-    - updated_at: datetime
     - tags: string
 ==
     ~ getter
