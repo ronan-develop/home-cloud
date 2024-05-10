@@ -20,6 +20,11 @@ h1 {
     text-shadow: 1px 1px 2px var(--shadow-title);
 }
 
+ul.left-column > li > span {
+
+    margin-left: 2rem;
+}
+
 .footer {
 
     position: fixed;
