@@ -6,7 +6,7 @@
     {% include 'partials/_navbar.html.twig' %}
     <div class="rounded overflow-hidden shadow-lg w-full md:w-1/2 mx-auto mt-10">
         <div class="px-6 py-4">
-            <h1 class="font-bold text-xl mb-2 text-gray-900" style="text-shadow: 1px 1px 2px #079EDD;">Veuillez vous connecter</h1>
+            <h1 class="text-xl mb-2 text-gray-900">Veuillez vous connecter</h1>
             <form method="post">
                 {% if error %}
                     <div class="alert alert-danger">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
