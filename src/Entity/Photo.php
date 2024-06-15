@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\PhotoRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PhotoRepository::class)]
@@ -21,6 +23,17 @@ class Photo
 
     #[ORM\ManyToOne(inversedBy: 'photos')]
     private ?User $user = null;
+
+    /**
+     * @var Collection<int, Tag>
+     */
+    #[ORM\ManyToMany(targetEntity: Tag::class, mappedBy: 'value')]
+    private Collection $tags;
+
+    public function __construct()
+    {
+        $this->tags = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -59,6 +72,33 @@ class Photo
     public function setUser(?User $user): static
     {
         $this->user = $user;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Tag>
+     */
+    public function getTags(): Collection
+    {
+        return $this->tags;
+    }
+
+    public function addTag(Tag $tag): static
+    {
+        if (!$this->tags->contains($tag)) {
+            $this->tags->add($tag);
+            $tag->addValue($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTag(Tag $tag): static
+    {
+        if ($this->tags->removeElement($tag)) {
+            $tag->removeValue($this);
+        }
 
         return $this;
     }

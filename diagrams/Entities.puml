@@ -21,18 +21,21 @@ class Photo {
     - created_at: datetime
     - tags: string
 ==
-    ~ getter
-    ~ setter
+    ~ getUrl(): string
+    ~ setUrl(url: string)
+    ~ addTag(tag: Tag)
 }
 
 class Album {
-
     - id: int
     - user_id: int
     - name: string
     - created_at: datetime
     - updated_at: datetime
 ==
+    ~ addPhoto(photo: Photo)
+    ~ removePhoto(photo: Photo)
+    ~ getPhotos(): Photo[]
     ~ getter
     ~ setter
 }

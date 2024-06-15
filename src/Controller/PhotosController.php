@@ -2,9 +2,10 @@
 
 namespace App\Controller;
 
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use App\Form\UploadablePhotoType;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class PhotosController extends AbstractController
 {
@@ -14,6 +15,15 @@ class PhotosController extends AbstractController
         
         return $this->render('photos/index.html.twig', [
             'controller_name' => 'PhotosController',
+        ]);
+    }
+    #[Route('/photos/upload', name: 'app_photos_upload')]
+    public function upload(): Response
+    {
+        $form = $this->createForm(UploadablePhotoType::class);
+
+        return $this->render('photo/upload.html.twig', [
+            'form' => $form->createView(),
         ]);
     }
 }

@@ -1,6 +1,6 @@
 # Home Cloud
 
-TODO : placer le formulaire de connexion sur la page d'accueil
+TODO : faire un system d'avatar pour le user, il s'affichera s'il existe à la place du message de login
 
 Git :
 
@@ -11,6 +11,8 @@ Git :
 - 🛇 bug
 
 - 🗑 delete
+
+- 📦 entities
 
 > (optional)
 >
