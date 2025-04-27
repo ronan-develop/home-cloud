@@ -1,4 +1,4 @@
-# Architecture sereveur
+# Architecture serveur
 
 ## Déploiement et configuration du projet
 
