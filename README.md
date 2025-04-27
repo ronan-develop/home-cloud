@@ -1,47 +1,103 @@
-<h1 align="center"><a href="https://api-platform.com"><img src="https://api-platform.com/images/logos/Logo_Circle%20webby%20text%20blue.png" alt="API Platform" width="250" height="250"></a></h1>
+# Architecture sereveur
 
-API Platform is a next-generation web framework designed to easily create API-first projects without compromising extensibility
-and flexibility:
+## Déploiement et configuration du projet
 
-* Design your own data model as plain old PHP classes or [**import an existing ontology**](https://api-platform.com/docs/schema-generator).
-* **Expose in minutes a hypermedia REST or a GraphQL API** with pagination, data validation, access control, relation embedding,
-  filters, and error handling...
-* Benefit from Content Negotiation: [GraphQL](https://api-platform.com/docs/core/graphql/), [JSON-LD](https://json-ld.org), [Hydra](https://hydra-cg.com),
-  [HAL](https://github.com/mikekelly/hal_specification/blob/master/hal_specification.md), [JSON:API](https://jsonapi.org/), [YAML](https://yaml.org/), [JSON](https://www.json.org/), [XML](https://www.w3.org/XML/) and [CSV](https://www.ietf.org/rfc/rfc4180.txt) are supported out of the box.
-* Enjoy the **beautiful automatically generated API documentation** ([OpenAPI](https://api-platform.com/docs/core/openapi/)).
-* Add [**a convenient Material Design administration interface**](https://api-platform.com/docs/admin) built with [React](https://reactjs.org/)
-  without writing a line of code.
-* **Scaffold fully functional Progressive-Web-Apps and mobile apps** built with [Next.js](https://api-platform.com/docs/client-generator/nextjs/) (React),
-[Nuxt.js](https://api-platform.com/docs/client-generator/nuxtjs/) (Vue.js) or [React Native](https://api-platform.com/docs/client-generator/react-native/)
-thanks to [the client generator](https://api-platform.com/docs/client-generator/) (a Vue.js generator is also available).
-* Install a development environment and deploy your project in production using **[Docker](https://api-platform.com/docs/distribution)**
-and [Kubernetes](https://api-platform.com/docs/deployment/kubernetes).
-* Easily add **[OAuth](https://oauth.net/) authentication**.
-* Create specs and tests with **[a developer friendly API testing tool](https://api-platform.com/docs/distribution/testing/)**.
+### 1. Installation des outils et prérequis
 
-The official project documentation is available **[on the API Platform website](https://api-platform.com)**.
+- Installation de la **Symfony CLI** pour faciliter le développement et la gestion du projet.
+- Vérification de la configuration PHP et des extensions nécessaires via `symfony check:requirements`.
 
-API Platform embraces open web standards and the
-[Linked Data](https://www.w3.org/standards/semanticweb/data) movement. Your API will automatically expose structured data.
-It means that your API Platform application is usable **out of the box** with technologies of
-the semantic web.
+### 2. Gestion des bases de données
 
-It also means that **your SEO will be improved** because **[Google leverages these formats](https://developers.google.com/search/docs/guides/intro-structured-data)**.
+- Désinstallation de MySQL/MariaDB pour repartir sur une base propre.
+- Installation de **PostgreSQL** (sous Manjaro en local, CloudLinux côté serveur).
+- Création de la base de données `r_homecloud`.
 
-Last but not least, the server component of API Platform is built on top of the [Symfony](https://symfony.com) framework,
-while client components leverage [React](https://reactjs.org/) ([Vue.js](https://vuejs.org/) flavors are also available).
-It means that you can:
+### 3. Déploiement sur le serveur
 
-* Use **thousands of Symfony bundles and React components** with API Platform.
-* Integrate API Platform in **any existing Symfony, React, or Vue application**.
-* Reuse **all your Symfony and JavaScript skills**, and benefit from the incredible amount of documentation available.
-* Enjoy the popular [Doctrine ORM](https://www.doctrine-project.org/projects/orm.html) (used by default, but fully optional:
-  you can use the data provider you want, including but not limited to MongoDB and Elasticsearch)
+- Connexion SSH à l’hébergement mutualisé (o2switch).
+- Téléchargement et installation locale de **FrankenPHP** dans le dossier du site.
+- Création d’un fichier `Caddyfile` pour servir l’application Symfony via FrankenPHP.
+- Lancement de FrankenPHP avec la configuration adaptée.
 
-## Install
+### 4. Conseils et limitations
 
-[Read the official "Getting Started" guide](https://api-platform.com/docs/distribution/).
+- Utilisation de FrankenPHP en local (pas de droits root pour une installation globale).
+- Utilisation du port 8080 pour le serveur web (pas d’accès root pour le port 80).
+- Vérification de la compatibilité et des limitations de l’environnement mutualisé (CloudLinux 8).
 
-## Credits
+### 5. Lancement de FrankenPHP en tâche de fond
 
-Created by [Kévin Dunglas](https://dunglas.fr). Commercial support is available at [Les-Tilleuls.coop](https://les-tilleuls.coop).
+- Pour que FrankenPHP continue de tourner après fermeture de la session SSH, utilise :
+
+  ```bash
+  nohup ./frankenphp run --config ./Caddyfile > frankenphp.log 2>&1 &
+  ```
+
+- Les logs sont enregistrés dans `frankenphp.log`.
+
+### 6. Relancer FrankenPHP en tâche de fond
+
+- Après avoir arrêté FrankenPHP (ex : `pkill frankenphp`), relance-le en tâche de fond avec :
+
+  ```bash
+  nohup ./frankenphp run --config ./Caddyfile > frankenphp.log 2>&1 &
+  ```
+
+- Pour vérifier qu'il tourne :
+
+  ```bash
+  ps aux | grep frankenphp
+  ```
+
+### 7. Installation de Certbot et génération d’un certificat SSL
+
+Pour générer un certificat SSL avec Let’s Encrypt en ligne de commande, il faut installer **Certbot** :
+
+- Sur CentOS/CloudLinux :
+
+  ```bash
+  sudo dnf install certbot
+  ```
+
+Ensuite, pour générer un certificat pour votre domaine :
+
+```bash
+sudo certbot certonly --standalone -d votredomaine.fr
+```
+
+- Suivez les instructions affichées pour valider le domaine et récupérer les fichiers du certificat.
+- Sur un hébergement mutualisé, il faut généralement importer manuellement le certificat via l’interface d’administration.
+
+## Gestion de FrankenPHP en tâche de fond
+
+Pour lancer FrankenPHP en tâche de fond (service web Symfony) :
+
+```bash
+nohup ./frankenphp run --config ./Caddyfile > frankenphp.log 2>&1 &
+```
+
+- Cette commande démarre FrankenPHP en arrière-plan et enregistre les logs dans `frankenphp.log`.
+- **Important** : Ne lance qu’une seule instance à la fois pour éviter les conflits.
+
+### Vérifier les processus FrankenPHP
+
+Pour vérifier qu’une seule instance tourne :
+
+```bash
+ps aux | grep frankenphp
+```
+
+### Arrêter toutes les instances FrankenPHP
+
+Pour arrêter toutes les instances en cours :
+
+```bash
+pkill frankenphp
+```
+
+Puis relance proprement une seule instance avec la commande ci-dessus.
+
+---
+
+_Ne jamais lancer plusieurs fois la commande de démarrage sans avoir arrêté les instances précédentes._
