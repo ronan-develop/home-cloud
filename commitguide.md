@@ -32,3 +32,11 @@ Courte description sur une ou deux lignes
   📝 docs : mise à jour du README
   Ajoute la section sur le déploiement de FrankenPHP.
   ```
+
+- 🙈 **ignore** : Modification du `.gitignore`  
+    _Exemple_ :  
+
+```txt
+🙈 ignore : ajout de fichiers temporaires
+Ajoute les fichiers `.env.local` et `/tmp` au `.gitignore`.
+```
