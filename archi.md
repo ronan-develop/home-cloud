@@ -20,15 +20,22 @@
 - Création d’un fichier `Caddyfile` pour servir l’application Symfony via FrankenPHP.
 - Lancement de FrankenPHP avec la configuration adaptée.
 
-### 4. Conseils et limitations
+### 4. Utilisation de FrankenPHP avec Docker
 
-- Utilisation de FrankenPHP en local (pas de droits root pour une installation globale).
-- Utilisation du port 8080 pour le serveur web (pas d’accès root pour le port 80).
-- Vérification de la compatibilité et des limitations de l’environnement mutualisé (CloudLinux 8).
+- FrankenPHP est utilisé comme serveur web principal (remplace Apache).
+- Le dossier public de l’API Symfony est monté dans le conteneur Docker avec :
+
+  ```yaml
+  volumes:
+    - ./api/public:/app/public:ro
+  ```
+
+- Les ports 80 et 443 sont exposés pour l’accès HTTP/HTTPS.
+- Voir compose.yaml pour la configuration complète.
 
 ### 5. Lancement de FrankenPHP en tâche de fond
 
-- Pour que FrankenPHP continue de tourner après fermeture de la session SSH, utilise :
+- Pour que FrankenPHP continue de tourner après fermeture de la session SSH, utilise :
 
   ```bash
   nohup ./frankenphp run --config ./Caddyfile > frankenphp.log 2>&1 &
