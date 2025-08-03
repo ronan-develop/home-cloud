@@ -1,0 +1,11 @@
+:80, :443 {
+    root * /public
+    encode gzip
+    php_fastcgi unix//run/php/php.sock
+    file_server
+    try_files {path} /index.php?{query}
+    header X-Frame-Options "SAMEORIGIN"
+    header X-Content-Type-Options "nosniff"
+    header Referrer-Policy "strict-origin-when-cross-origin"
+    header Permissions-Policy "interest-cohort=()"
+}
