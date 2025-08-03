@@ -108,3 +108,14 @@ Puis relance proprement une seule instance avec la commande ci-dessus.
 ---
 
 _Ne jamais lancer plusieurs fois la commande de démarrage sans avoir arrêté les instances précédentes._
+
+## Architecture multi-tenant Home Cloud
+
+- Cœur applicatif unique Symfony (7.3.2)
+- Un sous-domaine = un tenant = une base MySQL dédiée
+- Détection du tenant à chaque requête via le sous-domaine
+- Doctrine sélectionne dynamiquement la connexion à la base du tenant
+- Isolation stricte des données, mais logique métier partagée
+- Le domaine racine lenouvel.me n’est jamais accessible directement : seules les requêtes vers des sous-domaines déclarés sont autorisées.
+
+Voir le schéma Mermaid dans `.github/diagram-multitenant.md` pour le flux détaillé.
