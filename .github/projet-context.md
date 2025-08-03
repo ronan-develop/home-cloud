@@ -246,3 +246,12 @@ uname -a
 - Vérifier le bon fonctionnement de la chaîne Caddy → FrankenPHP → Symfony.
 - Documenter tout retour d’expérience ou adaptation supplémentaire.
 - Poursuivre la configuration multi-tenant et la sécurisation.
+
+## Synthèse déploiement prod (environnement mutualisé O2Switch)
+
+- Les instructions officielles FrankenPHP/Docker ne sont pas applicables sur O2Switch : pas d’accès root, pas de Docker, pas de build d’image personnalisée possible.
+- Le déploiement se fait en mode « binaire utilisateur » : téléchargement manuel de Caddy et FrankenPHP, configuration locale, pas d’automatisation via Docker Compose.
+- La gestion des domaines et certificats Let’s Encrypt est possible via Caddy, mais nécessite un domaine configuré côté registrar (pas d’IP nue).
+- Le déploiement du code se fait par SFTP, SCP ou Git (clé SSH déployée sur GitLab).
+- Les variables d’environnement et credentials sont gérés dans des fichiers locaux non versionnés (`.token`).
+- La documentation Docker/Compose de FrankenPHP/Symfony/API Platform n’est pas transposable telle quelle : il faut adapter chaque étape à l’hébergement mutualisé (voir sections précédentes pour la procédure adaptée).

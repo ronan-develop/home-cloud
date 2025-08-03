@@ -36,3 +36,5 @@ applyTo: '**'
 
 - Pour toute génération de message de commit, se référer à la convention détaillée dans `.github/CONVENTION_COMMITS.md` (format, types, emojis, exemples).
 - Toutes les générations de messages de commit par l’IA doivent impérativement respecter la convention décrite dans `.github/CONVENTION_COMMITS.md` (format, types, emojis, exemples).
+- Toujours ignorer les instructions Docker/Compose de la documentation FrankenPHP/Symfony/API Platform pour le déploiement sur O2Switch : privilégier le mode binaire utilisateur, la configuration manuelle et la documentation adaptée à l’hébergement mutualisé.
+- Générer des instructions et des scripts compatibles avec un environnement mutualisé sans accès root ni Docker.
