@@ -6,7 +6,7 @@ Un bon message de commit doit permettre de savoir ce qui a changé et pourquoi. 
 
 ### Format adopté (inspiré Angular, avec emoji)
 
-```
+```txt
 <emoji> <type>(<scope>): <sujet>
 
 <description>
@@ -35,7 +35,7 @@ Un bon message de commit doit permettre de savoir ce qui a changé et pourquoi. 
 
 ### Exemples
 
-```
+```txt
 ✨ feat(api): gestion multi-tenant
 
 Ajoute la logique d’isolation des utilisateurs par sous-domaine.
@@ -43,19 +43,19 @@ Ajoute la logique d’isolation des utilisateurs par sous-domaine.
 Closes #42
 ```
 
-```
+```txt
 🐛 fix(cart): correction du calcul de TVA
 
 Corrige un bug sur le calcul de la TVA lors de l’ajout d’un produit au panier.
 ```
 
-```
+```txt
 📝 docs: mise à jour du README
 
 Ajoute la section sur l’installation de Caddy en mutualisé.
 ```
 
-```
+```txt
 ⏪ revert: feat(api): gestion multi-tenant 1a2b3c4
 
 Annule le commit d’ajout de la gestion multi-tenant (problème de migration).
