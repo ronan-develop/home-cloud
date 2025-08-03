@@ -183,3 +183,66 @@ uname -a
 - Caddy n’est pas disponible via yum/dnf sur l’hébergement mutualisé O2Switch.
 
 *Prochaine étape : configuration d’un Caddyfile et lancement sur un port utilisateur (>1024).*
+
+## Intégration FrankenPHP + Caddy (août 2025)
+
+### Installation de FrankenPHP (binaire utilisateur)
+
+1. Téléchargement et installation :
+
+   ```sh
+   curl -Lo frankenphp "https://github.com/dunglas/frankenphp/releases/latest/download/frankenphp-linux-amd64"
+   chmod +x frankenphp
+   ./frankenphp --version
+   ```
+
+2. Préparation du Caddyfile pour Symfony + FrankenPHP :
+
+   ```caddyfile
+   :8080 {
+       root * /home9/ron2cuba/www/public
+       php_fastcgi frankenphp:9000
+       file_server
+   }
+   ```
+
+3. Lancement de FrankenPHP en mode FastCGI :
+
+   ```sh
+   ./frankenphp run --port=9000 /home9/ron2cuba/www/public
+   ```
+
+4. Lancement de Caddy avec le Caddyfile adapté :
+
+   ```sh
+   ./caddy run --config ./lenouvel.me/Caddyfile
+   ```
+
+**Remarques** :
+
+- Adapter le chemin `/home9/ron2cuba/www/public` selon l’emplacement de ton projet Symfony.
+- Les deux processus doivent tourner en parallèle (deux terminaux ou en arrière-plan).
+- Documenter toute adaptation ou retour d’expérience dans ce fichier.
+
+## Journal d’intégration Caddy + FrankenPHP (août 2025)
+
+### Étapes réalisées
+
+- Téléchargement et installation du binaire Caddy (v2.10.0) dans le dossier utilisateur.
+- Téléchargement du binaire FrankenPHP (v1.9.0) sur poste local, puis transfert SCP vers le serveur mutualisé O2Switch.
+- Attribution des droits d’exécution sur les deux binaires.
+- Vérification des versions :
+  - `./caddy version` → v2.10.0
+  - `./frankenphp --version` → v1.9.0 PHP 8.4.11
+- Lancement de FrankenPHP en mode FastCGI sur le port 9000 :
+  - `./frankenphp php-server --listen :9000 /home9/ron2cuba/www/public`
+- Préparation d’un Caddyfile minimal pour servir Symfony via FrankenPHP sur le port 8080.
+- Prêt à lancer Caddy pour tester l’accès à l’application.
+
+## TODO – Reprise projet Home Cloud (août 2025)
+
+- Lancer Caddy avec le Caddyfile adapté pour reverse proxy sur le port 8080.
+- Tester l’accès à l’application Symfony via http://[adresse_serveur]:8080 (ou tunnel SSH si besoin).
+- Vérifier le bon fonctionnement de la chaîne Caddy → FrankenPHP → Symfony.
+- Documenter tout retour d’expérience ou adaptation supplémentaire.
+- Poursuivre la configuration multi-tenant et la sécurisation.
