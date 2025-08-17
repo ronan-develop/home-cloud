@@ -69,4 +69,8 @@ Share "*" -- "0..1" User : invité (optionnel)
 Share "1" -- "*" AccessRight : droits >
 Share "1" -- "*" AccessLog : journalise >
 
+' NOTE: Chaque PrivateSpace est associé à un sous-domaine dédié (multi-tenant applicatif)
+' L'isolation des données est assurée par la détection du sous-domaine côté Symfony
+' Un User possède un PrivateSpace, chaque PrivateSpace correspond à un sous-domaine
+
 @enduml
