@@ -131,6 +131,8 @@ Pour accéder à l’hébergement O2Switch en SSH :
   - 4 assertions validant la cohérence ORM et l’accès bidirectionnel
   - Rappel : commit et Pull Request à chaque étape structurante, documentation à synchroniser dans README.md et .github/projet-context.md
 
+  - Rappel : proposer systématiquement à l’utilisateur de lancer les commandes utiles (console Symfony, migrations, tests, etc.) à chaque étape technique pour faciliter la validation et la reproductibilité.
+
 - **Juillet 2025**
   - Initialisation du projet Home Cloud (structure Symfony, API Platform, configuration O2Switch)
   - Définition des premiers endpoints API et des entités principales (User, PrivateSpace, File, Share, AccessRight, AccessLog)
