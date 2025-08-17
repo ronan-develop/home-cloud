@@ -96,6 +96,30 @@ Pour accéder à l’hébergement O2Switch en SSH :
 
 *Document généré automatiquement pour servir de référence projet et onboarding rapide.*
 
+## TODO automatisation et sécurité (à garder en vue)
+
+- Une fois le projet fonctionnel et stabilisé, automatiser la création de l’environnement utilisateur :
+  - Génération et gestion des credentials (SSH, base de données) pour chaque tenant
+  - Script de provisioning (création BDD, utilisateur, mot de passe, fichier credentials local)
+  - Sécurisation et rotation des accès
+
+## Journal des actions réalisées
+
+- **Août 2025**
+  - Migration du dépôt GitLab vers GitHub (sécurité, traçabilité)
+  - Purge complète de l’historique git pour supprimer les secrets accidentellement commités (.env, credentials, tokens)
+  - Synchronisation et enrichissement de la documentation métier et technique (README, api_endpoints.md, classes.puml)
+  - Ajout d’une section détaillée sur l’architecture multi-tenant par sous-domaine (isolation, sécurité, filtrage applicatif)
+  - Ajout et harmonisation des instructions IA (rappel de commit, conventions, sécurité)
+  - Refonte du .gitignore pour ignorer tous les fichiers sensibles
+  - Documentation de la procédure d’installation manuelle de Caddy et FrankenPHP sur O2Switch (mutualisé)
+  - Abandon de la stack Caddy/FrankenPHP en mode serveur au profit d’Apache/PHP natif (limites O2Switch)
+  - Modélisation métier complète (diagramme de classes, cas d’usage de partage, gestion des droits, logs)
+
+- **Juillet 2025**
+  - Initialisation du projet Home Cloud (structure Symfony, API Platform, configuration O2Switch)
+  - Définition des premiers endpoints API et des entités principales (User, PrivateSpace, File, Share, AccessRight, AccessLog)
+
 ## TODO projet (à garder en vue)
 
 - Une fois le projet fonctionnel et stabilisé, automatiser la création de l’environnement utilisateur :
@@ -103,7 +127,7 @@ Pour accéder à l’hébergement O2Switch en SSH :
   - Script de provisioning (création BDD, utilisateur, mot de passe, fichier credentials local)
   - Sécurisation et rotation des accès
 
-## Informations de version MariaDB (phpMyAdmin)
+## Informations détaillées de version MariaDB (phpMyAdmin)
 
 - **version** : 11.4.7-MariaDB
 - **version_comment** : MariaDB Server
@@ -186,6 +210,8 @@ uname -a
 
 ## Intégration FrankenPHP + Caddy (août 2025)
 
+> ⚠️ En attente du retour du service client O2Switch concernant la possibilité d’exécuter FrankenPHP sur l’hébergement mutualisé. La décision finale sur la stack serveur sera prise après leur réponse.
+
 ### Installation de FrankenPHP (binaire utilisateur)
 
 1. Téléchargement et installation :
@@ -224,34 +250,15 @@ uname -a
 - Les deux processus doivent tourner en parallèle (deux terminaux ou en arrière-plan).
 - Documenter toute adaptation ou retour d’expérience dans ce fichier.
 
-## Journal d’intégration Caddy + FrankenPHP (août 2025)
+## Multi-tenant par sous-domaine
 
-### Étapes réalisées
+- Chaque sous-domaine (ex : elea.lenouvel.me, ronan.lenouvel.me) correspond à un espace privé isolé, avec sa propre racine documentaire et (optionnellement) sa propre base de données.
+- L’application détecte le sous-domaine courant et filtre toutes les données côté applicatif (Symfony) pour garantir l’isolation stricte.
+- Aucune donnée d’un espace privé ne doit être accessible depuis un autre sous-domaine.
+- La sécurité et la confidentialité sont assurées par ce découpage logique et applicatif.
 
-- Téléchargement et installation du binaire Caddy (v2.10.0) dans le dossier utilisateur.
-- Téléchargement du binaire FrankenPHP (v1.9.0) sur poste local, puis transfert SCP vers le serveur mutualisé O2Switch.
-- Attribution des droits d’exécution sur les deux binaires.
-- Vérification des versions :
-  - `./caddy version` → v2.10.0
-  - `./frankenphp --version` → v1.9.0 PHP 8.4.11
-- Lancement de FrankenPHP en mode FastCGI sur le port 9000 :
-  - `./frankenphp php-server --listen :9000 /home9/ron2cuba/www/public`
-- Préparation d’un Caddyfile minimal pour servir Symfony via FrankenPHP sur le port 8080.
-- Prêt à lancer Caddy pour tester l’accès à l’application.
+*À compléter avec les autres informations (env, distribution, etc.) au fur et à mesure des retours.*
 
-## TODO – Reprise projet Home Cloud (août 2025)
+---
 
-- Lancer Caddy avec le Caddyfile adapté pour reverse proxy sur le port 8080.
-- Tester l’accès à l’application Symfony via http://[adresse_serveur]:8080 (ou tunnel SSH si besoin).
-- Vérifier le bon fonctionnement de la chaîne Caddy → FrankenPHP → Symfony.
-- Documenter tout retour d’expérience ou adaptation supplémentaire.
-- Poursuivre la configuration multi-tenant et la sécurisation.
-
-## Synthèse déploiement prod (environnement mutualisé O2Switch)
-
-- Les instructions officielles FrankenPHP/Docker ne sont pas applicables sur O2Switch : pas d’accès root, pas de Docker, pas de build d’image personnalisée possible.
-- Le déploiement se fait en mode « binaire utilisateur » : téléchargement manuel de Caddy et FrankenPHP, configuration locale, pas d’automatisation via Docker Compose.
-- La gestion des domaines et certificats Let’s Encrypt est possible via Caddy, mais nécessite un domaine configuré côté registrar (pas d’IP nue).
-- Le déploiement du code se fait par SFTP, SCP ou Git (clé SSH déployée sur GitLab).
-- Les variables d’environnement et credentials sont gérés dans des fichiers locaux non versionnés (`.token`).
-- La documentation Docker/Compose de FrankenPHP/Symfony/API Platform n’est pas transposable telle quelle : il faut adapter chaque étape à l’hébergement mutualisé (voir sections précédentes pour la procédure adaptée).
+*Document généré automatiquement pour servir de référence projet et onboarding rapide.*
