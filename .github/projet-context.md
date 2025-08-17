@@ -117,6 +117,21 @@ Pour accéder à l’hébergement O2Switch en SSH :
   - Documentation de la procédure d’installation manuelle de Caddy et FrankenPHP sur O2Switch (mutualisé)
   - Abandon de la stack Caddy/FrankenPHP en mode serveur au profit d’Apache/PHP natif (limites O2Switch)
   - Modélisation métier complète (diagramme de classes, cas d’usage de partage, gestion des droits, logs)
+  - Création de l’entité User (modélisation initiale), génération et application de la première migration Doctrine (table user)
+  - Configuration de la connexion MariaDB locale via un utilisateur dédié (`ronan`), gestion des droits et adaptation du fichier `.env.local`
+  - Documentation de la procédure dans la PR associée et rappel de la synchronisation avec `classes.puml` et `.github/projet-context.md`
+  - Création de la branche feat/private-space pour la modélisation de l’entité PrivateSpace
+  - Génération/adaptation de la classe PrivateSpace (id, name, description, createdAt) dans src/Entity/PrivateSpace.php
+  - Synchronisation du diagramme de classes (classes.puml) avec la nouvelle entité
+  - Préparation à la migration Doctrine et à la création des relations (User, Database)
+  - Ajout de la relation bidirectionnelle OneToOne User <-> PrivateSpace (accès $privateSpace->getUser()), synchronisation du diagramme et documentation. Rappel : commit et PR à chaque étape structurante.
+  - Ajout d’un test d’intégration pour valider la persistance et la relation bidirectionnelle User <-> PrivateSpace (tests/Entity/UserPrivateSpaceTest.php)
+  - Configuration complète de .env.test pour la base MariaDB de test locale
+  - Migration Doctrine appliquée sur la base de test, schéma synchronisé
+  - 4 assertions validant la cohérence ORM et l’accès bidirectionnel
+  - Rappel : commit et Pull Request à chaque étape structurante, documentation à synchroniser dans README.md et .github/projet-context.md
+
+  - Rappel : proposer systématiquement à l’utilisateur de lancer les commandes utiles (console Symfony, migrations, tests, etc.) à chaque étape technique pour faciliter la validation et la reproductibilité.
 
 - **Juillet 2025**
   - Initialisation du projet Home Cloud (structure Symfony, API Platform, configuration O2Switch)
