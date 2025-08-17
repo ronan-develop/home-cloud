@@ -27,7 +27,10 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         if (!$user instanceof User) {
             throw new UnsupportedUserException(sprintf('Instances of "%s" are not supported.', $user::class));
         }
-
+        // Contrôle métier explicite : username obligatoire
+        if (empty($user->getUsername())) {
+            throw new \LogicException('Cannot upgrade password: username is required.');
+        }
         $user->setPassword($newHashedPassword);
         $this->getEntityManager()->persist($user);
         $this->getEntityManager()->flush();
