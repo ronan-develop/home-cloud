@@ -1,12 +1,16 @@
 # TODO
 
-- [ ] Lancer Caddy avec le Caddyfile adapté pour reverse proxy sur le port 8080.
-- [ ] Tester l’accès à l’application Symfony via http://[adresse_serveur]:8080 (ou tunnel SSH si besoin).
-- [ ] Vérifier le bon fonctionnement de la chaîne Caddy → FrankenPHP → Symfony.
-- [ ] Documenter tout retour d’expérience ou adaptation supplémentaire dans `.github/projet-context.md`.
-- [ ] Poursuivre la configuration multi-tenant et la sécurisation.
-- [ ] Mettre à jour la documentation à chaque avancée.
-- [ ] Après validation du fonctionnement Caddy + FrankenPHP, réaliser un schéma d’architecture API + PWA :
-  - [ ] Backend : API Symfony avec ApiPlatform (multi-tenant)
-  - [ ] Frontend : PWA (Vue, Angular ou React à choisir)
-  - [ ] Décrire les flux, la sécurité, et la séparation des responsabilités.
+- [ ] Affiner la modélisation métier (diagramme de classes)
+  - [ ] Détailler les entités principales (User, PrivateSpace, Database, Share)
+  - [ ] Ajouter l'entité File (gestion des fichiers partagés)
+  - [ ] Définir les relations et règles de gestion (propriétaire, partage, accès invité)
+- [ ] Décrire les cas d'usage de partage
+  - [ ] Partage par lien public (avec ou sans expiration)
+  - [ ] Partage par invitation email (utilisateur existant ou externe)
+  - [ ] Gestion des droits d'accès (lecture seule, modification, suppression)
+  - [ ] Notifications et suivi des accès partagés
+- [ ] Mettre à jour la documentation technique et métier à chaque évolution
+- [ ] Réaliser un schéma d'architecture API + PWA
+  - [ ] Backend : API Symfony avec ApiPlatform (multi-tenant)
+  - [ ] Frontend : PWA (Vue, Angular ou React à choisir)
+  - [ ] Décrire les flux, la sécurité, et la séparation des responsabilités
