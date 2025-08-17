@@ -6,10 +6,10 @@ Créer une solution d’hébergement personnel (type cloud privé) pour stocker,
 
 ## Architecture cible
 
-- Application Symfony (PHP, version LTS 7.3.2 à ce jour) hébergée chez O2Switch (hébergement mutualisé, pas de Docker possible)
+- Application API Platform (Symfony, PHP, version LTS 7.3.2 à ce jour) hébergée chez O2Switch (hébergement mutualisé, pas de Docker possible)
+- API exposée en REST (et optionnellement GraphQL) via API Platform : toute la logique d’exposition, la documentation OpenAPI, la gestion des endpoints et des ressources sont assurées par API Platform.
 - Application conçue en mode multi-tenant : chaque sous-domaine (ex : ronan.lenouvel.me, elea.lenouvel.me) correspond à un espace privé et isolé pour un utilisateur ou un groupe, tout en partageant le même cœur applicatif et la même base de code.
 - Chaque utilisateur disposera de sa propre base de données MySQL dédiée, afin de garantir une isolation stricte des données et d’éviter tout mélange entre les espaces privés.
-- Serveur web Caddy installé sur l’espace d’hébergement (reverse proxy, HTTPS, gestion des routes)
 - Domaine principal : lenouvel.me
 - Sous-domaines pour chaque membre du foyer (ex : ronan.lenouvel.me, elea.lenouvel.me, yannick.lenouvel.me)
 - Multi-tenant : chaque sous-domaine = un espace utilisateur isolé
@@ -44,7 +44,7 @@ Pour accéder à l’hébergement O2Switch en SSH :
 
 3. Saisis le mot de passe associé au compte lorsque demandé.
 4. En cas d’erreur « Permission denied », vérifie l’orthographe du mot de passe et réessaie.
-5. Une fois connecté, tu peux utiliser la console pour manipuler les fichiers, lancer des commandes Symfony, composer, etc.
+5. Une fois connecté, tu peux utiliser la console pour manipuler les fichiers, lancer des commandes Symfony/API Platform, composer, etc.
 
 ## Fonctionnalités attendues
 
@@ -53,18 +53,20 @@ Pour accéder à l’hébergement O2Switch en SSH :
 - Gestion fine des utilisateurs et permissions
 - Synchronisation multi-appareils
 - Support multi-tenant (sous-domaines)
+- API RESTful exposée via API Platform (documentation OpenAPI intégrée)
 
-## Pourquoi PHP/Symfony ?
+## Pourquoi API Platform (Symfony) ?
 
-- Robuste pour la gestion HTTP, upload, sécurité
-- Compatible avec les restrictions O2Switch
-- Large écosystème et support
+- API Platform permet de générer rapidement une API RESTful (et GraphQL si besoin) robuste, documentée (OpenAPI), sécurisée et compatible avec les contraintes O2Switch.
+- Symfony assure la robustesse pour la gestion HTTP, la sécurité, l’upload, et l’intégration avec API Platform.
+- Large écosystème et support.
 
 ## Points d’attention
 
 - Pas d’accès root, pas de customisation serveur profonde
 - Pas de containers, pas de reverse proxy custom
 - Tout doit fonctionner dans les limites d’un mutualisé PHP classique
+- Toute la logique API doit être implémentée via API Platform (ressources, opérations, filtres, sécurité)
 
 ## Résumé de la configuration serveur O2Switch
 
