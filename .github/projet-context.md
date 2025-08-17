@@ -208,48 +208,6 @@ uname -a
 
 *Prochaine étape : configuration d’un Caddyfile et lancement sur un port utilisateur (>1024).*
 
-## Intégration FrankenPHP + Caddy (août 2025)
-
-> ⚠️ En attente du retour du service client O2Switch concernant la possibilité d’exécuter FrankenPHP sur l’hébergement mutualisé. La décision finale sur la stack serveur sera prise après leur réponse.
-
-### Installation de FrankenPHP (binaire utilisateur)
-
-1. Téléchargement et installation :
-
-   ```sh
-   curl -Lo frankenphp "https://github.com/dunglas/frankenphp/releases/latest/download/frankenphp-linux-amd64"
-   chmod +x frankenphp
-   ./frankenphp --version
-   ```
-
-2. Préparation du Caddyfile pour Symfony + FrankenPHP :
-
-   ```caddyfile
-   :8080 {
-       root * /home9/ron2cuba/www/public
-       php_fastcgi frankenphp:9000
-       file_server
-   }
-   ```
-
-3. Lancement de FrankenPHP en mode FastCGI :
-
-   ```sh
-   ./frankenphp run --port=9000 /home9/ron2cuba/www/public
-   ```
-
-4. Lancement de Caddy avec le Caddyfile adapté :
-
-   ```sh
-   ./caddy run --config ./lenouvel.me/Caddyfile
-   ```
-
-**Remarques** :
-
-- Adapter le chemin `/home9/ron2cuba/www/public` selon l’emplacement de ton projet Symfony.
-- Les deux processus doivent tourner en parallèle (deux terminaux ou en arrière-plan).
-- Documenter toute adaptation ou retour d’expérience dans ce fichier.
-
 ## Multi-tenant par sous-domaine
 
 - Chaque sous-domaine (ex : elea.lenouvel.me, ronan.lenouvel.me) correspond à un espace privé isolé, avec sa propre racine documentaire et (optionnellement) sa propre base de données.
@@ -262,3 +220,9 @@ uname -a
 ---
 
 *Document généré automatiquement pour servir de référence projet et onboarding rapide.*
+
+## Stack serveur imposée par O2Switch
+
+- Seule la stack Apache/PHP natif est supportée sur l’hébergement mutualisé O2Switch.
+- Impossible d’exécuter Caddy, FrankenPHP ou tout autre serveur HTTP utilisateur.
+- Toute la documentation, les scripts et la configuration doivent être adaptés à cette contrainte.
