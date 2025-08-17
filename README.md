@@ -116,4 +116,17 @@ Cette architecture garantit la confidentialité, la sécurité et la scalabilit�
 
 > ⚠️ L’hébergement O2Switch mutualisé n’autorise que la stack Apache/PHP natif. L’utilisation de serveurs applicatifs utilisateurs (Caddy, FrankenPHP, etc.) est strictement impossible. Toute la configuration et le déploiement doivent être adaptés à cette contrainte.
 
+---
+
+## Démarrage local de l’API
+
+Pour développer ou tester l’API en local, utilise le serveur interne PHP (recommandé sur tous les environnements) :
+
+```sh
+php -S localhost:8000 -t public
+```
+
+- Accède ensuite à [http://localhost:8000/api](http://localhost:8000/api) pour voir la documentation OpenAPI générée par API Platform.
+- Cette méthode fonctionne partout, même si `symfony serve` échoue ou que PHP-FPM n’est pas disponible.
+
 Prochaine étape : modéliser techniquement ces cas d’usage (API, entités, flux) et enrichir la documentation technique.
