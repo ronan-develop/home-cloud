@@ -1,5 +1,7 @@
 # Endpoints API Home Cloud
 
+> Tous les endpoints sont filtrés selon l’espace privé du sous-domaine courant (multi-tenant applicatif). L’isolation des données est garantie côté applicatif.
+
 Ce document liste les principaux endpoints exposés via API Platform (REST/GraphQL) à implémenter pour couvrir les cas d’usage métier (gestion des utilisateurs, espaces privés, fichiers, partages, droits, logs).
 
 > L’API sera construite avec [API Platform](https://api-platform.com/), qui permet de générer automatiquement la documentation OpenAPI/Swagger, d’exposer les entités en REST et GraphQL, et de gérer la sécurité, la pagination, la validation, etc.
