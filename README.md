@@ -1,5 +1,7 @@
 # Home Cloud
 
+[![Coverage Status](https://img.shields.io/badge/coverage-80%25-brightgreen)](https://github.com/ronan-develop/home-cloud/actions)
+
 ## Modélisation métier (diagramme de classes)
 
 Le projet Home Cloud repose sur une architecture orientée utilisateurs particuliers : chaque utilisateur dispose de son propre espace privé et peut partager des ressources avec d’autres personnes, qu’elles soient ou non inscrites sur la plateforme.
@@ -128,5 +130,16 @@ php -S localhost:8000 -t public
 
 - Accède ensuite à [http://localhost:8000/api](http://localhost:8000/api) pour voir la documentation OpenAPI générée par API Platform.
 - Cette méthode fonctionne partout, même si `symfony serve` échoue ou que PHP-FPM n’est pas disponible.
+
+---
+
+## Tests d’intégration et validation ORM
+
+- Un test d’intégration (`tests/Entity/UserPrivateSpaceTest.php`) valide la création, la persistance et la relation bidirectionnelle entre User et PrivateSpace.
+- La configuration `.env.test` permet d’utiliser une base MariaDB locale dédiée aux tests.
+- La migration Doctrine est appliquée sur la base de test pour garantir la cohérence du schéma.
+- 4 assertions vérifient la cohérence ORM et l’accès bidirectionnel entre User et PrivateSpace.
+
+---
 
 Prochaine étape : modéliser techniquement ces cas d’usage (API, entités, flux) et enrichir la documentation technique.
