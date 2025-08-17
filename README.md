@@ -99,4 +99,17 @@ API Platform permettra d’ajouter GraphQL plus tard si besoin, sans remettre en
 
 ---
 
+## Architecture multi-tenant par sous-domaine
+
+Chaque sous-domaine (ex : elea.lenouvel.me, ronan.lenouvel.me, yannick.lenouvel.me) correspond à un espace privé isolé pour un utilisateur ou un groupe. L’application détecte le sous-domaine courant et filtre toutes les données (fichiers, partages, logs, etc.) pour garantir l’isolation stricte entre les espaces privés.
+
+- Un `User` possède un `PrivateSpace` (relation 1:1)
+- Chaque espace privé est physiquement séparé (racine documentaire dédiée, base de données dédiée ou schéma logique)
+- Aucune donnée d’un espace ne doit être accessible depuis un autre sous-domaine
+- Toute la logique multi-tenant est gérée côté applicatif (Symfony)
+
+Cette architecture garantit la confidentialité, la sécurité et la scalabilité du service Home Cloud.
+
+---
+
 Prochaine étape : modéliser techniquement ces cas d’usage (API, entités, flux) et enrichir la documentation technique.
