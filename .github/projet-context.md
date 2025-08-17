@@ -125,6 +125,10 @@ Pour accéder à l’hébergement O2Switch en SSH :
   - Synchronisation du diagramme de classes (classes.puml) avec la nouvelle entité
   - Préparation à la migration Doctrine et à la création des relations (User, Database)
   - Ajout de la relation bidirectionnelle OneToOne User <-> PrivateSpace (accès $privateSpace->getUser()), synchronisation du diagramme et documentation. Rappel : commit et PR à chaque étape structurante.
+  - Ajout d’un test d’intégration pour valider la persistance et la relation bidirectionnelle User <-> PrivateSpace (tests/Entity/UserPrivateSpaceTest.php)
+  - Configuration complète de .env.test pour la base MariaDB de test locale
+  - Migration Doctrine appliquée sur la base de test, schéma synchronisé
+  - 4 assertions validant la cohérence ORM et l’accès bidirectionnel
   - Rappel : commit et Pull Request à chaque étape structurante, documentation à synchroniser dans README.md et .github/projet-context.md
 
 - **Juillet 2025**
