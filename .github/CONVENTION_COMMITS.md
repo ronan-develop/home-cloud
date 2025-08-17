@@ -75,6 +75,11 @@ Fusionne les dernières évolutions de la branche dev (docs, procédures d’int
 - Sujet court, à l’infinitif, sans point final.
 - Description et footer optionnels, mais utiles pour la clarté.
 
+## Couverture de tests
+
+- La couverture minimale des tests (code coverage) doit être de 80% sur chaque PR ou merge vers main.
+- Toute nouvelle fonctionnalité ou correction doit être accompagnée de tests pertinents (unitaires ou d’intégration).
+
 ---
 
 *Respecter cette convention pour tous les commits du projet Home Cloud.*
