@@ -120,6 +120,12 @@ Pour accéder à l’hébergement O2Switch en SSH :
   - Création de l’entité User (modélisation initiale), génération et application de la première migration Doctrine (table user)
   - Configuration de la connexion MariaDB locale via un utilisateur dédié (`ronan`), gestion des droits et adaptation du fichier `.env.local`
   - Documentation de la procédure dans la PR associée et rappel de la synchronisation avec `classes.puml` et `.github/projet-context.md`
+  - Création de la branche feat/private-space pour la modélisation de l’entité PrivateSpace
+  - Génération/adaptation de la classe PrivateSpace (id, name, description, createdAt) dans src/Entity/PrivateSpace.php
+  - Synchronisation du diagramme de classes (classes.puml) avec la nouvelle entité
+  - Préparation à la migration Doctrine et à la création des relations (User, Database)
+  - Ajout de la relation bidirectionnelle OneToOne User <-> PrivateSpace (accès $privateSpace->getUser()), synchronisation du diagramme et documentation. Rappel : commit et PR à chaque étape structurante.
+  - Rappel : commit et Pull Request à chaque étape structurante, documentation à synchroniser dans README.md et .github/projet-context.md
 
 - **Juillet 2025**
   - Initialisation du projet Home Cloud (structure Symfony, API Platform, configuration O2Switch)

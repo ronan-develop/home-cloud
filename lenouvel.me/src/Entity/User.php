@@ -41,6 +41,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?bool $isActive = null;
 
+    #[ORM\OneToOne(inversedBy: 'user', cascade: ['persist', 'remove'])]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?PrivateSpace $privateSpace = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -154,6 +158,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setIsActive(bool $isActive): static
     {
         $this->isActive = $isActive;
+
+        return $this;
+    }
+
+    public function getPrivateSpace(): ?PrivateSpace
+    {
+        return $this->privateSpace;
+    }
+
+    public function setPrivateSpace(PrivateSpace $privateSpace): static
+    {
+        $this->privateSpace = $privateSpace;
 
         return $this;
     }
