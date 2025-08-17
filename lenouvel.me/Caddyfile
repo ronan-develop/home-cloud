@@ -1,0 +1,11 @@
+# Caddyfile minimal pour test local sur port utilisateur
+
+:8080 {
+    root * /home9/ron2cuba/www
+    file_server
+}
+
+# Explications :
+# - :8080 : écoute sur le port 8080 (modifiable si besoin)
+# - root * ... : dossier à servir (adapter le chemin si besoin)
+# - file_server : active le serveur de fichiers statiques

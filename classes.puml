@@ -1,0 +1,76 @@
+@startuml
+
+' Diagramme de classes principal pour Home Cloud (particuliers, partage)
+
+class User {
+  +id : int
+  +username : string
+  +email : string
+  +password : string
+  +createdAt : datetime
+}
+
+class PrivateSpace {
+  +id : int
+  +name : string
+  +description : string
+  +createdAt : datetime
+}
+
+class Database {
+  +id : int
+  +name : string
+  +dsn : string
+  +username : string
+  +createdAt : datetime
+}
+
+class File {
+  +id : int
+  +filename : string
+  +path : string
+  +size : int
+  +mimeType : string
+  +createdAt : datetime
+  +ownerId : int
+}
+
+class Share {
+  +id : int
+  +token : string
+  +email : string
+  +createdAt : datetime
+  +isExternal : bool
+  +accessLevel : string
+  +expiresAt : datetime
+  +password : string
+}
+
+class AccessRight {
+  +id : int
+  +type : string ' (lecture, modification, suppression)
+  +grantedAt : datetime
+}
+
+class AccessLog {
+  +id : int
+  +shareId : int
+  +accessedAt : datetime
+  +ip : string
+  +action : string
+}
+
+User "1" -- "1" PrivateSpace : propriétaire >
+PrivateSpace "1" -- "1" Database : stocke >
+PrivateSpace "1" -- "*" File : contient >
+File "1" -- "*" Share : partagé via >
+PrivateSpace "1" -- "*" Share : partage global >
+Share "*" -- "0..1" User : invité (optionnel)
+Share "1" -- "*" AccessRight : droits >
+Share "1" -- "*" AccessLog : journalise >
+
+' NOTE: Chaque PrivateSpace est associé à un sous-domaine dédié (multi-tenant applicatif)
+' L'isolation des données est assurée par la détection du sous-domaine côté Symfony
+' Un User possède un PrivateSpace, chaque PrivateSpace correspond à un sous-domaine
+
+@enduml
