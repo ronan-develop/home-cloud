@@ -117,6 +117,9 @@ Pour accéder à l’hébergement O2Switch en SSH :
   - Documentation de la procédure d’installation manuelle de Caddy et FrankenPHP sur O2Switch (mutualisé)
   - Abandon de la stack Caddy/FrankenPHP en mode serveur au profit d’Apache/PHP natif (limites O2Switch)
   - Modélisation métier complète (diagramme de classes, cas d’usage de partage, gestion des droits, logs)
+  - Création de l’entité User (modélisation initiale), génération et application de la première migration Doctrine (table user)
+  - Configuration de la connexion MariaDB locale via un utilisateur dédié (`ronan`), gestion des droits et adaptation du fichier `.env.local`
+  - Documentation de la procédure dans la PR associée et rappel de la synchronisation avec `classes.puml` et `.github/projet-context.md`
 
 - **Juillet 2025**
   - Initialisation du projet Home Cloud (structure Symfony, API Platform, configuration O2Switch)
