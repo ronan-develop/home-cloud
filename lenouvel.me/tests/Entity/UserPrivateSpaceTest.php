@@ -15,10 +15,15 @@ class UserPrivateSpaceTest extends KernelTestCase
         $container = static::getContainer();
         $em = $container->get('doctrine')->getManager();
 
-        // Création d'un User
+        // Nettoyage de la base
+        $em->createQuery('DELETE FROM App\\Entity\\PrivateSpace ps')->execute();
+        $em->createQuery('DELETE FROM App\\Entity\\User u')->execute();
+
+        // Création d'un User avec username unique
+        $uniqueUsername = 'testuser_' . uniqid();
         $user = new User();
-        $user->setUsername('testuser');
-        $user->setEmail('testuser@example.com');
+        $user->setUsername($uniqueUsername);
+        $user->setEmail($uniqueUsername . '@example.com');
         $user->setPassword('hashedpassword');
         $user->setCreatedAt(new \DateTimeImmutable());
         $user->setIsActive(true);
@@ -42,13 +47,13 @@ class UserPrivateSpaceTest extends KernelTestCase
         // Récupération depuis la base
         $userRepo = $em->getRepository(User::class);
         $psRepo = $em->getRepository(PrivateSpace::class);
-        $userFromDb = $userRepo->findOneBy(['username' => 'testuser']);
+        $userFromDb = $userRepo->findOneBy(['username' => $uniqueUsername]);
         $psFromDb = $psRepo->findOneBy(['name' => 'Espace Test']);
 
         // Vérification de la relation dans les deux sens
         Assert::assertNotNull($userFromDb->getPrivateSpace());
         Assert::assertEquals('Espace Test', $userFromDb->getPrivateSpace()->getName());
         Assert::assertNotNull($psFromDb->getUser());
-        Assert::assertEquals('testuser', $psFromDb->getUser()->getUsername());
+        Assert::assertEquals($uniqueUsername, $psFromDb->getUser()->getUsername());
     }
 }
