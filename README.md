@@ -142,4 +142,52 @@ php -S localhost:8000 -t public
 
 ---
 
+## Endpoints principaux
+
+### Endpoint d’accueil documenté
+
+- **GET /api/info**
+  - Exposé via API Platform (DTO InfoApiOutput + provider)
+  - Retourne : message d’accueil, version, endpoint login, info d’authentification
+  - Documenté dans Swagger/OpenAPI
+  - Exemple de réponse :
+
+    ```json
+    {
+      "@context": "/api/contexts/InfoApiOutput",
+      "@id": "/api/info",
+      "@type": "InfoApiOutput",
+      "message": "Bienvenue sur l’API Home Cloud.",
+      "version": "1.0.0",
+      "login_endpoint": "/api/login",
+      "info": "Authentifiez-vous via POST /api/login avec vos credentials (email/username + password)."
+    }
+    ```
+
+- **GET /api**
+  - Contrôleur Symfony classique (non documenté Swagger)
+  - Retourne un message d’accueil simple (legacy)
+
+---
+
+## Bonnes pratiques API Platform
+
+- Privilégier l’exposition des endpoints via API Platform pour bénéficier de la documentation Swagger/OpenAPI, du typage et de la maintenabilité.
+- Utiliser des DTOs et providers pour les endpoints informatifs ou custom (accueil, healthcheck, etc.).
+- Synchroniser la documentation métier et technique à chaque évolution majeure.
+
+---
+
+## Couverture de test automatisée
+
+Pour générer la couverture de test :
+
+```sh
+bin/phpunit-coverage --coverage-text
+```
+
+Le script active automatiquement Xdebug coverage pour faciliter la CI et la reproductibilité.
+
+---
+
 Prochaine étape : modéliser techniquement ces cas d’usage (API, entités, flux) et enrichir la documentation technique.
