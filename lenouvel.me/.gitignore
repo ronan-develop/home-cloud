@@ -1,0 +1,4 @@
+# Clés JWT (ne jamais versionner)
+/config/jwt/private.pem
+/config/jwt/public.pem
+# ...autres règles existantes...

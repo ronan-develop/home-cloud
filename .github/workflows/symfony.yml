@@ -1,0 +1,33 @@
+name: Symfony Workflow
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.0'
+
+      - name: Prepare test environment
+        run: |
+          if [ -f .env.test ]; then
+            cp .env.test .env.test.local
+          elif [ -f .env.test.example ]; then
+            cp .env.test.example .env.test
+            cp .env.test.example .env.test.local
+          fi
+
+      - name: Install dependencies
+        run: composer install --no-progress --no-suggest --prefer-dist
+
+      - name: Run tests
+        run: vendor/bin/phpunit
