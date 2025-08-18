@@ -1,0 +1,5 @@
+#!/bin/sh
+# Lance PHPUnit avec Xdebug coverage activé automatiquement
+
+export XDEBUG_MODE=coverage
+php bin/phpunit "$@"
