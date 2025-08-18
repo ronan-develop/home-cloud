@@ -133,6 +133,12 @@ Pour accéder à l’hébergement O2Switch en SSH :
 
   - Rappel : proposer systématiquement à l’utilisateur de lancer les commandes utiles (console Symfony, migrations, tests, etc.) à chaque étape technique pour faciliter la validation et la reproductibilité.
 
+  - Ajout d’un endpoint d’accueil `/api/info` exposé via API Platform (DTO InfoApiOutput + provider InfoApiProvider)
+    - Endpoint documenté dans Swagger/OpenAPI, typé, maintenable, sans entité Doctrine
+    - Correction de la config API Platform pour inclure explicitement `src/Dto` dans le mapping
+    - Documentation du contrôleur d’accueil classique (`ApiHomeController`) pour clarifier la différence avec la ressource officielle
+    - Rappel : commit et Pull Request à chaque étape structurante, synchronisation de la doc technique
+
 - **Juillet 2025**
   - Initialisation du projet Home Cloud (structure Symfony, API Platform, configuration O2Switch)
   - Définition des premiers endpoints API et des entités principales (User, PrivateSpace, File, Share, AccessRight, AccessLog)
