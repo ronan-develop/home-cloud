@@ -2,3 +2,8 @@
 /config/jwt/private.pem
 /config/jwt/public.pem
 # ...autres règles existantes...
+
+###> phpunit/phpunit ###
+/phpunit.xml
+/.phpunit.cache/
+###< phpunit/phpunit ###
