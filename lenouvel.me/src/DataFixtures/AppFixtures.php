@@ -34,8 +34,7 @@ class AppFixtures extends Fixture
         $user->setIsActive(true);
         $user->setRoles([]);
         $user->setPrivateSpace($privateSpace);
-        $user->setPassword(
-        // Use environment variable for password if set, otherwise generate a strong random password
+        // Génération du mot de passe de test
         $demoPassword = getenv('DEMO_USER_PASSWORD');
         if (!$demoPassword) {
             $demoPassword = bin2hex(random_bytes(12)); // 24 hex chars = 12 bytes
