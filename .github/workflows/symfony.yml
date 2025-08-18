@@ -9,15 +9,15 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: Vérifie le code
-        uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Installe PHP
+      - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.0'
 
-      - name: Prépare l'environnement de test
+      - name: Prepare test environment
         run: |
           if [ -f .env.test ]; then
             cp .env.test .env.test.local
@@ -26,8 +26,8 @@ jobs:
             cp .env.test.example .env.test.local
           fi
 
-      - name: Installe les dépendances
+      - name: Install dependencies
         run: composer install --no-progress --no-suggest --prefer-dist
 
-      - name: Exécute les tests
+      - name: Run tests
         run: vendor/bin/phpunit
