@@ -17,3 +17,5 @@ note.txt
 /lenouvel.me/public/bundles/
 /lenouvel.me/var/
 /lenouvel.me/vendor/
+.env*
+!.env.dist
