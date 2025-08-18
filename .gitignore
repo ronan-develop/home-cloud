@@ -9,3 +9,10 @@
 note.txt
 .credentials
 .token
+/config/jwt/
+/lenouvel.me/config/jwt/*.pem
+/lenouvel.me/.env.local
+/lenouvel.me/.phpunit.cache/
+/lenouvel.me/public/bundles/
+/lenouvel.me/var/
+/lenouvel.me/vendor/
