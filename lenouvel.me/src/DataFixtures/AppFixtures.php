@@ -35,7 +35,17 @@ class AppFixtures extends Fixture
         $user->setRoles([]);
         $user->setPrivateSpace($privateSpace);
         $user->setPassword(
-            $this->passwordHasher->hashPassword($user, 'password123')
+        // Use environment variable for password if set, otherwise generate a strong random password
+        $demoPassword = getenv('DEMO_USER_PASSWORD');
+        if (!$demoPassword) {
+            $demoPassword = bin2hex(random_bytes(12)); // 24 hex chars = 12 bytes
+            // Log the generated password for developer reference
+            if (php_sapi_name() === 'cli') {
+                echo "Generated demo user password: {$demoPassword}\n";
+            }
+        }
+        $user->setPassword(
+            $this->passwordHasher->hashPassword($user, $demoPassword)
         );
         $manager->persist($user);
 
