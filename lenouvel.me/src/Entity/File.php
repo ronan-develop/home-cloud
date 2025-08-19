@@ -171,6 +171,14 @@ class File
         self::$logger = $logger;
     }
 
+    /**
+     * Getter statique pour le logger (utilisé uniquement pour les tests).
+     */
+    public static function getLogger(): ?\Psr\Log\LoggerInterface
+    {
+        return self::$logger;
+    }
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
