@@ -84,7 +84,7 @@ class File
         maxMessage: 'Le nom du fichier ne peut pas dépasser {{ limit }} caractères.'
     )]
     #[Assert\Regex(
-        pattern: '/^(?!.*\\.\\.)(?!\.)[a-zA-Z0-9 _\-\(\),]+\\.([a-zA-Z0-9]+)$/',
+        pattern: '/^(?!.*\\.\\.)(?!\.)[a-zA-Z0-9_\-\(\),]+\\.([a-zA-Z0-9]+)$/',
         message: 'Le nom du fichier doit contenir une extension (ex: .pdf), ne doit pas commencer par un point, ne doit pas contenir de points consécutifs, et ne doit contenir que des lettres, chiffres, espaces, tirets, underscores, parenthèses, virgules et un seul point pour l\'extension.'
     )]
     private string $name;
