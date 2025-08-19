@@ -56,4 +56,21 @@ class UserPrivateSpaceTest extends KernelTestCase
         Assert::assertNotNull($psFromDb->getUser());
         Assert::assertEquals($uniqueUsername, $psFromDb->getUser()->getUsername());
     }
+
+    public function testUserPrivateSpaceBidirectionalRelationUnit(): void
+    {
+        // Création d'un User et d'un PrivateSpace sans BDD
+        $user = new User();
+        $user->setUsername('unit_user');
+        $privateSpace = new PrivateSpace();
+        $privateSpace->setName('Unit Espace');
+
+        // Association bidirectionnelle
+        $user->setPrivateSpace($privateSpace);
+        $privateSpace->setUser($user);
+
+        // Vérification de la relation dans les deux sens
+        $this->assertSame($privateSpace, $user->getPrivateSpace());
+        $this->assertSame($user, $privateSpace->getUser());
+    }
 }
