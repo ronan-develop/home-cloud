@@ -47,6 +47,32 @@ class File
 
     #[ORM\Column(type: 'string', length: 100)]
     #[Groups(['file:read', 'file:write'])]
+    #[Assert\Choice(
+        choices: [
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'image/webp',
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/zip',
+            'application/x-rar-compressed',
+            'application/x-7z-compressed',
+            'text/plain',
+            'text/csv',
+            'text/html',
+            'audio/mpeg',
+            'audio/wav',
+            'audio/ogg',
+            'video/mp4',
+            'video/x-msvideo',
+            'video/x-matroska'
+        ],
+        message: 'Le type MIME fourni n\'est pas autorisé.'
+    )]
     private string $mimeType;
 
     #[ORM\Column(type: 'integer')]
