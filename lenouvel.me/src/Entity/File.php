@@ -7,6 +7,7 @@ use App\Repository\FileRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 #[ORM\Entity(repositoryClass: FileRepository::class)]
 #[ApiResource(
@@ -216,7 +217,7 @@ class File
     /**
      * Validation personnalisée pour les noms réservés (ex: nul, con, prn, etc.)
      */
-    public function validateReservedNames(\Symfony\Component\Validator\Context\ExecutionContextInterface $context, $payload): void
+    public function validateReservedNames(ExecutionContextInterface $context, $payload): void
     {
         $basename = pathinfo($this->name, PATHINFO_FILENAME);
         $extension = pathinfo($this->name, PATHINFO_EXTENSION);
@@ -234,7 +235,7 @@ class File
     /**
      * Validation personnalisée pour la sécurité du chemin (interdit .., /, \\ et variantes encodées)
      */
-    public function validatePathSecurity(\Symfony\Component\Validator\Context\ExecutionContextInterface $context, $payload): void
+    public function validatePathSecurity(ExecutionContextInterface $context, $payload): void
     {
         $path = $this->path ?? '';
         $decodedPath = urldecode($path);
@@ -250,7 +251,7 @@ class File
         }
     }
 
-    public function validateExtension(\Symfony\Component\Validator\Context\ExecutionContextInterface $context, $payload): void
+    public function validateExtension(ExecutionContextInterface $context, $payload): void
     {
         $extension = strtolower(pathinfo($this->name, PATHINFO_EXTENSION));
         $allowed = false;
