@@ -3,3 +3,7 @@ controllers:
         path: ../src/Controller/
         namespace: App\Controller
     type: attribute
+
+# Import manuel de la route JWT login_check
+lexik_jwt_authentication:
+    resource: 'routes/lexik_jwt_authentication.yaml'

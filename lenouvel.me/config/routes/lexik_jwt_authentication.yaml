@@ -1,0 +1,5 @@
+# Ajout manuel de la route JWT login_check pour compatibilité LexikJWT v3+
+lexik_jwt_login:
+    path: /api/login_check
+    methods: [POST]
+    controller: Lexik\Bundle\JWTAuthenticationBundle\Controller\AuthenticationController::getTokenAction
