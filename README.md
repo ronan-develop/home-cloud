@@ -190,4 +190,17 @@ Le script active automatiquement Xdebug coverage pour faciliter la CI et la repr
 
 ---
 
+## Cas d'usage utilisateur
+
+L'API Home Cloud permet à chaque utilisateur de :
+
+- Se connecter via JWT
+- Uploader des fichiers (photo, vidéo, tout type)
+- Mettre à jour ou supprimer ses fichiers
+- Lister et trier ses fichiers par date de création
+
+Voir la section TODO.md pour le détail des endpoints et règles métier.
+
+---
+
 Prochaine étape : modéliser techniquement ces cas d’usage (API, entités, flux) et enrichir la documentation technique.

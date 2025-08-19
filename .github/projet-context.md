@@ -258,3 +258,12 @@ uname -a
   - `<username>` : identifiant unique de l’utilisateur (ex : ronan, elea, yannick)
 - Exemple pour toi : `ron2cuba_hc_ronan`
 - À appliquer systématiquement pour chaque nouvel utilisateur
+
+## Cas d'usage utilisateur (synchronisation)
+
+- Connexion sécurisée (JWT)
+- Upload de fichiers (photo, vidéo, tout type)
+- Update/delete de fichiers
+- Tri des fichiers par date de création
+
+Endpoints principaux : voir README.md et TODO.md

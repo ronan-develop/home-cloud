@@ -93,3 +93,43 @@
   - [ ] Backend : API Symfony avec ApiPlatform (multi-tenant)
   - [ ] Frontend : PWA (Vue, Angular ou React à choisir)
   - [ ] Décrire les flux, la sécurité, et la séparation des responsabilités
+
+## 1. Use cases utilisateur (API)
+
+- Connexion (login via JWT)
+- Upload de fichiers (photo, vidéo, tout type)
+- Mise à jour de fichier (update)
+- Suppression de fichier (delete)
+- Tri des fichiers par date de création
+
+### Détail des use cases
+
+#### Connexion utilisateur
+
+- Endpoint : POST /api/login
+- Entrée : username/email, password
+- Sortie : token JWT
+
+#### Upload de fichier
+
+- Endpoint : POST /api/files
+- Entrée : fichier (multipart), métadonnées
+- Sortie : référence du fichier créé
+
+#### Mise à jour de fichier
+
+- Endpoint : PATCH /api/files/{id}
+- Entrée : nouvelles métadonnées
+- Sortie : fichier mis à jour
+
+#### Suppression de fichier
+
+- Endpoint : DELETE /api/files/{id}
+- Entrée : id du fichier
+- Sortie : confirmation
+
+#### Tri des fichiers
+
+- Endpoint : GET /api/files?order[createdAt]=desc
+- Entrée : paramètre de tri
+- Sortie : liste paginée triée
