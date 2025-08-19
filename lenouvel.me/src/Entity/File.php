@@ -237,7 +237,8 @@ class File
     }
 
     /**
-     * Validation personnalisée pour les noms réservés (ex: nul, con, prn, etc.)
+     * Vérifie que le nom de fichier n'est pas un nom réservé Windows (nul, con, prn, lpt*, com*, etc.).
+     * S'applique uniquement si une extension est présente.
      */
     public function validateReservedNames(ExecutionContextInterface $context, $payload): void
     {
@@ -255,7 +256,7 @@ class File
     }
 
     /**
-     * Validation personnalisée pour la sécurité du chemin (interdit .., /, \\ et variantes encodées)
+     * Vérifie que le chemin ne contient aucune séquence ../, /, \ ou variante encodée pour des raisons de sécurité.
      */
     public function validatePathSecurity(ExecutionContextInterface $context, $payload): void
     {
@@ -273,6 +274,9 @@ class File
         }
     }
 
+    /**
+     * Vérifie que l'extension du fichier est bien dans la liste blanche ALLOWED_EXTENSIONS.
+     */
     public function validateExtension(ExecutionContextInterface $context, $payload): void
     {
         $extension = strtolower(pathinfo($this->name, PATHINFO_EXTENSION));
