@@ -203,4 +203,50 @@ Voir la section TODO.md pour le détail des endpoints et règles métier.
 
 ---
 
+## Développement et tests automatisés avec Docker (PHP 8.3 + SQLite)
+
+Pour garantir la compatibilité avec la prod O2Switch (PHP 8.3, extensions natives), le projet fournit un environnement Docker dédié au développement et aux tests automatisés.
+
+### Utilisation rapide
+
+1. **Build de l’image Docker (si besoin)**
+
+   ```sh
+   docker build -f Docker/Dockerfile.php83-sqlite -t php83-sqlite-dev .
+   ```
+
+2. **Lancement d’un shell dans le conteneur**
+
+   ```sh
+   docker run --rm -it -v "$PWD":/app -w /app php83-sqlite-dev bash
+   ```
+
+3. **Automatisation des tests**
+   Utilise le script fourni pour exécuter les tests ou toute commande Symfony/Composer dans l’environnement Docker :
+
+   ```sh
+   ./docker-test.sh
+   # ou pour une commande personnalisée
+   ./docker-test.sh "php bin/console doctrine:schema:validate"
+   ```
+
+### À quoi sert ce Dockerfile ?
+
+- Environnement isolé pour dev/test local (PHP 8.3, SQLite, Xdebug, Composer)
+- Aucune dépendance système requise sur ta machine (hors Docker)
+- Ne pas utiliser pour la production (O2Switch = Apache/PHP natif, pas Docker)
+
+### Bonnes pratiques
+
+- Développe en local, utilise Docker pour les tests et la validation finale
+- Documente toute modification de workflow dans ce README
+- Pense à committer le Dockerfile, le script et à créer une Pull Request pour la revue
+
+### Script d’automatisation
+
+- `docker-test.sh` : build auto, lancement du conteneur, exécution des tests ou commandes Symfony/Composer
+- Rends-le exécutable : `chmod +x docker-test.sh`
+
+---
+
 Prochaine étape : modéliser techniquement ces cas d’usage (API, entités, flux) et enrichir la documentation technique.
