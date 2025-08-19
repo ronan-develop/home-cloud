@@ -219,6 +219,11 @@ class File
     public function validateReservedNames(\Symfony\Component\Validator\Context\ExecutionContextInterface $context, $payload): void
     {
         $basename = pathinfo($this->name, PATHINFO_FILENAME);
+        $extension = pathinfo($this->name, PATHINFO_EXTENSION);
+        // On ne vérifie les noms réservés que si une extension est présente
+        if ($extension === '' || $extension === null) {
+            return;
+        }
         if ($basename !== null && in_array(strtolower($basename), self::RESERVED_NAMES, true)) {
             $context->buildViolation('Ce nom de fichier est réservé et ne peut pas être utilisé.')
                 ->atPath('name')
