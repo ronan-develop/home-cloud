@@ -28,8 +28,8 @@ class File
     #[ORM\Column(type: 'string', length: 255)]
     #[Groups(['file:read', 'file:write'])]
     #[Assert\Regex(
-        pattern: '/^(?!.*\.\.).*$/',
-        message: 'Le chemin ne doit pas contenir de séquence ../ pour des raisons de sécurité.'
+        pattern: '/^(?!.*\.\.)(?!\/)(?!\\\\)[a-zA-Z0-9_\-\/\.]+$/',
+        message: 'Le chemin doit être relatif, ne pas commencer par / ou \\, et ne pas contenir de séquence ../ pour des raisons de sécurité.'
     )]
     private string $path;
 
