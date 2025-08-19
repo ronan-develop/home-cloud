@@ -1,0 +1,23 @@
+# Dockerfile PHP 8.3 custom pour dev/test Symfony avec SQLite
+FROM php:8.3-cli
+
+# Installations des extensions nécessaires
+RUN apt-get update \
+    && apt-get install -y git unzip libzip-dev libicu-dev libxml2-dev libonig-dev \
+    && docker-php-ext-install pdo pdo_sqlite intl zip opcache
+
+# (Optionnel) Xdebug pour le debug local
+RUN pecl install xdebug \
+    && docker-php-ext-enable xdebug
+
+# Configuration de l'environnement de travail
+WORKDIR /app
+
+# Copie composer (si besoin)
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Variables d'environnement utiles
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
+# Commande par défaut
+CMD ["php", "-a"]
