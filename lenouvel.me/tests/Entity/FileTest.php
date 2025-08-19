@@ -142,4 +142,31 @@ class FileTest extends KernelTestCase
             $this->assertNotEmpty($errors, "Le caractère interdit '$char' doit être refusé");
         }
     }
+
+    public function testValidateReservedNames(): void
+    {
+        $file = $this->getValidFile();
+        $file->setName('con.pdf'); // nom réservé
+        $errors = $this->validator->validate($file);
+        $this->assertNotEmpty($errors, 'Le nom réservé doit être refusé par validateReservedNames');
+        $this->assertStringContainsString('réservé', (string) $errors);
+    }
+
+    public function testValidateExtension(): void
+    {
+        $file = $this->getValidFile();
+        $file->setName('test.exe'); // extension interdite
+        $errors = $this->validator->validate($file);
+        $this->assertNotEmpty($errors, 'L\'extension interdite doit être refusée par validateExtension');
+        $this->assertStringContainsString('n\'est pas autorisée', (string) $errors);
+    }
+
+    public function testValidatePathSecurity(): void
+    {
+        $file = $this->getValidFile();
+        $file->setPath('../secret'); // chemin interdit
+        $errors = $this->validator->validate($file);
+        $this->assertNotEmpty($errors, 'Le chemin interdit doit être refusé par validatePathSecurity');
+        $this->assertStringContainsString('sécurité', (string) $errors);
+    }
 }
