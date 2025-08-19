@@ -81,8 +81,8 @@ class File
         maxMessage: 'Le nom du fichier ne peut pas dépasser {{ limit }} caractères.'
     )]
     #[Assert\Regex(
-        pattern: '/^[a-zA-Z0-9_\-]+\.[a-zA-Z0-9]+$/',
-        message: 'Le nom du fichier doit contenir une extension (ex: .pdf) et ne doit contenir que des lettres, chiffres, tirets, underscores et un seul point pour l\'extension.'
+        pattern: '/^[a-zA-Z0-9 _\-\(\)\.,;]+\.([a-zA-Z0-9]+)$/',
+        message: 'Le nom du fichier doit contenir une extension (ex: .pdf) et ne doit contenir que des lettres, chiffres, espaces, tirets, underscores, parenthèses, points, virgules, points-virgules et un seul point pour l\'extension.'
     )]
     #[Assert\Callback('validateReservedNames')]
     #[Assert\Callback('validateExtension')]
@@ -90,10 +90,7 @@ class File
 
     #[ORM\Column(type: 'string', length: 255)]
     #[Groups(['file:read', 'file:write'])]
-    #[Assert\Regex(
-        pattern: '/^[a-zA-Z0-9_\-\.]+$/',
-        message: 'Le chemin ne doit pas contenir de slash (/) ou de séquence ../ pour des raisons de sécurité.'
-    )]
+    #[Assert\Callback('validatePathSecurity')]
     private string $path;
 
     #[ORM\Column(type: 'string', length: 100)]
@@ -221,8 +218,20 @@ class File
      */
     public function validateReservedNames(\Symfony\Component\Validator\Context\ExecutionContextInterface $context, $payload): void
     {
-        if (in_array(strtolower($this->name), self::RESERVED_NAMES, true)) {
+        $basename = pathinfo($this->name, PATHINFO_FILENAME);
+        if (in_array(strtolower($basename), self::RESERVED_NAMES, true)) {
             $context->buildViolation('Ce nom de fichier est réservé et ne peut pas être utilisé.')
+                ->addViolation();
+        }
+    }
+
+    /**
+     * Validation personnalisée pour la sécurité du chemin (interdit .., /, \\)
+     */
+    public function validatePathSecurity(\Symfony\Component\Validator\Context\ExecutionContextInterface $context, $payload): void
+    {
+        if (preg_match('/(\\.\\.|\/|\\\\)/', $this->path)) {
+            $context->buildViolation('Le chemin ne doit contenir aucune séquence ../, / ou \\ pour des raisons de sécurité.')
                 ->addViolation();
         }
     }
