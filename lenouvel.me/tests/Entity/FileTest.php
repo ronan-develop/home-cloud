@@ -87,12 +87,13 @@ class FileTest extends KernelTestCase
         $this->assertStringContainsString('sécurité', (string) $errors);
     }
 
-    public function testFileNameRegexAllowsSpecialChars(): void
+    public function testFileNameRegexRejectsSpecialChars(): void
     {
         $file = $this->getValidFile();
         $file->setName('Mon fichier (v2), test; ok.pdf');
         $errors = $this->validator->validate($file);
-        $this->assertCount(0, $errors);
+        $this->assertGreaterThan(0, count($errors), 'Le point-virgule et autres caractères spéciaux doivent être refusés');
+        $this->assertStringContainsString('extension', (string) $errors);
     }
 
     public function testFileNameRegexRequiresExtension(): void
