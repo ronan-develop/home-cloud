@@ -160,6 +160,17 @@ class File
     #[Groups(['file:read'])]
     private User $owner;
 
+    /** @var null|\Psr\Log\LoggerInterface */
+    private static ?\Psr\Log\LoggerInterface $logger = null;
+
+    /**
+     * Permet d'injecter le logger statique depuis le service appelant (ex: EventListener).
+     */
+    public static function setLogger(?\Psr\Log\LoggerInterface $logger): void
+    {
+        self::$logger = $logger;
+    }
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
@@ -244,11 +255,16 @@ class File
     {
         $basename = pathinfo($this->name, PATHINFO_FILENAME);
         $extension = pathinfo($this->name, PATHINFO_EXTENSION);
-        // On ne vérifie les noms réservés que si une extension est présente
         if ($extension === '' || $extension === null) {
             return;
         }
         if ($basename !== null && in_array(strtolower($basename), self::RESERVED_NAMES, true)) {
+            if (self::$logger) {
+                self::$logger->warning('[SECURITY] Tentative d’upload d’un fichier avec nom réservé', [
+                    'filename' => $this->name,
+                    'user' => method_exists($this->owner ?? null, 'getId') ? $this->owner->getId() : null,
+                ]);
+            }
             $context->buildViolation('Ce nom de fichier est réservé et ne peut pas être utilisé.')
                 ->atPath('name')
                 ->addViolation();
@@ -268,6 +284,13 @@ class File
             strpos($decodedPath, '\\') !== false ||
             preg_match('/%2e|%2f|%5c/i', $path)
         ) {
+            if (self::$logger) {
+                self::$logger->warning('[SECURITY] Tentative d’upload avec chemin dangereux', [
+                    'path' => $this->path,
+                    'filename' => $this->name,
+                    'user' => method_exists($this->owner ?? null, 'getId') ? $this->owner->getId() : null,
+                ]);
+            }
             $context->buildViolation('Le chemin ne doit contenir aucune séquence ../, /, \\ ou variante encodée pour des raisons de sécurité.')
                 ->atPath('path')
                 ->addViolation();
@@ -281,6 +304,13 @@ class File
     {
         $extension = strtolower(pathinfo($this->name, PATHINFO_EXTENSION));
         if (!in_array($extension, array_map('strtolower', self::ALLOWED_EXTENSIONS), true)) {
+            if (self::$logger) {
+                self::$logger->warning('[SECURITY] Tentative d’upload d’un fichier avec extension interdite', [
+                    'filename' => $this->name,
+                    'extension' => $extension,
+                    'user' => method_exists($this->owner ?? null, 'getId') ? $this->owner->getId() : null,
+                ]);
+            }
             $context->buildViolation('L\'extension de fichier n\'est pas autorisée.')
                 ->atPath('name')
                 ->addViolation();
