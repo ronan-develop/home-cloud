@@ -18,7 +18,8 @@ docker image inspect $IMAGE > /dev/null 2>&1 || \
 # Commande à exécuter (par défaut : vendor/bin/phpunit)
 CMD_IN_CONTAINER="$@"
 if [ -z "$CMD_IN_CONTAINER" ]; then
-  CMD_IN_CONTAINER="vendor/bin/phpunit"
+  # Migration automatique de la base de test avant les tests
+  CMD_IN_CONTAINER="bin/console doctrine:migrations:migrate --env=test --no-interaction && vendor/bin/phpunit"
 fi
 
 docker run --rm -it \
