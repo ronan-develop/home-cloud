@@ -68,7 +68,12 @@ class FileTest extends KernelTestCase
     public function invalidExtensionsProvider(): array
     {
         return [
-            ['exe'], ['php'], ['bat'], ['sh'], ['js'], ['bin']
+            ['exe'],
+            ['php'],
+            ['bat'],
+            ['sh'],
+            ['js'],
+            ['bin']
         ];
     }
 
