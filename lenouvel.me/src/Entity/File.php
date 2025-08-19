@@ -44,6 +44,35 @@ class File
         'lpt8',
         'lpt9'
     ];
+    /**
+     * Types MIME autorisés pour l’upload de fichiers :
+     * - Voir la constante ALLOWED_MIME_TYPES pour la liste exhaustive.
+     *
+     * Pour ajouter ou retirer un type, modifier uniquement la constante.
+     */
+    public const ALLOWED_MIME_TYPES = [
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/zip',
+        'application/x-rar-compressed',
+        'application/x-7z-compressed',
+        'text/plain',
+        'text/csv',
+        'text/html',
+        'audio/mpeg',
+        'audio/wav',
+        'audio/ogg',
+        'video/mp4',
+        'video/x-msvideo',
+        'video/x-matroska'
+    ];
     public const ALLOWED_EXTENSIONS = [
         'jpg',
         'jpeg',
@@ -112,29 +141,7 @@ class File
     #[ORM\Column(type: 'string', length: 100)]
     #[Groups(['file:read', 'file:write'])]
     #[Assert\Choice(
-        choices: [
-            'image/jpeg',
-            'image/png',
-            'image/gif',
-            'image/webp',
-            'application/pdf',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'application/vnd.ms-excel',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'application/zip',
-            'application/x-rar-compressed',
-            'application/x-7z-compressed',
-            'text/plain',
-            'text/csv',
-            'text/html',
-            'audio/mpeg',
-            'audio/wav',
-            'audio/ogg',
-            'video/mp4',
-            'video/x-msvideo',
-            'video/x-matroska'
-        ],
+        choices: self::ALLOWED_MIME_TYPES,
         message: 'Le type MIME fourni n\'est pas autorisé.'
     )]
     private string $mimeType;
