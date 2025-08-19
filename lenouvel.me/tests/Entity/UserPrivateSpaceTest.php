@@ -5,20 +5,30 @@ namespace App\Tests\Entity;
 use App\Entity\User;
 use App\Entity\PrivateSpace;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
-use PHPUnit\Framework\Assert;
+use Doctrine\ORM\EntityManagerInterface;
 
 class UserPrivateSpaceTest extends KernelTestCase
 {
-    public function testUserPrivateSpaceBidirectionalRelation(): void
+    private EntityManagerInterface $em;
+
+    protected function setUp(): void
     {
         self::bootKernel();
-        $container = static::getContainer();
-        $em = $container->get('doctrine')->getManager();
+        $this->em = static::getContainer()->get('doctrine')->getManager();
+        // Nettoyage de la base avant chaque test
+        $this->em->createQuery('DELETE FROM App\\Entity\\PrivateSpace ps')->execute();
+        $this->em->createQuery('DELETE FROM App\\Entity\\User u')->execute();
+    }
 
-        // Nettoyage de la base
-        $em->createQuery('DELETE FROM App\\Entity\\PrivateSpace ps')->execute();
-        $em->createQuery('DELETE FROM App\\Entity\\User u')->execute();
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+        $this->em->close();
+        unset($this->em);
+    }
 
+    public function testUserPrivateSpaceBidirectionalRelation(): void
+    {
         // Création d'un User avec username unique
         $uniqueUsername = 'testuser_' . uniqid();
         $user = new User();
@@ -39,21 +49,21 @@ class UserPrivateSpaceTest extends KernelTestCase
         $privateSpace->setUser($user);
 
         // Persistance
-        $em->persist($user);
-        $em->persist($privateSpace);
-        $em->flush();
-        $em->clear();
+        $this->em->persist($user);
+        $this->em->persist($privateSpace);
+        $this->em->flush();
+        $this->em->clear();
 
         // Récupération depuis la base
-        $userRepo = $em->getRepository(User::class);
-        $psRepo = $em->getRepository(PrivateSpace::class);
+        $userRepo = $this->em->getRepository(User::class);
+        $psRepo = $this->em->getRepository(PrivateSpace::class);
         $userFromDb = $userRepo->findOneBy(['username' => $uniqueUsername]);
         $psFromDb = $psRepo->findOneBy(['name' => 'Espace Test']);
 
         // Vérification de la relation dans les deux sens
-        Assert::assertNotNull($userFromDb->getPrivateSpace());
-        Assert::assertEquals('Espace Test', $userFromDb->getPrivateSpace()->getName());
-        Assert::assertNotNull($psFromDb->getUser());
-        Assert::assertEquals($uniqueUsername, $psFromDb->getUser()->getUsername());
+        $this->assertNotNull($userFromDb->getPrivateSpace());
+        $this->assertEquals('Espace Test', $userFromDb->getPrivateSpace()->getName());
+        $this->assertNotNull($psFromDb->getUser());
+        $this->assertEquals($uniqueUsername, $psFromDb->getUser()->getUsername());
     }
 }

@@ -10,7 +10,7 @@ class UserLoginTest extends ApiTestCase
     {
         // Préparer un utilisateur en base (à adapter selon fixtures ou factory)
         // ...
-        $response = static::createClient()->request('POST', '/api/login', [
+        $response = static::createClient()->request('POST', '/api/login_check', [
             'json' => [
                 'username' => 'demo',
                 'password' => 'password123'
@@ -18,14 +18,12 @@ class UserLoginTest extends ApiTestCase
         ]);
 
         $this->assertResponseIsSuccessful();
-        $this->assertJsonContains([
-            'token' => true // ou autre structure selon la réponse attendue
-        ]);
+        $this->assertArrayHasKey('token', $response->toArray());
     }
 
     public function test_login_failure(): void
     {
-        $response = static::createClient()->request('POST', '/api/login', [
+        $response = static::createClient()->request('POST', '/api/login_check', [
             'json' => [
                 'username' => 'demo',
                 'password' => 'wrongpassword'
@@ -33,8 +31,6 @@ class UserLoginTest extends ApiTestCase
         ]);
 
         $this->assertResponseStatusCodeSame(401);
-        $this->assertJsonContains([
-            'message' => 'Invalid credentials.'
-        ]);
+        $this->assertArrayHasKey('code', $response->toArray()); // JWT retourne un code d'erreur
     }
 }
