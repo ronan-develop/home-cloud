@@ -3,10 +3,12 @@
 namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
+use App\Repository\FileRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: FileRepository::class)]
 #[ApiResource(
     normalizationContext: ['groups' => ['file:read']],
     denormalizationContext: ['groups' => ['file:write']]
@@ -25,6 +27,10 @@ class File
 
     #[ORM\Column(type: 'string', length: 255)]
     #[Groups(['file:read', 'file:write'])]
+    #[Assert\Regex(
+        pattern: '/^(?!.*\.\.).*$/',
+        message: 'Le chemin ne doit pas contenir de séquence ../ pour des raisons de sécurité.'
+    )]
     private string $path;
 
     #[ORM\Column(type: 'string', length: 100)]
@@ -33,6 +39,7 @@ class File
 
     #[ORM\Column(type: 'integer')]
     #[Groups(['file:read', 'file:write'])]
+    #[Assert\Range(min: 1, max: 104857600, notInRangeMessage: 'La taille du fichier doit être comprise entre 1 octet et 100 Mo.')]
     private int $size;
 
     #[ORM\Column(type: 'datetime_immutable')]
@@ -43,6 +50,11 @@ class File
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['file:read'])]
     private User $owner;
+
+    public function __construct()
+    {
+        $this->createdAt = new \DateTimeImmutable();
+    }
 
     public function getId(): ?int
     {
