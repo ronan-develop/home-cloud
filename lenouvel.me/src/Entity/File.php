@@ -84,8 +84,8 @@ class File
         maxMessage: 'Le nom du fichier ne peut pas dépasser {{ limit }} caractères.'
     )]
     #[Assert\Regex(
-        pattern: '/^(?!.*\.\.)(?!\.)[a-zA-Z0-9 _\-\(\),;]+\.([a-zA-Z0-9]+)$/',
-        message: 'Le nom du fichier doit contenir une extension (ex: .pdf), ne doit pas commencer par un point, ne doit pas contenir de points consécutifs, et ne doit contenir que des lettres, chiffres, espaces, tirets, underscores, parenthèses, virgules, points-virgules et un seul point pour l\'extension.'
+        pattern: '/^(?!.*\\.\\.)(?!\.)[a-zA-Z0-9 _\-\(\),]+\\.([a-zA-Z0-9]+)$/',
+        message: 'Le nom du fichier doit contenir une extension (ex: .pdf), ne doit pas commencer par un point, ne doit pas contenir de points consécutifs, et ne doit contenir que des lettres, chiffres, espaces, tirets, underscores, parenthèses, virgules et un seul point pour l\'extension.'
     )]
     private string $name;
 
@@ -247,11 +247,10 @@ class File
 
     public function validateExtension(\Symfony\Component\Validator\Context\ExecutionContextInterface $context, $payload): void
     {
-        $name = strtolower($this->name);
+        $extension = strtolower(pathinfo($this->name, PATHINFO_EXTENSION));
         $allowed = false;
         foreach (self::ALLOWED_EXTENSIONS as $allowedExt) {
-            $allowedExt = strtolower($allowedExt);
-            if (substr($name, -strlen($allowedExt) - 1) === '.' . $allowedExt) {
+            if ($extension === strtolower($allowedExt)) {
                 $allowed = true;
                 break;
             }
