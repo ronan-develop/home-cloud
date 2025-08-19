@@ -247,10 +247,18 @@ class File
 
     public function validateExtension(\Symfony\Component\Validator\Context\ExecutionContextInterface $context, $payload): void
     {
-        $parts = explode('.', $this->name);
-        $ext = strtolower(array_pop($parts));
-        if (!in_array($ext, self::ALLOWED_EXTENSIONS, true)) {
-            $context->buildViolation('L\'extension de fichier ".' . $ext . '" n\'est pas autorisée.')
+        $name = strtolower($this->name);
+        $allowed = false;
+        foreach (self::ALLOWED_EXTENSIONS as $allowedExt) {
+            $allowedExt = strtolower($allowedExt);
+            if (substr($name, -strlen($allowedExt) - 1) === '.' . $allowedExt) {
+                $allowed = true;
+                break;
+            }
+        }
+        if (!$allowed) {
+            $context->buildViolation('L\'extension de fichier n\'est pas autorisée.')
+                ->atPath('name')
                 ->addViolation();
         }
     }
