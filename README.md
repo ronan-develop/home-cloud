@@ -142,6 +142,19 @@ php -S localhost:8000 -t public
 
 ---
 
+## Stratégie ISO base de test / production
+
+Pour garantir la robustesse et la reproductibilité des tests, la base de test utilisée (SQLite) est synchronisée à chaque exécution avec le schéma Doctrine de la base MariaDB de production :
+
+- Le schéma Doctrine est appliqué à la base SQLite avant chaque run de test (`doctrine:schema:update` ou migrations).
+- Les tests purgent et injectent systématiquement les mêmes données de référence (utilisateur, private space, etc.) avant chaque test.
+- Les contraintes de structure (colonnes, types, index) sont vérifiées pour garantir l’alignement avec la prod.
+- Les tests d’authentification, de persistance et de logique métier sont donc valides et reproductibles, quelle que soit la base sous-jacente.
+
+**Limite** : certaines différences SQL natives (types, index, contraintes) peuvent exister entre SQLite et MariaDB ; elles sont documentées et surveillées lors des migrations.
+
+---
+
 ## Endpoints principaux
 
 ### Endpoint d’accueil documenté
