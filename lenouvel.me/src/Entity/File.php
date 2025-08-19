@@ -227,13 +227,19 @@ class File
     }
 
     /**
-     * Validation personnalisée pour la sécurité du chemin (interdit .., /, \\)
+     * Validation personnalisée pour la sécurité du chemin (interdit .., /, \\ et variantes encodées)
      */
     public function validatePathSecurity(\Symfony\Component\Validator\Context\ExecutionContextInterface $context, $payload): void
     {
         $path = $this->path ?? '';
-        if (strpos($path, '..') !== false || strpos($path, '/') !== false || strpos($path, '\\') !== false) {
-            $context->buildViolation('Le chemin ne doit contenir aucune séquence ../, / ou \\ pour des raisons de sécurité.')
+        $decodedPath = urldecode($path);
+        if (
+            strpos($decodedPath, '..') !== false ||
+            strpos($decodedPath, '/') !== false ||
+            strpos($decodedPath, '\\') !== false ||
+            preg_match('/%2e|%2f|%5c/i', $path)
+        ) {
+            $context->buildViolation('Le chemin ne doit contenir aucune séquence ../, /, \\ ou variante encodée pour des raisons de sécurité.')
                 ->atPath('path')
                 ->addViolation();
         }
