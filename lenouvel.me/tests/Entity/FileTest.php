@@ -122,4 +122,24 @@ class FileTest extends KernelTestCase
         $this->assertNotEmpty($errors);
         $this->assertStringContainsString('n\'est pas autorisé', (string) $errors);
     }
+
+    public function testFileNameRejectsSemicolon(): void
+    {
+        $file = $this->getValidFile();
+        $file->setName('test;file.pdf');
+        $errors = $this->validator->validate($file);
+        $this->assertNotEmpty($errors, 'Le point-virgule doit être refusé');
+        $this->assertStringContainsString('point-virgule', (string) $errors);
+    }
+
+    public function testFileNameRejectsOtherForbiddenChars(): void
+    {
+        $forbidden = ['é', '"', '%', '$'];
+        foreach ($forbidden as $char) {
+            $file = $this->getValidFile();
+            $file->setName('test' . $char . 'file.pdf');
+            $errors = $this->validator->validate($file);
+            $this->assertNotEmpty($errors, "Le caractère interdit '$char' doit être refusé");
+        }
+    }
 }
