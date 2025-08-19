@@ -15,6 +15,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 )]
 class File
 {
+    public const MAX_FILE_SIZE = 104857600; // 100 Mo
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
@@ -34,7 +36,7 @@ class File
         pattern: '/^[a-zA-Z0-9_\-\.]+$/',
         message: 'Le nom du fichier ne doit contenir que des lettres, chiffres, tirets, underscores et points.'
     )]
-    #[Assert\Callback([self::class, 'validateReservedNames'])]
+    #[Assert\Callback('validateReservedNames')]
     private string $name;
 
     #[ORM\Column(type: 'string', length: 255)]
@@ -88,8 +90,6 @@ class File
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['file:read'])]
     private User $owner;
-
-    public const MAX_FILE_SIZE = 104857600; // 100 Mo
 
     public function __construct()
     {
@@ -170,10 +170,10 @@ class File
     /**
      * Validation personnalisée pour les noms réservés (ex: nul, con, prn, etc.)
      */
-    public static function validateReservedNames($value, \Symfony\Component\Validator\Context\ExecutionContextInterface $context): void
+    public function validateReservedNames(\Symfony\Component\Validator\Context\ExecutionContextInterface $context, $payload): void
     {
         $reserved = ['nul', 'con', 'prn', 'aux', 'com1', 'com2', 'com3', 'com4', 'com5', 'com6', 'com7', 'com8', 'com9', 'lpt1', 'lpt2', 'lpt3', 'lpt4', 'lpt5', 'lpt6', 'lpt7', 'lpt8', 'lpt9'];
-        if (in_array(strtolower($value), $reserved, true)) {
+        if (in_array(strtolower($this->name), $reserved, true)) {
             $context->buildViolation('Ce nom de fichier est réservé et ne peut pas être utilisé.')
                 ->addViolation();
         }
