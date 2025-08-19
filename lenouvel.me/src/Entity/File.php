@@ -42,7 +42,7 @@ class File
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'files')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['file:read'])]
-    private ?User $owner = null;
+    private User $owner;
 
     public function getId(): ?int
     {
@@ -104,12 +104,12 @@ class File
         return $this;
     }
 
-    public function getOwner(): ?User
+    public function getOwner(): User
     {
         return $this->owner;
     }
 
-    public function setOwner(?User $owner): self
+    public function setOwner(User $owner): self
     {
         $this->owner = $owner;
         return $this;
