@@ -38,7 +38,7 @@ class FileTest extends KernelTestCase
 
     public function testReservedNamesAreRejected(): void
     {
-        $reserved = \App\Entity\File::RESERVED_NAMES;
+        $reserved = File::RESERVED_NAMES;
         foreach ($reserved as $name) {
             $file = $this->getValidFile();
             $file->setName($name . '.pdf');
