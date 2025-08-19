@@ -23,6 +23,18 @@ class File
 
     #[ORM\Column(type: 'string', length: 255)]
     #[Groups(['file:read', 'file:write'])]
+    #[Assert\NotBlank(message: 'Le nom du fichier ne doit pas être vide.')]
+    #[Assert\Length(
+        min: 1,
+        max: 255,
+        minMessage: 'Le nom du fichier doit comporter au moins {{ limit }} caractère.',
+        maxMessage: 'Le nom du fichier ne peut pas dépasser {{ limit }} caractères.'
+    )]
+    #[Assert\Regex(
+        pattern: '/^[a-zA-Z0-9_\-\.]+$/',
+        message: 'Le nom du fichier ne doit contenir que des lettres, chiffres, tirets, underscores et points.'
+    )]
+    #[Assert\Callback([self::class, 'validateReservedNames'])]
     private string $name;
 
     #[ORM\Column(type: 'string', length: 255)]
@@ -127,5 +139,17 @@ class File
     {
         $this->owner = $owner;
         return $this;
+    }
+
+    /**
+     * Validation personnalisée pour les noms réservés (ex: nul, con, prn, etc.)
+     */
+    public static function validateReservedNames($value, \Symfony\Component\Validator\Context\ExecutionContextInterface $context): void
+    {
+        $reserved = ['nul', 'con', 'prn', 'aux', 'com1', 'com2', 'com3', 'com4', 'com5', 'com6', 'com7', 'com8', 'com9', 'lpt1', 'lpt2', 'lpt3', 'lpt4', 'lpt5', 'lpt6', 'lpt7', 'lpt8', 'lpt9'];
+        if (in_array(strtolower($value), $reserved, true)) {
+            $context->buildViolation('Ce nom de fichier est réservé et ne peut pas être utilisé.')
+                ->addViolation();
+        }
     }
 }
