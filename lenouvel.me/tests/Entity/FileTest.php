@@ -43,7 +43,7 @@ class FileTest extends KernelTestCase
             $file = $this->getValidFile();
             $file->setName($name . '.pdf');
             $errors = $this->validator->validate($file);
-            $this->assertGreaterThan(0, count($errors), "Le nom réservé '$name' doit être refusé");
+            $this->assertNotEmpty($errors, "Le nom réservé '$name' doit être refusé");
             $this->assertStringContainsString('réservé', (string) $errors);
         }
     }
@@ -55,7 +55,7 @@ class FileTest extends KernelTestCase
             $file = $this->getValidFile();
             $file->setName('test.' . $ext);
             $errors = $this->validator->validate($file);
-            $this->assertGreaterThan(0, count($errors), "L'extension '$ext' doit être refusée");
+            $this->assertNotEmpty($errors, "L'extension '$ext' doit être refusée");
             $this->assertStringContainsString('n\'est pas autorisée', (string) $errors);
         }
     }
@@ -65,7 +65,7 @@ class FileTest extends KernelTestCase
         $file = $this->getValidFile();
         $file->setPath('..');
         $errors = $this->validator->validate($file);
-        $this->assertGreaterThan(0, count($errors));
+        $this->assertNotEmpty($errors);
         $this->assertStringContainsString('sécurité', (string) $errors);
     }
 
@@ -74,7 +74,7 @@ class FileTest extends KernelTestCase
         $file = $this->getValidFile();
         $file->setPath('mon/dossier');
         $errors = $this->validator->validate($file);
-        $this->assertGreaterThan(0, count($errors));
+        $this->assertNotEmpty($errors);
         $this->assertStringContainsString('sécurité', (string) $errors);
     }
 
@@ -83,7 +83,7 @@ class FileTest extends KernelTestCase
         $file = $this->getValidFile();
         $file->setPath('mon\\dossier');
         $errors = $this->validator->validate($file);
-        $this->assertGreaterThan(0, count($errors));
+        $this->assertNotEmpty($errors);
         $this->assertStringContainsString('sécurité', (string) $errors);
     }
 
@@ -92,7 +92,7 @@ class FileTest extends KernelTestCase
         $file = $this->getValidFile();
         $file->setName('Mon fichier (v2), test; ok.pdf');
         $errors = $this->validator->validate($file);
-        $this->assertGreaterThan(0, count($errors), 'Le point-virgule et autres caractères spéciaux doivent être refusés');
+        $this->assertNotEmpty($errors, 'Le point-virgule et autres caractères spéciaux doivent être refusés');
         $this->assertStringContainsString('extension', (string) $errors);
     }
 
@@ -101,7 +101,7 @@ class FileTest extends KernelTestCase
         $file = $this->getValidFile();
         $file->setName('sans_extension');
         $errors = $this->validator->validate($file);
-        $this->assertGreaterThan(0, count($errors));
+        $this->assertNotEmpty($errors);
         $this->assertStringContainsString('extension', (string) $errors);
     }
 
@@ -110,7 +110,7 @@ class FileTest extends KernelTestCase
         $file = $this->getValidFile();
         $file->setSize(File::MAX_FILE_SIZE + 1);
         $errors = $this->validator->validate($file);
-        $this->assertGreaterThan(0, count($errors));
+        $this->assertNotEmpty($errors);
         $this->assertStringContainsString('100 Mo', (string) $errors);
     }
 
@@ -119,7 +119,7 @@ class FileTest extends KernelTestCase
         $file = $this->getValidFile();
         $file->setMimeType('application/x-msdownload');
         $errors = $this->validator->validate($file);
-        $this->assertGreaterThan(0, count($errors));
+        $this->assertNotEmpty($errors);
         $this->assertStringContainsString('n\'est pas autorisé', (string) $errors);
     }
 }
