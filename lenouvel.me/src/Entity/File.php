@@ -254,14 +254,7 @@ class File
     public function validateExtension(ExecutionContextInterface $context, $payload): void
     {
         $extension = strtolower(pathinfo($this->name, PATHINFO_EXTENSION));
-        $allowed = false;
-        foreach (self::ALLOWED_EXTENSIONS as $allowedExt) {
-            if ($extension === strtolower($allowedExt)) {
-                $allowed = true;
-                break;
-            }
-        }
-        if (!$allowed) {
+        if (!in_array($extension, array_map('strtolower', self::ALLOWED_EXTENSIONS), true)) {
             $context->buildViolation('L\'extension de fichier n\'est pas autorisée.')
                 ->atPath('name')
                 ->addViolation();
