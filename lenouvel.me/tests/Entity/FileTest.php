@@ -36,45 +36,28 @@ class FileTest extends KernelTestCase
         $this->assertCount(0, $errors);
     }
 
-    /**
-     * @dataProvider reservedNamesProvider
-     */
-    public function testReservedNamesAreRejected(string $name): void
+    public function testReservedNamesAreRejected(): void
     {
-        $file = $this->getValidFile();
-        $file->setName($name . '.pdf');
-        $errors = $this->validator->validate($file);
-        $this->assertGreaterThan(0, count($errors));
-        $this->assertStringContainsString('réservé', (string) $errors);
+        $reserved = \App\Entity\File::RESERVED_NAMES;
+        foreach ($reserved as $name) {
+            $file = $this->getValidFile();
+            $file->setName($name . '.pdf');
+            $errors = $this->validator->validate($file);
+            $this->assertGreaterThan(0, count($errors), "Le nom réservé '$name' doit être refusé");
+            $this->assertStringContainsString('réservé', (string) $errors);
+        }
     }
 
-    public function reservedNamesProvider(): array
+    public function testInvalidExtensionsAreRejected(): void
     {
-        return array_map(fn($n) => [$n], File::RESERVED_NAMES);
-    }
-
-    /**
-     * @dataProvider invalidExtensionsProvider
-     */
-    public function testInvalidExtensionsAreRejected(string $ext): void
-    {
-        $file = $this->getValidFile();
-        $file->setName('test.' . $ext);
-        $errors = $this->validator->validate($file);
-        $this->assertGreaterThan(0, count($errors));
-        $this->assertStringContainsString('n\'est pas autorisée', (string) $errors);
-    }
-
-    public function invalidExtensionsProvider(): array
-    {
-        return [
-            ['exe'],
-            ['php'],
-            ['bat'],
-            ['sh'],
-            ['js'],
-            ['bin']
-        ];
+        $invalid = ['exe', 'php', 'bat', 'sh', 'js', 'bin'];
+        foreach ($invalid as $ext) {
+            $file = $this->getValidFile();
+            $file->setName('test.' . $ext);
+            $errors = $this->validator->validate($file);
+            $this->assertGreaterThan(0, count($errors), "L'extension '$ext' doit être refusée");
+            $this->assertStringContainsString('n\'est pas autorisée', (string) $errors);
+        }
     }
 
     public function testPathSecurityRejectsDotDotSlash(): void

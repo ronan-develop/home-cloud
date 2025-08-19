@@ -13,6 +13,9 @@ use Symfony\Component\Validator\Constraints as Assert;
     normalizationContext: ['groups' => ['file:read']],
     denormalizationContext: ['groups' => ['file:write']]
 )]
+#[Assert\Callback('validateReservedNames')]
+#[Assert\Callback('validateExtension')]
+#[Assert\Callback('validatePathSecurity')]
 class File
 {
     public const MAX_FILE_SIZE = 104857600; // 100 Mo
@@ -84,13 +87,10 @@ class File
         pattern: '/^[a-zA-Z0-9 _\-\(\)\.,;]+\.([a-zA-Z0-9]+)$/',
         message: 'Le nom du fichier doit contenir une extension (ex: .pdf) et ne doit contenir que des lettres, chiffres, espaces, tirets, underscores, parenthèses, points, virgules, points-virgules et un seul point pour l\'extension.'
     )]
-    #[Assert\Callback('validateReservedNames')]
-    #[Assert\Callback('validateExtension')]
     private string $name;
 
     #[ORM\Column(type: 'string', length: 255)]
     #[Groups(['file:read', 'file:write'])]
-    #[Assert\Callback('validatePathSecurity')]
     private string $path;
 
     #[ORM\Column(type: 'string', length: 100)]
@@ -219,8 +219,9 @@ class File
     public function validateReservedNames(\Symfony\Component\Validator\Context\ExecutionContextInterface $context, $payload): void
     {
         $basename = pathinfo($this->name, PATHINFO_FILENAME);
-        if (in_array(strtolower($basename), self::RESERVED_NAMES, true)) {
+        if ($basename !== null && in_array(strtolower($basename), self::RESERVED_NAMES, true)) {
             $context->buildViolation('Ce nom de fichier est réservé et ne peut pas être utilisé.')
+                ->atPath('name')
                 ->addViolation();
         }
     }
@@ -230,8 +231,10 @@ class File
      */
     public function validatePathSecurity(\Symfony\Component\Validator\Context\ExecutionContextInterface $context, $payload): void
     {
-        if (preg_match('/(\\.\\.|\/|\\\\)/', $this->path)) {
+        $path = $this->path ?? '';
+        if (strpos($path, '..') !== false || strpos($path, '/') !== false || strpos($path, '\\') !== false) {
             $context->buildViolation('Le chemin ne doit contenir aucune séquence ../, / ou \\ pour des raisons de sécurité.')
+                ->atPath('path')
                 ->addViolation();
         }
     }
