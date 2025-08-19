@@ -75,6 +75,21 @@ class File
     #[Groups(['file:read'])]
     private ?int $id = null;
 
+    /**
+     * Caractères autorisés pour les noms de fichiers (hors extension) :
+     * - Lettres (a-z, A-Z)
+     * - Chiffres (0-9)
+     * - Espace
+     * - Tiret (-)
+     * - Underscore (_)
+     * - Parenthèses ( )
+     * - Virgule (,)
+     *
+     * Extension obligatoire, un seul point, pas de points consécutifs, pas de point initial.
+     * Le point-virgule (;) et tout autre caractère non listé sont strictement interdits.
+     *
+     * Voir la regex de validation pour la correspondance exacte.
+     */
     #[ORM\Column(type: 'string', length: 255)]
     #[Groups(['file:read', 'file:write'])]
     #[Assert\NotBlank(message: 'Le nom du fichier ne doit pas être vide.')]
