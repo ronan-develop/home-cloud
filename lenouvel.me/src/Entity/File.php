@@ -16,6 +16,54 @@ use Symfony\Component\Validator\Constraints as Assert;
 class File
 {
     public const MAX_FILE_SIZE = 104857600; // 100 Mo
+    public const RESERVED_NAMES = [
+        'nul',
+        'con',
+        'prn',
+        'aux',
+        'com1',
+        'com2',
+        'com3',
+        'com4',
+        'com5',
+        'com6',
+        'com7',
+        'com8',
+        'com9',
+        'lpt1',
+        'lpt2',
+        'lpt3',
+        'lpt4',
+        'lpt5',
+        'lpt6',
+        'lpt7',
+        'lpt8',
+        'lpt9'
+    ];
+    public const ALLOWED_EXTENSIONS = [
+        'jpg',
+        'jpeg',
+        'png',
+        'gif',
+        'webp',
+        'pdf',
+        'doc',
+        'docx',
+        'xls',
+        'xlsx',
+        'zip',
+        'rar',
+        '7z',
+        'txt',
+        'csv',
+        'html',
+        'mp3',
+        'wav',
+        'ogg',
+        'mp4',
+        'avi',
+        'mkv'
+    ];
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -33,17 +81,18 @@ class File
         maxMessage: 'Le nom du fichier ne peut pas dépasser {{ limit }} caractères.'
     )]
     #[Assert\Regex(
-        pattern: '/^[a-zA-Z0-9_\-\.]+$/',
-        message: 'Le nom du fichier ne doit contenir que des lettres, chiffres, tirets, underscores et points.'
+        pattern: '/^[a-zA-Z0-9_\-]+\.[a-zA-Z0-9]+$/',
+        message: 'Le nom du fichier doit contenir une extension (ex: .pdf) et ne doit contenir que des lettres, chiffres, tirets, underscores et un seul point pour l\'extension.'
     )]
     #[Assert\Callback('validateReservedNames')]
+    #[Assert\Callback('validateExtension')]
     private string $name;
 
     #[ORM\Column(type: 'string', length: 255)]
     #[Groups(['file:read', 'file:write'])]
     #[Assert\Regex(
-        pattern: '/^(?!.*\.\.)(?!\/)(?!\\\\)[a-zA-Z0-9_\-\/\.]+$/',
-        message: 'Le chemin doit être relatif, ne pas commencer par / ou \\, et ne pas contenir de séquence ../ pour des raisons de sécurité.'
+        pattern: '/^[a-zA-Z0-9_\-\.]+$/',
+        message: 'Le chemin ne doit pas contenir de slash (/) ou de séquence ../ pour des raisons de sécurité.'
     )]
     private string $path;
 
@@ -172,9 +221,18 @@ class File
      */
     public function validateReservedNames(\Symfony\Component\Validator\Context\ExecutionContextInterface $context, $payload): void
     {
-        $reserved = ['nul', 'con', 'prn', 'aux', 'com1', 'com2', 'com3', 'com4', 'com5', 'com6', 'com7', 'com8', 'com9', 'lpt1', 'lpt2', 'lpt3', 'lpt4', 'lpt5', 'lpt6', 'lpt7', 'lpt8', 'lpt9'];
-        if (in_array(strtolower($this->name), $reserved, true)) {
+        if (in_array(strtolower($this->name), self::RESERVED_NAMES, true)) {
             $context->buildViolation('Ce nom de fichier est réservé et ne peut pas être utilisé.')
+                ->addViolation();
+        }
+    }
+
+    public function validateExtension(\Symfony\Component\Validator\Context\ExecutionContextInterface $context, $payload): void
+    {
+        $parts = explode('.', $this->name);
+        $ext = strtolower(array_pop($parts));
+        if (!in_array($ext, self::ALLOWED_EXTENSIONS, true)) {
+            $context->buildViolation('L\'extension de fichier ".' . $ext . '" n\'est pas autorisée.')
                 ->addViolation();
         }
     }
