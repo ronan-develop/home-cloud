@@ -125,7 +125,7 @@ class File
 
     #[ORM\Column(type: 'integer')]
     #[Groups(['file:read', 'file:write'])]
-    #[Assert\Range(min: 1, max: self::MAX_FILE_SIZE, notInRangeMessage: 'La taille du fichier doit être comprise entre 1 octet et 100 Mo.')]
+    #[Assert\Range(min: 1, max: 104857600, notInRangeMessage: 'La taille du fichier doit être comprise entre 1 octet et 100 Mo.')]
     private int $size;
 
     #[ORM\Column(type: 'datetime_immutable')]
