@@ -267,3 +267,15 @@ uname -a
 - Tri des fichiers par date de création
 
 Endpoints principaux : voir README.md et TODO.md
+
+# 🔒 Bonnes pratiques Firewall & Auth API Platform + JWT (Home Cloud)
+
+- Toujours placer le firewall `login` (pour `/api/login_check`) **avant** le firewall `api` (JWT) dans `security.yaml`.
+- Le firewall `login` doit matcher uniquement `/api/login_check` et utiliser `json_login` (ou le contrôleur LexikJWT).
+- Le firewall `api` doit matcher `^/api` et utiliser `jwt: ~`.
+- Le firewall `main` doit être sans pattern, en dernier, pour couvrir le reste du site (form_login ou json_login si besoin).
+- Ne jamais utiliser `form_login` pour une API, préférer `json_login` ou LexikJWT.
+- Les `access_control` doivent autoriser l’anonyme sur `/api/login_check` et exiger l’authentification sur `/api`.
+- L’ordre des firewalls est **critique** : Symfony n’active qu’un seul firewall par requête, le premier qui matche le pattern.
+
+> Pour toute évolution de la sécurité, commit + PR obligatoire pour garantir la traçabilité et la revue.

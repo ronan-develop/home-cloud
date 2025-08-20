@@ -288,6 +288,63 @@ applyTo: '**'
 
 ---
 
+# Password Hashing and Verification (Symfony)
+
+## Configuration du Password Hasher
+
+- Utilise le composant PasswordHasher de Symfony pour stocker les mots de passe de façon sécurisée.
+- Installation :
+  ```sh
+  composer require symfony/password-hasher
+  ```
+- Configuration recommandée dans `config/packages/security.yaml` :
+  ```yaml
+  security:
+      password_hashers:
+          # Pour la classe User (et enfants)
+          App\Entity\User: 'auto'
+          # Pour tous les PasswordAuthenticatedUserInterface
+          Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
+              algorithm: 'auto'
+              cost: 15
+  ```
+- L’algorithme `auto` sélectionne le plus sécurisé disponible (ex : bcrypt, sodium).
+- Pour accélérer les tests, configure un hasher plus rapide en test :
+  ```yaml
+  when@test:
+      security:
+          password_hashers:
+              App\Entity\User:
+                  algorithm: auto
+                  cost: 4 # Bcrypt minimum
+                  time_cost: 3 # Argon minimum
+                  memory_cost: 10 # Argon minimum
+  ```
+
+## Hashage et vérification du mot de passe
+
+- Utilise `UserPasswordHasherInterface` pour hasher et vérifier les mots de passe :
+  ```php
+  $hashedPassword = $passwordHasher->hashPassword($user, $plainPassword);
+  $user->setPassword($hashedPassword);
+  // Vérification
+  $passwordHasher->isPasswordValid($user, $plainPassword);
+  ```
+- Toujours hasher le mot de passe avant de le stocker en base (fixtures, registration, reset, etc).
+
+## Migration et upgrade de hash
+
+- Utilise l’option `migrate_from` pour migrer d’un algo legacy vers un plus sécurisé.
+- Implémente `PasswordUpgraderInterface` dans le repository pour permettre l’upgrade automatique lors du login.
+
+## Conseils
+
+- En test, baisse le coût du hash pour accélérer la suite de tests.
+- Vérifie que le champ password en base commence par `$2y$` (bcrypt) ou `$argon2` (sodium) pour garantir le hashage.
+- Pour les utilisateurs avancés, tu peux utiliser des hashers nommés et dynamiques via `PasswordHasherAwareInterface`.
+
+---
+
 *Ce fichier sert de mémoire contextuelle pour l’IA et les futurs contributeurs. Synchroniser avec `.github/projet-context.md` en cas de modification du contexte technique ou serveur.*
 
 - Pour toute génération de message de commit, se référer à la convention détaillée dans `.github/CONVENTION_COMMITS.md` (format, types, emojis, exemples).
