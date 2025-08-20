@@ -278,6 +278,8 @@ applyTo: '**'
   ```sh
   php bin/console doctrine:fixtures:load --env=test --purge-with-truncate
   ```
+- ⚠️ Toujours charger les fixtures avec `--env=test` pour garantir que le hash des mots de passe utilise la config de test (cost: 4). Ne jamais pré-hasher le mot de passe côté client pour `/api/login_check`.
+- Documenter toute divergence de config ou de procédure dans `.github/projet-context.md`.
 - Utilise `addReference()`/`getReference()` pour partager des entités entre fixtures.
 - Implémente `DependentFixtureInterface` pour forcer l’ordre de chargement.
 - Implémente `FixtureGroupInterface` pour charger des groupes spécifiques.

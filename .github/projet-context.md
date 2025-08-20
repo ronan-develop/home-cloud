@@ -279,3 +279,19 @@ Endpoints principaux : voir README.md et TODO.md
 - L’ordre des firewalls est **critique** : Symfony n’active qu’un seul firewall par requête, le premier qui matche le pattern.
 
 > Pour toute évolution de la sécurité, commit + PR obligatoire pour garantir la traçabilité et la revue.
+
+## ⚠️ Pratique critique : cohérence du hashage des mots de passe en test
+
+Pour garantir la réussite des tests d’authentification, il est impératif de charger les fixtures dans l’environnement de test avec :
+
+    php bin/console doctrine:fixtures:load --env=test --no-interaction
+
+Cela garantit que le mot de passe est haché avec le même coût (cost: 4) que celui utilisé par l’environnement de test (voir bloc `when@test` dans `security.yaml`).
+
+- Toute divergence de config entre dev, test et prod peut provoquer des 401 inattendus.
+- Si vous utilisez Docker ou un runner CI, exécutez cette commande dans le conteneur PHP de test.
+- Le mot de passe transmis à `/api/login_check` doit toujours être en clair (ex: "test"), jamais pré-hashé côté client.
+
+Voir aussi `.github/copilot-instructions.md` pour les bonnes pratiques de tests et de sécurité.
+
+---

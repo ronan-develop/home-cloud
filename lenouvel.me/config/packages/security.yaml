@@ -46,6 +46,22 @@ security:
         # - { path: ^/admin, roles: ROLE_ADMIN }
         # - { path: ^/profile, roles: ROLE_USER }
 
+# ⚠️ IMPORTANT :
+# Pour garantir la réussite des tests d’authentification, il est impératif de charger les fixtures
+# dans l’environnement de test avec la commande suivante :
+#
+#     php bin/console doctrine:fixtures:load --env=test --no-interaction
+#
+# Cela garantit que le mot de passe est haché avec le même coût (cost: 4) que celui utilisé par
+# l’environnement de test (voir bloc when@test ci-dessous). Toute divergence de config entre dev, test
+# et prod peut provoquer des 401 inattendus.
+#
+# Si vous utilisez Docker ou un runner CI, exécutez cette commande dans le conteneur PHP de test.
+#
+# Le mot de passe transmis à /api/login_check doit toujours être en clair (ex: "test"), jamais pré-hashé côté client.
+#
+# Voir .github/copilot-instructions.md pour les bonnes pratiques de tests et de sécurité.
+
 when@test:
     security:
         password_hashers:
