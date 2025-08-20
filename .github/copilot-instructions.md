@@ -104,6 +104,148 @@ applyTo: '**'
 
 ---
 
+# Validation des données avec API Platform/Symfony
+
+- Utiliser les contraintes Symfony (`Assert\*`) directement dans les entités annotées `#[ApiResource]`.
+- Les erreurs de validation sont retournées en 422 avec la liste des violations (format JSON-LD par défaut).
+- Pour des règles avancées, créer des contraintes personnalisées (voir exemple MinimalProperties).
+- Utiliser les validation groups pour adapter les règles selon l’opération (POST, PUT, etc.) :
+  - `#[ApiResource(validationContext: ['groups' => ['Default', 'postValidation']])]`
+  - Ou par opération : `#[Post(validationContext: ['groups' => ['postValidation']])]`
+- Les groupes peuvent être dynamiques via callable ou service (ex : selon le rôle de l’utilisateur).
+- Pour accélérer les tests, surcharger le hasher en test (ex : algo md5).
+- Les erreurs de dénormalisation (type, format) sont aussi retournées en 422 si `collectDenormalizationErrors` est activé.
+- Pour les relations toMany, utiliser `#[Assert\Valid]` sur le getter retournant un tableau.
+- API Platform génère automatiquement les restrictions de schéma OpenAPI à partir des contraintes Symfony.
+- Commit + PR à chaque évolution de la validation ou des entités pour la traçabilité.
+
+---
+
+# Sécurité API Platform/Symfony
+
+- Utiliser les expressions `security` et `securityPostDenormalize` dans `#[ApiResource]` et sur chaque opération pour contrôler l’accès (ex : `is_granted('ROLE_USER')`, `object.owner == user`).
+- Privilégier les voters pour la logique métier complexe (ex : `is_granted('BOOK_EDIT', object)`).
+- Personnaliser les messages d’erreur avec `securityMessage` et `securityPostDenormalizeMessage`.
+- Pour filtrer les collections selon l’utilisateur, utiliser une extension Doctrine (pas une expression security sur la collection).
+- Pour désactiver une opération, ne pas la déclarer dans l’ApiResource.
+- Pour changer dynamiquement les groupes de sérialisation selon l’utilisateur, adapter le Serializer context.
+- Commit + PR à chaque évolution de la sécurité ou des règles d’accès pour la traçabilité.
+
+---
+
+# Debug avec Xdebug et Docker (Symfony/API Platform)
+
+- Xdebug est inclus par défaut dans la distribution API Platform.
+- Pour activer Xdebug dans Docker :
+  ```sh
+  XDEBUG_MODE=debug XDEBUG_SESSION=1 docker compose up --wait
+  ```
+- Pour VS Code, ajoute ce bloc dans `.vscode/launch.json` :
+  ```json
+  {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Listen for Xdebug",
+        "type": "php",
+        "request": "launch",
+        "port": 9003,
+        "log": true,
+        "pathMappings": {
+          "/app": "${workspaceFolder}/api"
+        }
+      }
+    ]
+  }
+  ```
+- Sur Linux, utilise l’IP locale de ta machine pour `client_host` si `host.docker.internal` ne fonctionne pas.
+- Pour vérifier l’installation :
+  ```sh
+  docker compose exec php php --version
+  # ...doit afficher "with Xdebug v..."
+  ```
+- Pour le debug CLI (console/tests) :
+  ```sh
+  XDEBUG_SESSION=1 PHP_IDE_CONFIG="serverName=api" php bin/console ...
+  ```
+- Pense à commit toute configuration de debug utile à l’équipe (ex : launch.json).
+
+---
+
+# Intégration Symfony Messenger (CQRS, async, handler, input object)
+
+- Installer Messenger :
+  ```sh
+  composer require symfony/messenger
+  ```
+- Pour une ressource asynchrone, ajouter `messenger: true` sur l’opération (ex : POST) dans `#[ApiResource]`.
+- Créer un handler avec `#[AsMessageHandler]` pour traiter la ressource ou l’input.
+- Pour traiter un input spécifique (ex : reset password), utiliser `messenger: 'input'` et un DTO dédié.
+- Pour un POST async, configurer l’opération avec `output: false` et `status: 202` pour indiquer que le traitement est différé.
+- Pour différencier les suppressions, vérifier la présence du RemoveStamp dans le middleware Messenger.
+- Commit + PR à chaque ajout de handler, DTO ou modification de la config Messenger pour la traçabilité.
+
+---
+
+# Upload de fichiers avec API Platform et VichUploaderBundle
+
+- Installer le bundle :
+  ```sh
+  composer require vich/uploader-bundle
+  ```
+- Activer le format multipart globalement ou par opération dans `api_platform.yaml` :
+  ```yaml
+  api_platform:
+    formats:
+      jsonld: ['application/ld+json']
+      multipart: ['multipart/form-data']
+  ```
+- Configurer `vich_uploader.yaml` pour le mapping `media_object` (upload dans `public/media`).
+- Créer une entité `MediaObject` annotée `#[Vich\Uploadable]` et `#[ApiResource(..., operations: [Post(inputFormats: ['multipart' => ['multipart/form-data']])])]`.
+- Utiliser un normalizer pour exposer l’URL du fichier (`contentUrl`).
+- Créer un decoder multipart si besoin pour la désérialisation.
+- Pour lier un fichier à une autre ressource (ex : Book), ajouter une relation ManyToOne vers `MediaObject` ou un champ `file` avec `Vich\UploadableField`.
+- Pour les tests, utiliser `ApiTestCase` et `UploadedFile` pour simuler l’upload.
+- Commit + PR à chaque ajout de ressource, mapping ou test d’upload pour la traçabilité.
+
+---
+
+# Opérations custom et controllers API Platform
+
+- Privilégier les action classes (pattern ADR) plutôt que les contrôleurs Symfony classiques.
+- Les actions sont autowirées : tout service peut être injecté par le constructeur.
+- Déclarer l’opération custom dans l’attribut `#[ApiResource(operations: [...])]` avec `controller`, `uriTemplate`, `name`, `method`.
+- Pour bypasser la récupération automatique de l’entité, utiliser `read: false` dans l’opération.
+- Pour documenter l’opération, configurer `normalizationContext`/`denormalizationContext`/OpenAPI sur l’opération.
+- Utiliser `PlaceholderAction` si aucune logique custom n’est nécessaire.
+- Commit + PR à chaque ajout ou modification d’opération custom pour la traçabilité.
+
+---
+
+# Documentation API : Swagger & NelmioApiDocBundle
+
+- Privilégier le support Swagger/OpenAPI natif d’API Platform pour la documentation interactive.
+- Pour les projets existants ou besoins spécifiques, NelmioApiDocBundle 3+ est compatible avec API Platform (activer `enable_nelmio_api_doc: true` dans `api_platform.yaml`).
+- Exemple de configuration :
+  ```yaml
+  api_platform:
+    enable_nelmio_api_doc: true
+
+  nelmio_api_doc:
+    sandbox:
+      accept_type: 'application/json'
+      body_format:
+        formats: ['json']
+        default_format: 'json'
+      request_format:
+        formats:
+          json: 'application/json'
+  ```
+- Attention : la sandbox Nelmio ne gère pas les tableaux JSON imbriqués (limitation connue).
+- Commit + PR à chaque évolution de la documentation API pour la traçabilité.
+
+---
+
 *Ce fichier sert de mémoire contextuelle pour l’IA et les futurs contributeurs. Synchroniser avec `.github/projet-context.md` en cas de modification du contexte technique ou serveur.*
 
 - Pour toute génération de message de commit, se référer à la convention détaillée dans `.github/CONVENTION_COMMITS.md` (format, types, emojis, exemples).
