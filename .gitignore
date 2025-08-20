@@ -1,11 +1,17 @@
-/.env
-/.env.local
-/.env.test
-/api/frankenphp
-/e2e
-/helm
-/helm/api-platform/charts/*
-!/helm/api-platform/charts/.gitignore
 note.txt
 .credentials
 .token
+lenouvel.me/.env
+lenouvel.me/.env.*
+lenouvel.me/public/bundles/
+lenouvel.me/var/
+lenouvel.me/vendor/
+
+###> phpunit/phpunit ###
+lenouvel.me/phpunit.xml
+lenouvel.me/.phpunit.cache/
+###< phpunit/phpunit ###
+
+###> lexik/jwt-authentication-bundle ###
+lenouvel.me/config/jwt/*.pem
+###< lexik/jwt-authentication-bundle ###
