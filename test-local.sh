@@ -13,4 +13,4 @@ if [ -z "$CMD_IN_APP" ]; then
   CMD_IN_APP="bin/console doctrine:schema:update --env=test --force && vendor/bin/phpunit"
 fi
 
-$CMD_IN_APP
+bash -c "$CMD_IN_APP"
