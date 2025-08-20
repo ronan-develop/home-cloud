@@ -40,6 +40,19 @@ applyTo: '**'
 
 ---
 
+# Bonnes pratiques de tests API Platform/Symfony (Home Cloud)
+
+- Utiliser `ApiTestCase` pour tous les tests d’API (pas de requêtes réseau, accès direct au kernel Symfony).
+- Privilégier les assertions API Platform : `assertJsonEquals`, `assertJsonContains`, `assertMatchesJsonSchema`, etc.
+- Factoriser la récupération du token JWT et la création de clients authentifiés dans une classe de base de tests (ex : `AbstractApiTest`).
+- Couvrir l’accès anonyme, l’authentification, et les droits d’accès (401, 403, etc.) dans les tests.
+- S’assurer que la base de test MariaDB est bien utilisée lors des tests (ISO prod).
+- Intégrer la suite de tests dans la CI/CD (GitHub Actions), avec build Docker et exécution sur MariaDB.
+- Synchroniser `.env.test.example` à chaque évolution de la config de test.
+- Commit + PR à chaque ajout ou modification de tests pour la traçabilité.
+
+---
+
 *Ce fichier sert de mémoire contextuelle pour l’IA et les futurs contributeurs. Synchroniser avec `.github/projet-context.md` en cas de modification du contexte technique ou serveur.*
 
 - Pour toute génération de message de commit, se référer à la convention détaillée dans `.github/CONVENTION_COMMITS.md` (format, types, emojis, exemples).
