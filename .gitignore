@@ -1,5 +1,6 @@
 # Fichiers d'environnement
 .env
+.env.dev
 .env.*
 # Secrets Symfony
 /config/secrets/prod/prod.decrypt.private.php
