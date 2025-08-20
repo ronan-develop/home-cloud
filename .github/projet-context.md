@@ -258,3 +258,40 @@ uname -a
   - `<username>` : identifiant unique de l’utilisateur (ex : ronan, elea, yannick)
 - Exemple pour toi : `ron2cuba_hc_ronan`
 - À appliquer systématiquement pour chaque nouvel utilisateur
+
+## Cas d'usage utilisateur (synchronisation)
+
+- Connexion sécurisée (JWT)
+- Upload de fichiers (photo, vidéo, tout type)
+- Update/delete de fichiers
+- Tri des fichiers par date de création
+
+Endpoints principaux : voir README.md et TODO.md
+
+# 🔒 Bonnes pratiques Firewall & Auth API Platform + JWT (Home Cloud)
+
+- Toujours placer le firewall `login` (pour `/api/login_check`) **avant** le firewall `api` (JWT) dans `security.yaml`.
+- Le firewall `login` doit matcher uniquement `/api/login_check` et utiliser `json_login` (ou le contrôleur LexikJWT).
+- Le firewall `api` doit matcher `^/api` et utiliser `jwt: ~`.
+- Le firewall `main` doit être sans pattern, en dernier, pour couvrir le reste du site (form_login ou json_login si besoin).
+- Ne jamais utiliser `form_login` pour une API, préférer `json_login` ou LexikJWT.
+- Les `access_control` doivent autoriser l’anonyme sur `/api/login_check` et exiger l’authentification sur `/api`.
+- L’ordre des firewalls est **critique** : Symfony n’active qu’un seul firewall par requête, le premier qui matche le pattern.
+
+> Pour toute évolution de la sécurité, commit + PR obligatoire pour garantir la traçabilité et la revue.
+
+## ⚠️ Pratique critique : cohérence du hashage des mots de passe en test
+
+Pour garantir la réussite des tests d’authentification, il est impératif de charger les fixtures dans l’environnement de test avec :
+
+    php bin/console doctrine:fixtures:load --env=test --no-interaction
+
+Cela garantit que le mot de passe est haché avec le même coût (cost: 4) que celui utilisé par l’environnement de test (voir bloc `when@test` dans `security.yaml`).
+
+- Toute divergence de config entre dev, test et prod peut provoquer des 401 inattendus.
+- Si vous utilisez Docker ou un runner CI, exécutez cette commande dans le conteneur PHP de test.
+- Le mot de passe transmis à `/api/login_check` doit toujours être en clair (ex: "test"), jamais pré-hashé côté client.
+
+Voir aussi `.github/copilot-instructions.md` pour les bonnes pratiques de tests et de sécurité.
+
+---
