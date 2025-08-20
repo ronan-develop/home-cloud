@@ -53,6 +53,57 @@ applyTo: '**'
 
 ---
 
+# Authentification JWT avec Symfony (LexikJWTAuthenticationBundle)
+
+- Installer le bundle :
+  ```sh
+  composer require lexik/jwt-authentication-bundle
+  ```
+- Générer les clés :
+  ```sh
+  php bin/console lexik:jwt:generate-keypair
+  # ou via Docker, voir doc projet
+  ```
+- Ne jamais versionner les clés privées/publics (config/jwt/ dans .gitignore)
+- Configurer le provider sur la propriété `email` de l'entité User
+- Configurer le firewall principal avec :
+  - `json_login` (pour POST /auth ou /login)
+  - `jwt: ~` (pour sécuriser les routes après login)
+  - `success_handler` et `failure_handler` Lexik pour la gestion des réponses
+- Exemple de bloc dans `security.yaml` :
+  ```yaml
+  firewalls:
+    main:
+      stateless: true
+      provider: users
+      json_login:
+        check_path: /auth
+        username_path: email
+        password_path: password
+        success_handler: lexik_jwt_authentication.handler.authentication_success
+        failure_handler: lexik_jwt_authentication.handler.authentication_failure
+      jwt: ~
+  ```
+- Ajouter la route `/auth` dans `routes.yaml` si besoin
+- Documenter l’authentification dans Swagger/OpenAPI via `api_platform.yaml` :
+  ```yaml
+  api_platform:
+    swagger:
+      api_keys:
+        JWT:
+          name: Authorization
+          type: header
+  ```
+- Pour les tests :
+  - Utiliser `ApiTestCase` et injecter un utilisateur de test avec un mot de passe hashé
+  - Récupérer le token via un POST `/auth` puis l’utiliser dans les headers `Authorization: Bearer <token>`
+  - Pour accélérer les tests, surcharger le hasher en test (ex : algo md5)
+- Toujours commit + PR à chaque évolution de la config de sécurité ou des tests d’authentification.
+
+ℹ️ Privilégier OIDC pour les projets nécessitant une interopérabilité forte ou une scalabilité accrue.
+
+---
+
 *Ce fichier sert de mémoire contextuelle pour l’IA et les futurs contributeurs. Synchroniser avec `.github/projet-context.md` en cas de modification du contexte technique ou serveur.*
 
 - Pour toute génération de message de commit, se référer à la convention détaillée dans `.github/CONVENTION_COMMITS.md` (format, types, emojis, exemples).
