@@ -23,7 +23,7 @@ class UserFixture extends Fixture implements DependentFixtureInterface
             ->setIsActive(true)
             ->setCreatedAt(new \DateTimeImmutable())
             ->setPrivateSpace($privateSpace);
-        $user->setPassword($this->hasher->hashPassword($user, 'password123'));
+        $user->setPassword($this->hasher->hashPassword($user, 'test'));
         $manager->persist($user);
 
         $manager->flush();

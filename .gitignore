@@ -9,3 +9,6 @@
 note.txt
 .credentials
 .token
+lenouvel.me/lenouvel.me/config/jwt/private.pem
+.gitignore
+lenouvel.me/lenouvel.me/config/jwt/public.pem

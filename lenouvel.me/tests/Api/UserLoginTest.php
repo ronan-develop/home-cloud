@@ -4,15 +4,13 @@ namespace App\Tests\Api;
 
 use ApiPlatform\Symfony\Bundle\Test\ApiTestCase;
 
-class UserLoginTest extends ApiTestCase
+class UserLoginTest extends AbstractApiTest
 {
     public function test_login_success(): void
     {
-        // Préparer un utilisateur en base (à adapter selon fixtures ou factory)
-        // ...
         $response = static::createClient()->request('POST', '/api/login_check', [
             'json' => [
-                'username' => 'demo',
+                'email' => 'demo@homecloud.local',
                 'password' => 'password123'
             ]
         ]);
@@ -25,7 +23,7 @@ class UserLoginTest extends ApiTestCase
     {
         $response = static::createClient()->request('POST', '/api/login_check', [
             'json' => [
-                'username' => 'demo',
+                'email' => 'demo@homecloud.local',
                 'password' => 'wrongpassword'
             ]
         ]);

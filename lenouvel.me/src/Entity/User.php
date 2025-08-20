@@ -42,7 +42,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?bool $isActive = null;
 
     #[ORM\OneToOne(inversedBy: 'user', cascade: ['persist', 'remove'])]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?PrivateSpace $privateSpace = null;
 
     public function getId(): ?int
@@ -166,5 +166,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->privateSpace = $privateSpace;
 
         return $this;
+    }
+
+    /**
+     * @see UserInterface
+     */
+    public function eraseCredentials(): void
+    {
+        // Méthode requise par UserInterface, volontairement vide
     }
 }
