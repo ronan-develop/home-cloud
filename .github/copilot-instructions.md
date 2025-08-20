@@ -246,6 +246,48 @@ applyTo: '**'
 
 ---
 
+# Utilisation des fixtures avec DoctrineFixturesBundle (Home Cloud)
+
+- Les fixtures permettent de charger des jeux de données de test/démo en base (utilisateurs, espaces privés, etc.) pour le développement et les tests automatisés.
+- Compatible avec toutes les bases supportées par Doctrine ORM (MySQL/MariaDB, PostgreSQL, SQLite…)
+- Installation :
+  ```sh
+  composer require --dev orm-fixtures
+  # ou
+  composer require --dev doctrine/doctrine-fixtures-bundle
+  ```
+- Crée une classe dans `src/DataFixtures/` qui étend `Fixture`.
+- Utilise l’injection de dépendance pour accéder à des services (ex : hasher de mot de passe).
+- Exemple pour un utilisateur :
+  ```php
+  class UserFixture extends Fixture
+  {
+      public function __construct(private UserPasswordHasherInterface $hasher) {}
+      public function load(ObjectManager $manager): void
+      {
+          $user = new User();
+          $user->setUsername('demo');
+          $user->setPassword($this->hasher->hashPassword($user, 'password123'));
+          // ...autres champs...
+          $manager->persist($user);
+          $manager->flush();
+      }
+  }
+  ```
+- Chargement des fixtures (purge la base par défaut) :
+  ```sh
+  php bin/console doctrine:fixtures:load --env=test --purge-with-truncate
+  ```
+- Utilise `addReference()`/`getReference()` pour partager des entités entre fixtures.
+- Implémente `DependentFixtureInterface` pour forcer l’ordre de chargement.
+- Implémente `FixtureGroupInterface` pour charger des groupes spécifiques.
+- Toujours hasher les mots de passe via le service Symfony, jamais à la main.
+- Préférer des fixtures modulaires (User, PrivateSpace, etc.) pour la réutilisabilité.
+- Documenter chaque fixture et son usage dans `.github/projet-context.md`.
+- Synchroniser les données de test avec les besoins métier/API (ex : utilisateurs actifs, rôles, espaces privés…).
+
+---
+
 *Ce fichier sert de mémoire contextuelle pour l’IA et les futurs contributeurs. Synchroniser avec `.github/projet-context.md` en cas de modification du contexte technique ou serveur.*
 
 - Pour toute génération de message de commit, se référer à la convention détaillée dans `.github/CONVENTION_COMMITS.md` (format, types, emojis, exemples).
