@@ -2,13 +2,21 @@
 
 namespace App\Tests\Api;
 
-use ApiPlatform\Symfony\Bundle\Test\ApiTestCase;
+use App\Tests\Api\AbstractApiTest;
 
-class InfoApiOutputTest extends ApiTestCase
+class InfoApiOutputTest extends AbstractApiTest
 {
     public function test_api_info_endpoint_returns_expected_json(): void
     {
-        $response = static::createClient()->request('GET', '/api/info');
+        // ⚠️ Important : on force un redémarrage du kernel pour garantir la visibilité des fixtures
+        // Voir https://github.com/api-platform/core/issues/6971 et la doc Symfony sur l'isolation des tests
+        self::ensureKernelShutdown();
+        $token = $this->getJwtToken();
+        $response = static::createClient()->request('GET', '/api/info', [
+            'headers' => [
+                'Authorization' => 'Bearer ' . $token
+            ]
+        ]);
 
         $this->assertResponseIsSuccessful();
         $this->assertSame('application/ld+json; charset=utf-8', $response->getHeaders()['content-type'][0]);

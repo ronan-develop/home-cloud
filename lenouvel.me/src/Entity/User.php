@@ -69,7 +69,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     public function getUserIdentifier(): string
     {
-        return (string) $this->username;
+        file_put_contents(__DIR__ . '/../../../var/log/user_identifier.log', date('c') . " getUserIdentifier: " . $this->email . PHP_EOL, FILE_APPEND);
+        return (string) $this->email;
     }
 
     /**

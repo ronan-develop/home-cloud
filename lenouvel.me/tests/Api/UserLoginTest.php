@@ -3,9 +3,12 @@
 namespace App\Tests\Api;
 
 use ApiPlatform\Symfony\Bundle\Test\ApiTestCase;
+use Hautelook\AliceBundle\PhpUnit\ReloadDatabaseTrait;
 
-class UserLoginTest extends AbstractApiTest
+class UserLoginTest extends ApiTestCase
 {
+    use ReloadDatabaseTrait;
+
     public function test_login_success(): void
     {
         $response = static::createClient()->request('POST', '/api/login_check', [
