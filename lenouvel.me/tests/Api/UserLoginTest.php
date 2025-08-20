@@ -11,7 +11,7 @@ class UserLoginTest extends AbstractApiTest
         $response = static::createClient()->request('POST', '/api/login_check', [
             'json' => [
                 'email' => 'demo@homecloud.local',
-                'password' => 'password123'
+                'password' => 'test' // Doit correspondre à la fixture UserFixture
             ]
         ]);
 
