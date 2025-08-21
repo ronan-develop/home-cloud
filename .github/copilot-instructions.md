@@ -51,6 +51,53 @@ applyTo: '**'
   - 🧞‍♂️ docs: mise à jour automatique de la documentation
   - 🧞‍♂️ test: refactorisation générée par l’IA
 
+## 8. Bonnes pratiques tests & environnement de test
+
+- Toujours installer le test-pack Symfony pour bénéficier de PHPUnit, BrowserKit, etc. :
+  ```bash
+  composer require --dev symfony/test-pack
+  ```
+- Les tests doivent être organisés par type :
+  - `tests/Unit/` pour les tests unitaires
+  - `tests/Integration/` pour les tests d’intégration
+  - `tests/Application/` pour les tests fonctionnels (API, HTTP, E2E)
+- Le kernel de test est défini par la variable d’environnement `KERNEL_CLASS` dans `.env.test`.
+- La base de test doit être indépendante, suffixée `_test` (ex : `DATABASE_URL=.../ma_base_test`).
+- Les fixtures doivent être chargées via le bundle Alice ou DoctrineFixturesBundle, activés pour `dev` et `test` dans `config/bundles.php`.
+- Pour garantir l’isolation, utiliser `RefreshDatabaseTrait` ou `DAMA\\DoctrineTestBundle` pour rollback automatique.
+- Toujours vérifier que les entités des fixtures sont visibles via un test GET collection avant toute création.
+- Pour déboguer, dumper la réponse brute du client dans les tests si la collection est vide ou inattendue.
+- Ne jamais utiliser `.env.local` en environnement de test (non pris en compte).
+- Les tests doivent être reproductibles, indépendants et ne jamais dépendre de l’état d’un autre test.
+
+### 8.1 Configuration de la base de test et isolation
+
+- Toujours utiliser une base dédiée pour les tests, suffixée `_test` (ex : `DATABASE_URL=.../ma_base_test`).
+- Pour un setup partagé, configurez la base dans `.env.test` (commit au dépôt). Pour un setup local, surcharger dans `.env.test.local` (non versionné).
+- Création de la base et du schéma :
+  ```bash
+  php bin/console --env=test doctrine:database:create
+  php bin/console --env=test doctrine:schema:create
+  ```
+- Les tests doivent être indépendants : chaque test doit pouvoir être exécuté seul, sans dépendre de l’état d’un autre.
+- Utiliser `DAMA\DoctrineTestBundle` pour rollback automatique des transactions :
+  ```bash
+  composer require --dev dama/doctrine-test-bundle
+  ```
+  Puis activer l’extension PHPUnit dans `phpunit.dist.xml` :
+  ```xml
+  <phpunit>
+    <extensions>
+      <bootstrap class="DAMA\\DoctrineTestBundle\\PHPUnit\\PHPUnitExtension"/>
+    </extensions>
+  </phpunit>
+  ```
+- Charger les fixtures via Alice ou DoctrineFixturesBundle, puis :
+  ```bash
+  php bin/console --env=test doctrine:fixtures:load
+  ```
+- Toujours vérifier la visibilité des entités fixtures via un test GET collection avant toute création.
+
 ---
 
 *Ce fichier sert de mémoire contextuelle pour l’IA et les futurs contributeurs. Synchroniser avec `.github/projet-context.md` en cas de modification du contexte technique ou serveur.*
