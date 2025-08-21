@@ -1,8 +1,14 @@
+````instructions
 ---
 applyTo: '**'
 ---
 
 # 🧞‍♂️ Instructions IA – Home Cloud
+
+## 0. Règle d’emoji 🧞‍♂️ pour consignes IA
+
+- Toute modification, ajout ou clarification d’une consigne, règle ou documentation destinée à l’IA (Copilot, agent IA, etc.) doit être committée avec l’emoji 🧞‍♂️, même si ce n’est pas généré par Copilot.
+- L’emoji 🧞‍♂️ ne doit pas être utilisé pour des commits humains classiques qui ne concernent pas une consigne IA.
 
 ## 1. Contexte et architecture
 - Projet Symfony 7/API Platform multi-tenant (hébergement O2Switch, Apache/PHP natif, pas de Docker/root)
@@ -105,6 +111,12 @@ applyTo: '**'
 - L’IA ne doit proposer de lancer les tests que lorsqu’elle juge cela pertinent (après une modification de code/test, ou sur demande explicite).
 - Ne jamais lancer les tests sans raison ou contexte approprié.
 
+## 10. Reporting des tests
+
+- Après chaque exécution de tests, fournir systématiquement un tableau récapitulatif des résultats au format Markdown (succès, échecs, avertissements, etc.).
+- Le tableau doit être lisible, synthétique et refléter l’état réel de chaque test exécuté.
+
 ---
 
 *Ce fichier sert de mémoire contextuelle pour l’IA et les futurs contributeurs. Synchroniser avec `.github/projet-context.md` en cas de modification du contexte technique ou serveur.*
+````
