@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
 use App\Repository\PrivateSpaceRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -36,9 +38,16 @@ class PrivateSpace
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
+    /**
+     * @var Collection<int, File>
+     */
+    #[ORM\OneToMany(targetEntity: File::class, mappedBy: 'privateSpace')]
+    private Collection $files;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
+        $this->files = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -78,6 +87,36 @@ class PrivateSpace
     public function setCreatedAt(\DateTimeImmutable $createdAt): static
     {
         $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, File>
+     */
+    public function getFiles(): Collection
+    {
+        return $this->files;
+    }
+
+    public function addFile(File $file): static
+    {
+        if (!$this->files->contains($file)) {
+            $this->files->add($file);
+            $file->setPrivateSpace($this);
+        }
+
+        return $this;
+    }
+
+    public function removeFile(File $file): static
+    {
+        if ($this->files->removeElement($file)) {
+            // set the owning side to null (unless already changed)
+            if ($file->getPrivateSpace() === $this) {
+                $file->setPrivateSpace(null);
+            }
+        }
 
         return $this;
     }
