@@ -3,11 +3,20 @@
 namespace App\Tests\Api;
 
 use ApiPlatform\Symfony\Bundle\Test\ApiTestCase;
-use Hautelook\AliceBundle\PhpUnit\RefreshDatabaseTrait;
 
 class PrivateSpaceCrudTest extends ApiTestCase
 {
-    use RefreshDatabaseTrait;
+    /**
+     * Reset la base et recharge les fixtures avant chaque test fonctionnel API.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Reset base et fixtures
+        shell_exec('php bin/console --env=test doctrine:schema:drop --force');
+        shell_exec('php bin/console --env=test doctrine:schema:create');
+        shell_exec('php bin/console --env=test hautelook:fixtures:load --no-interaction');
+    }
 
     public function testCreatePrivateSpace(): void
     {
@@ -52,7 +61,9 @@ class PrivateSpaceCrudTest extends ApiTestCase
             'headers' => ['Accept' => 'application/ld+json']
         ]);
         $this->assertResponseIsSuccessful();
-        $this->assertJsonContains(['hydra:member' => [['name' => 'Espace Coll']]]);
+        $data = $response->toArray();
+        $this->assertArrayHasKey('hydra:member', $data);
+        $this->assertSame('Espace Coll', $data['hydra:member'][0]['name']);
     }
 
     public function testGetPrivateSpaceItem(): void
@@ -142,5 +153,16 @@ class PrivateSpaceCrudTest extends ApiTestCase
             'headers' => ['Accept' => 'application/ld+json']
         ]);
         $this->assertResponseStatusCodeSame(404);
+    }
+
+    public function testFixturesAreVisibleViaDoctrine(): void
+    {
+        // Récupère le container de test
+        self::bootKernel();
+        $container = static::getContainer();
+        $repo = $container->get(\App\Repository\PrivateSpaceRepository::class);
+        $spaces = $repo->findAll();
+        $this->assertNotEmpty($spaces, 'Les entités PrivateSpace doivent être présentes en base après chargement des fixtures.');
+        $this->assertSame('Espace Démo', $spaces[0]->getName());
     }
 }
