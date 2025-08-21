@@ -38,6 +38,28 @@ applyTo: '**'
 - S’assurer que toute nouvelle doc ou script respecte la sécurité, la maintenabilité et la compatibilité mutualisé
 - Mettre à jour ce fichier à chaque évolution majeure du contexte, de l’architecture ou de l’environnement serveur (ex : changement de distribution, upgrade PHP/MariaDB, modification des contraintes O2Switch)
 
+## Règles pour les listes de tâches (tasklists)
+
+- Toutes les listes de tâches générées par l’IA doivent suivre ce format Markdown précis :
+
+```
+- [ ] Ajouter les contraintes de validation Symfony sur l’entité PrivateSpace
+- [ ] Adapter les tests pour vérifier le code 422 sur les erreurs de validation
+- [ ] Investiguer et corriger la non-disponibilité immédiate des entités créées dans les tests
+- [ ] Améliorer la documentation métier et technique liée à PrivateSpace
+```
+
+- Ne jamais utiliser d’autres formats, puces ou numérotations pour les tâches à réaliser.
+- Toujours entourer la liste de tâches de triples backticks Markdown si elle est affichée dans la conversation.
+- Toutes les listes de tâches (tasklists) générées doivent impérativement suivre le format Markdown ci-dessous, sans puces, numérotation ou autre format :
+
+```
+- [ ] Tâche 1
+- [ ] Tâche 2
+```
+
+- Toujours entourer la liste de tâches de triples backticks Markdown dans la conversation.
+
 ---
 
 *Ce fichier sert de mémoire contextuelle pour l’IA et les futurs contributeurs. Synchroniser avec `.github/projet-context.md` en cas de modification du contexte technique ou serveur.*
