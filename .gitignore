@@ -15,6 +15,7 @@
 # Cache PHPUnit
 /phpunit.xml
 /.phpunit.cache/
+phpunit.dist.xml
 
 # JWT Lexik
 /config/jwt/*.pem
@@ -32,4 +33,7 @@ note.txt
 .DS_Store
 bin/console
 bin/phpunit
+phpunit.dist.xml
+phpunit.dist.xml
+phpunit.dist.xml
 phpunit.dist.xml
