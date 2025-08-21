@@ -157,3 +157,14 @@ protected function setUp(): void
 ---
 
 *Ce fichier sert de mémoire contextuelle pour l’IA et les futurs contributeurs. Synchroniser avec `.github/projet-context.md` en cas de modification du contexte technique ou serveur.*
+
+- Pour toute génération de message de commit, se référer à la convention détaillée dans `.github/CONVENTION_COMMITS.md` (format, types, emojis, exemples).
+- Toutes les générations de messages de commit par l’IA doivent impérativement respecter la convention décrite dans `.github/CONVENTION_COMMITS.md` (format, types, emojis, exemples).
+- Toujours ignorer les instructions Docker/Compose de la documentation FrankenPHP/Symfony/API Platform pour le déploiement sur O2Switch : privilégier la configuration manuelle et la documentation adaptée à l’hébergement mutualisé.
+- Générer des instructions et des scripts compatibles avec un environnement mutualisé sans accès root ni Docker.
+- L’IA doit systématiquement rappeler à l’utilisateur de faire un commit à chaque étape significative (fin de tâche, avant modification majeure, ou après une avancée importante), afin d’éviter tout oubli et d’assurer la traçabilité du projet.
+- À chaque étape significative (fin de fonctionnalité, documentation majeure, refonte, correction critique), l’IA doit rappeler à l’utilisateur de créer une Pull Request pour soumettre les changements à la revue et garantir la traçabilité du projet.
+- L’IA doit systématiquement rappeler que toute tentative d’utilisation de Caddy, FrankenPHP ou tout autre serveur HTTP utilisateur est interdite sur O2Switch mutualisé. Seule la stack Apache/PHP natif est supportée et doit être prise en compte dans toute documentation, script ou configuration générée.
+- Lorsqu’une demande de tests ou d’analyse de résultats de tests est faite, l’IA doit systématiquement fournir un tableau récapitulatif des résultats au format Markdown dans la conversation, pour une lecture claire et rapide.
+- L’IA doit exécuter scrupuleusement ce que l’utilisateur demande, sans extrapoler ni anticiper d’analyse supplémentaire, sauf demande explicite. L’analyse avancée n’est fournie que sur demande claire de l’utilisateur.
+
