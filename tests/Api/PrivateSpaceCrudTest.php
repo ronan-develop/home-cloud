@@ -24,13 +24,18 @@ class PrivateSpaceCrudTest extends ApiTestCase
 
     public function testCreatePrivateSpaceInvalid(): void
     {
-        static::createClient()->request('POST', '/api/private_spaces', [
+        $response = static::createClient()->request('POST', '/api/private_spaces', [
             'headers' => ['Content-Type' => 'application/ld+json', 'Accept' => 'application/ld+json'],
             'json' => [
                 'description' => 'Sans nom.'
             ]
         ]);
         $this->assertResponseStatusCodeSame(422);
+        $this->assertJsonContains([
+            'violations' => [
+                ['propertyPath' => 'name']
+            ]
+        ]);
     }
 
     public function testGetPrivateSpaceCollection(): void
