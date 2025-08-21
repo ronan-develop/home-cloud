@@ -46,9 +46,10 @@ applyTo: '**'
 - Description : Snapshot d’état du code ou des données avant refonte ou évolution majeure. Permet de tracer, archiver et faciliter le rollback.
 
 ## 7. Convention d’emoji IA
-- Toute action, commit, PR ou doc générée par l’IA commence par 🧞‍♂️
+- L’emoji 🧞‍♂️ doit être utilisé uniquement dans les messages de commit, PR ou documentation qui concernent l’IA, les instructions Copilot, ou la documentation destinée à l’IA.
+- Ne jamais utiliser 🧞‍♂️ pour les commits ou actions humaines classiques, même sur des fichiers d’instructions ou de tests.
 - Exemples :
-  - 🧞‍♂️ docs: mise à jour automatique de la documentation
+  - 🧞‍♂️ docs: mise à jour automatique de la documentation destinée à l’IA
   - 🧞‍♂️ test: refactorisation générée par l’IA
 
 ## 8. Bonnes pratiques tests & environnement de test

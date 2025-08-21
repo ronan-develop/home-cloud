@@ -22,6 +22,7 @@ Un bon message de commit doit permettre de savoir ce qui a changé et pourquoi. 
 
 ### Types de commit autorisés
 
+- 🧞‍♂️ **ia** : documentation, instructions ou commits destinés à l’IA, Copilot ou agents IA (jamais pour les actions humaines classiques)
 - 🛠️ **build** : changements sur le système de build ou dépendances (npm, make…)
 - 🤖 **ci** : intégration continue, scripts/config (Travis, Ansible…)
 - ✨ **feat** : ajout d’une nouvelle fonctionnalité
