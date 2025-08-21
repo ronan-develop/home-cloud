@@ -148,6 +148,12 @@ protected function setUp(): void
 - Le symbole ❌ est réservé aux tests échoués.
 - Objectif : garantir la clarté et éviter toute confusion dans la lecture des résultats de tests.
 
+## 14. Fichiers d’environnement à utiliser
+
+- Pour le développement local, toujours utiliser `.env.local` (jamais `.env` seul).
+- Pour les tests, toujours utiliser `.env.test` (jamais `.env` ni `.env.local`).
+- Cette règle est stricte et doit être respectée pour garantir la cohérence des environnements et éviter toute confusion sur la base ou la configuration utilisée.
+
 ---
 
 *Ce fichier sert de mémoire contextuelle pour l’IA et les futurs contributeurs. Synchroniser avec `.github/projet-context.md` en cas de modification du contexte technique ou serveur.*
