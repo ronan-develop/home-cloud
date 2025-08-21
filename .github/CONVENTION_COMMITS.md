@@ -22,7 +22,7 @@ Un bon message de commit doit permettre de savoir ce qui a changé et pourquoi. 
 
 ### Types de commit autorisés
 
-- 🧞‍♂️ **ia** : documentation, instructions ou commits destinés à l’IA, Copilot ou agents IA (jamais pour les actions humaines classiques)
+- 🧞‍♂️ **ia** : documentation, instructions ou commits destinés à l’IA, Copilot ou agents IA (**jamais pour les actions humaines classiques, même sur des fichiers d’instructions, de tests ou de configuration**)
 - 🛠️ **build** : changements sur le système de build ou dépendances (npm, make…)
 - 🤖 **ci** : intégration continue, scripts/config (Travis, Ansible…)
 - ✨ **feat** : ajout d’une nouvelle fonctionnalité
@@ -34,6 +34,10 @@ Un bon message de commit doit permettre de savoir ce qui a changé et pourquoi. 
 - 🧪 **test** : ajout/modif de tests
 - ⏪ **revert** : annulation d’un commit précédent
 - 🔀 **merge** : fusion de branches (ex : dev → main)
+
+#### Règle stricte emoji IA
+
+> L’emoji 🧞‍♂️ est strictement réservé au type **ia**. Il ne doit jamais être utilisé pour un commit, une PR ou une documentation humaine classique, même sur des fichiers d’instructions, de tests ou de configuration. Pour tout autre sujet, utiliser l’emoji du type de commit approprié ci-dessous.
 
 ### Exemples
 
