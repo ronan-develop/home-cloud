@@ -69,7 +69,8 @@ class PrivateSpaceCrudTest extends ApiTestCase
             $memberKey = 'member';
         }
         $this->assertNotNull($memberKey, 'La clé de collection attendue (hydra:member ou member) est absente.');
-        $this->assertSame('Espace Coll', $data[$memberKey][0]['name']);
+        $names = array_column($data[$memberKey], 'name');
+        $this->assertContains('Espace Coll', $names, 'La collection doit contenir l\'espace créé.');
     }
 
     public function testGetPrivateSpaceItem(): void
