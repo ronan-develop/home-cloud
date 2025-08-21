@@ -62,6 +62,37 @@ applyTo: '**'
 
 ---
 
+# Workflow de gestion des tests et conventions de commit/PR
+
+## Workflow recommandé pour toute refonte ou correction majeure des tests :
+
+1. Créer une branche dédiée à la sauvegarde de l’état initial des tests (ex : `test/snapshot-private-space-before-refacto-client`).
+2. Committer l’état actuel des tests avant toute modification.
+3. Ouvrir une Pull Request pour tracer ce snapshot.
+4. Effectuer la refonte ou correction sur une nouvelle branche à partir de ce snapshot.
+5. Committer et ouvrir une nouvelle Pull Request pour la refonte, en liant les deux PR pour assurer la traçabilité.
+
+Ce workflow garantit la traçabilité, la possibilité de rollback et la revue efficace des évolutions de tests.
+
+## Convention pour les messages de commit et PR
+
+- Quand l’utilisateur demande « prépare le commit » ou « commit », l’IA doit générer un message de commit conforme à `.github/CONVENTION_COMMITS.md` avec :
+  - Le message formaté
+  - Les labels
+  - Les #tags
+  - Le numéro de la PR associée si connu
+
+- Quand l’utilisateur demande « PR » ou « prépare la PR », l’IA doit générer :
+  - Le titre de la PR
+  - Le message/description détaillée
+  - Les labels
+  - Les #tags
+  - Le numéro de la PR associée si connu
+
+- L’IA doit systématiquement rappeler ces conventions et automatiser la génération de ces éléments pour gagner du temps et garantir la traçabilité.
+
+- Toujours respecter la convention de commit du projet et synchroniser ces instructions si la convention évolue.
+
 *Ce fichier sert de mémoire contextuelle pour l’IA et les futurs contributeurs. Synchroniser avec `.github/projet-context.md` en cas de modification du contexte technique ou serveur.*
 
 - Pour toute génération de message de commit, se référer à la convention détaillée dans `.github/CONVENTION_COMMITS.md` (format, types, emojis, exemples).
