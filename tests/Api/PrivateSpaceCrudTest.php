@@ -40,14 +40,15 @@ class PrivateSpaceCrudTest extends ApiTestCase
 
     public function testGetPrivateSpaceCollection(): void
     {
-        static::createClient()->request('POST', '/api/private_spaces', [
+        $client = static::createClient();
+        $client->request('POST', '/api/private_spaces', [
             'headers' => ['Content-Type' => 'application/ld+json', 'Accept' => 'application/ld+json'],
             'json' => [
                 'name' => 'Espace Coll',
                 'description' => 'Pour la collection.'
             ]
         ]);
-        $response = static::createClient()->request('GET', '/api/private_spaces', [
+        $response = $client->request('GET', '/api/private_spaces', [
             'headers' => ['Accept' => 'application/ld+json']
         ]);
         $this->assertResponseIsSuccessful();
