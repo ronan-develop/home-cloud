@@ -144,29 +144,7 @@ php -S localhost:8000 -t public
 
 ## Endpoints principaux
 
-### Endpoint d’accueil documenté
-
-- **GET /api/info**
-  - Exposé via API Platform (DTO InfoApiOutput + provider)
-  - Retourne : message d’accueil, version, endpoint login, info d’authentification
-  - Documenté dans Swagger/OpenAPI
-  - Exemple de réponse :
-
-    ```json
-    {
-      "@context": "/api/contexts/InfoApiOutput",
-      "@id": "/api/info",
-      "@type": "InfoApiOutput",
-      "message": "Bienvenue sur l’API Home Cloud.",
-      "version": "1.0.0",
-      "login_endpoint": "/api/login",
-      "info": "Authentifiez-vous via POST /api/login avec vos credentials (email/username + password)."
-    }
-    ```
-
-- **GET /api**
-  - Contrôleur Symfony classique (non documenté Swagger)
-  - Retourne un message d’accueil simple (legacy)
+👉 [Voir la liste complète des endpoints dans `api_endpoints.md`](./api_endpoints.md)
 
 ---
 
