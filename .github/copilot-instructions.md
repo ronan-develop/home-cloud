@@ -99,6 +99,12 @@ applyTo: '**'
   ```
 - Toujours vérifier la visibilité des entités fixtures via un test GET collection avant toute création.
 
+## 9. Exécution des tests
+
+- Lorsque l’utilisateur écrit uniquement le mot « test », l’IA doit automatiquement lancer la commande de tests (ex : `php bin/phpunit`).
+- L’IA ne doit proposer de lancer les tests que lorsqu’elle juge cela pertinent (après une modification de code/test, ou sur demande explicite).
+- Ne jamais lancer les tests sans raison ou contexte approprié.
+
 ---
 
 *Ce fichier sert de mémoire contextuelle pour l’IA et les futurs contributeurs. Synchroniser avec `.github/projet-context.md` en cas de modification du contexte technique ou serveur.*
