@@ -3,11 +3,20 @@
 namespace App\Tests\Api;
 
 use ApiPlatform\Symfony\Bundle\Test\ApiTestCase;
-use Hautelook\AliceBundle\PhpUnit\RefreshDatabaseTrait;
 
 class PrivateSpaceCrudTest extends ApiTestCase
 {
-    use RefreshDatabaseTrait;
+    /**
+     * Reset la base et recharge les fixtures avant chaque test fonctionnel API.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Reset base et fixtures
+        shell_exec('php bin/console --env=test doctrine:schema:drop --force');
+        shell_exec('php bin/console --env=test doctrine:schema:create');
+        shell_exec('php bin/console --env=test hautelook:fixtures:load --no-interaction');
+    }
 
     public function testCreatePrivateSpace(): void
     {
@@ -24,29 +33,44 @@ class PrivateSpaceCrudTest extends ApiTestCase
 
     public function testCreatePrivateSpaceInvalid(): void
     {
-        static::createClient()->request('POST', '/api/private_spaces', [
+        $response = static::createClient()->request('POST', '/api/private_spaces', [
             'headers' => ['Content-Type' => 'application/ld+json', 'Accept' => 'application/ld+json'],
             'json' => [
                 'description' => 'Sans nom.'
             ]
         ]);
         $this->assertResponseStatusCodeSame(422);
+        $this->assertJsonContains([
+            'violations' => [
+                ['propertyPath' => 'name']
+            ]
+        ]);
     }
 
     public function testGetPrivateSpaceCollection(): void
     {
-        static::createClient()->request('POST', '/api/private_spaces', [
+        $client = static::createClient();
+        $client->request('POST', '/api/private_spaces', [
             'headers' => ['Content-Type' => 'application/ld+json', 'Accept' => 'application/ld+json'],
             'json' => [
                 'name' => 'Espace Coll',
                 'description' => 'Pour la collection.'
             ]
         ]);
-        $response = static::createClient()->request('GET', '/api/private_spaces', [
+        $response = $client->request('GET', '/api/private_spaces', [
             'headers' => ['Accept' => 'application/ld+json']
         ]);
         $this->assertResponseIsSuccessful();
-        $this->assertJsonContains(['hydra:member' => [['name' => 'Espace Coll']]]);
+        $data = $response->toArray();
+        $memberKey = null;
+        if (isset($data['hydra:member'])) {
+            $memberKey = 'hydra:member';
+        } elseif (isset($data['member'])) {
+            $memberKey = 'member';
+        }
+        $this->assertNotNull($memberKey, 'La clé de collection attendue (hydra:member ou member) est absente.');
+        $names = array_column($data[$memberKey], 'name');
+        $this->assertContains('Espace Coll', $names, 'La collection doit contenir l\'espace créé.');
     }
 
     public function testGetPrivateSpaceItem(): void
@@ -136,5 +160,16 @@ class PrivateSpaceCrudTest extends ApiTestCase
             'headers' => ['Accept' => 'application/ld+json']
         ]);
         $this->assertResponseStatusCodeSame(404);
+    }
+
+    public function testFixturesAreVisibleViaDoctrine(): void
+    {
+        // Récupère le container de test
+        self::bootKernel();
+        $container = static::getContainer();
+        $repo = $container->get(\App\Repository\PrivateSpaceRepository::class);
+        $spaces = $repo->findAll();
+        $this->assertNotEmpty($spaces, 'Les entités PrivateSpace doivent être présentes en base après chargement des fixtures.');
+        $this->assertSame('Espace Démo', $spaces[0]->getName());
     }
 }

@@ -32,3 +32,4 @@ note.txt
 .DS_Store
 bin/console
 bin/phpunit
+phpunit.dist.xml
