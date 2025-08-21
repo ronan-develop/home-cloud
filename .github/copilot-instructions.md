@@ -1,3 +1,5 @@
+``````instructions
+`````instructions
 ````instructions
 ---
 applyTo: '**'
@@ -116,7 +118,34 @@ applyTo: '**'
 - Après chaque exécution de tests, fournir systématiquement un tableau récapitulatif des résultats au format Markdown (succès, échecs, avertissements, etc.).
 - Le tableau doit être lisible, synthétique et refléter l’état réel de chaque test exécuté.
 
+## 11. Pattern obligatoire pour les tests fonctionnels API Platform
+
+- Pour tout test fonctionnel API dépendant des données (ex : tests sur endpoints API Platform), il est obligatoire de réinitialiser complètement la base de données et de recharger les fixtures dans la méthode `setUp()` de la classe de test.
+- Ce pattern est nécessaire car l’isolation transactionnelle ne fonctionne pas entre le kernel de test et le client HTTP/API Platform : les entités insérées par les fixtures ne sont pas visibles côté API sinon.
+- Exemple à suivre :
+
+```php
+protected function setUp(): void
+{
+    parent::setUp();
+    // Reset base et fixtures
+    shell_exec('php bin/console --env=test doctrine:schema:drop --force');
+    shell_exec('php bin/console --env=test doctrine:schema:create');
+    shell_exec('php bin/console --env=test hautelook:fixtures:load --no-interaction');
+}
+```
+
+- Toujours vérifier la visibilité des entités fixtures via un test GET collection avant toute création.
+- Ne jamais utiliser l’isolation transactionnelle pour ce type de tests.
+
+## 12. Interdiction de proposer des commandes de commit en console à l’utilisateur
+
+- Il est strictement interdit de proposer à l’utilisateur une commande en console (git commit, git add, etc.) pour effectuer un commit.
+- L’IA doit toujours effectuer elle-même l’opération de commit via l’interface adaptée, sans jamais demander à l’utilisateur de copier/coller une commande git.
+- Objectif : garantir la traçabilité, la cohérence des conventions et éviter toute erreur humaine sur les conventions de commit IA.
+
 ---
 
 *Ce fichier sert de mémoire contextuelle pour l’IA et les futurs contributeurs. Synchroniser avec `.github/projet-context.md` en cas de modification du contexte technique ou serveur.*
-````
+`````
+``````
