@@ -1,6 +1,3 @@
-``````instructions
-`````instructions
-````instructions
 ---
 applyTo: '**'
 ---
@@ -144,8 +141,13 @@ protected function setUp(): void
 - L’IA doit toujours effectuer elle-même l’opération de commit via l’interface adaptée, sans jamais demander à l’utilisateur de copier/coller une commande git.
 - Objectif : garantir la traçabilité, la cohérence des conventions et éviter toute erreur humaine sur les conventions de commit IA.
 
+## 13. Reporting des tests : symboles et règles de synthèse
+
+- Tout test dont toutes les assertions passent doit être marqué ✔️ dans le tableau de reporting Markdown.
+- Le symbole ⚠ ne doit être utilisé que pour signaler un warning, une dépréciation ou un cas explicitement partiel.
+- Le symbole ❌ est réservé aux tests échoués.
+- Objectif : garantir la clarté et éviter toute confusion dans la lecture des résultats de tests.
+
 ---
 
 *Ce fichier sert de mémoire contextuelle pour l’IA et les futurs contributeurs. Synchroniser avec `.github/projet-context.md` en cas de modification du contexte technique ou serveur.*
-`````
-``````
