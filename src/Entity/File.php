@@ -2,9 +2,20 @@
 
 namespace App\Entity;
 
-use App\Repository\FileRepository;
 use Doctrine\ORM\Mapping as ORM;
+use App\Repository\FileRepository;
+use ApiPlatform\Metadata\ApiResource;
+use Symfony\Component\Validator\Constraints as Assert;
 
+#[ApiResource(
+    operations: [
+        new \ApiPlatform\Metadata\Get(),
+        new \ApiPlatform\Metadata\GetCollection(),
+        new \ApiPlatform\Metadata\Post(),
+        new \ApiPlatform\Metadata\Put(),
+        new \ApiPlatform\Metadata\Delete()
+    ]
+)]
 #[ORM\Entity(repositoryClass: FileRepository::class)]
 class File
 {
@@ -14,22 +25,33 @@ class File
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank]
     private ?string $filename = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank]
     private ?string $path = null;
 
     #[ORM\Column]
+    #[Assert\NotBlank]
     private ?int $size = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank]
     private ?string $mimeType = null;
 
     #[ORM\Column]
+    #[Assert\NotBlank]
     private ?\DateTimeImmutable $createdAt = null;
 
-    #[ORM\ManyToOne(inversedBy: 'files')]
+    #[ORM\ManyToOne(inversedBy: 'files', nullable: false)]
+    #[Assert\NotNull]
     private ?PrivateSpace $privateSpace = null;
+
+    public function __construct()
+    {
+        $this->createdAt = new \DateTimeImmutable();
+    }
 
     public function getId(): ?int
     {
