@@ -1,5 +1,18 @@
 # Home Cloud
 
+## Astuce pour les déploiements futurs
+
+Pour éviter les surprises :
+
+- 🧪 Testez toujours votre `.cpanel.yml` en local :
+  - Clonez votre dépôt sur votre ordinateur et lancez les commandes du fichier `.cpanel.yml` manuellement pour vérifier qu’elles fonctionnent.
+- 🌱 Utilisez des branches dédiées :
+  - Déployez depuis la branche `main` pour plus de contrôle.
+
+---
+
+# Home Cloud
+
 [![Coverage Status](https://img.shields.io/badge/coverage-80%25-brightgreen)](https://github.com/ronan-develop/home-cloud/actions)
 
 ## Modélisation métier (diagramme de classes)
@@ -130,6 +143,21 @@ php -S localhost:8000 -t public
 
 - Accède ensuite à [http://localhost:8000/api](http://localhost:8000/api) pour voir la documentation OpenAPI générée par API Platform.
 - Cette méthode fonctionne partout, même si `symfony serve` échoue ou que PHP-FPM n’est pas disponible.
+
+---
+
+## Astuce pour consulter les logs de déploiement en temps réel
+
+Pour suivre l’exécution du déploiement sur O2Switch et diagnostiquer rapidement un problème, connectez-vous en SSH sur le serveur puis lancez :
+
+```sh
+ssh -p 22 ron2cuba@abricot.o2switch.net
+# Puis, une fois connecté :
+tail -f /home9/ron2cuba/.cpanel/deployment/logs/deployment-*.log
+```
+
+- Cette commande affiche en direct les logs de tous les déploiements cPanel.
+- Pratique pour vérifier le déroulement, repérer une erreur ou valider la fin du process.
 
 ---
 
