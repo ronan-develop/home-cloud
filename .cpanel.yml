@@ -1,7 +1,7 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/ron2cuba/lenouvel.me/
+    - export DEPLOYPATH=/home9/ron2cuba/repositories/home-cloud 
     # Déploiement du front Symfony (public)
     - /bin/cp -R public/* $DEPLOYPATH
     # (Optionnel) Déploiement de fichiers de config spécifiques
