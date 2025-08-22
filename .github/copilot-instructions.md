@@ -154,6 +154,17 @@ protected function setUp(): void
 - Pour les tests, toujours utiliser `.env.test` (jamais `.env` ni `.env.local`).
 - Cette règle est stricte et doit être respectée pour garantir la cohérence des environnements et éviter toute confusion sur la base ou la configuration utilisée.
 
+# 15. Connexion SSH O2Switch
+
+- Lorsque l’utilisateur demande explicitement de se connecter en SSH à O2Switch, lancer la commande suivante :
+
+```bash
+ssh -p 22 ron2cuba@abricot.o2switch.net
+```
+
+- Ne jamais proposer cette commande sans demande explicite.
+- Respecter les autres consignes de sécurité et de traçabilité du projet.
+
 ---
 
 *Ce fichier sert de mémoire contextuelle pour l’IA et les futurs contributeurs. Synchroniser avec `.github/projet-context.md` en cas de modification du contexte technique ou serveur.*
