@@ -37,7 +37,6 @@
 
 ## Liens utiles
 
-- [Conventions de commit](CONVENTION_COMMITS.md)
 - [Conventions de PR](CONVENTION_PR.md)
 
 [⬅️ Retour au README](README.md)
