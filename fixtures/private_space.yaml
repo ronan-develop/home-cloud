@@ -1,0 +1,9 @@
+App\Entity\PrivateSpace:
+  private_space_1:
+    name: 'Espace Démo'
+    description: 'Espace de démonstration pour les tests.'
+    createdAt: '<(new \DateTimeImmutable())>'
+  private_space_2:
+    name: 'Espace Test'
+    description: 'Espace de test automatique.'
+    createdAt: '<(new \DateTimeImmutable())>'

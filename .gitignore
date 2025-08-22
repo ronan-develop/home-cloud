@@ -1,11 +1,36 @@
-/.env
-/.env.local
-/.env.test
-/api/frankenphp
-/e2e
-/helm
-/helm/api-platform/charts/*
-!/helm/api-platform/charts/.gitignore
-note.txt
+# Fichiers d'environnement
+.env
+.env.dev
+.env.*
+# Secrets Symfony
+/config/secrets/prod/prod.decrypt.private.php
+
+# Vendor et var
+/vendor/
+/var/
+
+# Bundles publics
+/public/bundles/
+
+# Cache PHPUnit
+/phpunit.xml
+/.phpunit.cache/
+
+# JWT Lexik
+/config/jwt/*.pem
+
+# Fichiers temporaires et tokens
 .credentials
 .token
+note.txt
+
+# Node/npm (si frontend)
+/node_modules/
+
+# Autres fichiers spécifiques
+.idea/
+.DS_Store
+bin/console
+bin/phpunit
+phpunit.dist.xml
+phpunit.xml.dist
