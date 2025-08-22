@@ -168,4 +168,52 @@ Le script active automatiquement Xdebug coverage pour faciliter la CI et la repr
 
 ---
 
+## Workflow de développement et déploiement O2Switch
+
+### 1. Développement local
+
+- Travaille sur une branche dédiée.
+- Commits réguliers, messages conformes à la convention (voir [CONVENTION_COMMITS.md](CONVENTION_COMMITS.md)).
+
+### 2. Création de Pull Request (PR)
+
+- Ouvre une PR sur GitHub pour chaque fonctionnalité/correction.
+- Respecte la convention de titre et de description (voir [CONVENTION_PR.md](CONVENTION_PR.md)).
+- Merge uniquement après validation/review.
+
+### 3. Déploiement
+
+- Après merge sur `main`, push sur GitHub :
+
+  ```bash
+  git push origin main
+  ```
+
+- Synchronise ensuite le dépôt O2Switch via l’interface cPanel :
+  - Va dans cPanel > Git™ Version Control > ton dépôt > clique sur “Update from Remote” pour rapatrier les changements depuis GitHub.
+  - Le déploiement automatique s’exécutera alors via le `.cpanel.yml` versionné.
+
+- Le fichier `.cpanel.yml` doit être à jour et versionné.
+- Vérifie le déploiement dans l’interface cPanel.
+
+### 4. Dépôt de secours
+
+- Le repo O2Switch sert aussi de backup :
+  `ssh://ron2cuba@ron2cuba.odns.fr/home9/ron2cuba/repositories/home-cloud`
+
+---
+
+## Historique des tests
+
+- Voir la liste complète dans [TESTS_HISTORIQUE.md](TESTS_HISTORIQUE.md)
+
+---
+
+## Liens utiles
+
+- [Convention de commits](CONVENTION_COMMITS.md)
+- [Convention de PR](CONVENTION_PR.md)
+
+---
+
 Prochaine étape : modéliser techniquement ces cas d’usage (API, entités, flux) et enrichir la documentation technique.
