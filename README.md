@@ -1,8 +1,19 @@
 # Home Cloud
 
-[![Coverage Status](https://img.shields.io/badge/coverage-80%25-brightgreen)](https://github.com/ronan-develop/home-cloud/actions)
+## Astuce pour les déploiements futurs
+
+Pour éviter les surprises :
+
+- 🧪 Testez toujours votre `.cpanel.yml` en local :
+  - Clonez votre dépôt sur votre ordinateur et lancez les commandes du fichier `.cpanel.yml` manuellement pour vérifier qu’elles fonctionnent.
+- 🌱 Utilisez des branches dédiées :
+  - Déployez depuis la branche `main` pour plus de contrôle.
+
+---
 
 ## Modélisation métier (diagramme de classes)
+
+[![Coverage Status](https://img.shields.io/badge/coverage-80%25-brightgreen)](https://github.com/ronan-develop/home-cloud/actions)
 
 Le projet Home Cloud repose sur une architecture orientée utilisateurs particuliers : chaque utilisateur dispose de son propre espace privé et peut partager des ressources avec d’autres personnes, qu’elles soient ou non inscrites sur la plateforme.
 
@@ -133,6 +144,21 @@ php -S localhost:8000 -t public
 
 ---
 
+## Astuce pour consulter les logs de déploiement en temps réel
+
+Pour suivre l’exécution du déploiement sur O2Switch et diagnostiquer rapidement un problème, connectez-vous en SSH sur le serveur puis lancez :
+
+```sh
+ssh -p 22 ron2cuba@abricot.o2switch.net
+# Puis, une fois connecté :
+tail -f /home9/ron2cuba/.cpanel/deployment/logs/deployment-*.log
+```
+
+- Cette commande affiche en direct les logs de tous les déploiements cPanel.
+- Pratique pour vérifier le déroulement, repérer une erreur ou valider la fin du process.
+
+---
+
 ## Tests d’intégration et validation ORM
 
 - Un test d’intégration (`tests/Entity/UserPrivateSpaceTest.php`) valide la création, la persistance et la relation bidirectionnelle entre User et PrivateSpace.
@@ -165,6 +191,54 @@ bin/phpunit-coverage --coverage-text
 ```
 
 Le script active automatiquement Xdebug coverage pour faciliter la CI et la reproductibilité.
+
+---
+
+## Workflow de développement et déploiement O2Switch
+
+### 1. Développement local
+
+- Travaille sur une branche dédiée.
+- Commits réguliers, messages conformes à la convention (voir [CONVENTION_COMMITS.md](CONVENTION_COMMITS.md)).
+
+### 2. Création de Pull Request (PR)
+
+- Ouvre une PR sur GitHub pour chaque fonctionnalité/correction.
+- Respecte la convention de titre et de description (voir [CONVENTION_PR.md](CONVENTION_PR.md)).
+- Merge uniquement après validation/review.
+
+### 3. Déploiement
+
+- Après merge sur `main`, push sur GitHub :
+
+  ```bash
+  git push origin main
+  ```
+
+- Synchronise ensuite le dépôt O2Switch via l’interface cPanel :
+  - Va dans cPanel > Git™ Version Control > ton dépôt > clique sur “Update from Remote” pour rapatrier les changements depuis GitHub.
+  - Le déploiement automatique s’exécutera alors via le `.cpanel.yml` versionné.
+
+- Le fichier `.cpanel.yml` doit être à jour et versionné.
+- Vérifie le déploiement dans l’interface cPanel.
+
+### 4. Dépôt de secours
+
+- Le repo O2Switch sert aussi de backup :
+  `ssh://ron2cuba@ron2cuba.odns.fr/home9/ron2cuba/repositories/home-cloud`
+
+---
+
+## Historique des tests
+
+- Voir la liste complète dans [TESTS_HISTORIQUE.md](TESTS_HISTORIQUE.md)
+
+---
+
+## Liens utiles
+
+- [Convention de commits](CONVENTION_COMMITS.md)
+- [Convention de PR](CONVENTION_PR.md)
 
 ---
 
