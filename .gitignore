@@ -34,4 +34,4 @@ bin/console
 bin/phpunit
 phpunit.dist.xml
 phpunit.xml.dist
-cpanel.yml
+default.xml
