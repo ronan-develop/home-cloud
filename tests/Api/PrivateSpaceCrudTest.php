@@ -43,6 +43,22 @@ class PrivateSpaceCrudTest extends ApiTestCase
         ]);
     }
 
+    public function testCreatePrivateSpaceInvalidDescription(): void
+    {
+        $response = static::createClient()->request('POST', '/api/private_spaces', [
+            'headers' => ['Content-Type' => 'application/ld+json', 'Accept' => 'application/ld+json'],
+            'body' => json_encode([
+                'name' => 'Sans description'
+            ])
+        ]);
+        $this->assertResponseStatusCodeSame(422);
+        $this->assertJsonContains([
+            'violations' => [
+                ['propertyPath' => 'description']
+            ]
+        ]);
+    }
+
     public function testGetPrivateSpaceCollection(): void
     {
         $client = static::createClient();
