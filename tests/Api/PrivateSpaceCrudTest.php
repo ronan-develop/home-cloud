@@ -12,10 +12,6 @@ class PrivateSpaceCrudTest extends ApiTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // Reset base et fixtures
-        shell_exec('php bin/console --env=test doctrine:schema:drop --force');
-        shell_exec('php bin/console --env=test doctrine:schema:create');
-        shell_exec('php bin/console --env=test hautelook:fixtures:load --no-interaction');
     }
 
     public function testCreatePrivateSpace(): void
