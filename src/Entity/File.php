@@ -14,7 +14,7 @@ class File
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    private ?string $filenmame = null;
+    private ?string $filename = null;
 
     #[ORM\Column(length: 255)]
     private ?string $path = null;
@@ -36,14 +36,14 @@ class File
         return $this->id;
     }
 
-    public function getFilenmame(): ?string
+    public function getFilename(): ?string
     {
-        return $this->filenmame;
+        return $this->filename;
     }
 
-    public function setFilenmame(string $filenmame): static
+    public function setFilename(string $filename): static
     {
-        $this->filenmame = $filenmame;
+        $this->filename = $filename;
 
         return $this;
     }
