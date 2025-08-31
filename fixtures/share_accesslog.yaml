@@ -8,6 +8,7 @@ App\Entity\Share:
     token: 'token-1234'
     expiresAt: <(new DateTime('+7 days'))>
     privateSpace: '@private_space1'
+    is_external: false
 
 App\Entity\AccessLog:
   access_log1:
