@@ -50,7 +50,10 @@ class FileIntegrationTest extends KernelTestCase
 
         // Suppression
         $this->em->remove($savedFile);
-        $this->em->remove($privateSpace);
+        $this->em->flush();
+        $privateSpaceRepo = $this->em->getRepository(PrivateSpace::class);
+        $savedPrivateSpace = $privateSpaceRepo->find($savedFile->getPrivateSpace()->getId());
+        $this->em->remove($savedPrivateSpace);
         $this->em->flush();
         $this->assertNull($repo->findOneBy(['filename' => 'test.txt']));
     }
