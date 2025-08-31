@@ -80,6 +80,23 @@ applyTo: '**'
 - Pour déboguer, dumper la réponse brute du client dans les tests si la collection est vide ou inattendue.
 - Ne jamais utiliser `.env.local` en environnement de test (non pris en compte).
 - Les tests doivent être reproductibles, indépendants et ne jamais dépendre de l’état d’un autre test.
+- Toujours factoriser le reset de la base et le chargement des fixtures dans un trait commun (`DatabaseResetTrait`) pour tous les tests d’intégration.
+- Utiliser ce trait dans chaque classe de test d’intégration pour garantir la cohérence et éviter la duplication de code.
+- Exemple d’utilisation :
+  ```php
+  use App\Tests\Integration\DatabaseResetTrait;
+  
+  class MaClasseDeTest extends KernelTestCase
+  {
+      use DatabaseResetTrait;
+      
+      public static function setUpBeforeClass(): void
+      {
+          self::resetDatabaseAndFixtures();
+      }
+      // ...
+  }
+  ```
 
 ### 8.1 Configuration de la base de test et isolation
 
