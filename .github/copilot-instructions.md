@@ -111,7 +111,7 @@ applyTo: '**'
 
 ## 9. Exécution des tests
 
-- Lorsque l’utilisateur écrit uniquement le mot « test », l’IA doit automatiquement lancer la commande de tests (ex : `php bin/phpunit`).
+- Lorsque l’utilisateur écrit uniquement le mot « test », l’IA doit automatiquement lancer la commande de tests **avec l’option `--testdox`** (ex : `php bin/phpunit --testdox`).
 - L’IA ne doit proposer de lancer les tests que lorsqu’elle juge cela pertinent (après une modification de code/test, ou sur demande explicite).
 - Ne jamais lancer les tests sans raison ou contexte approprié.
 
