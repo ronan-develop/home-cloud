@@ -21,9 +21,6 @@ class AccessLog
     private ?\DateTimeImmutable $accessedAt = null;
 
     #[ORM\Column(length: 45)]
-    private ?string $ip = null;
-
-    #[ORM\Column(length: 45)]
     private ?string $ipAddress = null;
 
     #[ORM\Column(length: 32)]
@@ -56,17 +53,6 @@ class AccessLog
     public function setAccessedAt(\DateTimeImmutable $accessedAt): static
     {
         $this->accessedAt = $accessedAt;
-        return $this;
-    }
-
-    public function getIp(): ?string
-    {
-        return $this->ip;
-    }
-
-    public function setIp(string $ip): static
-    {
-        $this->ip = $ip;
         return $this;
     }
 

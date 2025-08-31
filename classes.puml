@@ -36,13 +36,15 @@ class Share {
   +accessLevel : string
   +expiresAt : datetime
   +password : string
+  +file : File
+  +privateSpace : PrivateSpace
 }
 
 class AccessLog {
   +id : int
   +shareId : int
   +accessedAt : datetime
-  +ip : string
+  +ipAddress : string
   +action : string
   +userId : int
 }
