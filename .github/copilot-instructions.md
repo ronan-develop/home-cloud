@@ -50,12 +50,17 @@ applyTo: '**'
 - Couleur : `#6f42c1` (violet)
 - Description : Snapshot d’état du code ou des données avant refonte ou évolution majeure. Permet de tracer, archiver et faciliter le rollback.
 
-## 7. Convention d’emoji IA
-- L’emoji 🧞‍♂️ doit être utilisé uniquement dans les messages de commit, PR ou documentation qui concernent l’IA, les instructions Copilot, ou la documentation destinée à l’IA.
-- Ne jamais utiliser 🧞‍♂️ pour les commits ou actions humaines classiques, même sur des fichiers d’instructions ou de tests.
+## 7. Convention d’emoji pour les commits
+
+- Tous les messages de commit doivent obligatoirement comporter un emoji en début de message, choisi selon le sujet du commit (voir `.github/CONVENTION_COMMITS.md`).
+- L’emoji 🧞‍♂️ est strictement réservé aux commits, PR ou documentation qui concernent l’IA, les instructions Copilot, ou la documentation destinée à l’IA.
+- Pour tout autre sujet (code, doc métier, tests, refactor, etc.), utiliser l’emoji approprié (ex : 📝, 🚀, 🐛, etc.) selon la convention du projet.
+- Ne jamais utiliser 🧞‍♂️ pour des commits humains classiques, même sur des fichiers d’instructions ou de tests.
 - Exemples :
   - 🧞‍♂️ docs: mise à jour automatique de la documentation destinée à l’IA
-  - 🧞‍♂️ test: refactorisation générée par l’IA
+  - 📝 docs: mise à jour de la documentation métier
+  - 🐛 fix: correction d’un bug sur l’API
+  - 🚀 feat: ajout d’une nouvelle fonctionnalité
 
 ## 8. Bonnes pratiques tests & environnement de test
 
