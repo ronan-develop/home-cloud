@@ -3,20 +3,22 @@
 namespace App\Tests\Integration;
 
 use App\Entity\Share;
+use App\Tests\Integration\DatabaseResetTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 class ShareIntegrationTest extends KernelTestCase
 {
+    use DatabaseResetTrait;
     private EntityManagerInterface $em;
+
+    public static function setUpBeforeClass(): void
+    {
+        self::resetDatabaseAndFixtures();
+    }
 
     protected function setUp(): void
     {
-        // Reset base et schéma avant chaque test d’intégration
-        shell_exec('php bin/console --env=test doctrine:database:create --if-not-exists');
-        shell_exec('php bin/console --env=test doctrine:schema:drop --force');
-        shell_exec('php bin/console --env=test doctrine:schema:create');
-        shell_exec('php bin/console --env=test hautelook:fixtures:load --no-interaction');
         self::bootKernel();
         $this->em = static::getContainer()->get(EntityManagerInterface::class);
     }
