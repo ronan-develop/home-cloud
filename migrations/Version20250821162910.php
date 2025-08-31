@@ -14,7 +14,7 @@ final class Version20250821162910 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Création de la table file (fichiers) et ajout de la clé étrangère vers private_space.';
     }
 
     public function up(Schema $schema): void

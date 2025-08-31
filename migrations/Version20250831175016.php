@@ -14,7 +14,7 @@ final class Version20250831175016 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Ajout du champ ip_address à la table access_log.';
     }
 
     public function up(Schema $schema): void

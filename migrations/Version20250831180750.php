@@ -14,7 +14,7 @@ final class Version20250831180750 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Suppression du champ ip de la table access_log (remplacé par ip_address).';
     }
 
     public function up(Schema $schema): void

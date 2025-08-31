@@ -14,7 +14,7 @@ final class Version20250831171223 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Création des tables share (partages) et access_log (logs d’accès), modification de file.private_space_id (NOT NULL).';
     }
 
     public function up(Schema $schema): void
