@@ -52,10 +52,11 @@ class FileIntegrationTest extends KernelTestCase
         $this->assertEquals('Espace Test', $savedFile->getPrivateSpace()->getName());
 
         // Suppression
+        $privateSpaceId = $savedFile->getPrivateSpace()->getId();
         $this->em->remove($savedFile);
         $this->em->flush();
         $privateSpaceRepo = $this->em->getRepository(PrivateSpace::class);
-        $savedPrivateSpace = $privateSpaceRepo->find($savedFile->getPrivateSpace()->getId());
+        $savedPrivateSpace = $privateSpaceRepo->find($privateSpaceId);
         $this->em->remove($savedPrivateSpace);
         $this->em->flush();
         $this->assertNull($repo->findOneBy(['filename' => 'test.txt']));
