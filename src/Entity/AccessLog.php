@@ -23,6 +23,9 @@ class AccessLog
     #[ORM\Column(length: 45)]
     private ?string $ip = null;
 
+    #[ORM\Column(length: 45)]
+    private ?string $ipAddress = null;
+
     #[ORM\Column(length: 32)]
     private ?string $action = null;
 
@@ -64,6 +67,17 @@ class AccessLog
     public function setIp(string $ip): static
     {
         $this->ip = $ip;
+        return $this;
+    }
+
+    public function getIpAddress(): ?string
+    {
+        return $this->ipAddress;
+    }
+
+    public function setIpAddress(string $ipAddress): static
+    {
+        $this->ipAddress = $ipAddress;
         return $this;
     }
 
