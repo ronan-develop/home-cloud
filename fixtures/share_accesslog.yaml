@@ -21,7 +21,6 @@ App\Entity\Share:
 App\Entity\AccessLog:
   access_log1:
     accessedAt: <(new DateTime('-1 hour'))>
-    ip: '127.0.0.1'
     ipAddress: '127.0.0.1'
     action: 'view'
     userId: 1
