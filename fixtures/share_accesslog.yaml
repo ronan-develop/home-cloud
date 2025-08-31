@@ -1,3 +1,8 @@
+App\Entity\PrivateSpace:
+  private_space1:
+    name: 'Espace partagé'
+    description: 'Espace de test pour fixtures Share/AccessLog'
+
 App\Entity\Share:
   share1:
     token: 'token-1234'
