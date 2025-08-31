@@ -52,20 +52,28 @@ class Share
     {
         $this->createdAt = new \DateTimeImmutable();
         $this->accessLogs = new ArrayCollection();
+        $this->generateToken();
     }
 
-    public function getId(): ?int
+    /**
+     * Génère un token sécurisé (entropie forte) pour le partage.
+     * @return $this
+     */
+    public function generateToken(): static
     {
-        return $this->id;
+        $this->token = bin2hex(random_bytes(32)); // 64 caractères hex, 256 bits d'entropie
+        return $this;
     }
 
-    public function getToken(): ?string
-    {
-        return $this->token;
-    }
-
+    /**
+     * Définit le token de partage après validation d'entropie.
+     * @throws \InvalidArgumentException
+     */
     public function setToken(string $token): static
     {
+        if (strlen($token) < 32 || !preg_match('/^[a-f0-9]{32,64}$/', $token)) {
+            throw new \InvalidArgumentException('Le token doit comporter au moins 32 caractères hexadécimaux.');
+        }
         $this->token = $token;
         return $this;
     }

@@ -8,7 +8,7 @@ App\Entity\PrivateSpace:
 
 App\Entity\Share:
   share1:
-    token: 'token-1234'
+    token: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
     expiresAt: <(new DateTime('+7 days'))>
     privateSpace: '@private_space1'
     is_external: false
