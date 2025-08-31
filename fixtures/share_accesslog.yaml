@@ -1,0 +1,11 @@
+App\Entity\Share:
+  share1:
+    token: 'token-1234'
+    expiresAt: <(new DateTime('+7 days'))>
+    privateSpace: '@private_space1'
+
+App\Entity\AccessLog:
+  access_log1:
+    accessedAt: <(new DateTime('-1 hour'))>
+    ipAddress: '127.0.0.1'
+    share: '@share1'
