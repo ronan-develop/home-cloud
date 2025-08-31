@@ -47,3 +47,5 @@ Ce document liste les principaux endpoints exposés via API Platform (REST/Graph
 ---
 
 > La structure et les routes exactes pourront évoluer selon la configuration d’API Platform, les besoins métier et les conventions REST/GraphQL du projet.
+
+[⬅️ Retour au README](README.md)

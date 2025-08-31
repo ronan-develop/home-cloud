@@ -44,7 +44,8 @@ class File
     #[Assert\NotBlank]
     private ?\DateTimeImmutable $createdAt = null;
 
-    #[ORM\ManyToOne(inversedBy: 'files', nullable: false)]
+    #[ORM\ManyToOne(inversedBy: 'files')]
+    #[ORM\JoinColumn(nullable: false)]
     #[Assert\NotNull]
     private ?PrivateSpace $privateSpace = null;
 

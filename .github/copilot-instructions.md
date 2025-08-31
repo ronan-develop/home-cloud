@@ -50,12 +50,17 @@ applyTo: '**'
 - Couleur : `#6f42c1` (violet)
 - Description : Snapshot d’état du code ou des données avant refonte ou évolution majeure. Permet de tracer, archiver et faciliter le rollback.
 
-## 7. Convention d’emoji IA
-- L’emoji 🧞‍♂️ doit être utilisé uniquement dans les messages de commit, PR ou documentation qui concernent l’IA, les instructions Copilot, ou la documentation destinée à l’IA.
-- Ne jamais utiliser 🧞‍♂️ pour les commits ou actions humaines classiques, même sur des fichiers d’instructions ou de tests.
+## 7. Convention d’emoji pour les commits
+
+- Tous les messages de commit doivent obligatoirement comporter un emoji en début de message, choisi selon le sujet du commit (voir `.github/CONVENTION_COMMITS.md`).
+- L’emoji 🧞‍♂️ est strictement réservé aux commits, PR ou documentation qui concernent l’IA, les instructions Copilot, ou la documentation destinée à l’IA.
+- Pour tout autre sujet (code, doc métier, tests, refactor, etc.), utiliser l’emoji approprié (ex : 📝, 🚀, 🐛, etc.) selon la convention du projet.
+- Ne jamais utiliser 🧞‍♂️ pour des commits humains classiques, même sur des fichiers d’instructions ou de tests.
 - Exemples :
   - 🧞‍♂️ docs: mise à jour automatique de la documentation destinée à l’IA
-  - 🧞‍♂️ test: refactorisation générée par l’IA
+  - 📝 docs: mise à jour de la documentation métier
+  - 🐛 fix: correction d’un bug sur l’API
+  - 🚀 feat: ajout d’une nouvelle fonctionnalité
 
 ## 8. Bonnes pratiques tests & environnement de test
 
@@ -75,6 +80,23 @@ applyTo: '**'
 - Pour déboguer, dumper la réponse brute du client dans les tests si la collection est vide ou inattendue.
 - Ne jamais utiliser `.env.local` en environnement de test (non pris en compte).
 - Les tests doivent être reproductibles, indépendants et ne jamais dépendre de l’état d’un autre test.
+- Toujours factoriser le reset de la base et le chargement des fixtures dans un trait commun (`DatabaseResetTrait`) pour tous les tests d’intégration.
+- Utiliser ce trait dans chaque classe de test d’intégration pour garantir la cohérence et éviter la duplication de code.
+- Exemple d’utilisation :
+  ```php
+  use App\Tests\Integration\DatabaseResetTrait;
+  
+  class MaClasseDeTest extends KernelTestCase
+  {
+      use DatabaseResetTrait;
+      
+      public static function setUpBeforeClass(): void
+      {
+          self::resetDatabaseAndFixtures();
+      }
+      // ...
+  }
+  ```
 
 ### 8.1 Configuration de la base de test et isolation
 
@@ -106,7 +128,7 @@ applyTo: '**'
 
 ## 9. Exécution des tests
 
-- Lorsque l’utilisateur écrit uniquement le mot « test », l’IA doit automatiquement lancer la commande de tests (ex : `php bin/phpunit`).
+- Lorsque l’utilisateur écrit uniquement le mot « test », l’IA doit automatiquement lancer la commande de tests **avec l’option `--testdox`** (ex : `php bin/phpunit --testdox`).
 - L’IA ne doit proposer de lancer les tests que lorsqu’elle juge cela pertinent (après une modification de code/test, ou sur demande explicite).
 - Ne jamais lancer les tests sans raison ou contexte approprié.
 

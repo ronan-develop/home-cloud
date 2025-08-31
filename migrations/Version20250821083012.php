@@ -14,7 +14,7 @@ final class Version20250821083012 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Création des tables private_space (espaces privés) et messenger_messages (queue Symfony Messenger).';
     }
 
     public function up(Schema $schema): void

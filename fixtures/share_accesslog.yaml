@@ -1,0 +1,27 @@
+App\Entity\PrivateSpace:
+  private_space1:
+    name: 'Espace partagé'
+    description: 'Espace de test pour fixtures Share/AccessLog'
+  espace_demo:
+    name: 'Espace Démo'
+    description: 'Espace attendu par le test API.'
+
+App\Entity\Share:
+  share1:
+    token: 'token-1234'
+    expiresAt: <(new DateTime('+7 days'))>
+    privateSpace: '@private_space1'
+    is_external: false
+    access_level: 'read'
+    createdAt: <(new DateTime('-2 days'))>
+    email: 'test@example.com'
+    password: 'secret'
+    file: ~
+
+App\Entity\AccessLog:
+  access_log1:
+    accessedAt: <(new DateTime('-1 hour'))>
+    ipAddress: '127.0.0.1'
+    action: 'view'
+    userId: 1
+    share: '@share1'

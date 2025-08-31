@@ -1,4 +1,4 @@
-@startuml
+@startuml HomeCloud
 
 ' Diagramme de classes principal pour Home Cloud (particuliers, partage)
 
@@ -14,14 +14,6 @@ class PrivateSpace {
   +id : int
   +name : string
   +description : string
-  +createdAt : datetime
-}
-
-class Database {
-  +id : int
-  +name : string
-  +dsn : string
-  +username : string
   +createdAt : datetime
 }
 
@@ -44,22 +36,23 @@ class Share {
   +accessLevel : string
   +expiresAt : datetime
   +password : string
+  +file : File
+  +privateSpace : PrivateSpace
 }
 
 class AccessLog {
   +id : int
   +shareId : int
   +accessedAt : datetime
-  +ip : string
+  +ipAddress : string
   +action : string
   +userId : int
 }
 
-' Suppression de AccessRight (droit géré directement dans Share par accessLevel)
+' Suppression de Database (l'isolation se fait par base, pas par entité métier)
 
 User "1" -- "1" PrivateSpace : propriétaire >
 PrivateSpace "1" -- "1" User : < associé (bidirectionnel)
-PrivateSpace "1" -- "1" Database : stocke >
 PrivateSpace "1" -- "*" File : contient >
 File "1" -- "*" Share : partagé via >
 PrivateSpace "1" -- "*" Share : partage global >
