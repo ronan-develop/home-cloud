@@ -177,6 +177,7 @@ class PrivateSpaceCrudTest extends ApiTestCase
         $repo = $container->get(\App\Repository\PrivateSpaceRepository::class);
         $spaces = $repo->findAll();
         $this->assertNotEmpty($spaces, 'Les entités PrivateSpace doivent être présentes en base après chargement des fixtures.');
-        $this->assertSame('Espace Démo', $spaces[0]->getName());
+        $names = array_map(fn($s) => $s->getName(), $spaces);
+        $this->assertContains('Espace Démo', $names, 'La fixture "Espace Démo" doit être présente.');
     }
 }
