@@ -2,6 +2,14 @@
 
 ## Backlog des prochaines fonctionnalités
 
+> **À chaque démarrage de sprint ou revue, ce tableau doit être relu et enrichi avec les nouveaux use cases ou besoins identifiés.**
+>
+> **Hook de suivi :**
+>
+> - Dernière mise à jour du backlog : 01/09/2025
+> - Prochaine revue prévue : [À compléter à chaque début de sprint]
+> - Responsable de la mise à jour : ronan-develop
+
 | Fonctionnalité                                 | Description courte                                      | Priorité   | Statut   |
 |-----------------------------------------------|--------------------------------------------------------|------------|----------|
 | Gestion fine des droits                       | ACL, rôles personnalisés, droits par fichier/dossier   | Haute      | À faire  |
