@@ -309,4 +309,12 @@ Pour des besoins collaboratifs avancés (multi-auteurs, historique d’upload, e
 
 ---
 
+## Limites connues & évolutions prévues
+
+👉 Voir le détail dans [`LIMITES_EVOLUTIONS.md`](./LIMITES_EVOLUTIONS.md)
+
+Ce document liste les limitations actuelles (collaboratif, droits fins, notifications, etc.) et la roadmap des évolutions prévues.
+
+---
+
 Prochaine étape : modéliser techniquement ces cas d’usage (API, entités, flux) et enrichir la documentation technique.
