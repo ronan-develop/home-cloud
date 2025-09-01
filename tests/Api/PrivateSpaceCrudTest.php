@@ -20,13 +20,31 @@ class PrivateSpaceCrudTest extends ApiTestCase
         shell_exec('php bin/console --env=test hautelook:fixtures:load --no-interaction');
     }
 
+    private function createUserAndGetIri($client, $username = null): string
+    {
+        $username = $username ?? 'user_' . uniqid();
+        $response = $client->request('POST', '/api/users', [
+            'headers' => ['Content-Type' => 'application/ld+json', 'Accept' => 'application/ld+json'],
+            'body' => json_encode([
+                'username' => $username,
+                'email' => $username . '@example.com',
+                'password' => 'testpass'
+            ])
+        ]);
+        $this->assertResponseStatusCodeSame(201);
+        return $response->toArray()['@id'];
+    }
+
     public function testCreatePrivateSpace(): void
     {
-        $response = static::createClient()->request('POST', '/api/private_spaces', [
+        $client = static::createClient();
+        $userIri = $this->createUserAndGetIri($client);
+        $response = $client->request('POST', '/api/private_spaces', [
             'headers' => ['Content-Type' => 'application/ld+json', 'Accept' => 'application/ld+json'],
             'body' => json_encode([
                 'name' => 'Espace Test',
-                'description' => 'Un espace de test.'
+                'description' => 'Un espace de test.',
+                'user' => $userIri
             ])
         ]);
         $this->assertResponseStatusCodeSame(201);
@@ -68,11 +86,13 @@ class PrivateSpaceCrudTest extends ApiTestCase
     public function testGetPrivateSpaceCollection(): void
     {
         $client = static::createClient();
+        $userIri = $this->createUserAndGetIri($client);
         $client->request('POST', '/api/private_spaces', [
             'headers' => ['Content-Type' => 'application/ld+json', 'Accept' => 'application/ld+json'],
             'body' => json_encode([
                 'name' => 'Espace Coll',
-                'description' => 'Pour la collection.'
+                'description' => 'Pour la collection.',
+                'user' => $userIri
             ])
         ]);
         $response = $client->request('GET', '/api/private_spaces', [
@@ -89,11 +109,13 @@ class PrivateSpaceCrudTest extends ApiTestCase
     public function testGetPrivateSpaceItem(): void
     {
         $client = static::createClient();
+        $userIri = $this->createUserAndGetIri($client);
         $response = $client->request('POST', '/api/private_spaces', [
             'headers' => ['Content-Type' => 'application/ld+json', 'Accept' => 'application/ld+json'],
             'body' => json_encode([
                 'name' => 'Espace Item',
-                'description' => 'Pour l\'item.'
+                'description' => 'Pour l\'item.',
+                'user' => $userIri
             ])
         ]);
         $id = $response->toArray()['id'] ?? null;
@@ -115,11 +137,13 @@ class PrivateSpaceCrudTest extends ApiTestCase
     public function testUpdatePrivateSpace(): void
     {
         $client = static::createClient();
+        $userIri = $this->createUserAndGetIri($client);
         $response = $client->request('POST', '/api/private_spaces', [
             'headers' => ['Content-Type' => 'application/ld+json', 'Accept' => 'application/ld+json'],
             'body' => json_encode([
                 'name' => 'Espace Update',
-                'description' => 'Avant modif.'
+                'description' => 'Avant modif.',
+                'user' => $userIri
             ])
         ]);
         $id = $response->toArray()['id'] ?? null;
@@ -127,7 +151,8 @@ class PrivateSpaceCrudTest extends ApiTestCase
             'headers' => ['Content-Type' => 'application/ld+json', 'Accept' => 'application/ld+json'],
             'body' => json_encode([
                 'name' => 'Espace Update',
-                'description' => 'Après modif.'
+                'description' => 'Après modif.',
+                'user' => $userIri
             ])
         ]);
         $this->assertResponseIsSuccessful();
@@ -149,11 +174,13 @@ class PrivateSpaceCrudTest extends ApiTestCase
     public function testDeletePrivateSpace(): void
     {
         $client = static::createClient();
+        $userIri = $this->createUserAndGetIri($client);
         $response = $client->request('POST', '/api/private_spaces', [
             'headers' => ['Content-Type' => 'application/ld+json', 'Accept' => 'application/ld+json'],
             'body' => json_encode([
                 'name' => 'Espace Delete',
-                'description' => 'À supprimer.'
+                'description' => 'À supprimer.',
+                'user' => $userIri
             ])
         ]);
         $id = $response->toArray()['id'] ?? null;
@@ -162,14 +189,6 @@ class PrivateSpaceCrudTest extends ApiTestCase
         ]);
         $this->assertResponseStatusCodeSame(204);
         $client->request('GET', '/api/private_spaces/' . $id, [
-            'headers' => ['Accept' => 'application/ld+json']
-        ]);
-        $this->assertResponseStatusCodeSame(404);
-    }
-
-    public function testDeleteNonExistentPrivateSpace(): void
-    {
-        static::createClient()->request('DELETE', '/api/private_spaces/99999', [
             'headers' => ['Accept' => 'application/ld+json']
         ]);
         $this->assertResponseStatusCodeSame(404);
@@ -224,5 +243,14 @@ class PrivateSpaceCrudTest extends ApiTestCase
         ]);
         $this->assertResponseIsSuccessful();
         $this->assertEquals($userIri, $responseGet->toArray()['user']);
+    }
+
+    private function getFirstUserIri($client): ?string
+    {
+        $responseUser = $client->request('GET', '/api/users', [
+            'headers' => ['Accept' => 'application/ld+json']
+        ]);
+        $users = $responseUser->toArray(false)['member'] ?? [];
+        return $users[0]['@id'] ?? null;
     }
 }

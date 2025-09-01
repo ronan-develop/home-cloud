@@ -1,9 +1,25 @@
+App\Entity\User:
+  user_demo:
+    username: 'demo'
+    email: 'demo@example.com'
+    password: 'password'
+    createdAt: '<(new \DateTimeImmutable())>'
+  user_test:
+    username: 'test'
+    email: 'test@example.com'
+    password: 'password'
+    createdAt: '<(new \DateTimeImmutable())>'
+
 App\Entity\PrivateSpace:
-  private_space_1:
+  private_space_demo:
     name: 'Espace Démo'
     description: 'Espace de démonstration pour les tests.'
     createdAt: '<(new \DateTimeImmutable())>'
-  private_space_2:
+    user: '@user_demo'
+  private_space_test:
     name: 'Espace Test'
     description: 'Espace de test automatique.'
     createdAt: '<(new \DateTimeImmutable())>'
+    user: '@user_test'
+
+# Aucun champ id n'est fixé, OneToOne respecté
