@@ -1,6 +1,22 @@
 # Limites connues & évolutions prévues
 
-Ce document recense les limitations actuelles de Home Cloud et les évolutions prévues à court/moyen terme.
+## Backlog des prochaines fonctionnalités
+
+| Fonctionnalité                                 | Description courte                                      | Priorité   | Statut   |
+|-----------------------------------------------|--------------------------------------------------------|------------|----------|
+| Gestion fine des droits                       | ACL, rôles personnalisés, droits par fichier/dossier   | Haute      | À faire  |
+| Mode collaboratif / multi-auteurs             | Plusieurs propriétaires, édition simultanée            | Haute      | À faire  |
+| Historique et versionning                     | Audit trail, suivi des accès et modifications          | Moyenne    | À faire  |
+| Notifications temps réel                      | Webhooks, emails, intégrations externes                | Moyenne    | À faire  |
+| Upload avancé                                 | Drag & drop, multi-fichiers, gestion erreurs           | Moyenne    | À faire  |
+| Support GraphQL                               | API GraphQL en plus du REST                            | Basse      | À faire  |
+| Groupes et équipes                            | Partage multi-utilisateurs, gestion de groupes         | Moyenne    | À faire  |
+| Quotas et alertes de stockage                 | Limites personnalisées, alertes utilisateurs           | Basse      | À faire  |
+| Sécurité renforcée                            | 2FA, audit, logs avancés                               | Haute      | À faire  |
+
+---
+
+Ce tableau est mis à jour à chaque évolution majeure. Les priorités sont susceptibles d’évoluer selon les besoins utilisateurs et la roadmap.
 
 ## Limites connues
 
