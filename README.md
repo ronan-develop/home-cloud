@@ -168,6 +168,34 @@ tail -f /home9/ron2cuba/.cpanel/deployment/logs/deployment-*.log
 
 ---
 
+## Phase de refonte tests & migrations (septembre 2025)
+
+### Objectif
+
+Garantir une isolation stricte et la robustesse des tests API Platform, en corrigeant les problèmes d’intégrité liés à la relation OneToOne entre User et PrivateSpace.
+
+### Actions réalisées
+
+- **Purge complète des migrations** : suppression de toutes les migrations existantes et génération d’une migration unique alignée sur le schéma actuel des entités.
+- **Correction des fixtures** : chaque User n’a plus qu’un seul PrivateSpace associé (respect strict du OneToOne), harmonisation des références dans Share/AccessLog.
+- **Refactor des tests CRUD PrivateSpace** : chaque test crée dynamiquement un nouvel utilisateur avant de créer un PrivateSpace, évitant toute violation d’unicité.
+- **Chargement des fixtures** : validé sans erreur, la base de test est toujours cohérente.
+- **Isolation maximale** : chaque test API Platform réinitialise la base (drop/create schema + fixtures) pour garantir reproductibilité et absence de pollution d’état.
+
+### Pourquoi ce choix ?
+
+- L’isolation transactionnelle ne fonctionne pas avec le kernel HTTP/API Platform (voir doc officielle).
+- Réinitialiser la base avant chaque test est la seule méthode fiable pour garantir l’indépendance et la reproductibilité des tests fonctionnels API.
+- Ce pattern est recommandé par la doc Symfony/API Platform pour tous les tests dépendant des données.
+
+### Résultat
+
+- Suite de tests API Platform 100% verte (hors tests d’intégration non corrigés)
+- Plus aucune violation d’unicité sur la relation User <-> PrivateSpace
+- Base de code et fixtures prêtes pour l’évolution multi-tenant et la montée en charge
+
+---
+
 ## Endpoints principaux
 
 👉 [Voir la liste complète des endpoints dans `api_endpoints.md`](./api_endpoints.md)
@@ -239,6 +267,18 @@ Le script active automatiquement Xdebug coverage pour faciliter la CI et la repr
 
 - [Convention de commits](CONVENTION_COMMITS.md)
 - [Convention de PR](CONVENTION_PR.md)
+
+---
+
+## Stratégie de test
+
+La stratégie complète de test (isolation, organisation, pattern d’initialisation, bonnes pratiques) est détaillée dans le fichier [`tests/STRATEGIE_TESTS.md`](./tests/STRATEGIE_TESTS.md).
+
+- Objectif : garantir robustesse, reproductibilité et isolation stricte de tous les tests (unitaires, intégration, API Platform)
+- Pattern d’isolation API Platform : reset complet de la base et rechargement des fixtures avant chaque test fonctionnel
+- Organisation des tests, conventions et liens utiles dans le fichier dédié
+
+👉 [Voir la stratégie de test complète](./tests/STRATEGIE_TESTS.md)
 
 ---
 
