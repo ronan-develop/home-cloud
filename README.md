@@ -282,4 +282,16 @@ La stratégie complète de test (isolation, organisation, pattern d’initialisa
 
 ---
 
+## Propriété d’un fichier
+
+> La propriété d’un fichier est déterminée par la chaîne de relations suivante :
+>
+> **File → PrivateSpace → User**
+>
+> Il n’existe pas de champ `ownerId` sur l’entité `File` : le propriétaire d’un fichier est toujours le propriétaire de l’espace privé auquel il appartient. Cette structure garantit la cohérence métier et évite toute redondance ou désynchronisation.
+
+Pour des besoins collaboratifs avancés (multi-auteurs, historique d’upload, etc.), il sera possible d’ajouter un champ spécifique ou une entité d’historique dans une future évolution.
+
+---
+
 Prochaine étape : modéliser techniquement ces cas d’usage (API, entités, flux) et enrichir la documentation technique.

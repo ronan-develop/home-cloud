@@ -1,6 +1,7 @@
 @startuml HomeCloud
 
 ' Diagramme de classes principal pour Home Cloud (particuliers, partage)
+' Synchronisé avec le code au 01/09/2025 — #24
 
 class User {
   +id : int
@@ -24,7 +25,6 @@ class File {
   +size : int
   +mimeType : string
   +createdAt : datetime
-  +ownerId : int
 }
 
 class Share {
@@ -36,8 +36,6 @@ class Share {
   +accessLevel : string
   +expiresAt : datetime
   +password : string
-  +file : File
-  +privateSpace : PrivateSpace
 }
 
 class AccessLog {
