@@ -180,4 +180,43 @@ class PrivateSpaceCrudTest extends ApiTestCase
         $names = array_map(fn($s) => $s->getName(), $spaces);
         $this->assertContains('Espace Démo', $names, 'La fixture "Espace Démo" doit être présente.');
     }
+
+    public function testPrivateSpaceUserRelation(): void
+    {
+        $client = static::createClient();
+
+        // Création d'un utilisateur via l'API
+        $responseUser = $client->request('POST', '/api/users', [
+            'headers' => ['Content-Type' => 'application/ld+json', 'Accept' => 'application/ld+json'],
+            'body' => json_encode([
+                'username' => 'relation_user',
+                'email' => 'relation_user@example.com',
+                'password' => 'testpass'
+            ])
+        ]);
+        $this->assertResponseStatusCodeSame(201);
+        $userIri = $responseUser->toArray()['@id'] ?? null;
+        $this->assertNotNull($userIri, 'L’IRI de l’utilisateur doit être présent.');
+
+        // Création d’un PrivateSpace lié à cet utilisateur
+        $responseSpace = $client->request('POST', '/api/private_spaces', [
+            'headers' => ['Content-Type' => 'application/ld+json', 'Accept' => 'application/ld+json'],
+            'body' => json_encode([
+                'name' => 'Espace Relation',
+                'description' => 'Test relation User <-> PrivateSpace',
+                'user' => $userIri
+            ])
+        ]);
+        $this->assertResponseStatusCodeSame(201);
+        $data = $responseSpace->toArray();
+        $this->assertEquals($userIri, $data['user'], 'Le PrivateSpace doit être lié à l’utilisateur créé.');
+
+        // Vérification côté GET
+        $spaceIri = $data['@id'] ?? null;
+        $responseGet = $client->request('GET', $spaceIri, [
+            'headers' => ['Accept' => 'application/ld+json']
+        ]);
+        $this->assertResponseIsSuccessful();
+        $this->assertEquals($userIri, $responseGet->toArray()['user']);
+    }
 }
