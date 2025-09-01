@@ -3,15 +3,21 @@
 namespace App\Tests\Api;
 
 use ApiPlatform\Symfony\Bundle\Test\ApiTestCase;
+use App\Tests\Integration\DatabaseResetTrait;
 
 class PrivateSpaceCrudTest extends ApiTestCase
 {
+    use DatabaseResetTrait;
     /**
      * Reset la base et recharge les fixtures avant chaque test fonctionnel API.
      */
     protected function setUp(): void
     {
         parent::setUp();
+        // Reset base et fixtures (pattern obligatoire API Platform)
+        shell_exec('php bin/console --env=test doctrine:schema:drop --force');
+        shell_exec('php bin/console --env=test doctrine:schema:create');
+        shell_exec('php bin/console --env=test hautelook:fixtures:load --no-interaction');
     }
 
     public function testCreatePrivateSpace(): void
