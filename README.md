@@ -20,7 +20,22 @@ Le projet Home Cloud repose sur une architecture orientée utilisateurs particul
 ### 1. User
 
 - **Rôle** : utilisateur particulier, propriétaire d’un espace privé.
-- **Responsabilités** : gère l’authentification, les informations de connexion et la date de création.
+- **Attributs principaux** :
+  - `id` (int) : identifiant unique
+  - `username` (string) : nom d’utilisateur unique
+  - `email` (string) : adresse email unique
+  - `password` (string, hashé) : mot de passe sécurisé
+  - `createdAt` (datetime) : date de création du compte
+- **Relations** :
+  - 1:1 avec `PrivateSpace` (chaque utilisateur possède un espace privé dédié)
+- **Responsabilités** :
+  - Gère l’authentification (inscription, login, logout)
+  - Peut modifier ses informations de profil
+  - Est propriétaire de toutes les ressources de son espace privé (fichiers, partages, logs)
+- **Cas d’usage API** :
+  - Inscription (`POST /api/register`)
+  - Connexion (`POST /api/login`)
+  - Consultation/modification du profil (`GET`/`PATCH /api/me`)
 
 ### 2. PrivateSpace
 
@@ -44,7 +59,7 @@ Le projet Home Cloud repose sur une architecture orientée utilisateurs particul
 
 #### Règles de gestion et cas d’usage du partage
 
-- Un **User** possède un **PrivateSpace**.
+- Un **User** possède un **PrivateSpace** (relation 1:1, obligatoire, unique et bidirectionnelle).
 - Un **PrivateSpace** utilise une **Database** dédiée.
 - Un **PrivateSpace** contient plusieurs **Files**.
 - Un **File** peut être partagé via plusieurs **Share** (lien public, invitation email, droits d’accès, expiration).

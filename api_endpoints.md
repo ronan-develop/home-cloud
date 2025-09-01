@@ -9,9 +9,20 @@ Ce document liste les principaux endpoints exposés via API Platform (REST/Graph
 ## Utilisateurs (User)
 
 - `POST /api/register` : inscription d’un nouvel utilisateur
+  - Payload : `{ "username": string, "email": string, "password": string }`
+  - Réponse : 201 Created, user minimal (sans mot de passe)
+  - Public, sans authentification
 - `POST /api/login` : authentification
+  - Payload : `{ "username": string, "password": string }`
+  - Réponse : 200 OK, token JWT ou session
+  - Public, sans authentification
 - `GET /api/me` : infos du profil connecté
+  - Réponse : 200 OK, user complet (hors mot de passe)
+  - Authentification requise (JWT/session)
 - `PATCH /api/me` : mise à jour du profil
+  - Payload : `{ "email"?: string, "password"?: string }`
+  - Réponse : 200 OK, user mis à jour
+  - Authentification requise
 
 ## Espace privé (PrivateSpace)
 
