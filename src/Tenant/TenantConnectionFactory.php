@@ -64,8 +64,16 @@ class TenantConnectionFactory
         }
 
         // create entity manager with same ORM configuration and event manager
-        /** @noinspection PhpUndefinedMethodInspection */
-        $em = \Doctrine\ORM\EntityManager::create($conn, $defaultEm->getConfiguration(), $defaultEm->getEventManager()); // @phpstan-ignore-line
+        // Use a class-string call so static analysers (phpstan/psalm) understand the static constructor
+        try {
+            // Instantiate a new EntityManager with the same ORM configuration and event manager.
+            // Using the constructor avoids static-method false positives from static analysers.
+            $em = new EntityManager($conn, $defaultEm->getConfiguration(), $defaultEm->getEventManager());
+        } catch (\Throwable $e) {
+            // Log full error for administrators, but keep the exception message generic for callers
+            $this->logger->error('Failed to create tenant EntityManager', ['tenant' => $tenantName, 'error' => $e->getMessage()]);
+            throw new \RuntimeException('Impossible d\'initialiser l\'entity manager du tenant. Contactez l\'administrateur.');
+        }
 
         $this->cache[$key] = $em;
 
