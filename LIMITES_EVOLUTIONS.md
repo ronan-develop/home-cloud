@@ -22,6 +22,8 @@
 | Quotas et alertes de stockage                 | Limites personnalisées, alertes utilisateurs           | Basse      | À faire  |
 | Sécurité renforcée                            | 2FA, audit, logs avancés                               | Haute      | À faire  |
 
+| 🛡️ Epic Sécurité renforcée (incl. JWT) (#45)   | Toutes les mesures de sécurité avancées (JWT, 2FA, audit, rate limiting, CORS, sessions, partages) | Epic      | Ouvert   |
+
 ---
 
 Ce tableau est mis à jour à chaque évolution majeure. Les priorités sont susceptibles d’évoluer selon les besoins utilisateurs et la roadmap.
