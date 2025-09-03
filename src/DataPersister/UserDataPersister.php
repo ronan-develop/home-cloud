@@ -2,38 +2,15 @@
 
 namespace App\DataPersister;
 
-use ApiPlatform\Core\DataPersister\ContextAwareDataPersisterInterface;
-use App\Entity\User;
-use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-
-final class UserDataPersister implements ContextAwareDataPersisterInterface
+/**
+ * Legacy shim left for backward compatibility during migration to API Platform v4.
+ * The project now uses `App\State\Processor\UserProcessor`.
+ * If this class is still referenced, replace usages by the new Processor.
+ */
+final class UserDataPersister
 {
-    public function __construct(private EntityManagerInterface $em, private UserPasswordHasherInterface $hasher) {}
-
-    public function supports(mixed $data, array $context = []): bool
+    public function __construct()
     {
-        return $data instanceof User;
-    }
-
-    public function persist(mixed $data, array $context = []): mixed
-    {
-        /** @var User $data */
-        $plain = $data->getPassword();
-        if ($plain && password_get_info($plain)['algo'] === 0) {
-            $hash = $this->hasher->hashPassword($data, $plain);
-            $data->setPassword($hash);
-        }
-
-        $this->em->persist($data);
-        $this->em->flush();
-
-        return $data;
-    }
-
-    public function remove(mixed $data, array $context = []): void
-    {
-        $this->em->remove($data);
-        $this->em->flush();
+        throw new \LogicException('UserDataPersister is deprecated: use App\\State\\Processor\\UserProcessor instead.');
     }
 }

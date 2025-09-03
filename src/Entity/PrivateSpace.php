@@ -31,8 +31,9 @@ class PrivateSpace
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank]
     #[Assert\Regex(
-        pattern: '/^[a-z0-9\-]{3,63}$/',
-        message: 'Le nom doit contenir uniquement des lettres minuscules, chiffres ou tirets, entre 3 et 63 caractères.'
+        // Allow letters (including accents), numbers, spaces, hyphens and underscores. Length 3-63
+        pattern: '/^[\p{L}0-9\s\-_]{3,63}$/u',
+        message: 'Le nom doit contenir entre 3 et 63 caractères ; lettres, chiffres, espaces, tirets et underscores sont autorisés.'
     )]
     private ?string $name = null;
 
@@ -50,7 +51,7 @@ class PrivateSpace
     private Collection $files;
 
     #[ORM\OneToOne(inversedBy: 'privateSpace', targetEntity: User::class)]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     private ?User $user = null;
 
     public function __construct()
@@ -77,21 +78,7 @@ class PrivateSpace
         return $this;
     }
 
-    #[ORM\PrePersist]
-    #[ORM\PreUpdate]
-    public function normalizeName(): void
-    {
-        if (null === $this->name) {
-            return;
-        }
-
-        $name = trim($this->name);
-        $name = strtolower($name);
-        // defensive cleanup: replace sequences of dots or spaces
-        $name = preg_replace('/[\s\.]+/', '-', $name);
-
-        $this->name = $name;
-    }
+    // keep original display name; slug for URL is computed on demand in getPublicUrl()
 
     public function getDescription(): ?string
     {
@@ -166,7 +153,15 @@ class PrivateSpace
     public function getPublicUrl(string $mainDomain, bool $https = true): string
     {
         $scheme = $https ? 'https' : 'http';
-        $host = sprintf('%s.%s', $this->name, $mainDomain);
+
+        $name = $this->name ?? '';
+        // produce a slug suitable for a subdomain: lowercase, replace spaces/accents by '-', remove invalid chars
+        $slug = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $name) ?: $name;
+        $slug = preg_replace('/[^a-zA-Z0-9\-]/', '-', strtolower($slug));
+        $slug = preg_replace('/-+/', '-', $slug);
+        $slug = trim($slug, '-');
+
+        $host = sprintf('%s.%s', $slug, $mainDomain);
 
         return $scheme . '://' . $host;
     }
