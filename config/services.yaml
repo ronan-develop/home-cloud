@@ -4,6 +4,8 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    app_main_domain: '%env(string:APP_MAIN_DOMAIN)%'
+    storage_path: '%kernel.project_dir%/var/storage'
 
 services:
     # default configuration for services in *this* file
@@ -18,5 +20,18 @@ services:
 
 
     App\Security\RefreshTokenManager: ~
+    App\DataPersister\UserDataPersister: ~
+    App\Tenant\TenantResolver:
+        arguments:
+            $mainDomain: '%app_main_domain%'
+
+    App\EventListener\TenantRequestListener:
+        tags:
+            - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest, priority: 100 }
+    App\Tenant\TenantConnectionFactory: ~
+
+    App\Storage\StorageService:
+        arguments:
+            $storagePath: '%storage_path%'
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

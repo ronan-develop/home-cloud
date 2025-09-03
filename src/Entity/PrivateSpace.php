@@ -20,6 +20,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     ]
 )]
 #[ORM\Entity(repositoryClass: PrivateSpaceRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class PrivateSpace
 {
     #[ORM\Id]
@@ -29,6 +30,10 @@ class PrivateSpace
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank]
+    #[Assert\Regex(
+        pattern: '/^[a-z0-9\-]{3,63}$/',
+        message: 'Le nom doit contenir uniquement des lettres minuscules, chiffres ou tirets, entre 3 et 63 caractères.'
+    )]
     private ?string $name = null;
 
     #[ORM\Column(type: Types::TEXT)]
@@ -66,9 +71,26 @@ class PrivateSpace
 
     public function setName(string $name): static
     {
+        // store raw value; lifecycle callback will normalise before persist
         $this->name = $name;
 
         return $this;
+    }
+
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    public function normalizeName(): void
+    {
+        if (null === $this->name) {
+            return;
+        }
+
+        $name = trim($this->name);
+        $name = strtolower($name);
+        // defensive cleanup: replace sequences of dots or spaces
+        $name = preg_replace('/[\s\.]+/', '-', $name);
+
+        $this->name = $name;
     }
 
     public function getDescription(): ?string
@@ -135,5 +157,17 @@ class PrivateSpace
         $this->user = $user;
 
         return $this;
+    }
+
+    /**
+     * Retourne l'URL publique calculée du private space en fonction du domaine principal.
+     * Exemple: si MAIN_DOMAIN=\"lenouvel.me\" et name=\"ronan\" -> https://ronan.lenouvel.me
+     */
+    public function getPublicUrl(string $mainDomain, bool $https = true): string
+    {
+        $scheme = $https ? 'https' : 'http';
+        $host = sprintf('%s.%s', $this->name, $mainDomain);
+
+        return $scheme . '://' . $host;
     }
 }
