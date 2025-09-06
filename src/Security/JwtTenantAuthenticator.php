@@ -10,7 +10,7 @@ use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Http\Authenticator\AbstractAuthenticator;
 use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
 use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
-use Symfony\Component\Security\Http\Authenticator\Passport\PassportInterface;
+// use Symfony\Component\Security\Http\Authenticator\Passport\PassportInterface; // supprimé : n'existe plus dans Symfony >=5.3
 use Psr\Log\LoggerInterface;
 
 /**
@@ -27,7 +27,7 @@ final class JwtTenantAuthenticator extends AbstractAuthenticator
         return $request->headers->has('Authorization') || $request->attributes->has('jwt_payload');
     }
 
-    public function authenticate(Request $request): PassportInterface
+    public function authenticate(Request $request): SelfValidatingPassport
     {
         $payload = $request->attributes->get('jwt_payload');
 

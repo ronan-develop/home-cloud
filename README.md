@@ -356,7 +356,7 @@ Pourquoi cette séparation ?
 
 Configuration
 
-- Le listener `LexikJwtDecodedListener` est enregistré comme service et taggé pour l'événement `lexik_jwt_authentication.on_jwt_decoded`.
+- Le listener `LexikJwtDecodedListener` est enregistré comme service et taggé pour l’événement `lexik_jwt_authentication.on_jwt_decoded`.
   Ceci est visible dans `config/services.yaml`.
 - En complément, l'`JwtTenantAuthenticator` doit être enregistré dans la configuration de sécurité (`config/packages/security.yaml`) sous le
   firewall API via `custom_authenticators:` pour qu'il soit exécuté sur chaque requête API.
@@ -402,3 +402,31 @@ Support et tests
 ---
 
 Fin de la section sécurité JWT multi-tenant.
+
+# Journal de debug sécurité JWT (septembre 2025)
+
+## Correction autoloading PassportInterface
+- Suppression de l'import et du typehint `PassportInterface` dans `JwtTenantAuthenticator` (Symfony >=5.3 n'a plus cette interface)
+- Correction de la signature : `authenticate(Request $request): SelfValidatingPassport`
+- Vérification de l'absence de toute référence à `PassportInterface` dans le code
+
+## Purge du cache Symfony
+- Exécution de `rm -rf var/cache/*` pour s'assurer qu'aucune ancienne référence n'est gardée
+- Relance des tests fonctionnels JWT
+
+## Résultat des tests JWT (6 septembre 2025)
+- Plus d'erreur d'autoloading, mais l'authentification JWT échoue (401 Unauthorized)
+- Hypothèses : problème de clé privée/publique, format JWT, ou listener LexikJwtDecodedListener non appelé
+- Prochaines étapes :
+  - Vérifier la correspondance des clés (test vs config Lexik)
+  - Vérifier la config LexikJWT (clé publique, passphrase, algo)
+  - Tracer le flux JWT côté authenticator/listener
+
+---
+
+## Sécurité JWT et multi-tenant
+
+- Utiliser uniquement `SelfValidatingPassport` dans les authenticators personnalisés (ne jamais utiliser `PassportInterface`)
+- En cas d'erreur d'autoloading liée à PassportInterface, vérifier et supprimer tout import ou typehint de cette interface
+- Pour les tests fonctionnels JWT, s'assurer que la clé privée utilisée pour signer les tokens correspond bien à la clé publique configurée dans LexikJWTAuthenticationBundle
+- En cas d'échec 401 sur les endpoints protégés, vérifier le listener LexikJwtDecodedListener et la configuration Lexik

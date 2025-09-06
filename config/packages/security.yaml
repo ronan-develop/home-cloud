@@ -17,7 +17,8 @@ security:
             pattern: ^/api
             stateless: true  # 🔒 L'API doit être 100% stateless, aucune session ne sera utilisée
             provider: app_user_provider
-            # TODO: ajouter l'authenticator JWT (Lexik) ici
+            custom_authenticators:
+                - App\Security\JwtTenantAuthenticator  # JWT multi-tenant (voir README)
         main:
             lazy: true
             provider: users_in_memory
