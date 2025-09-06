@@ -28,6 +28,9 @@ services:
     App\EventListener\TenantRequestListener:
         tags:
             - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest, priority: 100 }
+    App\EventListener\LexikJwtDecodedListener:
+        tags:
+            - { name: kernel.event_listener, event: 'lexik_jwt_authentication.on_jwt_decoded', method: onJwtDecoded }
     App\Tenant\TenantConnectionFactory: ~
 
     App\Storage\StorageService:

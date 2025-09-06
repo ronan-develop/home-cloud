@@ -318,3 +318,87 @@ Ce document liste les limitations actuelles (collaboratif, droits fins, notifica
 ---
 
 Prochaine étape : modéliser techniquement ces cas d’usage (API, entités, flux) et enrichir la documentation technique.
+
+---
+
+## Sécurité : intégration JWT multi-tenant (flux et composants)
+
+Cette section décrit les composants ajoutés pour assurer l'authentification JWT tout en respectant l'isolation multi-tenant (sous-domaines).
+
+Objectif
+
+- Garantir qu'un token JWT émis pour un tenant A ne soit jamais exploitable depuis le sous-domaine (tenant) B.
+- Fournir un point unique où lire le payload JWT décodé pour les authentificateurs et voters.
+
+Composants clés
+
+- `src/EventListener/TenantRequestListener.php`
+  - Rôle : résout le tenant à partir du Host (ex : `ronan.lenouvel.me`) et place le résultat dans `Request::attributes['tenant']`.
+  - But : centraliser la logique de résolution du tenant pour toute la stack (DB per-tenant, storage, sécurité).
+
+- `src/EventListener/LexikJwtDecodedListener.php`
+  - Rôle : écoute l'événement Lexik `lexik_jwt_authentication.on_jwt_decoded` (classe `JWTDecodedEvent`) et copie le payload décodé
+    dans `Request::attributes['jwt_payload']`.
+  - But : exposer proprement le contenu décodé du JWT (claims) dans la requête courante pour que l'authenticator et les voters
+    puissent l'examiner sans redécoder la signature.
+
+- `src/Security/JwtTenantAuthenticator.php`
+  - Rôle : authenticator minimal qui récupère le payload depuis `Request::attributes['jwt_payload']` (ou, à défaut, prend le token
+    brut depuis l'en-tête Authorization) et créé un `SelfValidatingPassport` en y attachant l'attribut `jwt_payload`.
+  - But : fournir le payload au pipeline Security (Token, Voters) tout en laissant la validation/decodage à Lexik.
+
+Pourquoi cette séparation ?
+
+- Lexik gère correctement la validation cryptographique et les erreurs associées. Nous ne redécodons pas le token dans l'authenticator
+  pour éviter la duplication et garder un point unique de vérité.
+- Le listener Lexik -> Request permet d'éviter d'appeler le décodeur dans plusieurs composants et rend facile la lecture des claims
+  (notamment `tenant`) pour l'application.
+
+Configuration
+
+- Le listener `LexikJwtDecodedListener` est enregistré comme service et taggé pour l'événement `lexik_jwt_authentication.on_jwt_decoded`.
+  Ceci est visible dans `config/services.yaml`.
+- En complément, l'`JwtTenantAuthenticator` doit être enregistré dans la configuration de sécurité (`config/packages/security.yaml`) sous le
+  firewall API via `custom_authenticators:` pour qu'il soit exécuté sur chaque requête API.
+
+Exemple (à ajouter dans `security.yaml` — adapter le firewall si besoin) :
+
+```yaml
+security:
+  firewalls:
+    api:
+      pattern: ^/api
+      stateless: true
+      custom_authenticators:
+        - App\Security\JwtTenantAuthenticator
+      # ... providers, access_control, etc.
+```
+
+Vérifications recommandées
+
+- Test unitaire/ fonctionnel 1 (happy path) :
+  - Générez un JWT (via `AuthController::login`) contenant la claim `tenant: "ronan"`.
+  - Effectuez une requête vers `ronan.lenouvel.me/api/...` en envoyant le token.
+  - Vérifier que `Request::attributes['tenant'] === 'ronan'` et que la requête est autorisée.
+
+- Test fonctionnel 2 (mauvais tenant) :
+  - Générez un JWT avec claim `tenant: "alice"`.
+  - Effectuez une requête vers `ronan.lenouvel.me` avec ce token.
+  - Vérifier que l'accès est refusé (403 ou 401 selon la politique) : le `TenantVoter` et l'authenticator doivent empêcher l'accès.
+
+Notes d'implémentation et sécurité
+
+- Ne stockez jamais de clés privées dans le dépôt (les clés présentes dans `config/jwt` appartiennent au repo de dev, gérer la rotation
+  et les secrets dans l'environnement de prod).
+- Le listener Lexik s'exécute uniquement si Lexik décode correctement le token et déclenche `JWT_DECODED`. Cela garantit que seuls
+  les tokens valides peuplent `jwt_payload`.
+- Pour une sécurité renforcée, envisagez la rotation et le suivi des `jti` (claim) et l'implémentation d'un `BlockedTokenManager`.
+
+Support et tests
+
+- Les tests d'intégration liés à ce flux doivent réinitialiser la base (pattern repo) et charger les fixtures avant chaque test fonctionnel
+  (voir la stratégie de tests en `tests/STRATEGIE_TESTS.md`).
+
+---
+
+Fin de la section sécurité JWT multi-tenant.
