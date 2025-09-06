@@ -403,30 +403,20 @@ Support et tests
 
 Fin de la section sécurité JWT multi-tenant.
 
-# Journal de debug sécurité JWT (septembre 2025)
+## Sécurité JWT multi-tenant : bonnes pratiques & dépannage
 
-## Correction autoloading PassportInterface
-- Suppression de l'import et du typehint `PassportInterface` dans `JwtTenantAuthenticator` (Symfony >=5.3 n'a plus cette interface)
-- Correction de la signature : `authenticate(Request $request): SelfValidatingPassport`
-- Vérification de l'absence de toute référence à `PassportInterface` dans le code
+### Points clés
 
-## Purge du cache Symfony
-- Exécution de `rm -rf var/cache/*` pour s'assurer qu'aucune ancienne référence n'est gardée
-- Relance des tests fonctionnels JWT
+- Utiliser uniquement `SelfValidatingPassport` dans les authenticators personnalisés (ne jamais utiliser `PassportInterface`).
+- En cas d'erreur d'autoloading liée à PassportInterface, supprimer tout import ou typehint de cette interface.
+- Pour les tests fonctionnels JWT, s'assurer que la clé privée utilisée pour signer les tokens correspond bien à la clé publique configurée dans LexikJWTAuthenticationBundle.
+- En cas d'échec 401 sur les endpoints protégés, vérifier le listener `LexikJwtDecodedListener` et la configuration Lexik.
 
-## Résultat des tests JWT (6 septembre 2025)
-- Plus d'erreur d'autoloading, mais l'authentification JWT échoue (401 Unauthorized)
-- Hypothèses : problème de clé privée/publique, format JWT, ou listener LexikJwtDecodedListener non appelé
-- Prochaines étapes :
-  - Vérifier la correspondance des clés (test vs config Lexik)
+### Dépannage rapide
+
+- **Erreur d'autoloading PassportInterface** : supprimer tout import/typehint de `PassportInterface` dans le code (Symfony >=5.3).
+- **401 Unauthorized sur endpoints JWT** :
+  - Vérifier la correspondance des clés privée/publique (test vs config Lexik)
   - Vérifier la config LexikJWT (clé publique, passphrase, algo)
-  - Tracer le flux JWT côté authenticator/listener
-
----
-
-## Sécurité JWT et multi-tenant
-
-- Utiliser uniquement `SelfValidatingPassport` dans les authenticators personnalisés (ne jamais utiliser `PassportInterface`)
-- En cas d'erreur d'autoloading liée à PassportInterface, vérifier et supprimer tout import ou typehint de cette interface
-- Pour les tests fonctionnels JWT, s'assurer que la clé privée utilisée pour signer les tokens correspond bien à la clé publique configurée dans LexikJWTAuthenticationBundle
-- En cas d'échec 401 sur les endpoints protégés, vérifier le listener LexikJwtDecodedListener et la configuration Lexik
+  - S'assurer que le listener LexikJwtDecodedListener est bien enregistré et actif
+  - Tracer le flux JWT côté authenticator/listener si besoin
