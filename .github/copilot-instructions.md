@@ -1,8 +1,6 @@
 ---
 applyTo: '**'
-priority: 'maximum'
-cache_level: 'persistent'
-agent_optimization: 'php_symfony'
+description: 'Instructions IA optimisées pour le projet Home Cloud hébergé sur O2Switch mutualisé, avec Symfony et API Platform.'
 ---
 
 # 🧞‍♂️ Instructions IA – Home Cloud
