@@ -1,5 +1,6 @@
 # Convention de commit – Home Cloud
 
+Toujours au format markdown (.md) pour pouvoir copier/coller directement dans le terminal/git.
 
 - Utilise des emojis pour le type de commit (voir tableau ci-dessous)
 - Structure : `<emoji> type(scope): message court`
