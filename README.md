@@ -88,27 +88,25 @@ Le diagramme de classes est maintenu dans le fichier `classes.puml` à la racine
 
 ---
 
-## Choix technique backend : API REST
+## Choix technique backend : Application web Symfony
 
-Pour Home Cloud, l’API backend sera exposée en REST via API Platform. Ce choix est motivé par :
+Pour Home Cloud, l'application web Symfony (interface utilisateur et logique métier) est le cœur du projet. L'API REST via API Platform est optionnelle et activable par instance selon les besoins. Ce choix est motivé par :
 
-- Simplicité d’intégration avec tous les clients (PWA, mobile, desktop)
-- Standardisation des opérations CRUD (upload, partage, suppression de fichiers)
-- Facilité de sécurisation (authentification, droits d’accès, gestion des tokens)
-- Documentation automatique (OpenAPI/Swagger)
-- Compatibilité avec les outils de test et d’intégration (Postman, Insomnia, etc.)
-- Facilité de gestion des uploads (multipart/form-data, endpoints dédiés)
-- Gestion native de la pagination, des filtres, de la validation et des relations
+- Priorité à l'interface utilisateur intuitive pour la gestion des fichiers, dossiers et partages
+- Symfony assure la robustesse pour la gestion HTTP, la sécurité, l'upload et l'authentification
+- API Platform disponible pour exposer des endpoints REST si nécessaire (intégration externe, mobile, etc.)
+- Large écosystème et support
+- Adapté aux contraintes O2Switch (Apache/PHP natif)
 
-**Cas d’usage couverts par l’API REST** :
+**Cas d'usage couverts par l'application web** :
 
-- Upload de fichiers dans l’espace privé de l’utilisateur
+- Upload de fichiers dans l'espace privé de l'utilisateur
 - Partage de fichiers ou de dossiers via lien public ou invitation email
-- Attribution de droits d’accès fins (lecture, modification, suppression)
+- Attribution de droits d'accès fins (lecture, modification, suppression)
 - Révocation et suivi des partages
 - Accès sécurisé aux ressources pour les membres et les invités externes
 
-API Platform permettra d’ajouter GraphQL plus tard si besoin, sans remettre en cause l’architecture.
+API Platform peut être activée ultérieurement pour exposer une API REST ou GraphQL, sans remettre en cause l'architecture
 
 ---
 
