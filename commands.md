@@ -13,4 +13,3 @@
    ```bash
    symfony serve -d --port=8000 --https
    ```
-
