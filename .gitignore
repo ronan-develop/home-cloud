@@ -9,6 +9,8 @@
 /var/
 /vendor/
 /compose.*
+/node_modules/
+/build/
 ###< symfony/framework-bundle ###
 
 ###> phpunit/phpunit ###
