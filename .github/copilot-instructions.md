@@ -5,6 +5,8 @@ description: 'Instructions IA optimisées pour le projet Home Cloud hébergé su
 
 # 🧞‍♂️ Instructions IA – Home Cloud
 
+Tu créés/écrits dans les fichiers suivants quand je te le demande expressément
+
 ## 📋 Sommaire rapide
 - [⚡ Règles critiques](#-règles-critiques---accès-rapide)
 - [🎯 Commandes fréquentes](#-commandes-fréquentes---accès-rapide)
