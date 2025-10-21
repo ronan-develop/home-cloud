@@ -1,37 +1,24 @@
-# Fichiers d'environnement
-.env
-.env.dev
-.env.*
-# Secrets Symfony
+
+###> symfony/framework-bundle ###
+/.env.*
+/.env.local
+/.env.local.php
+/.env.*.local
 /config/secrets/prod/prod.decrypt.private.php
-
-# Vendor et var
-/vendor/
-/var/
-
-# Bundles publics
 /public/bundles/
+/var/
+/vendor/
+/compose.*
+/node_modules/
+/build/
+###< symfony/framework-bundle ###
 
-# Cache PHPUnit
+###> phpunit/phpunit ###
 /phpunit.xml
 /.phpunit.cache/
+###< phpunit/phpunit ###
 
-# JWT Lexik
-/config/jwt/*.pem
-
-# Fichiers temporaires et tokens
-.credentials
-.token
-note.txt
-
-# Node/npm (si frontend)
-/node_modules/
-
-# Autres fichiers spécifiques
-.idea/
-.DS_Store
-bin/console
-bin/phpunit
-phpunit.dist.xml
-phpunit.xml.dist
-default.xml
+###> symfony/asset-mapper ###
+/public/assets/
+/assets/vendor/
+###< symfony/asset-mapper ###

@@ -88,40 +88,70 @@ Le diagramme de classes est maintenu dans le fichier `classes.puml` à la racine
 
 ---
 
-## Choix technique backend : API REST
+## Choix technique backend : Application web Symfony
 
-Pour Home Cloud, l’API backend sera exposée en REST via API Platform. Ce choix est motivé par :
+Pour Home Cloud, l'application web Symfony (interface utilisateur et logique métier) est le cœur du projet. L'API REST via API Platform est optionnelle et activable par instance selon les besoins. Ce choix est motivé par :
 
-- Simplicité d’intégration avec tous les clients (PWA, mobile, desktop)
-- Standardisation des opérations CRUD (upload, partage, suppression de fichiers)
-- Facilité de sécurisation (authentification, droits d’accès, gestion des tokens)
-- Documentation automatique (OpenAPI/Swagger)
-- Compatibilité avec les outils de test et d’intégration (Postman, Insomnia, etc.)
-- Facilité de gestion des uploads (multipart/form-data, endpoints dédiés)
-- Gestion native de la pagination, des filtres, de la validation et des relations
+- Priorité à l'interface utilisateur intuitive pour la gestion des fichiers, dossiers et partages
+- Symfony assure la robustesse pour la gestion HTTP, la sécurité, l'upload et l'authentification
+- API Platform disponible pour exposer des endpoints REST si nécessaire (intégration externe, mobile, etc.)
+- Large écosystème et support
+- Adapté aux contraintes O2Switch (Apache/PHP natif)
 
-**Cas d’usage couverts par l’API REST** :
+**Cas d'usage couverts par l'application web** :
 
-- Upload de fichiers dans l’espace privé de l’utilisateur
+- Upload de fichiers dans l'espace privé de l'utilisateur
 - Partage de fichiers ou de dossiers via lien public ou invitation email
-- Attribution de droits d’accès fins (lecture, modification, suppression)
+- Attribution de droits d'accès fins (lecture, modification, suppression)
 - Révocation et suivi des partages
 - Accès sécurisé aux ressources pour les membres et les invités externes
 
-API Platform permettra d’ajouter GraphQL plus tard si besoin, sans remettre en cause l’architecture.
+API Platform peut être activée ultérieurement pour exposer une API REST ou GraphQL, sans remettre en cause l'architecture
 
 ---
 
-## Architecture multi-tenant par sous-domaine
+## Déploiement par package Composer (lenouvel.me)
 
-Chaque sous-domaine (ex : elea.lenouvel.me, ronan.lenouvel.me, yannick.lenouvel.me) correspond à un espace privé isolé pour un utilisateur ou un groupe. L’application détecte le sous-domaine courant et filtre toutes les données (fichiers, partages, logs, etc.) pour garantir l’isolation stricte entre les espaces privés.
+Le projet Home Cloud est désormais distribué sous forme de package Composer privé hébergé sur [lenouvel.me](https://lenouvel.me). Chaque sous-domaine correspond à une instance Symfony indépendante, installée et maintenue via Composer.
 
-- Un `User` possède un `PrivateSpace` (relation 1:1)
-- Chaque espace privé est physiquement séparé (racine documentaire dédiée, base de données dédiée ou schéma logique)
-- Aucune donnée d’un espace ne doit être accessible depuis un autre sous-domaine
-- Toute la logique multi-tenant est gérée côté applicatif (Symfony)
+### Nouveau workflow
 
-Cette architecture garantit la confidentialité, la sécurité et la scalabilité du service Home Cloud.
+- Symfony 7 webapp indépendante par domaine
+- Installation et mise à jour via Composer (`create-project` ou `update`)
+- Hébergement O2Switch mutualisé (Apache/PHP natif)
+- Pas de Docker/Caddy/FrankenPHP
+
+### Installation sur un domaine
+
+```bash
+composer create-project lenouvel/home-cloud-mon-espace /home/cloud/mon-espace
+```
+
+### Mise à jour du package
+
+```bash
+cd /home/cloud/mon-espace
+composer update
+```
+
+### Avantages
+
+- Maintenance facilitée (update Composer)
+- Isolation parfaite entre espaces
+- Déploiement rapide sur chaque sous-domaine
+- Compatible mutualisé O2Switch
+
+### Notes importantes
+
+- Le package privé doit être référencé dans le `composer.json` (voir documentation lenouvel.me)
+- Les credentials d’accès au dépôt privé Composer ne doivent jamais être commités
+- Toute configuration spécifique (base, domaine, etc.) se fait via `.env.local` (jamais `.env.test`)
+
+### Documentation détaillée
+
+- Voir `.github/projet-context.md` et la documentation lenouvel.me pour la configuration du dépôt privé Composer
+
+---
 
 ---
 
@@ -131,16 +161,17 @@ Cette architecture garantit la confidentialité, la sécurité et la scalabilit�
 
 ---
 
-## Démarrage local de l’API
+## Démarrage local de l’application
 
-Pour développer ou tester l’API en local, utilise le serveur interne PHP (recommandé sur tous les environnements) :
+Pour développer ou tester Home Cloud en local, utilise le serveur interne PHP (compatible sur tous les environnements) :
 
-```sh
+```bash
 php -S localhost:8000 -t public
 ```
 
-- Accède ensuite à [http://localhost:8000/api](http://localhost:8000/api) pour voir la documentation OpenAPI générée par API Platform.
-- Cette méthode fonctionne partout, même si `symfony serve` échoue ou que PHP-FPM n’est pas disponible.
+Accède ensuite à [http://localhost:8000](http://localhost:8000) pour utiliser l’interface web Home Cloud.
+
+Cette méthode fonctionne partout, même si `symfony serve` échoue ou que PHP-FPM n’est pas disponible.
 
 ---
 
