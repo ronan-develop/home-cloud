@@ -10,46 +10,70 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use App\Security\FileAccessManager;
+use App\Security\FilePathSecurity;
+use App\Security\FileMimeTypeGuesser;
 
 class FileController extends AbstractController
 {
     #[Route('/files/download/{id}', name: 'file_download', requirements: ['id' => '\\d+'])]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
-    public function download(int $id, EntityManagerInterface $em): BinaryFileResponse|RedirectResponse
+    public function download(int $id, EntityManagerInterface $em, FileAccessManager $fileAccessManager, FilePathSecurity $filePathSecurity, FileMimeTypeGuesser $fileMimeTypeGuesser): BinaryFileResponse|RedirectResponse
     {
         $file = $em->getRepository(File::class)->find($id);
+        // Message unique pour éviter fuite d'info
+        $errorMsg = 'Accès refusé ou fichier inexistant.';
         if (!$file) {
-            $this->addFlash('danger', 'Fichier introuvable.');
+            $this->addFlash('danger', $errorMsg);
             return $this->redirectToRoute('file_upload');
         }
-        // Protection d'accès par Voter
-        $this->denyAccessUnlessGranted('FILE_DOWNLOAD', $file);
-
-        $response = new BinaryFileResponse($file->getPath());
+        try {
+            $fileAccessManager->assertDownloadAccess($file, $this->getUser());
+        } catch (\Symfony\Component\Security\Core\Exception\AccessDeniedException $e) {
+            $this->addFlash('danger', $errorMsg);
+            return $this->redirectToRoute('file_upload');
+        }
+        try {
+            $realPath = $filePathSecurity->assertSafePath($file->getPath());
+        } catch (\RuntimeException $e) {
+            $this->addFlash('danger', $errorMsg);
+            return $this->redirectToRoute('file_upload');
+        }
+        $response = new BinaryFileResponse($realPath);
         $response->setContentDisposition(
             ResponseHeaderBag::DISPOSITION_ATTACHMENT,
             $file->getName()
         );
-        $response->headers->set('Content-Type', $file->getMimeType());
+        // Content-Type sécurisé via service
+        $mime = $fileMimeTypeGuesser->getSafeMimeType($file);
+        $response->headers->set('Content-Type', $mime);
         return $response;
     }
 
     #[Route('/files/delete/{id}', name: 'file_delete', requirements: ['id' => '\\d+'], methods: ['POST'])]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
-    public function delete(int $id, EntityManagerInterface $em): RedirectResponse
+    public function delete(int $id, EntityManagerInterface $em, FileAccessManager $fileAccessManager, FilePathSecurity $filePathSecurity): RedirectResponse
     {
         $file = $em->getRepository(File::class)->find($id);
+        $errorMsg = 'Accès refusé ou fichier inexistant.';
         if (!$file) {
-            $this->addFlash('danger', 'Fichier introuvable.');
+            $this->addFlash('danger', $errorMsg);
             return $this->redirectToRoute('file_upload');
         }
-        // Protection d'accès par Voter
-        $this->denyAccessUnlessGranted('FILE_DELETE', $file);
-
-        // Suppression physique
-        if (file_exists($file->getPath())) {
-            @unlink($file->getPath());
+        try {
+            $fileAccessManager->assertDeleteAccess($file, $this->getUser());
+        } catch (\Symfony\Component\Security\Core\Exception\AccessDeniedException $e) {
+            $this->addFlash('danger', $errorMsg);
+            return $this->redirectToRoute('file_upload');
         }
+        try {
+            $realPath = $filePathSecurity->assertSafePath($file->getPath());
+        } catch (\RuntimeException $e) {
+            $this->addFlash('danger', $errorMsg);
+            return $this->redirectToRoute('file_upload');
+        }
+        // Suppression physique sécurisée
+        $filePathSecurity->deleteFile($realPath);
         $em->remove($file);
         $em->flush();
         $this->addFlash('success', 'Fichier supprimé avec succès.');
