@@ -11,10 +11,8 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class FileUploadController extends AbstractController
 {
-    /**
-     * @Route("/files/upload", name="file_upload", methods={"POST"})
-     * @IsGranted("IS_AUTHENTICATED_FULLY")
-     */
+    #[Route('/files/upload', name: 'file_upload', methods: ['POST'])]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function upload(Request $request): Response
     {
         $file = $request->files->get('file');
@@ -37,8 +35,8 @@ class FileUploadController extends AbstractController
             return new JsonResponse(['error' => 'Les images/photos ne sont pas autorisées.'], Response::HTTP_FORBIDDEN);
         }
 
-        // Stockage du fichier (exemple, à adapter)
-        $uploadDir = $this->getParameter('kernel.project_dir') . '/var/data/files';
+        // Stockage du fichier dans le dossier configuré
+        $uploadDir = $this->getParameter('app.files_dir');
         if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0775, true);
         }
