@@ -1,6 +1,9 @@
 
 ###> symfony/framework-bundle ###
+<<<<<<< HEAD
 .env.*
+=======
+>>>>>>> origin/main
 /.env.local
 /.env.local.php
 /.env.*.local
@@ -19,3 +22,9 @@
 /public/assets/
 /assets/vendor/
 ###< symfony/asset-mapper ###
+<<<<<<< HEAD
+=======
+.env
+
+.env.*
+>>>>>>> origin/main
