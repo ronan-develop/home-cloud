@@ -1,46 +1,21 @@
-# Symfony standard .gitignore
 
-# Environment files
-.env.local
-.env.*.local
-.env.test
-.env
-
-# Symfony cache and logs
+###> symfony/framework-bundle ###
+.env.*
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
 /var/
-!/var/.gitkeep
-
-# Composer
 /vendor/
-/composer.lock
+###< symfony/framework-bundle ###
 
-# PHPUnit
+###> phpunit/phpunit ###
 /phpunit.xml
-/phpunit.xml.dist
+/.phpunit.cache/
+###< phpunit/phpunit ###
 
-# Build
-/build/
-
-# IDE
-/.idea/
-*.iml
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Node
-/node_modules/
-
-# Misc
-*.log
-*.cache
-
-# Ignore sensitive files
-config/secrets/*.env*
-
-# Ignore coverage
-/coverage/
-
-# Ignore docker
-.docker/
+###> symfony/asset-mapper ###
+/public/assets/
+/assets/vendor/
+###< symfony/asset-mapper ###
