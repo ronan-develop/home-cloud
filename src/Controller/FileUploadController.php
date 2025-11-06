@@ -20,6 +20,7 @@ class FileUploadController extends AbstractController
     {
         $this->em = $em;
     }
+    
     #[Route('/files/upload', name: 'file_upload', methods: ['GET'])]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function index(Request $request): Response
@@ -53,6 +54,9 @@ class FileUploadController extends AbstractController
                 $size = $uploadedFile->getSize();
                 $mimeType = $uploadedFile->getClientMimeType();
 
+                // Calcul du hash SHA256 sur le fichier temporaire
+                $hash = hash_file('sha256', $uploadedFile->getPathname());
+
                 $uploadedFile->move($uploadDir, $filename);
 
                 // Persistance des métadonnées en base
@@ -62,6 +66,7 @@ class FileUploadController extends AbstractController
                 $fileEntity->setSize($size);
                 $fileEntity->setMimeType($mimeType);
                 $fileEntity->setUploadedAt(new \DateTimeImmutable());
+                $fileEntity->setHash($hash);
 
                 $this->em->persist($fileEntity);
                 $this->em->flush();

@@ -79,5 +79,9 @@ class FileUploadControllerTest extends WebTestCase
         $this->assertContains($file->getMimeType(), ['text/plain', 'application/octet-stream']);
         $this->assertGreaterThan(0, $file->getSize());
         $this->assertFileExists($file->getPath());
+
+        // Vérifie le hash SHA256
+        $expectedHash = hash('sha256', 'Contenu de test');
+        $this->assertEquals($expectedHash, $file->getHash(), 'Le hash SHA256 doit correspondre au contenu uploadé');
     }
 }
