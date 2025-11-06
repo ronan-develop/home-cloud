@@ -22,6 +22,8 @@ class FileController extends AbstractController
             $this->addFlash('danger', 'Fichier introuvable.');
             return $this->redirectToRoute('file_upload');
         }
+        // Protection d'accès par Voter
+        $this->denyAccessUnlessGranted('FILE_DOWNLOAD', $file);
 
         $response = new BinaryFileResponse($file->getPath());
         $response->setContentDisposition(
@@ -41,6 +43,8 @@ class FileController extends AbstractController
             $this->addFlash('danger', 'Fichier introuvable.');
             return $this->redirectToRoute('file_upload');
         }
+        // Protection d'accès par Voter
+        $this->denyAccessUnlessGranted('FILE_DELETE', $file);
 
         // Suppression physique
         if (file_exists($file->getPath())) {

@@ -31,7 +31,7 @@ class File
     private string $hash;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: false, onDelete: "CASCADE")]
     private ?User $owner = null;
 
     // Getters/setters ...
