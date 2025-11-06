@@ -6,10 +6,10 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Form\FileUploadType;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use App\Service\FileUploader;
 use App\Service\FileManager;
 use App\Service\FileUploadValidator;
+use App\Service\UploadFeedbackManager;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -18,12 +18,14 @@ class FileUploadController extends AbstractController
     private FileUploader $fileUploader;
     private FileManager $fileManager;
     private FileUploadValidator $fileUploadValidator;
+    private UploadFeedbackManager $feedbackManager;
 
-    public function __construct(FileUploader $fileUploader, FileManager $fileManager, FileUploadValidator $fileUploadValidator)
+    public function __construct(FileUploader $fileUploader, FileManager $fileManager, FileUploadValidator $fileUploadValidator, UploadFeedbackManager $feedbackManager)
     {
         $this->fileUploader = $fileUploader;
         $this->fileManager = $fileManager;
         $this->fileUploadValidator = $fileUploadValidator;
+        $this->feedbackManager = $feedbackManager;
     }
 
     #[Route('/files/upload', name: 'file_upload', methods: ['GET'])]
@@ -51,12 +53,8 @@ class FileUploadController extends AbstractController
                 try {
                     $this->fileUploadValidator->validate($uploadedFile);
                 } catch (\InvalidArgumentException $e) {
-                    $this->addFlash('danger', $e->getMessage());
-                    return $this->render('file/upload.html.twig', [
-                        'form' => $form->createView(),
-                    ]);
+                    return $this->feedbackManager->error($form, $e->getMessage());
                 }
-
 
                 // Délégation à FileUploader
                 $result = $this->fileUploader->upload($uploadedFile);
@@ -68,13 +66,10 @@ class FileUploadController extends AbstractController
                 }
                 $this->fileManager->createAndSave($result, $user);
 
-                $this->addFlash('success', 'Fichier uploadé avec succès !');
-                return new RedirectResponse($request->getUri());
+                return $this->feedbackManager->success($request, 'Fichier uploadé avec succès !');
             }
         }
 
-        return $this->render('file/upload.html.twig', [
-            'form' => $form->createView(),
-        ]);
+        return $this->feedbackManager->error($form, '');
     }
 }
