@@ -7,8 +7,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Form\FileUploadType;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Doctrine\ORM\EntityManagerInterface;
-use App\Entity\File;
 use App\Service\FileUploader;
 use App\Service\FileManager;
 use App\Service\FileUploadValidator;
