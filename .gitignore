@@ -1,0 +1,46 @@
+# Symfony standard .gitignore
+
+# Environment files
+.env.local
+.env.*.local
+.env.test
+.env
+
+# Symfony cache and logs
+/var/
+!/var/.gitkeep
+
+# Composer
+/vendor/
+/composer.lock
+
+# PHPUnit
+/phpunit.xml
+/phpunit.xml.dist
+
+# Build
+/build/
+
+# IDE
+/.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+/node_modules/
+
+# Misc
+*.log
+*.cache
+
+# Ignore sensitive files
+config/secrets/*.env*
+
+# Ignore coverage
+/coverage/
+
+# Ignore docker
+.docker/
