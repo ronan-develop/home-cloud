@@ -1,0 +1,19 @@
+{
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.16",
+    "autoprefixer": "^10.4.21",
+    "concurrently": "^9.2.1",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.16",
+    "vite": "^7.2.1",
+    "vite-plugin-symfony": "^8.2.2"
+  },
+  "dependencies": {
+    "@hotwired/stimulus": "^3.2.2"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "dev:full": "concurrently \"symfony serve\" \"vite\""
+  }
+}
