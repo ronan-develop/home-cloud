@@ -17,5 +17,8 @@ services:
     App\:
         resource: '../src/'
 
-    # add more service definitions when explicit configuration is needed
-    # please note that last definitions always *replace* previous ones
+
+    # Injection explicite du répertoire cible pour FileUploader
+    App\Service\FileUploader:
+        arguments:
+            $targetDirectory: '%app.files_dir%'

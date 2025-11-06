@@ -9,23 +9,29 @@ use App\Form\FileUploadType;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\File;
+use App\Service\FileUploader;
+use App\Service\FileManager;
+use App\Service\FileUploadValidator;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class FileUploadController extends AbstractController
 {
-    private EntityManagerInterface $em;
+    private FileUploader $fileUploader;
+    private FileManager $fileManager;
+    private FileUploadValidator $fileUploadValidator;
 
-    public function __construct(EntityManagerInterface $em)
+    public function __construct(FileUploader $fileUploader, FileManager $fileManager, FileUploadValidator $fileUploadValidator)
     {
-        $this->em = $em;
+        $this->fileUploader = $fileUploader;
+        $this->fileManager = $fileManager;
+        $this->fileUploadValidator = $fileUploadValidator;
     }
-    
+
     #[Route('/files/upload', name: 'file_upload', methods: ['GET'])]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
-    public function index(Request $request): Response
+    public function index(): Response
     {
-
         $form = $this->createForm(FileUploadType::class);
 
         return $this->render('file/upload.html.twig', [
@@ -43,33 +49,21 @@ class FileUploadController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $uploadedFile = $form->get('file')->getData();
             if ($uploadedFile) {
-                $uploadDir = $this->getParameter('app.files_dir');
-                if (!is_dir($uploadDir)) {
-                    mkdir($uploadDir, 0775, true);
+                // Validation métier externalisée
+                try {
+                    $this->fileUploadValidator->validate($uploadedFile);
+                } catch (\InvalidArgumentException $e) {
+                    $this->addFlash('danger', $e->getMessage());
+                    return $this->render('file/upload.html.twig', [
+                        'form' => $form->createView(),
+                    ]);
                 }
-                $filename = uniqid() . '_' . $uploadedFile->getClientOriginalName();
 
-                // Récupérer les métadonnées AVANT le move()
-                $originalName = $uploadedFile->getClientOriginalName();
-                $size = $uploadedFile->getSize();
-                $mimeType = $uploadedFile->getClientMimeType();
+                // Délégation à FileUploader
+                $result = $this->fileUploader->upload($uploadedFile);
 
-                // Calcul du hash SHA256 sur le fichier temporaire
-                $hash = hash_file('sha256', $uploadedFile->getPathname());
-
-                $uploadedFile->move($uploadDir, $filename);
-
-                // Persistance des métadonnées en base
-                $fileEntity = new File();
-                $fileEntity->setName($originalName);
-                $fileEntity->setPath($uploadDir . '/' . $filename);
-                $fileEntity->setSize($size);
-                $fileEntity->setMimeType($mimeType);
-                $fileEntity->setUploadedAt(new \DateTimeImmutable());
-                $fileEntity->setHash($hash);
-
-                $this->em->persist($fileEntity);
-                $this->em->flush();
+                // Délégation à FileManager pour la persistance
+                $this->fileManager->createAndSave($result);
 
                 $this->addFlash('success', 'Fichier uploadé avec succès !');
                 return new RedirectResponse($request->getUri());
