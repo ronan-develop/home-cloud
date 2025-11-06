@@ -7,11 +7,19 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Form\FileUploadType;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Doctrine\ORM\EntityManagerInterface;
+use App\Entity\File;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class FileUploadController extends AbstractController
 {
+    private EntityManagerInterface $em;
+
+    public function __construct(EntityManagerInterface $em)
+    {
+        $this->em = $em;
+    }
     #[Route('/files/upload', name: 'file_upload', methods: ['GET'])]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function index(Request $request): Response
@@ -32,15 +40,26 @@ class FileUploadController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $file = $form->get('file')->getData();
-            if ($file) {
+            $uploadedFile = $form->get('file')->getData();
+            if ($uploadedFile) {
                 $uploadDir = $this->getParameter('app.files_dir');
                 if (!is_dir($uploadDir)) {
                     mkdir($uploadDir, 0775, true);
                 }
-                $filename = uniqid() . '_' . $file->getClientOriginalName();
-                $file->move($uploadDir, $filename);
-                // TODO: Enregistrer les métadonnées en base (nom, chemin, taille, type, user...)
+                $filename = uniqid() . '_' . $uploadedFile->getClientOriginalName();
+                $uploadedFile->move($uploadDir, $filename);
+
+                // Persistance des métadonnées en base
+                $fileEntity = new File();
+                $fileEntity->setName($uploadedFile->getClientOriginalName());
+                $fileEntity->setPath($uploadDir . '/' . $filename);
+                $fileEntity->setSize($uploadedFile->getSize());
+                $fileEntity->setMimeType($uploadedFile->getClientMimeType());
+                $fileEntity->setUploadedAt(new \DateTimeImmutable());
+
+                $this->em->persist($fileEntity);
+                $this->em->flush();
+
                 $this->addFlash('success', 'Fichier uploadé avec succès !');
                 return new RedirectResponse($request->getUri());
             }
