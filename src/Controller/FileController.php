@@ -22,9 +22,6 @@ class FileController extends AbstractController
             $this->addFlash('danger', 'Fichier introuvable.');
             return $this->redirectToRoute('file_upload');
         }
-        // Vérification d'accès (à adapter selon la logique métier)
-        // Exemple : seul l'uploader ou un admin peut télécharger
-        // if ($file->getOwner() !== $this->getUser()) { ... }
 
         $response = new BinaryFileResponse($file->getPath());
         $response->setContentDisposition(
@@ -44,9 +41,6 @@ class FileController extends AbstractController
             $this->addFlash('danger', 'Fichier introuvable.');
             return $this->redirectToRoute('file_upload');
         }
-        // Vérification d'accès (à adapter selon la logique métier)
-        // Exemple : seul l'uploader ou un admin peut supprimer
-        // if ($file->getOwner() !== $this->getUser()) { ... }
 
         // Suppression physique
         if (file_exists($file->getPath())) {

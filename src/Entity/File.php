@@ -30,7 +30,21 @@ class File
     #[ORM\Column(type: 'string', length: 64)]
     private string $hash;
 
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?User $owner = null;
+
     // Getters/setters ...
+    public function getOwner(): ?User
+    {
+        return $this->owner;
+    }
+
+    public function setOwner(?User $owner): self
+    {
+        $this->owner = $owner;
+        return $this;
+    }
     public function getHash(): string
     {
         return $this->hash;

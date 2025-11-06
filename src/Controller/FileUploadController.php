@@ -57,11 +57,16 @@ class FileUploadController extends AbstractController
                     ]);
                 }
 
+
                 // Délégation à FileUploader
                 $result = $this->fileUploader->upload($uploadedFile);
 
-                // Délégation à FileManager pour la persistance
-                $this->fileManager->createAndSave($result);
+                // Vérification stricte du type User
+                $user = $this->getUser();
+                if (!$user instanceof \App\Entity\User) {
+                    throw new \LogicException('L’utilisateur courant n’est pas une entité User.');
+                }
+                $this->fileManager->createAndSave($result, $user);
 
                 $this->addFlash('success', 'Fichier uploadé avec succès !');
                 return new RedirectResponse($request->getUri());

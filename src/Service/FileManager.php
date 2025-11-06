@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Entity\File;
+use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 
 class FileManager
@@ -17,9 +18,10 @@ class FileManager
     /**
      * Crée et persiste une entité File à partir des métadonnées fournies
      * @param array $data [originalName, path, size, mimeType, hash]
+     * @param User $owner
      * @return File
      */
-    public function createAndSave(array $data): File
+    public function createAndSave(array $data, User $owner): File
     {
         $file = new File();
         $file->setName($data['originalName']);
@@ -28,6 +30,7 @@ class FileManager
         $file->setMimeType($data['mimeType']);
         $file->setUploadedAt(new \DateTimeImmutable());
         $file->setHash($data['hash']);
+        $file->setOwner($owner);
         $this->em->persist($file);
         $this->em->flush();
         return $file;
