@@ -47,14 +47,20 @@ class FileUploadController extends AbstractController
                     mkdir($uploadDir, 0775, true);
                 }
                 $filename = uniqid() . '_' . $uploadedFile->getClientOriginalName();
+
+                // Récupérer les métadonnées AVANT le move()
+                $originalName = $uploadedFile->getClientOriginalName();
+                $size = $uploadedFile->getSize();
+                $mimeType = $uploadedFile->getClientMimeType();
+
                 $uploadedFile->move($uploadDir, $filename);
 
                 // Persistance des métadonnées en base
                 $fileEntity = new File();
-                $fileEntity->setName($uploadedFile->getClientOriginalName());
+                $fileEntity->setName($originalName);
                 $fileEntity->setPath($uploadDir . '/' . $filename);
-                $fileEntity->setSize($uploadedFile->getSize());
-                $fileEntity->setMimeType($uploadedFile->getClientMimeType());
+                $fileEntity->setSize($size);
+                $fileEntity->setMimeType($mimeType);
                 $fileEntity->setUploadedAt(new \DateTimeImmutable());
 
                 $this->em->persist($fileEntity);

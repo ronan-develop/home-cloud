@@ -18,10 +18,7 @@ class FileUploadType extends AbstractType
                 'mapped' => false,
                 'required' => true,
                 'constraints' => [
-                    new File([
-                        'maxSize' => '20M',
-                        // Plus de restriction sur le type MIME ici, tout est géré côté contrôleur
-                    ])
+                    new File(maxSize: '20M')
                 ],
             ]);
     }
