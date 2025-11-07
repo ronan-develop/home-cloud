@@ -3,7 +3,6 @@
 namespace App\Tests\Application;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\User;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
@@ -61,7 +60,8 @@ class FileControllerTest extends WebTestCase
         $em->flush();
         $client->loginUser($user);
 
-        $crawler = $client->request('GET', '/files/download-zip');
+        // Appel de la route qui doit provoquer la redirection
+        $client->request('GET', '/files/download-zip');
         $this->assertResponseRedirects('/files/upload');
         $client->followRedirect();
         $this->assertSelectorTextContains('.flash-danger', 'Aucun fichier à archiver');
