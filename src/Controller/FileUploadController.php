@@ -2,37 +2,21 @@
 
 namespace App\Controller;
 
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use App\Form\FileUploadType;
+use App\Service\FileUploadService;
+use App\Service\FileUploadFormHandler;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use App\Form\FileUploadType;
-use App\Service\FileUploader;
-use App\Service\FileManager;
-use App\Service\FileUploadValidator;
-use App\Service\UploadFeedbackManager;
-use App\Service\ErrorHandler;
-use App\Service\UploadLogger;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class FileUploadController extends AbstractController
 {
-    private FileUploader $fileUploader;
-    private FileManager $fileManager;
-    private FileUploadValidator $fileUploadValidator;
-    private UploadFeedbackManager $feedbackManager;
-    private ErrorHandler $errorHandler;
-    private UploadLogger $uploadLogger;
-
-    public function __construct(FileUploader $fileUploader, FileManager $fileManager, FileUploadValidator $fileUploadValidator, UploadFeedbackManager $feedbackManager, ErrorHandler $errorHandler, UploadLogger $uploadLogger)
-    {
-        $this->fileUploader = $fileUploader;
-        $this->fileManager = $fileManager;
-        $this->fileUploadValidator = $fileUploadValidator;
-        $this->feedbackManager = $feedbackManager;
-        $this->errorHandler = $errorHandler;
-        $this->uploadLogger = $uploadLogger;
-    }
+    public function __construct(
+        private FileUploadService $fileUploadService,
+        private FileUploadFormHandler $fileUploadFormHandler
+    ) {}
 
     #[Route('/files/upload', name: 'file_upload', methods: ['GET'])]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
@@ -53,46 +37,9 @@ class FileUploadController extends AbstractController
         $form = $this->createForm(FileUploadType::class);
         $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $uploadedFile = $form->get('file')->getData();
-            $largeFile = false;
-            if ($uploadedFile) {
-                if ($uploadedFile->getSize() > 10 * 1024 * 1024) { // 10 Mo
-                    $largeFile = true;
-                }
-                try {
-                    $this->fileUploadValidator->validate($uploadedFile);
-                    $user = $this->getUser();
-                    if (!$user instanceof \App\Entity\User) {
-                        throw new \LogicException('L’utilisateur courant n’est pas une entité User.');
-                    }
-                    $this->uploadLogger->logValidation($uploadedFile, $user, 'Validation réussie');
-                    // Délégation à FileUploader
-                    $result = $this->fileUploader->upload($uploadedFile);
-                    $this->fileManager->createAndSave($result, $user);
-                    $this->uploadLogger->logSuccess($uploadedFile, $user);
-                    $this->addFlash('success', 'Fichier uploadé avec succès !');
-                    return $this->redirectToRoute('file_upload');
-                } catch (\InvalidArgumentException $e) {
-                    $user = $this->getUser();
-                    if ($uploadedFile && $user instanceof \App\Entity\User) {
-                        $this->uploadLogger->logValidation($uploadedFile, $user, $e->getMessage());
-                    }
-                    $this->addFlash('danger', $e->getMessage());
-                    return $this->redirectToRoute('file_upload');
-                } catch (\Throwable $e) {
-                    $user = $this->getUser();
-                    if ($uploadedFile && $user instanceof \App\Entity\User) {
-                        $this->uploadLogger->logError($uploadedFile, $user, $e->getMessage());
-                    }
-                    $this->addFlash('danger', $e->getMessage());
-                    return $this->redirectToRoute('file_upload');
-                }
-            }
-        }
-        return $this->render('file/upload.html.twig', [
-            'form' => $form->createView(),
-            'largeFile' => false,
-        ]);
+        $uploadedFile = $this->fileUploadFormHandler->getUploadedFile($form);
+        $this->fileUploadService->handle($uploadedFile, $this->getUser());
+        $this->addFlash('success', 'Fichier uploadé avec succès !');
+        return $this->redirectToRoute('file_upload');
     }
 }

@@ -1,0 +1,35 @@
+<?php
+
+namespace App\Service;
+
+use App\Entity\User;
+use App\Service\FileUploader;
+use App\Service\FileManager;
+use App\Service\FileUploadValidator;
+use App\Service\UploadLogger;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+
+class FileUploadService
+{
+    public function __construct(
+        private FileUploadValidator $fileUploadValidator,
+        private FileUploader $fileUploader,
+        private FileManager $fileManager,
+        private UploadLogger $uploadLogger
+    ) {}
+
+    /**
+     * @throws \DomainException
+     */
+    public function handle(UploadedFile $uploadedFile, ?User $user): void
+    {
+        if (!$user instanceof User) {
+            throw new \DomainException('L’utilisateur courant n’est pas une entité User.');
+        }
+        $this->fileUploadValidator->validate($uploadedFile);
+        $this->uploadLogger->logValidation($uploadedFile, $user, 'Validation réussie');
+        $result = $this->fileUploader->upload($uploadedFile);
+        $this->fileManager->createAndSave($result, $user);
+        $this->uploadLogger->logSuccess($uploadedFile, $user);
+    }
+}
