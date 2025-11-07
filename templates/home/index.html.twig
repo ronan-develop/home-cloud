@@ -4,6 +4,13 @@
 {% endblock %}
 
 {% block body %}
-	<h1>Bienvenue sur Home Cloud</h1>
-	<p>Page d'accueil publique accessible sans authentification.</p>
+	<h1>Home Cloud</h1>
+
+	{% if not app.user %}
+		{% include 'home/_auth_link.html.twig' %}
+	{% endif %}
+
+	{% if app.user %}
+		{% include 'home/_upload_button.html.twig' %}
+	{% endif %}
 {% endblock %}

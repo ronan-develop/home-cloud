@@ -1,3 +1,11 @@
+# 📱 Règle front : Mobile First
+
+Tous les templates Twig, CSS et développements front doivent respecter le principe mobile first :
+- Prioriser l’affichage et l’ergonomie sur mobile
+- Utiliser Tailwind et les breakpoints pour garantir le responsive
+- Tester systématiquement le rendu sur petits écrans avant desktop
+
+Cette règle s’applique à toute évolution ou création de template, composant ou asset front.
 ---
 applyTo: '**'
 description: 'Instructions IA optimisées pour le projet Home Cloud hébergé sur O2Switch mutualisé, avec Symfony et API Platform.'

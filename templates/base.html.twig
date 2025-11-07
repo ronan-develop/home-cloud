@@ -16,14 +16,25 @@
 		{% endblock %}
 	</head>
 	<body>
-		{# Affichage des messages flash #}
-		{% for label, messages in app.flashes %}
-			{% for message in messages %}
-				<div class="flash-{{ label }}">
-					{{ message }}
-				</div>
+		{# Navbar fixe en haut #}
+		<nav class="w-full bg-gray-900 text-white shadow z-50">
+			<div class="container mx-auto py-2 px-4 w-full float-right">
+				{% if app.user %}
+					<a href="{{ path('app_logout') }}" class="px-3 py-1 rounded bg-red-600 hover:bg-red-700 transition">Déconnexion</a>
+				{% endif %}
+			</div>
+		</nav>
+
+		<div class="pt-16">
+			{# Décalage pour la navbar fixe #}
+			{# Affichage des messages flash #}
+				{% for label, messages in app.flashes %}
+					{% for message in messages %}
+						<div class="flash-{{ label }}"> {{ message }}
+					</div>
+				{% endfor %}
 			{% endfor %}
-		{% endfor %}
-		{% block body %}{% endblock %}
+			{% block body %}{% endblock %}
+		</div>
 	</body>
 </html>
