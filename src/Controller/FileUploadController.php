@@ -18,18 +18,6 @@ class FileUploadController extends AbstractController
         private FileUploadFormHandler $fileUploadFormHandler
     ) {}
 
-    #[Route('/files/upload', name: 'file_upload', methods: ['GET'])]
-    #[IsGranted('IS_AUTHENTICATED_FULLY')]
-    public function index(): Response
-    {
-        $form = $this->createForm(FileUploadType::class);
-
-        return $this->render('file/upload.html.twig', [
-            'form' => $form->createView(),
-            'largeFile' => false,
-        ]);
-    }
-
     #[Route('/files/upload', name: 'file_upload', methods: ['GET', 'POST'])]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function upload(Request $request): Response
@@ -37,9 +25,21 @@ class FileUploadController extends AbstractController
         $form = $this->createForm(FileUploadType::class);
         $form->handleRequest($request);
 
-        $uploadedFile = $this->fileUploadFormHandler->getUploadedFile($form);
-        $this->fileUploadService->handle($uploadedFile, $this->getUser());
-        $this->addFlash('success', 'Fichier uploadé avec succès !');
-        return $this->redirectToRoute('file_upload');
+        if ($form->isSubmitted() && $form->isValid()) {
+            try {
+                $uploadedFile = $this->fileUploadFormHandler->getUploadedFile($form);
+                $this->fileUploadService->handle($uploadedFile, $this->getUser());
+                $this->addFlash('success', 'Fichier uploadé avec succès !');
+                return $this->redirectToRoute('file_upload');
+            } catch (\InvalidArgumentException $e) {
+                $this->addFlash('danger', $e->getMessage());
+                return $this->redirectToRoute('file_upload');
+            }
+        }
+
+        return $this->render('file/upload.html.twig', [
+            'form' => $form,
+            'largeFile' => false,
+        ]);
     }
 }

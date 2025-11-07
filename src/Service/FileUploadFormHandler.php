@@ -3,8 +3,6 @@
 namespace App\Service;
 
 use Symfony\Component\Form\FormInterface;
-use Symfony\Component\HttpFoundation\Request;
-use App\Entity\User;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class FileUploadFormHandler

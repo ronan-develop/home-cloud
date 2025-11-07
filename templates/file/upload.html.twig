@@ -17,14 +17,14 @@
 		{% endif %}
 	{% endfor %}
 	{% if largeFile or tooLargeError %}
-	<div class="mb-4 p-3 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 rounded">
-		⚠️ Le fichier sélectionné est volumineux ou dépasse la limite serveur.<br>
-		L’envoi peut prendre du temps ou échouer si la taille dépasse la configuration PHP.<br>
-		Merci de patienter pendant l’upload. Aucune limite n’est imposée côté application.
-	</div>
+		<div class="mb-4 p-3 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 rounded">
+			⚠️ Le fichier sélectionné est volumineux ou dépasse la limite serveur.<br>
+			L’envoi peut prendre du temps ou échouer si la taille dépasse la configuration PHP.<br>
+			Merci de patienter pendant l’upload. Aucune limite n’est imposée côté application.
+		</div>
 	{% endif %}
 	{{ form_start(form, {'attr': {'enctype': 'multipart/form-data'}}) }}
 	{{ form_widget(form) }}
 	<button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Envoyer</button>
-	{{ form_end(form) }}
+	{{ form_end(form, {'render_rest': false}) }}
 {% endblock %}
