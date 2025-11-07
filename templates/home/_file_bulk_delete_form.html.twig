@@ -1,16 +1,28 @@
 {# Formulaire de suppression en masse des fichiers #}
-
 <form method="post" class="mb-4 flex flex-col gap-4">
 	<input type="hidden" name="_token" value="{{ csrf_token('bulk_delete') }}">
 	<div class="overflow-x-auto">
-		<table class="min-w-full border rounded shadow text-sm">
+		<table id="file-table" class="min-w-full border rounded shadow text-sm">
 			<thead class="bg-gray-50">
 				<tr>
 					<th class="p-2 text-left font-semibold">&nbsp;</th>
-					<th class="p-2 text-left font-semibold">Nom</th>
-					<th class="p-2 text-left font-semibold">Date</th>
-					<th class="p-2 text-left font-semibold">Taille</th>
+					<th class="p-2 text-left font-semibold cursor-pointer" data-sort="name">Nom
+						<span class="text-xs">⇅</span>
+					</th>
+					<th class="p-2 text-left font-semibold cursor-pointer" data-sort="date">Date
+						<span class="text-xs">⇅</span>
+					</th>
+					<th class="p-2 text-left font-semibold cursor-pointer" data-sort="size">Taille
+						<span class="text-xs">⇅</span>
+					</th>
 					<th class="p-2 text-left font-semibold">Actions</th>
+				</tr>
+				<tr>
+					<th></th>
+					<th><input type="text" class="w-full border rounded px-1 text-xs" placeholder="Filtrer nom" id="filter-name"></th>
+					<th><input type="text" class="w-full border rounded px-1 text-xs" placeholder="Filtrer date" id="filter-date"></th>
+					<th></th>
+					<th></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -24,9 +36,7 @@
 						<td class="p-2 align-middle text-xs text-gray-500">{{ file.size|number_format(0, ',', ' ') }}
 							octets</td>
 						<td class="p-2 align-middle">
-							<a href="{{ path('file_download', {id: file.id}) }}" class="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs transition" title="Télécharger le fichier">
-								Télécharger
-							</a>
+							<a href="{{ path('file_download', {id: file.id}) }}" class="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs transition" title="Télécharger le fichier">Télécharger</a>
 						</td>
 					</tr>
 				{% endfor %}
@@ -34,35 +44,8 @@
 		</table>
 	</div>
 	<div class="flex gap-4 mt-4">
-		<button type="submit" formaction="{{ path('file_download_selected_zip') }}" id="bulk-zip-btn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition hidden">
-			Télécharger ZIP
-		</button>
-		<button type="submit" formaction="{{ path('file_bulk_delete') }}" id="bulk-delete-btn" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition hidden" onclick="return confirm('Supprimer les fichiers sélectionnés ?')">
-			Supprimer
-		</button>
+		<button type="submit" formaction="{{ path('file_download_selected_zip') }}" id="bulk-zip-btn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition hidden">Télécharger ZIP</button>
+		<button type="submit" formaction="{{ path('file_bulk_delete') }}" id="bulk-delete-btn" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition hidden" onclick="return confirm('Supprimer les fichiers sélectionnés ?')">Supprimer</button>
 	</div>
 </form>
-<script>
-	// Mobile first : boutons affichés uniquement si au moins une case est cochée
-document.addEventListener('DOMContentLoaded', function () {
-const checkboxes = document.querySelectorAll('.file-checkbox');
-const btnDelete = document.getElementById('bulk-delete-btn');
-const btnZip = document.getElementById('bulk-zip-btn');
-function toggleBtns() {
-let checked = false;
-checkboxes.forEach(cb => {
-if (cb.checked) 
-checked = true;
-
-
-
-});
-btnDelete.classList.toggle('hidden', ! checked);
-btnZip.classList.toggle('hidden', ! checked);
-}
-checkboxes.forEach(cb => {
-cb.addEventListener('change', toggleBtns);
-});
-toggleBtns();
-});
-</script>
+<script src="{{ asset('file-table.js') }}"></script>

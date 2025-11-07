@@ -7,6 +7,7 @@ use App\Entity\File;
 use App\Security\FilePathSecurity;
 use App\Security\FileAccessManager;
 use App\Security\FileMimeTypeGuesser;
+use App\Service\BulkFileDeleteService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -51,33 +52,16 @@ class FileController extends AbstractController
     }
     #[Route('/files/bulk-delete', name: 'file_bulk_delete', methods: ['POST'])]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
-    public function bulkDelete(EntityManagerInterface $em, FileAccessManager $fileAccessManager, FilePathSecurity $filePathSecurity): RedirectResponse
+    public function bulkDelete(BulkFileDeleteService $bulkFileDeleteService): RedirectResponse
     {
         $request = $this->container->get('request_stack')->getCurrentRequest();
         $ids = $request->request->all('files');
         $user = $this->getUser();
-        $errorMsg = 'Accès refusé ou fichier inexistant.';
-        $count = 0;
         if (!is_array($ids) || empty($ids)) {
             $this->addFlash('warning', 'Aucun fichier sélectionné.');
             return $this->redirectToRoute('app_home');
         }
-        foreach ($ids as $id) {
-            $file = $em->getRepository(File::class)->find($id);
-            if (!$file) {
-                continue;
-            }
-            try {
-                $fileAccessManager->assertDeleteAccess($file, $user);
-                $realPath = $filePathSecurity->assertSafePath($file->getPath());
-                $filePathSecurity->deleteFile($realPath);
-                $em->remove($file);
-                $count++;
-            } catch (\Throwable $e) {
-                continue;
-            }
-        }
-        $em->flush();
+        $count = $bulkFileDeleteService->deleteFiles($ids, $user);
         $this->addFlash('success', $count . ' fichier(s) supprimé(s).');
         return $this->redirectToRoute('app_home');
     }
