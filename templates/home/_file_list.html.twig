@@ -1,0 +1,24 @@
+{# Liste des fichiers utilisateur, mobile-first #}
+{% if filesPager and filesPager.nbResults > 0 %}
+    <ul class="divide-y divide-gray-200">
+        {% for file in filesPager.currentPageResults %}
+            <li class="py-2 flex flex-col sm:flex-row sm:items-center justify-between">
+                <span class="font-mono text-sm break-all">{{ file.name }}</span>
+                <span class="text-xs text-gray-500">{{ file.size }} octets</span>
+                <span class="text-xs text-gray-400">{{ file.mimeType }}</span>
+                <a href="{{ path('file_download', {id: file.id}) }}" class="text-blue-600 hover:underline ml-2">Télécharger</a>
+            </li>
+        {% endfor %}
+    </ul>
+    <div class="mt-4 flex justify-center">
+        {% if filesPager.hasPreviousPage %}
+            <a href="?page={{ filesPager.previousPage }}" class="px-2 py-1 bg-gray-200 rounded-l hover:bg-gray-300">&lt; Précédent</a>
+        {% endif %}
+        <span class="px-3 py-1 bg-gray-100">Page {{ filesPager.currentPage }} / {{ filesPager.nbPages }}</span>
+        {% if filesPager.hasNextPage %}
+            <a href="?page={{ filesPager.nextPage }}" class="px-2 py-1 bg-gray-200 rounded-r hover:bg-gray-300">Suivant &gt;</a>
+        {% endif %}
+    </div>
+{% else %}
+    <p class="text-gray-500">Aucun fichier déposé pour l’instant.</p>
+{% endif %}
