@@ -17,20 +17,24 @@ class UploadLogger
 
     public function logSuccess(UploadedFile $file, User $user): void
     {
+        $size = @file_exists($file->getPathname()) ? $file->getSize() : null;
+        $mimeType = @file_exists($file->getPathname()) ? $file->getMimeType() : null;
         $this->logger->info('Upload réussi', [
             'filename' => $file->getClientOriginalName(),
-            'size' => $file->getSize(),
-            'mimeType' => $file->getMimeType(),
+            'size' => $size,
+            'mimeType' => $mimeType,
             'user' => $user->getUserIdentifier(),
         ]);
     }
 
     public function logError(UploadedFile $file, User $user, string $error): void
     {
+        $size = @file_exists($file->getPathname()) ? $file->getSize() : null;
+        $mimeType = @file_exists($file->getPathname()) ? $file->getMimeType() : null;
         $this->logger->error('Erreur upload', [
             'filename' => $file->getClientOriginalName(),
-            'size' => $file->getSize(),
-            'mimeType' => $file->getMimeType(),
+            'size' => $size,
+            'mimeType' => $mimeType,
             'user' => $user->getUserIdentifier(),
             'error' => $error,
         ]);
@@ -38,10 +42,12 @@ class UploadLogger
 
     public function logValidation(UploadedFile $file, User $user, string $validation): void
     {
+        $size = @file_exists($file->getPathname()) ? $file->getSize() : null;
+        $mimeType = @file_exists($file->getPathname()) ? $file->getMimeType() : null;
         $this->logger->debug('Validation upload', [
             'filename' => $file->getClientOriginalName(),
-            'size' => $file->getSize(),
-            'mimeType' => $file->getMimeType(),
+            'size' => $size,
+            'mimeType' => $mimeType,
             'user' => $user->getUserIdentifier(),
             'validation' => $validation,
         ]);
