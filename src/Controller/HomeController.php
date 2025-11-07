@@ -17,6 +17,7 @@ class HomeController extends AbstractController
     {
         $user = $this->getUser();
         $filesPager = null;
+        $lastFile = null;
         if ($user) {
             $page = max(1, (int) $request->query->get('page', 1));
             $query = $fileRepository->getFilesForUserQuery($user);
@@ -24,9 +25,11 @@ class HomeController extends AbstractController
             $pagerfanta->setMaxPerPage(10);
             $pagerfanta->setCurrentPage($page);
             $filesPager = $pagerfanta;
+            $lastFile = $fileRepository->getLastFileForUser($user);
         }
         return $this->render('home/index.html.twig', [
             'filesPager' => $filesPager,
+            'lastFile' => $lastFile,
         ]);
     }
 }

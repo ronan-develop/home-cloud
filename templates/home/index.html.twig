@@ -11,9 +11,24 @@
 	{% endif %}
 
 	{% if app.user %}
-		<div class="mb-6">
-			{% include 'home/_upload_button.html.twig' %}
-		</div>
+		{% if lastFile %}
+			<div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded flex flex-col sm:flex-row sm:items-center justify-between">
+				<div>
+					<span class="font-semibold text-blue-700">Dernier fichier uploadé :</span>
+					<span class="font-mono text-sm break-all">{{ lastFile.name }}</span>
+					<span class="text-xs text-gray-500">({{ lastFile.size }}
+						octets,
+						{{ lastFile.mimeType }})</span>
+					<a href="{{ path('file_download', {id: lastFile.id}) }}" class="ml-2 text-blue-600 hover:underline">Télécharger</a>
+				</div>
+				<form method="post" action="{{ path('file_delete', {id: lastFile.id}) }}" class="inline">
+					<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ lastFile.id) }}">
+					<button type="submit" class="ml-2 px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs transition" onclick="return confirm('Supprimer ce fichier uploadé ?')">
+						Supprimer
+					</button>
+				</form>
+			</div>
+		{% endif %}
 		<section class="bg-white rounded shadow p-4 mb-4">
 			<h2 class="text-lg font-semibold mb-2">Mes fichiers</h2>
 			{% include 'home/_file_bulk_delete_form.html.twig' %}
