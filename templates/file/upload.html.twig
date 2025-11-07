@@ -4,6 +4,7 @@
 {% endblock %}
 
 {% block body %}
+	<a href="{{ path('app_home') }}" class="inline-block mb-4 text-blue-600 hover:underline">&larr; Retour</a>
 	<h1 class="text-2xl font-bold mb-4">Uploader un fichier</h1>
 	{% set tooLargeError = false %}
 	{% for label, messages in app.flashes %}
