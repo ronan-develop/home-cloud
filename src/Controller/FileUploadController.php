@@ -42,6 +42,7 @@ class FileUploadController extends AbstractController
 
         return $this->render('file/upload.html.twig', [
             'form' => $form->createView(),
+            'largeFile' => false,
         ]);
     }
 
@@ -54,7 +55,11 @@ class FileUploadController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $uploadedFile = $form->get('file')->getData();
+            $largeFile = false;
             if ($uploadedFile) {
+                if ($uploadedFile->getSize() > 10 * 1024 * 1024) { // 10 Mo
+                    $largeFile = true;
+                }
                 // Validation métier externalisée
                 try {
                     $this->fileUploadValidator->validate($uploadedFile);
@@ -67,22 +72,40 @@ class FileUploadController extends AbstractController
                     $result = $this->fileUploader->upload($uploadedFile);
                     $this->fileManager->createAndSave($result, $user);
                     $this->uploadLogger->logSuccess($uploadedFile, $user);
-                    return $this->feedbackManager->success($request, 'Fichier uploadé avec succès !');
+                    return $this->render('file/upload.html.twig', [
+                        'form' => $form->createView(),
+                        'largeFile' => $largeFile,
+                        'success' => true,
+                        'message' => 'Fichier uploadé avec succès !',
+                    ]);
                 } catch (\InvalidArgumentException $e) {
                     $user = $this->getUser();
                     if ($uploadedFile && $user instanceof \App\Entity\User) {
                         $this->uploadLogger->logValidation($uploadedFile, $user, $e->getMessage());
                     }
-                    return $this->feedbackManager->error($form, $e->getMessage());
+                    return $this->render('file/upload.html.twig', [
+                        'form' => $form->createView(),
+                        'largeFile' => $largeFile,
+                        'error' => true,
+                        'message' => $e->getMessage(),
+                    ]);
                 } catch (\Throwable $e) {
                     $user = $this->getUser();
                     if ($uploadedFile && $user instanceof \App\Entity\User) {
                         $this->uploadLogger->logError($uploadedFile, $user, $e->getMessage());
                     }
-                    return $this->errorHandler->handle($e);
+                    return $this->render('file/upload.html.twig', [
+                        'form' => $form->createView(),
+                        'largeFile' => $largeFile,
+                        'error' => true,
+                        'message' => $e->getMessage(),
+                    ]);
                 }
             }
         }
-        return $this->feedbackManager->error($form, '');
+        return $this->render('file/upload.html.twig', [
+            'form' => $form->createView(),
+            'largeFile' => false,
+        ]);
     }
 }

@@ -7,6 +7,7 @@
                 <span class="text-xs text-gray-500">{{ file.size }} octets</span>
                 <span class="text-xs text-gray-400">{{ file.mimeType }}</span>
                 <a href="{{ path('file_download', {id: file.id}) }}" class="text-blue-600 hover:underline ml-2">Télécharger</a>
+                {% include 'home/_file_delete_button.html.twig' with {file: file} %}
             </li>
         {% endfor %}
     </ul>
