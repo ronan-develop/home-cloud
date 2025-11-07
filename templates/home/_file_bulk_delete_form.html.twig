@@ -1,5 +1,4 @@
 {# Formulaire de suppression en masse des fichiers #}
-
 <form method="post" class="mb-4 flex flex-col gap-4">
 	<input type="hidden" name="_token" value="{{ csrf_token('bulk_delete') }}">
 	<div class="overflow-x-auto">
