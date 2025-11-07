@@ -52,5 +52,3 @@ Un listener Symfony intercepte les exceptions métier et utilise FileErrorRedire
 Ce pattern doit être généralisé à tous les contrôleurs métier du projet Home Cloud.
 
 ---
-
-*Documenté le 07/11/2025 – Pattern validé et appliqué sur FileController.php*
