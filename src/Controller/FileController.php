@@ -27,12 +27,7 @@ class FileController extends AbstractController
             $this->addFlash('danger', $errorMsg);
             return $this->redirectToRoute('file_upload');
         }
-        try {
-            $fileAccessManager->assertDownloadAccess($file, $this->getUser());
-        } catch (\Symfony\Component\Security\Core\Exception\AccessDeniedException $e) {
-            $this->addFlash('danger', $errorMsg);
-            return $this->redirectToRoute('file_upload');
-        }
+        $fileAccessManager->assertDownloadAccess($file, $this->getUser());
         try {
             $realPath = $filePathSecurity->assertSafePath($file->getPath());
         } catch (\RuntimeException $e) {
@@ -60,12 +55,7 @@ class FileController extends AbstractController
             $this->addFlash('danger', $errorMsg);
             return $this->redirectToRoute('file_upload');
         }
-        try {
-            $fileAccessManager->assertDeleteAccess($file, $this->getUser());
-        } catch (\Symfony\Component\Security\Core\Exception\AccessDeniedException $e) {
-            $this->addFlash('danger', $errorMsg);
-            return $this->redirectToRoute('file_upload');
-        }
+        $fileAccessManager->assertDeleteAccess($file, $this->getUser());
         try {
             $realPath = $filePathSecurity->assertSafePath($file->getPath());
         } catch (\RuntimeException $e) {

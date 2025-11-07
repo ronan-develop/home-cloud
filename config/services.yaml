@@ -22,3 +22,8 @@ services:
     App\Service\FileUploader:
         arguments:
             $targetDirectory: '%app.files_dir%'
+
+    # Injection explicite du répertoire upload pour FilePathSecurity
+    App\Security\FilePathSecurity:
+        arguments:
+            $uploadDir: '%app.files_dir%'
