@@ -16,7 +16,40 @@ use App\Security\FileMimeTypeGuesser;
 
 class FileController extends AbstractController
 {
-    #[Route('/files/download/{id}', name: 'file_download', requirements: ['id' => '\\d+'])]
+    #[Route('/files/bulk-delete', name: 'file_bulk_delete', methods: ['POST'])]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    public function bulkDelete(EntityManagerInterface $em, FileAccessManager $fileAccessManager, FilePathSecurity $filePathSecurity): RedirectResponse
+    {
+        $request = $this->container->get('request_stack')->getCurrentRequest();
+        $ids = $request->request->all('files');
+        $user = $this->getUser();
+        $errorMsg = 'Accès refusé ou fichier inexistant.';
+        $count = 0;
+        if (!is_array($ids) || empty($ids)) {
+            $this->addFlash('warning', 'Aucun fichier sélectionné.');
+            return $this->redirectToRoute('app_home');
+        }
+        foreach ($ids as $id) {
+            $file = $em->getRepository(File::class)->find($id);
+            if (!$file) {
+                continue;
+            }
+            try {
+                $fileAccessManager->assertDeleteAccess($file, $user);
+                $realPath = $filePathSecurity->assertSafePath($file->getPath());
+                $filePathSecurity->deleteFile($realPath);
+                $em->remove($file);
+                $count++;
+            } catch (\Throwable $e) {
+                continue;
+            }
+        }
+        $em->flush();
+        $this->addFlash('success', $count . ' fichier(s) supprimé(s).');
+        return $this->redirectToRoute('app_home');
+    }
+
+    #[Route('/files/download/{id}', name: 'file_download', requirements: ['id' => '\d+'])]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function download(int $id, EntityManagerInterface $em, FileAccessManager $fileAccessManager, FilePathSecurity $filePathSecurity, FileMimeTypeGuesser $fileMimeTypeGuesser): BinaryFileResponse|RedirectResponse
     {
@@ -45,7 +78,7 @@ class FileController extends AbstractController
         return $response;
     }
 
-    #[Route('/files/delete/{id}', name: 'file_delete', requirements: ['id' => '\\d+'], methods: ['POST'])]
+    #[Route('/files/delete/{id}', name: 'file_delete', requirements: ['id' => '\d+'], methods: ['POST'])]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function delete(int $id, EntityManagerInterface $em, FileAccessManager $fileAccessManager, FilePathSecurity $filePathSecurity): RedirectResponse
     {
