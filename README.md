@@ -1,4 +1,3 @@
-
 # 🏠 Home Cloud
 
 Documentation générale.
@@ -27,6 +26,7 @@ Documentation générale.
 ## 📚 Documentation technique
 
 - [Mise en place de l’environnement de développement](docs/dev-setup.md)
+- [Gestion paginée des fichiers utilisateur](docs/user-files.md)
 
 ---
 
