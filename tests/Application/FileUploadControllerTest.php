@@ -54,8 +54,9 @@ class FileUploadControllerTest extends WebTestCase
 
         @unlink($testFilePath);
 
-        // On doit rester sur la page, et avoir un message d'erreur
-        $this->assertResponseIsSuccessful();
+        // On doit être redirigé et avoir un message d'erreur
+        $this->assertResponseRedirects('/files/upload');
+        $client->followRedirect();
         $this->assertSelectorExists('.flash-danger');
         $this->assertSelectorTextContains('.flash-danger', 'interdit');
 
