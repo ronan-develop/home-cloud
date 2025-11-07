@@ -19,13 +19,13 @@ class FileVoter extends Voter
             && $subject instanceof File;
     }
 
-/**
+    /**
      * @param string $attribute
-     * @param File $subject
+     * @param mixed $subject
      * @param TokenInterface $token
-     * TODO Symfony 7+ : adapter la signature selon la nouvelle API Voter
+     * TODO Symfony 7.4+ : ajouter l'argument Vote|null $vote à la signature
      */
-    protected function voteOnAttribute(string $attribute, $subject, TokenInterface $token): bool
+    protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token): bool
     {
         $user = $token->getUser();
         if (!$user instanceof UserInterface) {
