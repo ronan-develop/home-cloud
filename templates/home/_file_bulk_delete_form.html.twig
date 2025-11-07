@@ -1,19 +1,40 @@
 {# Formulaire de suppression en masse des fichiers #}
 <form method="post" action="{{ path('file_bulk_delete') }}" class="mb-4">
-    <input type="hidden" name="_token" value="{{ csrf_token('bulk_delete') }}">
-    <ul class="divide-y divide-gray-200">
-        {% for file in filesPager.currentPageResults %}
-            <li class="py-2 flex flex-col sm:flex-row sm:items-center justify-between">
-                <label class="flex items-center gap-2">
-                    <input type="checkbox" name="files[]" value="{{ file.id }}" class="form-checkbox">
-                    <span class="font-mono text-sm break-all">{{ file.name }}</span>
-                </label>
-                <span class="text-xs text-gray-500">{{ file.size }} octets</span>
-                <span class="text-xs text-gray-400">{{ file.mimeType }}</span>
-            </li>
-        {% endfor %}
-    </ul>
-    <button type="submit" class="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition" onclick="return confirm('Supprimer les fichiers sélectionnés ?')">
-        Supprimer la sélection
-    </button>
+	<input type="hidden" name="_token" value="{{ csrf_token('bulk_delete') }}">
+	<ul class="divide-y divide-gray-200">
+		{% for file in filesPager.currentPageResults %}
+			<li class="py-2 flex flex-col sm:flex-row sm:items-center justify-between">
+				<label class="flex items-center gap-2">
+					<input type="checkbox" name="files[]" value="{{ file.id }}" class="form-checkbox">
+					<span class="font-mono text-sm break-all">{{ file.name }}</span>
+				</label>
+				<span class="text-xs text-gray-500">{{ file.size }}
+					octets</span>
+				<span class="text-xs text-gray-400">{{ file.mimeType }}</span>
+			</li>
+		{% endfor %}
+	</ul>
+	<button type="submit" id="bulk-delete-btn" class="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition hidden" onclick="return confirm('Supprimer les fichiers sélectionnés ?')">
+		Supprimer les fichiers sélectionnés
+	</button>
 </form>
+<script>
+	// Mobile first : bouton affiché uniquement si au moins une case est cochée
+document.addEventListener('DOMContentLoaded', function () {
+const checkboxes = document.querySelectorAll('.file-checkbox');
+const btn = document.getElementById('bulk-delete-btn');
+function toggleBtn() {
+let checked = false;
+checkboxes.forEach(cb => {
+if (cb.checked) 
+checked = true;
+
+});
+btn.classList.toggle('hidden', ! checked);
+}
+checkboxes.forEach(cb => {
+cb.addEventListener('change', toggleBtn);
+});
+toggleBtn();
+});
+</script>

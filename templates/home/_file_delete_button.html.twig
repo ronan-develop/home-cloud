@@ -1,6 +1,1 @@
-<form method="post" action="{{ path('file_delete', {id: file.id}) }}" class="inline">
-    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ file.id) }}">
-    <button type="submit" class="ml-2 px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs transition" onclick="return confirm('Supprimer ce fichier ?')">
-        Supprimer
-    </button>
-</form>
+{# Suppression individuelle désactivée, remplacée par bulk delete #}
