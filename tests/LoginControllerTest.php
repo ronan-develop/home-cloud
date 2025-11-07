@@ -29,7 +29,10 @@ class LoginControllerTest extends WebTestCase
         /** @var UserPasswordHasherInterface $passwordHasher */
         $passwordHasher = $container->get('security.user_password_hasher');
 
-        $user = (new User())->setEmail('email@example.com');
+
+        $user = (new User())
+            ->setEmail('email@example.com')
+            ->setUsername('testuser');
         $user->setPassword($passwordHasher->hashPassword($user, 'password'));
 
         $em->persist($user);
@@ -68,9 +71,10 @@ class LoginControllerTest extends WebTestCase
         // Ensure we do not reveal the user exists but the password is wrong.
         self::assertSelectorTextContains('.alert-danger', 'Invalid credentials.');
 
+
         // Success - Login with valid credentials is allowed.
         $this->client->submitForm('Sign in', [
-            '_username' => 'email@example.com',
+            '_username' => 'testuser',
             '_password' => 'password',
         ]);
 
