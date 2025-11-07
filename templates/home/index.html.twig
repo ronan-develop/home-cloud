@@ -11,6 +11,12 @@
 	{% endif %}
 
 	{% if app.user %}
+		<div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+			{% include 'home/_upload_button.html.twig' %}
+			<a href="{{ path('file_download_zip') }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm">
+				Télécharger tous les fichiers (zip)
+			</a>
+		</div>
 		{% if lastFile %}
 			<div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded flex flex-col sm:flex-row sm:items-center justify-between">
 				<div>
