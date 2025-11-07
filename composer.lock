@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a2256eb4de3581980cc0dde8cbfbc55e",
+    "content-hash": "06ec999e60037506332319cf66dd7de2",
     "packages": [
         {
             "name": "composer/semver",
@@ -1374,6 +1374,140 @@
                 }
             ],
             "time": "2025-03-24T10:02:05+00:00"
+        },
+        {
+            "name": "pagerfanta/core",
+            "version": "v4.7.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Pagerfanta/core.git",
+                "reference": "8809e9cfccf2f468a102f2ca4483f030b3c7e15c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Pagerfanta/core/zipball/8809e9cfccf2f468a102f2ca4483f030b3c7e15c",
+                "reference": "8809e9cfccf2f468a102f2ca4483f030b3c7e15c",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "php": "^8.1"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^10.5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Pagerfanta\\": "./"
+                },
+                "exclude-from-classmap": [
+                    "Tests/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Core Pagerfanta API",
+            "keywords": [
+                "pagerfanta"
+            ],
+            "support": {
+                "source": "https://github.com/Pagerfanta/core/tree/v4.7.2"
+            },
+            "time": "2025-10-02T15:54:19+00:00"
+        },
+        {
+            "name": "pagerfanta/doctrine-orm-adapter",
+            "version": "v4.7.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Pagerfanta/doctrine-orm-adapter.git",
+                "reference": "a5f621411dff6168c12944dabb8ea62ae8502074"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Pagerfanta/doctrine-orm-adapter/zipball/a5f621411dff6168c12944dabb8ea62ae8502074",
+                "reference": "a5f621411dff6168c12944dabb8ea62ae8502074",
+                "shasum": ""
+            },
+            "require": {
+                "doctrine/orm": "^2.14 || ^3.0",
+                "pagerfanta/core": "^3.7 || ^4.0",
+                "php": "^8.1"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^10.5",
+                "symfony/cache": "^5.4 || ^6.3 || ^7.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Pagerfanta\\Doctrine\\ORM\\": "./"
+                },
+                "exclude-from-classmap": [
+                    "Tests/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Pagerfanta adapter for Doctrine ORM",
+            "keywords": [
+                "doctrine",
+                "orm",
+                "pagerfanta"
+            ],
+            "support": {
+                "source": "https://github.com/Pagerfanta/doctrine-orm-adapter/tree/v4.7.2"
+            },
+            "time": "2025-07-03T22:36:13+00:00"
+        },
+        {
+            "name": "pagerfanta/twig",
+            "version": "v4.7.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Pagerfanta/twig.git",
+                "reference": "28a9b75cabd246bd27c266ba62b742d45a4183f9"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Pagerfanta/twig/zipball/28a9b75cabd246bd27c266ba62b742d45a4183f9",
+                "reference": "28a9b75cabd246bd27c266ba62b742d45a4183f9",
+                "shasum": ""
+            },
+            "require": {
+                "pagerfanta/core": "^3.7 || ^4.0",
+                "php": "^8.1",
+                "twig/twig": "^2.13 || ^3.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^10.5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Pagerfanta\\Twig\\": "./"
+                },
+                "exclude-from-classmap": [
+                    "/Tests/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Twig integration for Pagerfanta",
+            "keywords": [
+                "pagerfanta"
+            ],
+            "support": {
+                "source": "https://github.com/Pagerfanta/twig/tree/v4.7.2"
+            },
+            "time": "2025-03-08T02:17:34+00:00"
         },
         {
             "name": "phpdocumentor/reflection-common",
