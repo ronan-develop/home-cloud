@@ -27,6 +27,7 @@ Documentation générale.
 
 - [Mise en place de l’environnement de développement](docs/dev-setup.md)
 - [Gestion paginée des fichiers utilisateur](docs/user-files.md)
+- [Pattern contrôleur ultra-lean](docs/controller-ultra-lean.md)
 
 ---
 
