@@ -30,12 +30,16 @@ class FileController extends AbstractController
         $user = $this->getUser();
         $userId = ($user instanceof User && method_exists($user, 'getId')) ? $user->getId() : 'unknown';
         $files = $em->getRepository(File::class)->findBy(['owner' => $user]);
-        // Plus de if métier ici : tout est géré par exception dans le service
-        return $zipArchiveService->createZipResponse(
-            $files,
-            'mes-fichiers-homecloud.zip',
-            (string)$userId
-        );
+        try {
+            $response = $zipArchiveService->createZipResponse(
+                $files,
+                'mes-fichiers-homecloud.zip',
+                (string)$userId
+            );
+            return $response;
+        } catch (\RuntimeException $e) {
+            return $errorRedirector->handle($e->getMessage(), 'file_upload');
+        }
     }
     #[Route('/files/bulk-delete', name: 'file_bulk_delete', methods: ['POST'])]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]

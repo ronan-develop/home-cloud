@@ -3,17 +3,18 @@
 namespace App\Service;
 
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\Flash\FlashBagInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class FileErrorRedirectorService
 {
-    private FlashBagInterface $flashBag;
+    private RequestStack $requestStack;
     private UrlGeneratorInterface $urlGenerator;
 
-    public function __construct(FlashBagInterface $flashBag, UrlGeneratorInterface $urlGenerator)
+    public function __construct(RequestStack $requestStack, UrlGeneratorInterface $urlGenerator)
     {
-        $this->flashBag = $flashBag;
+        $this->requestStack = $requestStack;
         $this->urlGenerator = $urlGenerator;
     }
 
@@ -25,7 +26,12 @@ class FileErrorRedirectorService
      */
     public function handle(string $errorMsg, string $route = 'file_upload'): RedirectResponse
     {
-        $this->flashBag->add('danger', $errorMsg);
+        $session = $this->requestStack->getSession();
+        if ($session) {
+            /** @var FlashBagInterface $flashBag */
+            $flashBag = $session->getBag('flashes');
+            $flashBag->add('danger', $errorMsg);
+        }
         $url = $this->urlGenerator->generate($route);
         return new RedirectResponse($url);
     }
