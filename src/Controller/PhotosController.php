@@ -8,9 +8,9 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class PhotosController extends AbstractController
 {
-    #[Route('/photos', name: 'photos_home')]
-    public function index(): Response
-    {
-        return $this->render('photos/index.html.twig');
-    }
+  #[Route('/photos', name: 'photos_home')]
+  public function index(): Response
+  {
+    return $this->render('photos/index.html.twig');
+  }
 }
