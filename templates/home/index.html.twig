@@ -4,40 +4,9 @@
 {% endblock %}
 
 {% block body %}
-	<h1 class="text-xl font-bold mb-4">Home Cloud</h1>
-
-	{% if not app.user %}
-		{% include 'home/_auth_link.html.twig' %}
-	{% endif %}
-
-	{% if app.user %}
-		<div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-			{% include 'home/_upload_button.html.twig' %}
-			<a href="{{ path('file_download_zip') }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm">
-				Télécharger tous les fichiers (zip)
-			</a>
-		</div>
-		{% if lastFile %}
-			<div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded flex flex-col sm:flex-row sm:items-center justify-between">
-				<div>
-					<span class="font-semibold text-blue-700">Dernier fichier uploadé :</span>
-					<span class="font-mono text-sm break-all">{{ lastFile.name }}</span>
-					<span class="text-xs text-gray-500">({{ lastFile.size }}
-						octets,
-						{{ lastFile.mimeType }})</span>
-					<a href="{{ path('file_download', {id: lastFile.id}) }}" class="ml-2 text-blue-600 hover:underline">Télécharger</a>
-				</div>
-				<form method="post" action="{{ path('file_delete', {id: lastFile.id}) }}" class="inline">
-					<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ lastFile.id) }}">
-					<button type="submit" class="ml-2 px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs transition" onclick="return confirm('Supprimer ce fichier uploadé ?')">
-						Supprimer
-					</button>
-				</form>
-			</div>
-		{% endif %}
-		<section class="bg-white rounded shadow p-4 mb-4">
-			<h2 class="text-lg font-semibold mb-2">Mes fichiers</h2>
-			{% include 'home/_file_bulk_delete_form.html.twig' %}
-		</section>
-	{% endif %}
+	<h1 class="text-2xl font-bold mb-6">Bienvenue sur Home Cloud</h1>
+	<div class="flex flex-col gap-4 w-full max-w-xs mx-auto mb-8">
+		<a href="{{ path('files_list') }}" class="btn btn-blue">Accéder à mes fichiers</a>
+		<a href="{{ path('photos_home') }}" class="btn btn-blue">Se connecter à Photos</a>
+	</div>
 {% endblock %}

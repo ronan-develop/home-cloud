@@ -16,12 +16,35 @@ use App\Service\FileErrorRedirectorService;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Symfony\Component\HttpFoundation\Request;
+use App\Repository\FileRepository;
+use Pagerfanta\Doctrine\ORM\QueryAdapter;
+use Pagerfanta\Pagerfanta;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class FileController extends AbstractController
 {
+    #[Route('/mes-fichiers', name: 'files_list')]
+    public function listFiles(Request $request, FileRepository $fileRepository): Response
+    {
+        $user = $this->getUser();
+        if (!$user) {
+            return $this->redirectToRoute('app_login');
+        }
+        $page = max(1, (int) $request->query->get('page', 1));
+        $query = $fileRepository->getFilesForUserQuery($user);
+        $pagerfanta = new Pagerfanta(new QueryAdapter($query));
+        $pagerfanta->setMaxPerPage(10);
+        $pagerfanta->setCurrentPage($page);
+        $lastFile = $fileRepository->getLastFileForUser($user);
+        return $this->render('file/files.html.twig', [
+            'filesPager' => $pagerfanta,
+            'lastFile' => $lastFile,
+        ]);
+    }
 
     #[Route('/files/download-zip', name: 'file_download_zip')]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
