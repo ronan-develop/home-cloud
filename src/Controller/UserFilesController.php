@@ -24,7 +24,8 @@ class UserFilesController extends AbstractController
         $pagerfanta->setMaxPerPage(10);
         $pagerfanta->setCurrentPage($page);
 
-        return $this->render('file/list.html.twig', [
+        // Rendu de la page principale qui inclut la liste des fichiers
+        return $this->render('home/index.html.twig', [
             'filesPager' => $pagerfanta,
         ]);
     }

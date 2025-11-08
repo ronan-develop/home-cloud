@@ -1,0 +1,11 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mes fichiers - Home Cloud
+{% endblock %}
+
+{% block body %}
+	<a href="{{ path('app_home') }}" class="inline-block mb-4 text-blue-600 hover:underline">&larr; Retour</a>
+	<h1 class="text-2xl font-bold mb-6">Mes fichiers</h1>
+	{% include 'file/_file_bulk_delete_form.html.twig' %}
+	{% include 'file/_upload_button.html.twig' %}
+{% endblock %}
