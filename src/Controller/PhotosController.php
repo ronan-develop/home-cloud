@@ -11,6 +11,6 @@ class PhotosController extends AbstractController
     #[Route('/photos', name: 'photos_home')]
     public function index(): Response
     {
-        return $this->render('photos/empty.html.twig');
+        return $this->render('photos/index.html.twig');
     }
 }
