@@ -6,6 +6,33 @@
 parameters:
     app.files_dir: '%kernel.project_dir%/uploads/files'
     app.photos_dir: '%kernel.project_dir%/uploads/photos'
+    app.photo_allowed_mime_types:
+        - 'image/jpeg'
+        - 'image/png'
+        - 'image/gif'
+        - 'image/webp'
+        - 'image/bmp'
+        - 'image/svg+xml'
+        - 'image/tiff'
+        - 'image/x-canon-cr2'
+        - 'image/x-canon-crw'
+        - 'image/x-nikon-nef'
+        - 'image/x-sony-arw'
+        - 'image/x-adobe-dng'
+        - 'image/x-olympus-orf'
+        - 'image/x-panasonic-raw'
+        - 'image/x-fuji-raf'
+        - 'image/x-pentax-pef'
+        - 'image/x-samsung-srw'
+        - 'image/x-minolta-mrw'
+        - 'image/x-leaf-mos'
+        - 'image/x-hasselblad-3fr'
+        - 'image/x-hasselblad-fff'
+        - 'image/x-kodak-dcr'
+        - 'image/x-kodak-k25'
+        - 'image/x-kodak-kdc'
+        - 'image/x-mamiya-mef'
+        - 'image/x-raw'
 
 services:
     # default configuration for services in *this* file
@@ -32,6 +59,10 @@ services:
             $mimeTypeValidator: '@App\Service\PhotoMimeTypeValidator'
             $directoryManager: '@App\Service\UploadDirectoryManager'
             $fileNameGenerator: '@App\Service\DefaultFileNameGenerator'
+
+    App\Service\PhotoMimeTypeValidator:
+        arguments:
+            $allowedMimeTypes: '%app.photo_allowed_mime_types%'
 
     App\Service\FileNameGeneratorInterface: '@App\Service\DefaultFileNameGenerator'
     App\Service\DefaultFileNameGenerator: ~

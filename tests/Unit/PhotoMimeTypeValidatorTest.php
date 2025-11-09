@@ -8,9 +8,11 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class PhotoMimeTypeValidatorTest extends TestCase
 {
+
     public function testAcceptsValidMimeTypes(): void
     {
-        $validator = new PhotoMimeTypeValidator();
+        $allowed = ['image/jpeg', 'image/png'];
+        $validator = new PhotoMimeTypeValidator($allowed);
         $file = $this->createMock(UploadedFile::class);
         $file->method('getClientMimeType')->willReturn('image/jpeg');
         $this->expectNotToPerformAssertions();
@@ -19,7 +21,8 @@ class PhotoMimeTypeValidatorTest extends TestCase
 
     public function testRejectsInvalidMimeTypes(): void
     {
-        $validator = new PhotoMimeTypeValidator();
+        $allowed = ['image/jpeg', 'image/png'];
+        $validator = new PhotoMimeTypeValidator($allowed);
         $file = $this->createMock(UploadedFile::class);
         $file->method('getClientMimeType')->willReturn('application/pdf');
         $this->expectException(\InvalidArgumentException::class);
