@@ -31,7 +31,10 @@ class PhotoUploaderTest extends TestCase
         $user = $this->createMock(User::class);
         $data = ['title' => 'Titre', 'description' => 'Desc', 'isFavorite' => true];
 
-        $uploader = new PhotoUploader($targetDir, $extractor, $validator);
+        $directoryManager = $this->createMock(\App\Service\UploadDirectoryManager::class);
+        $directoryManager->expects($this->once())->method('ensureDirectoryExists')->with($targetDir);
+
+        $uploader = new PhotoUploader($targetDir, $extractor, $validator, $directoryManager);
         $photo = $uploader->uploadPhoto($file, $user, $data);
 
         $this->assertInstanceOf(Photo::class, $photo);

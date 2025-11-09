@@ -24,10 +24,15 @@ services:
         arguments:
             $targetDirectory: '%app.files_dir%'
 
-    # Injection explicite du répertoire cible pour PhotoUploader
+    # Injection explicite du répertoire cible et des dépendances pour PhotoUploader
     App\Service\PhotoUploader:
         arguments:
             $targetDirectory: '%app.photos_dir%'
+            $exifExtractor: '@App\Service\ExifExtractor'
+            $mimeTypeValidator: '@App\Service\PhotoMimeTypeValidator'
+            $directoryManager: '@App\Service\UploadDirectoryManager'
+
+    App\Service\UploadDirectoryManager: ~
 
     # Injection explicite du répertoire upload pour FilePathSecurity
     App\Security\FilePathSecurity:

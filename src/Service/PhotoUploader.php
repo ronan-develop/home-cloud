@@ -15,15 +15,18 @@ class PhotoUploader
     private string $targetDirectory;
     private ExifExtractor $exifExtractor;
     private PhotoMimeTypeValidator $mimeTypeValidator;
+    private UploadDirectoryManager $directoryManager;
 
     public function __construct(
         string $targetDirectory,
         ExifExtractor $exifExtractor,
-        PhotoMimeTypeValidator $mimeTypeValidator
+        PhotoMimeTypeValidator $mimeTypeValidator,
+        UploadDirectoryManager $directoryManager
     ) {
         $this->targetDirectory = $targetDirectory;
         $this->exifExtractor = $exifExtractor;
         $this->mimeTypeValidator = $mimeTypeValidator;
+        $this->directoryManager = $directoryManager;
     }
 
     /**
@@ -36,9 +39,7 @@ class PhotoUploader
      */
     public function uploadPhoto(UploadedFile $file, User $user, array $data = [], array $exifData = []): Photo
     {
-        if (!is_dir($this->targetDirectory)) {
-            mkdir($this->targetDirectory, 0775, true);
-        }
+        $this->directoryManager->ensureDirectoryExists($this->targetDirectory);
         $mimeType = $file->getClientMimeType();
         $this->mimeTypeValidator->validate($file);
         $filename = uniqid() . '_' . $file->getClientOriginalName();
