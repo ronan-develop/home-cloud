@@ -92,7 +92,7 @@ class PhotoUploadHandler
      * @param \Symfony\Component\Form\FormInterface $form
      * @return PhotoUploadData
      */
-    private function extractFormData($form): PhotoUploadData
+    private function extractFormData(\Symfony\Component\Form\FormInterface $form): PhotoUploadData
     {
         return new PhotoUploadData(
             $form->get('title')->getData(),
