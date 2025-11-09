@@ -5,6 +5,7 @@ namespace App\Tests\Unit;
 use App\Entity\Photo;
 use App\Entity\User;
 use App\Service\PhotoUploader;
+use App\Form\Dto\PhotoUploadData;
 use App\Service\PhotoMimeTypeValidator;
 use App\Service\ExifExtractor;
 use PHPUnit\Framework\TestCase;
@@ -28,7 +29,7 @@ class PhotoUploaderTest extends TestCase
         $file->method('getPathname')->willReturn(__FILE__);
 
         $user = $this->createMock(User::class);
-        $data = ['title' => 'Titre', 'description' => 'Desc', 'isFavorite' => true];
+        $data = new PhotoUploadData('Titre', 'Desc', true);
 
         $directoryManager = $this->createMock(\App\Service\SafeDirectoryManager::class);
         $directoryManager->expects($this->once())->method('ensureDirectoryExists')->with($targetDir);

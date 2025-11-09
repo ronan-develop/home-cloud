@@ -9,6 +9,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 use App\Service\ExifExtractor;
 use App\Service\PhotoMimeTypeValidator;
+use App\Form\Dto\PhotoUploadData;
 use App\Exception\PhotoUploadException;
 use App\Service\SafeFileMover;
 
@@ -29,11 +30,11 @@ class PhotoUploader
      * Gère l'upload d'une photo et retourne une entité Photo complète
      * @param UploadedFile $file
      * @param User $user
-     * @param array $data (title, description, isFavorite)
+     * @param PhotoUploadData $data
      * @param array $exifData (optionnel)
      * @return Photo
      */
-    public function uploadPhoto(UploadedFile $file, User $user, array $data = [], array $exifData = []): Photo
+    public function uploadPhoto(UploadedFile $file, User $user, PhotoUploadData $data, array $exifData = []): Photo
     {
         $this->directoryManager->ensureDirectoryExists($this->targetDirectory);
         $mimeType = $file->getClientMimeType();
@@ -57,9 +58,9 @@ class PhotoUploader
             ->setHash($hash)
             ->setUploadedAt(new \DateTimeImmutable())
             ->setUser($user)
-            ->setTitle($data['title'] ?? null)
-            ->setDescription($data['description'] ?? null)
-            ->setIsFavorite($data['isFavorite'] ?? null)
+            ->setTitle($data->title)
+            ->setDescription($data->description)
+            ->setIsFavorite($data->isFavorite)
             ->setExifData($finalExif);
 
         return $photo;
