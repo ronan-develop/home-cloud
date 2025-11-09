@@ -15,7 +15,14 @@ class PhotoMimeTypeValidator
     {
         $mimeType = $file->getClientMimeType();
         if (!in_array($mimeType, $this->allowedMimeTypes, true)) {
-            throw new \InvalidArgumentException('Le fichier uploadé doit être une image ou un format RAW supporté.');
+            $allowed = implode(', ', $this->allowedMimeTypes);
+            throw new \InvalidArgumentException(
+                sprintf(
+                    "Type MIME refusé : '%s'. Types acceptés : %s",
+                    $mimeType,
+                    $allowed
+                )
+            );
         }
     }
 }

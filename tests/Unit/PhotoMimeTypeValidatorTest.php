@@ -26,6 +26,9 @@ class PhotoMimeTypeValidatorTest extends TestCase
         $file = $this->createMock(UploadedFile::class);
         $file->method('getClientMimeType')->willReturn('application/pdf');
         $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            "Type MIME refusé : 'application/pdf'. Types acceptés : image/jpeg, image/png"
+        );
         $validator->validate($file);
     }
 }
