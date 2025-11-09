@@ -40,9 +40,21 @@ class PhotoUploadHandler
      */
     public function handle(Request $request, UserInterface $user): PhotoUploadResult
     {
+        // Vérification du droit d'upload (ROLE_USER obligatoire)
+        $form = $this->formFactory->create(PhotoUploadType::class);
+        $form->handleRequest($request);
+        if (!\in_array('ROLE_USER', method_exists($user, 'getRoles') ? $user->getRoles() : [], true)) {
+            return new PhotoUploadResult(false, $form, null, "Vous n'avez pas le droit d'uploader des photos.");
+        }
+
 
         $form = $this->formFactory->create(PhotoUploadType::class);
         $form->handleRequest($request);
+
+        // Vérification du droit d'upload (ROLE_USER obligatoire)
+        if (!\in_array('ROLE_USER', method_exists($user, 'getRoles') ? $user->getRoles() : [], true)) {
+            return new PhotoUploadResult(false, $form, null, "Vous n'avez pas le droit d'uploader des photos.");
+        }
 
         if (!$form->isSubmitted() || !$form->isValid()) {
             $error = !$form->isSubmitted() ? null : 'Le formulaire contient des erreurs.';

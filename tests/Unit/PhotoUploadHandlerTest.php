@@ -10,6 +10,35 @@ use Symfony\Component\Form\FormInterface;
 
 class PhotoUploadHandlerTest extends TestCase
 {
+    public function testHandleRefusesUploadIfUserHasNoRoleUser(): void
+    {
+        $form = $this->createMock(FormInterface::class);
+        $form->method('isSubmitted')->willReturn(true);
+        $form->method('isValid')->willReturn(true);
+        $formFactory = $this->createMock(\Symfony\Component\Form\FormFactoryInterface::class);
+        $formFactory->method('create')->willReturn($form);
+
+        $photoUploader = $this->createMock(\App\Service\PhotoUploader::class);
+        $em = $this->createMock(\Doctrine\ORM\EntityManagerInterface::class);
+        $filePresenceValidator = $this->createMock(\App\Form\Validator\UploadedFilePresenceValidator::class);
+        $logger = $this->createMock(\Psr\Log\LoggerInterface::class);
+
+        $handler = new \App\Form\Handler\PhotoUploadHandler(
+            $formFactory,
+            $photoUploader,
+            $em,
+            $filePresenceValidator,
+            $logger
+        );
+
+        $request = $this->createMock(\Symfony\Component\HttpFoundation\Request::class);
+        $user = $this->createMock(\Symfony\Component\Security\Core\User\UserInterface::class);
+        $user->method('getRoles')->willReturn([]);
+
+        $result = $handler->handle($request, $user);
+        $this->assertFalse($result->success);
+        $this->assertStringContainsString('droit', strtolower($result->errorMessage));
+    }
     public function testHandleLogsCriticalExceptionAndReturnsGenericError(): void
     {
         $form = $this->createMock(FormInterface::class);
@@ -44,6 +73,7 @@ class PhotoUploadHandlerTest extends TestCase
         $request = $this->createMock(\Symfony\Component\HttpFoundation\Request::class);
         $user = $this->createMock(\Symfony\Component\Security\Core\User\UserInterface::class);
         $user->method('getUserIdentifier')->willReturn('user1');
+        $user->method('getRoles')->willReturn(['ROLE_USER']);
         $request->method('getRequestUri')->willReturn('/photos/upload');
 
         $result = $handler->handle($request, $user);
