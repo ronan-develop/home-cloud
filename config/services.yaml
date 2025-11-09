@@ -31,6 +31,10 @@ services:
             $exifExtractor: '@App\Service\ExifExtractor'
             $mimeTypeValidator: '@App\Service\PhotoMimeTypeValidator'
             $directoryManager: '@App\Service\UploadDirectoryManager'
+            $fileNameGenerator: '@App\Service\DefaultFileNameGenerator'
+
+    App\Service\FileNameGeneratorInterface: '@App\Service\DefaultFileNameGenerator'
+    App\Service\DefaultFileNameGenerator: ~
 
     App\Service\UploadDirectoryManager: ~
 

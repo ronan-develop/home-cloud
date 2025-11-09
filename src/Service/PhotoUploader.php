@@ -12,6 +12,8 @@ use App\Service\PhotoMimeTypeValidator;
 use App\Exception\PhotoUploadException;
 use App\Service\SafeFileMover;
 
+use App\Service\FileNameGeneratorInterface;
+
 class PhotoUploader
 {
     public function __construct(
@@ -19,7 +21,8 @@ class PhotoUploader
         private readonly ExifExtractor $exifExtractor,
         private readonly PhotoMimeTypeValidator $mimeTypeValidator,
         private readonly SafeDirectoryManager $directoryManager,
-        private readonly SafeFileMover $fileMover
+        private readonly SafeFileMover $fileMover,
+        private readonly FileNameGeneratorInterface $fileNameGenerator
     ) {}
 
     /**
@@ -35,7 +38,7 @@ class PhotoUploader
         $this->directoryManager->ensureDirectoryExists($this->targetDirectory);
         $mimeType = $file->getClientMimeType();
         $this->mimeTypeValidator->validate($file);
-        $filename = uniqid() . '_' . $file->getClientOriginalName();
+        $filename = $this->fileNameGenerator->generate($file->getClientOriginalName());
         $originalName = $file->getClientOriginalName();
         $size = $file->getSize();
 

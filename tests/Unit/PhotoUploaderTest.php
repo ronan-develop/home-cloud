@@ -36,7 +36,21 @@ class PhotoUploaderTest extends TestCase
         $fileMover = $this->createMock(\App\Service\SafeFileMover::class);
         $fileMover->expects($this->once())->method('move')->with($file, $targetDir, $this->anything());
 
-        $uploader = new \App\Service\PhotoUploader($targetDir, $extractor, $validator, $directoryManager, $fileMover);
+
+        $fileNameGenerator = $this->createMock(\App\Service\FileNameGeneratorInterface::class);
+        $fileNameGenerator->expects($this->once())
+            ->method('generate')
+            ->with('test.jpg')
+            ->willReturn('unique_test.jpg');
+
+        $uploader = new \App\Service\PhotoUploader(
+            $targetDir,
+            $extractor,
+            $validator,
+            $directoryManager,
+            $fileMover,
+            $fileNameGenerator
+        );
         $photo = $uploader->uploadPhoto($file, $user, $data);
 
         $this->assertInstanceOf(Photo::class, $photo);
@@ -47,7 +61,7 @@ class PhotoUploaderTest extends TestCase
         $this->assertSame($exif, $photo->getExifData());
         $this->assertSame('image/jpeg', $photo->getMimeType());
         $this->assertSame(1234, $photo->getSize());
-        $this->assertNotNull($photo->getFilename());
+        $this->assertSame('unique_test.jpg', $photo->getFilename());
         $this->assertNotNull($photo->getHash());
         $this->assertNotNull($photo->getUploadedAt());
     }
