@@ -8,15 +8,15 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Form\FormFactoryInterface;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
-use App\Exception\PhotoUploadException;
+use App\Form\Validator\UploadedFilePresenceValidator;
 
 class PhotoUploadHandler
 {
     public function __construct(
         private FormFactoryInterface $formFactory,
         private PhotoUploader $photoUploader,
-        private EntityManagerInterface $em
+        private EntityManagerInterface $em,
+        private UploadedFilePresenceValidator $filePresenceValidator
     ) {}
 
     /**
@@ -40,36 +40,47 @@ class PhotoUploadHandler
         $form = $this->formFactory->create(PhotoUploadType::class);
         $form->handleRequest($request);
 
-        if (!$form->isSubmitted()) {
-            return [false, $form, null, null];
-        }
-        if (!$form->isValid()) {
-            return [false, $form, null, 'Le formulaire contient des erreurs.'];
+        if (!$form->isSubmitted() || !$form->isValid()) {
+            $error = !$form->isSubmitted() ? null : 'Le formulaire contient des erreurs.';
+            return $this->fail($form, $error);
         }
 
-        /** @var UploadedFile|null $file */
+        // Validation présence fichier via service dédié
+        $this->filePresenceValidator->validate($form, 'file');
         $file = $form->get('file')->getData();
-        if (!$file) {
-            return [false, $form, null, 'Aucun fichier sélectionné.'];
-        }
 
-        try {
-            $photo = $this->photoUploader->uploadPhoto(
-                $file,
-                $user,
-                [
-                    'title' => $form->get('title')->getData(),
-                    'description' => $form->get('description')->getData(),
-                    'isFavorite' => $form->get('isFavorite')->getData(),
-                ]
-            );
-            $this->em->persist($photo);
-            $this->em->flush();
-            return [true, $form, $photo, null];
-        } catch (PhotoUploadException $e) {
-            return [false, $form, null, 'Erreur métier lors de l\'upload : ' . $e->getMessage()];
-        } catch (\Throwable $e) {
-            return [false, $form, null, 'Erreur technique lors de l\'upload : ' . $e->getMessage()];
-        }
+        $photo = $this->photoUploader->uploadPhoto(
+            $file,
+            $user,
+            $this->extractFormData($form)
+        );
+        $this->em->persist($photo);
+        $this->em->flush();
+        return [true, $form, $photo, null];
+    }
+
+    /**
+     * Retourne un tableau d'échec standardisé pour handle()
+     * @param \Symfony\Component\Form\FormInterface $form
+     * @param string|null $error
+     * @return array{0: false, 1: \Symfony\Component\Form\FormInterface, 2: null, 3: ?string}
+     */
+    private function fail($form, ?string $error = null): array
+    {
+        return [false, $form, null, $error];
+    }
+
+    /**
+     * Extrait les données du formulaire d'upload photo (hors fichier)
+     * @param \Symfony\Component\Form\FormInterface $form
+     * @return array{title: ?string, description: ?string, isFavorite: ?bool}
+     */
+    private function extractFormData($form): array
+    {
+        return [
+            'title' => $form->get('title')->getData(),
+            'description' => $form->get('description')->getData(),
+            'isFavorite' => $form->get('isFavorite')->getData(),
+        ];
     }
 }
