@@ -31,7 +31,7 @@ class FileController extends AbstractController
     public function listFiles(Request $request, FileRepository $fileRepository): Response
     {
         $user = $this->getUser();
-        if (!$user) {
+        if (!$user || !$user instanceof \App\Entity\User) {
             return $this->redirectToRoute('app_login');
         }
         $page = max(1, (int) $request->query->get('page', 1));
@@ -51,7 +51,10 @@ class FileController extends AbstractController
     public function downloadZip(EntityManagerInterface $em, ZipArchiveService $zipArchiveService, FileErrorRedirectorService $errorRedirector): BinaryFileResponse|RedirectResponse
     {
         $user = $this->getUser();
-        $userId = ($user instanceof User && method_exists($user, 'getId')) ? $user->getId() : 'unknown';
+        if (!$user || !$user instanceof \App\Entity\User) {
+            return $this->redirectToRoute('app_login');
+        }
+        $userId = $user->getId();
         $files = $em->getRepository(File::class)->findBy(['owner' => $user]);
         try {
             $response = $zipArchiveService->createZipResponse(
@@ -68,9 +71,17 @@ class FileController extends AbstractController
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function bulkDelete(BulkFileDeleteService $bulkFileDeleteService, FileErrorRedirectorService $errorRedirector): RedirectResponse
     {
-        $request = $this->container->get('request_stack')->getCurrentRequest();
+        $requestStack = $this->container->get('request_stack');
+        $request = $requestStack instanceof \Symfony\Component\HttpFoundation\RequestStack ? $requestStack->getCurrentRequest() : null;
+        if (!$request instanceof Request) {
+            return $this->redirectToRoute('app_home');
+        }
         $ids = $request->request->all('files');
+        /** @var array<int|string> $ids */
         $user = $this->getUser();
+        if (!$user || !$user instanceof \App\Entity\User) {
+            return $this->redirectToRoute('app_login');
+        }
         // Plus de if métier ici : tout est géré par exception dans le service
         $count = $bulkFileDeleteService->deleteFiles($ids, $user);
         $this->addFlash('success', $count . ' fichier(s) supprimé(s).');
@@ -93,8 +104,18 @@ class FileController extends AbstractController
          * est déportée dans les services via exception métier (fail-fast, SRP, testabilité).
          */
         $file = $em->getRepository(File::class)->find($id);
-        $fileAccessManager->assertDownloadAccess($file, $this->getUser());
+        $user = $this->getUser();
+        if (!$user || !$user instanceof \App\Entity\User) {
+            return $errorRedirector->handle('Utilisateur non authentifié', 'file_upload');
+        }
+        if (!$file) {
+            return $errorRedirector->handle('Fichier introuvable', 'file_upload');
+        }
+        $fileAccessManager->assertDownloadAccess($file, $user);
         $realPath = $filePathService->getSafePathOrNull($filePathSecurity, $file);
+        if (!$realPath) {
+            return $errorRedirector->handle('Chemin de fichier non valide', 'file_upload');
+        }
         $response = new BinaryFileResponse($realPath);
         $response->setContentDisposition(
             ResponseHeaderBag::DISPOSITION_ATTACHMENT,
@@ -116,11 +137,20 @@ class FileController extends AbstractController
         FileErrorRedirectorService $errorRedirector
     ): RedirectResponse {
         $file = $em->getRepository(File::class)->find($id);
-        // Plus de if métier ici : tout est géré par exception dans le service
-        $fileAccessManager->assertDeleteAccess($file, $this->getUser());
+        $user = $this->getUser();
+        if (!$user || !$user instanceof \App\Entity\User) {
+            return $this->redirectToRoute('app_login');
+        }
+        if (!$file) {
+            $this->addFlash('danger', 'Fichier introuvable.');
+            return $this->redirectToRoute('file_upload');
+        }
+        $fileAccessManager->assertDeleteAccess($file, $user);
         $realPath = $filePathService->getSafePathOrNull($filePathSecurity, $file);
         // Suppression physique sécurisée
-        $filePathSecurity->deleteFile($realPath);
+        if ($realPath) {
+            $filePathSecurity->deleteFile($realPath);
+        }
         $em->remove($file);
         $em->flush();
         $this->addFlash('success', 'Fichier supprimé avec succès.');
@@ -133,10 +163,18 @@ class FileController extends AbstractController
         FileSelectionService $fileSelectionService,
         ZipArchiveService $zipArchiveService,
     ): BinaryFileResponse|RedirectResponse {
-        $request = $this->container->get('request_stack')->getCurrentRequest();
+        $requestStack = $this->container->get('request_stack');
+        $request = $requestStack instanceof \Symfony\Component\HttpFoundation\RequestStack ? $requestStack->getCurrentRequest() : null;
+        if (!$request instanceof Request) {
+            return $this->redirectToRoute('app_home');
+        }
         $ids = $request->request->all('files');
+        /** @var array<int|string> $ids */
         $user = $this->getUser();
-        $userId = ($user instanceof User && method_exists($user, 'getId')) ? $user->getId() : 'unknown';
+        if (!$user || !$user instanceof \App\Entity\User) {
+            return $this->redirectToRoute('app_login');
+        }
+        $userId = $user->getId();
         // Plus de if métier ici : tout est géré par exception dans le service
         $files = $fileSelectionService->getUserFilesByIds($ids, $user);
         return $zipArchiveService->createZipResponse($files, 'mes-fichiers-homecloud.zip', (string)$userId);

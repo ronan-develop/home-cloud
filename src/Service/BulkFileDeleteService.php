@@ -23,7 +23,7 @@ class BulkFileDeleteService
 
     /**
      * Supprime en masse les fichiers pour un utilisateur
-     * @param array $ids Liste des IDs de fichiers
+     * @param array<int|string> $ids Liste des IDs de fichiers
      * @param User $user Utilisateur courant
      * @return int Nombre de fichiers supprimés
      */
