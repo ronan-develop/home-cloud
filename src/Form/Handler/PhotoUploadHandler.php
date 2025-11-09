@@ -11,6 +11,7 @@ use Symfony\Component\Form\FormFactoryInterface;
 use App\Form\Validator\UploadedFilePresenceValidator;
 use App\Form\Dto\PhotoUploadData;
 use App\Form\Dto\PhotoUploadResult;
+use Psr\Log\LoggerInterface;
 
 class PhotoUploadHandler
 {
@@ -18,7 +19,8 @@ class PhotoUploadHandler
         private FormFactoryInterface $formFactory,
         private PhotoUploader $photoUploader,
         private EntityManagerInterface $em,
-        private UploadedFilePresenceValidator $filePresenceValidator
+        private UploadedFilePresenceValidator $filePresenceValidator,
+        private LoggerInterface $logger
     ) {}
 
     /**
@@ -47,18 +49,28 @@ class PhotoUploadHandler
             return new PhotoUploadResult(false, $form, null, $error);
         }
 
-        // Validation présence fichier via service dédié
-        $this->filePresenceValidator->validate($form, 'file');
-        $file = $form->get('file')->getData();
+        try {
+            // Validation présence fichier via service dédié
+            $this->filePresenceValidator->validate($form, 'file');
+            $file = $form->get('file')->getData();
 
-        $photo = $this->photoUploader->uploadPhoto(
-            $file,
-            $user,
-            $this->extractFormData($form)
-        );
-        $this->em->persist($photo);
-        $this->em->flush();
-        return new PhotoUploadResult(true, $form, $photo, null);
+            $photo = $this->photoUploader->uploadPhoto(
+                $file,
+                $user,
+                $this->extractFormData($form)
+            );
+            $this->em->persist($photo);
+            $this->em->flush();
+            return new PhotoUploadResult(true, $form, $photo, null);
+        } catch (\Throwable $e) {
+            // Log uniquement les exceptions critiques (erreurs techniques)
+            $this->logger->error('Erreur critique lors de l\'upload de photo', [
+                'exception' => $e,
+                'user' => $user->getUserIdentifier(),
+                'request_uri' => $request->getRequestUri(),
+            ]);
+            return new PhotoUploadResult(false, $form, null, 'Une erreur technique est survenue lors de l\'upload.');
+        }
     }
 
     // La méthode fail() n'est plus nécessaire (remplacée par PhotoUploadResult)
