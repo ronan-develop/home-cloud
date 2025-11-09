@@ -31,7 +31,7 @@ class PhotoUploaderTest extends TestCase
         $user = $this->createMock(User::class);
         $data = ['title' => 'Titre', 'description' => 'Desc', 'isFavorite' => true];
 
-        $uploader = new PhotoUploader($targetDir, $validator, $extractor);
+        $uploader = new PhotoUploader($targetDir, $extractor, $validator);
         $photo = $uploader->uploadPhoto($file, $user, $data);
 
         $this->assertInstanceOf(Photo::class, $photo);

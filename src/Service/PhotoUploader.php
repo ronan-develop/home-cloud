@@ -8,18 +8,22 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 
 use App\Service\ExifExtractor;
+use App\Service\PhotoMimeTypeValidator;
 
 class PhotoUploader
 {
     private string $targetDirectory;
     private ExifExtractor $exifExtractor;
+    private PhotoMimeTypeValidator $mimeTypeValidator;
 
     public function __construct(
         string $targetDirectory,
-        ExifExtractor $exifExtractor
+        ExifExtractor $exifExtractor,
+        PhotoMimeTypeValidator $mimeTypeValidator
     ) {
         $this->targetDirectory = $targetDirectory;
         $this->exifExtractor = $exifExtractor;
+        $this->mimeTypeValidator = $mimeTypeValidator;
     }
 
     /**
@@ -36,6 +40,7 @@ class PhotoUploader
             mkdir($this->targetDirectory, 0775, true);
         }
         $mimeType = $file->getClientMimeType();
+        $this->mimeTypeValidator->validate($file);
         $filename = uniqid() . '_' . $file->getClientOriginalName();
         $originalName = $file->getClientOriginalName();
         $size = $file->getSize();

@@ -15,8 +15,6 @@ class FileUploadControllerTest extends WebTestCase
     {
         parent::setUp();
         // Reset complet base + fixtures (pattern IA Home Cloud)
-        shell_exec('php bin/console --env=test doctrine:schema:drop --force');
-        shell_exec('php bin/console --env=test doctrine:schema:create');
     }
 
     public function testUploadExecutableFileIsRejected(): void
@@ -25,9 +23,10 @@ class FileUploadControllerTest extends WebTestCase
         $container = static::getContainer();
         $em = $container->get('doctrine.orm.entity_manager');
         $passwordHasher = $container->get(UserPasswordHasherInterface::class);
-        $user = (new User())
-            ->setEmail('upload@example.com')
-            ->setUsername('uploaduser');
+        $unique = uniqid('uploaduser_');
+        $user = new User();
+        $user->setUsername($unique);
+        $user->setEmail($unique . '@example.com');
         $user->setPassword($passwordHasher->hashPassword($user, 'password'));
         $em->persist($user);
         $em->flush();
