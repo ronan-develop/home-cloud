@@ -26,15 +26,17 @@ class PhotoUploaderTest extends TestCase
         $file->method('getClientOriginalName')->willReturn('test.jpg');
         $file->method('getSize')->willReturn(1234);
         $file->method('getPathname')->willReturn(__FILE__);
-        $file->expects($this->once())->method('move');
 
         $user = $this->createMock(User::class);
         $data = ['title' => 'Titre', 'description' => 'Desc', 'isFavorite' => true];
 
-        $directoryManager = $this->createMock(\App\Service\UploadDirectoryManager::class);
+        $directoryManager = $this->createMock(\App\Service\SafeDirectoryManager::class);
         $directoryManager->expects($this->once())->method('ensureDirectoryExists')->with($targetDir);
 
-        $uploader = new PhotoUploader($targetDir, $extractor, $validator, $directoryManager);
+        $fileMover = $this->createMock(\App\Service\SafeFileMover::class);
+        $fileMover->expects($this->once())->method('move')->with($file, $targetDir, $this->anything());
+
+        $uploader = new \App\Service\PhotoUploader($targetDir, $extractor, $validator, $directoryManager, $fileMover);
         $photo = $uploader->uploadPhoto($file, $user, $data);
 
         $this->assertInstanceOf(Photo::class, $photo);

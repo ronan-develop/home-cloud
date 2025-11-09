@@ -9,25 +9,18 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 use App\Service\ExifExtractor;
 use App\Service\PhotoMimeTypeValidator;
+use App\Exception\PhotoUploadException;
+use App\Service\SafeFileMover;
 
 class PhotoUploader
 {
-    private string $targetDirectory;
-    private ExifExtractor $exifExtractor;
-    private PhotoMimeTypeValidator $mimeTypeValidator;
-    private UploadDirectoryManager $directoryManager;
-
     public function __construct(
-        string $targetDirectory,
-        ExifExtractor $exifExtractor,
-        PhotoMimeTypeValidator $mimeTypeValidator,
-        UploadDirectoryManager $directoryManager
-    ) {
-        $this->targetDirectory = $targetDirectory;
-        $this->exifExtractor = $exifExtractor;
-        $this->mimeTypeValidator = $mimeTypeValidator;
-        $this->directoryManager = $directoryManager;
-    }
+        private readonly string $targetDirectory,
+        private readonly ExifExtractor $exifExtractor,
+        private readonly PhotoMimeTypeValidator $mimeTypeValidator,
+        private readonly SafeDirectoryManager $directoryManager,
+        private readonly SafeFileMover $fileMover
+    ) {}
 
     /**
      * Gère l'upload d'une photo et retourne une entité Photo complète
@@ -50,7 +43,7 @@ class PhotoUploader
 
         // Extraction EXIF via service dédié (SRP)
         $autoExif = $this->exifExtractor->extract($file);
-        $file->move($this->targetDirectory, $filename);
+        $this->fileMover->move($file, $this->targetDirectory, $filename);
         $finalExif = array_merge($autoExif, $exifData);
 
         $photo = new Photo();

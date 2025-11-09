@@ -9,6 +9,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use App\Exception\PhotoUploadException;
 
 class PhotoUploadHandler
 {
@@ -65,8 +66,10 @@ class PhotoUploadHandler
             $this->em->persist($photo);
             $this->em->flush();
             return [true, $form, $photo, null];
+        } catch (PhotoUploadException $e) {
+            return [false, $form, null, 'Erreur métier lors de l\'upload : ' . $e->getMessage()];
         } catch (\Throwable $e) {
-            return [false, $form, null, 'Erreur lors de l\'upload : ' . $e->getMessage()];
+            return [false, $form, null, 'Erreur technique lors de l\'upload : ' . $e->getMessage()];
         }
     }
 }

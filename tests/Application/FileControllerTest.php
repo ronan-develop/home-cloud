@@ -11,7 +11,6 @@ class FileControllerTest extends WebTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // Reset complet base + fixtures (pattern IA Home Cloud)
     }
 
     public function testDownloadZipNominal(): void
