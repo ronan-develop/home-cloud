@@ -28,8 +28,6 @@ services:
     App\Service\PhotoUploader:
         arguments:
             $targetDirectory: '%app.photos_dir%'
-            $mimeTypeValidator: '@App\\Service\\PhotoMimeTypeValidator'
-            $exifExtractor: '@App\\Service\\ExifExtractor'
 
     # Injection explicite du répertoire upload pour FilePathSecurity
     App\Security\FilePathSecurity:

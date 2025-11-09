@@ -7,22 +7,18 @@ use App\Entity\User;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 
-use App\Service\PhotoMimeTypeValidator;
 use App\Service\ExifExtractor;
 
 class PhotoUploader
 {
     private string $targetDirectory;
-    private PhotoMimeTypeValidator $mimeTypeValidator;
     private ExifExtractor $exifExtractor;
 
     public function __construct(
         string $targetDirectory,
-        PhotoMimeTypeValidator $mimeTypeValidator,
         ExifExtractor $exifExtractor
     ) {
         $this->targetDirectory = $targetDirectory;
-        $this->mimeTypeValidator = $mimeTypeValidator;
         $this->exifExtractor = $exifExtractor;
     }
 
@@ -39,8 +35,6 @@ class PhotoUploader
         if (!is_dir($this->targetDirectory)) {
             mkdir($this->targetDirectory, 0775, true);
         }
-        // Validation du type MIME (SRP)
-        $this->mimeTypeValidator->validate($file);
         $mimeType = $file->getClientMimeType();
         $filename = uniqid() . '_' . $file->getClientOriginalName();
         $originalName = $file->getClientOriginalName();

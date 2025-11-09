@@ -37,6 +37,12 @@ class FileAccessVoterTest extends WebTestCase
         $em = $container->get('doctrine.orm.entity_manager');
         $hasher = $container->get(UserPasswordHasherInterface::class);
 
+        // Suppression de tout utilisateur 'owner' existant pour éviter l'erreur d'unicité
+        $existingOwner = $em->getRepository(User::class)->findOneBy(['username' => 'owner']);
+        if ($existingOwner) {
+            $em->remove($existingOwner);
+            $em->flush();
+        }
         $owner = $this->createUser($em, $hasher, 'owner');
         $client->loginUser($owner);
 
