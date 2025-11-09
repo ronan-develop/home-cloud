@@ -5,6 +5,7 @@
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
     app.files_dir: '%kernel.project_dir%/uploads/files'
+    app.photos_dir: '%kernel.project_dir%/uploads/photos'
 
 services:
     # default configuration for services in *this* file
@@ -22,6 +23,13 @@ services:
     App\Service\FileUploader:
         arguments:
             $targetDirectory: '%app.files_dir%'
+
+    # Injection explicite du répertoire cible pour PhotoUploader
+    App\Service\PhotoUploader:
+        arguments:
+            $targetDirectory: '%app.photos_dir%'
+            $mimeTypeValidator: '@App\\Service\\PhotoMimeTypeValidator'
+            $exifExtractor: '@App\\Service\\ExifExtractor'
 
     # Injection explicite du répertoire upload pour FilePathSecurity
     App\Security\FilePathSecurity:
