@@ -13,6 +13,20 @@ use App\Entity\Photo;
 
 class PhotoUploadType extends AbstractType
 {
+    /**
+     * Construit le formulaire d'upload de photo.
+     *
+     * Champs :
+     *  - file : fichier image/RAW à uploader (obligatoire, non mappé)
+     *  - title : titre optionnel
+     *  - description : description optionnelle
+     *  - isFavorite : favori ou non
+     *
+     * @param FormBuilderInterface $builder Le builder de formulaire Symfony
+     * @param array $options Les options du formulaire
+     *
+     * @return void
+     */
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
