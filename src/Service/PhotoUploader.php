@@ -21,7 +21,7 @@ class PhotoUploader
         private readonly string $targetDirectory,
         private readonly ExifExtractor $exifExtractor,
         private readonly PhotoMimeTypeValidator $mimeTypeValidator,
-        private readonly SafeDirectoryManager $directoryManager,
+        private readonly UploadDirectoryManager $directoryManager,
         private readonly SafeFileMover $fileMover,
         private readonly FileNameGeneratorInterface $fileNameGenerator
     ) {}

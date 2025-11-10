@@ -16,8 +16,8 @@ class PhotoController extends AbstractController
     {
         $result = $handler->handle($request, $user);
         if ($result->success) {
-            $this->addFlash('success', 'Photo uploadée avec succès !');
-            return $this->redirectToRoute('photo_upload');
+            $this->addFlash('success', 'Photo(s) uploadée(s) avec succès !');
+            return $this->redirectToRoute('photos_home');
         }
         return $this->render('photos/upload.html.twig', [
             'form' => $result->form->createView(),

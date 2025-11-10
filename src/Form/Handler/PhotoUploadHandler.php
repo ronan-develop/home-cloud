@@ -40,18 +40,8 @@ class PhotoUploadHandler
      */
     public function handle(Request $request, UserInterface $user): PhotoUploadResult
     {
-        // Vérification du droit d'upload (ROLE_USER obligatoire)
         $form = $this->formFactory->create(PhotoUploadType::class);
         $form->handleRequest($request);
-        if (!\in_array('ROLE_USER', method_exists($user, 'getRoles') ? $user->getRoles() : [], true)) {
-            return new PhotoUploadResult(false, $form, null, "Vous n'avez pas le droit d'uploader des photos.");
-        }
-
-
-        $form = $this->formFactory->create(PhotoUploadType::class);
-        $form->handleRequest($request);
-
-        // Vérification du droit d'upload (ROLE_USER obligatoire)
         if (!\in_array('ROLE_USER', method_exists($user, 'getRoles') ? $user->getRoles() : [], true)) {
             return new PhotoUploadResult(false, $form, null, "Vous n'avez pas le droit d'uploader des photos.");
         }
@@ -65,7 +55,6 @@ class PhotoUploadHandler
             // Validation présence fichier via service dédié
             $this->filePresenceValidator->validate($form, 'file');
             $file = $form->get('file')->getData();
-
             $photo = $this->photoUploader->uploadPhoto(
                 $file,
                 $user,
@@ -75,7 +64,6 @@ class PhotoUploadHandler
             $this->em->flush();
             return new PhotoUploadResult(true, $form, $photo, null);
         } catch (\Throwable $e) {
-            // Log uniquement les exceptions critiques (erreurs techniques)
             $this->logger->error('Erreur critique lors de l\'upload de photo', [
                 'exception' => $e,
                 'user' => $user->getUserIdentifier(),
