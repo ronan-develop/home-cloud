@@ -12,6 +12,7 @@ use App\Service\PhotoFetcher;
 
 class PhotoController extends AbstractController
 {
+
     #[Route('/photos', name: 'photos_home')]
     public function index(PhotoFetcher $photoFetcher, UserInterface $user): Response
     {

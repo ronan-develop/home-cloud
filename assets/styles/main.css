@@ -1,14 +1,14 @@
+@import "./_photo-glass-card.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Effet glassmorphism */
-.glass {
-	background: rgba(255,255,255,0.15);
-	backdrop-filter: blur(12px);
-	border-radius: 1rem;
-	border: 1px solid rgba(255,255,255,0.2);
-	box-shadow: 0 4px 32px 0 rgba(31, 38, 135, 0.15);
+/* Fond à points blancs sur fond noir pour la galerie */
+.gallery-bg {
+	min-height: 100vh;
+	background-color: #181622;
+	background-image: radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);
+	background-size: 24px 24px;
 }
-
 
