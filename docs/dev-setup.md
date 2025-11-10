@@ -1,4 +1,7 @@
+
 # 🛠️ Mise en place de l’environnement de développement – Home Cloud
+
+[⬅️ Retour au README](../README.md)
 
 Ce guide détaille toutes les étapes pour installer et configurer l’environnement de développement du projet Home Cloud : Symfony, npm, Tailwind, Stimulus, etc. Il est destiné à garantir une installation reproductible et conforme aux contraintes O2Switch.
 

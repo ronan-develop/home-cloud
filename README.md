@@ -28,6 +28,11 @@ Documentation générale.
 - [Mise en place de l’environnement de développement](docs/dev-setup.md)
 - [Gestion paginée des fichiers utilisateur](docs/user-files.md)
 - [Pattern contrôleur ultra-lean](docs/controller-ultra-lean.md)
+- [Endpoints API](docs/api_endpoints.md)
+- [Architecture](docs/architecture.md)
+- [Fixtures & jeux de données](docs/fixtures.md)
+- [Tests & Qualité](docs/tests.md)
+- [Import Google Photos](docs/google-photos-api.md)
 
 ---
 
