@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>
+			Ajouter une photo - MyPhotos
+		</title>
+				
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>"> 
+					<script type="module" src="http://localhost:5173/build/@vite/client" crossorigin></script><script crossorigin type="module" src="http://localhost:5173/build/assets/app.js"></script>
+			</head>
+	<body>
+											<div class="flash-error">
+					Type MIME refusé : &#039;application/octet-stream&#039;. Types acceptés : image/jpeg, image/png, image/gif, image/webp, image/bmp, image/svg+xml, image/tiff, image/x-canon-cr2, image/x-canon-crw, image/x-nikon-nef, image/x-sony-arw, image/x-adobe-dng, image/x-olympus-orf, image/x-panasonic-raw, image/x-fuji-raf, image/x-pentax-pef, image/x-samsung-srw, image/x-minolta-mrw, image/x-leaf-mos, image/x-hasselblad-3fr, image/x-hasselblad-fff, image/x-kodak-dcr, image/x-kodak-k25, image/x-kodak-kdc, image/x-mamiya-mef, image/x-raw
+				</div>
+								<div class="max-w-xl mx-auto mt-10 p-6 bg-white rounded shadow">
+		<h1 class="text-2xl font-bold mb-4">Ajouter une photo</h1>
+						<form name="photo_upload" method="post" enctype="multipart/form-data" enctype="multipart/form-data">
+		<div class="mb-4">
+			<div><label for="photo_upload_file" class="required">Fichier</label><input type="file" id="photo_upload_file" name="photo_upload[file]" required="required" /></div>
+		</div>
+		<div class="mb-4">
+			<div><label for="photo_upload_title">Titre</label><input type="text" id="photo_upload_title" name="photo_upload[title]" value="Test PPTX" /></div>
+		</div>
+		<div class="mb-4">
+			<div><label for="photo_upload_description">Description</label><textarea id="photo_upload_description" name="photo_upload[description]"></textarea></div>
+		</div>
+		<div class="mb-4">
+			<div><label for="photo_upload_isFavorite">Favori</label><input type="checkbox" id="photo_upload_isFavorite" name="photo_upload[isFavorite]" value="1" /></div>
+		</div>
+		<div><button type="submit" id="photo_upload_save" name="photo_upload[save]" class="btn btn-blue w-full mt-4">Uploader la photo</button></div><input type="hidden" id="photo_upload__token" name="photo_upload[_token]" data-controller="csrf-protection" value="csrf-token" />
+		</form>
+	</div>
+	</body>
+</html>

@@ -6,22 +6,21 @@ use App\Entity\Album;
 use App\Entity\Photo;
 use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
 use Doctrine\Common\Collections\ArrayCollection;
 
-class PhotoAlbumFixture extends Fixture
+class PhotoAlbumFixture extends Fixture implements DependentFixtureInterface
 {
+    public function getDependencies(): array
+    {
+        return [UserFixture::class];
+    }
     public function load(ObjectManager $manager): void
     {
-        // Récupère l'utilisateur admin existant
-        $user = $manager->getRepository(User::class)->findOneBy(['username' => 'admin']);
-        if (!$user) {
-            $user = new User();
-            $user->setUsername('admin');
-            $user->setRoles(['ROLE_ADMIN']);
-            $user->setPassword('$2y$13$xp5w9VmPOu6NbUUIRw2kfegQ7wVDP6OBcHhRQTC.t6f2Ke9ldDKG2');
-            $manager->persist($user);
-        }
+        // Récupère l'utilisateur admin via référence
+        /** @var User $user */
+        $user = $this->getReference('admin', User::class);
 
         // Création de quelques albums
         $album1 = new Album();

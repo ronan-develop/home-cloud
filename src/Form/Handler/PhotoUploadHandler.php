@@ -63,6 +63,9 @@ class PhotoUploadHandler
             $this->em->persist($photo);
             $this->em->flush();
             return new PhotoUploadResult(true, $form, $photo, null);
+        } catch (\InvalidArgumentException $e) {
+            // Erreur métier (ex: type MIME refusé)
+            return new PhotoUploadResult(false, $form, null, $e->getMessage());
         } catch (\Throwable $e) {
             $this->logger->error('Erreur critique lors de l\'upload de photo', [
                 'exception' => $e,
