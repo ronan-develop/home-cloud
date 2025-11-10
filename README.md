@@ -9,7 +9,6 @@ Documentation générale.
 - [🏠 Home Cloud](#-home-cloud)
   - [📚 Sommaire](#-sommaire)
   - [🚀 Fonctionnalités principales](#-fonctionnalités-principales)
-  - [📚 Documentation technique](#-documentation-technique)
   - [🧩 Services métier](#-services-métier)
 
 ---
@@ -23,8 +22,6 @@ Documentation générale.
 
 ---
 
-## 📚 Documentation technique
-
 - [Mise en place de l’environnement de développement](docs/dev-setup.md)
 - [Gestion paginée des fichiers utilisateur](docs/user-files.md)
 - [Pattern contrôleur ultra-lean](docs/controller-ultra-lean.md)
@@ -33,6 +30,7 @@ Documentation générale.
 - [Fixtures & jeux de données](docs/fixtures.md)
 - [Tests & Qualité](docs/tests.md)
 - [Import Google Photos](docs/google-photos-api.md)
+- [Sécurisation de la diffusion des photos](docs/photo-securisation.md)
 
 ---
 
