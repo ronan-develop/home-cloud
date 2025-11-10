@@ -34,6 +34,10 @@ Documentation générale.
 
 ---
 
+## 🖼️ Composant UX : Galerie photo
+
+Voir la documentation dédiée : [docs/photo_gallery_component.md](docs/photo_gallery_component.md)
+
 ## 🧩 Services métier
 
 Consultez la documentation détaillée des services métier dans [Services.md](./Services.md).

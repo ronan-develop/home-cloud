@@ -1,0 +1,19 @@
+{# templates/components/photo_gallery.html.twig #}
+{# Mobile first, lazy loading, sécurité via controller #}
+<div class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+  {% for photo in photos %}
+    <figure class="relative group">
+      <img
+        src="{{ path('photo_view', {id: photo.id}) }}"
+        alt="{{ photo.title ?? photo.originalName }}"
+        loading="lazy"
+        class="w-full h-auto object-cover rounded shadow-sm transition-transform duration-200 group-hover:scale-105"
+      >
+      {% if photo.title %}
+        <figcaption class="absolute bottom-0 left-0 w-full bg-black/60 text-white text-xs p-1 truncate">{{ photo.title }}</figcaption>
+      {% endif %}
+    </figure>
+  {% else %}
+    <div class="col-span-full text-center text-gray-400 py-8">Aucune photo à afficher.</div>
+  {% endfor %}
+</div>
