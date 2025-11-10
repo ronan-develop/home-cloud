@@ -11,6 +11,7 @@ class PhotosController extends AbstractController
   #[Route('/photos', name: 'photos_home')]
   public function index(): Response
   {
+    $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
     return $this->render('photos/index.html.twig');
   }
 }
