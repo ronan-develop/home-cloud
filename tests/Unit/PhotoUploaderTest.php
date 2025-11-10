@@ -31,7 +31,7 @@ class PhotoUploaderTest extends TestCase
         $user = $this->createMock(User::class);
         $data = new PhotoUploadData('Titre', 'Desc', true);
 
-        $directoryManager = $this->createMock(\App\Service\SafeDirectoryManager::class);
+        $directoryManager = $this->createMock(\App\Service\UploadDirectoryManager::class);
         $directoryManager->expects($this->once())->method('ensureDirectoryExists')->with($targetDir);
 
         $fileMover = $this->createMock(\App\Service\SafeFileMover::class);
