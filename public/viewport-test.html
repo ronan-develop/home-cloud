@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viewport Size Checker</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #181622 0%, #2a1f3d 100%);
+            color: #fff;
+        }
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(167, 139, 250, 0.3);
+            backdrop-filter: blur(12px);
+        }
+        h1 {
+            font-size: 2rem;
+            margin: 0 0 1rem 0;
+            background: linear-gradient(135deg, #a3e4db 0%, #9d8fd1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .info {
+            font-size: 1.5rem;
+            margin: 1rem 0;
+            font-weight: 600;
+        }
+        .label {
+            color: #a78bfa;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .value {
+            font-size: 2.5rem;
+            margin-top: 0.5rem;
+            font-family: 'Courier New', monospace;
+            color: #a3e4db;
+        }
+        .breakpoint {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(167, 139, 250, 0.3);
+        }
+        .breakpoint-label {
+            color: #a78bfa;
+            font-size: 0.9rem;
+        }
+        .breakpoint-value {
+            font-size: 1.3rem;
+            margin-top: 0.5rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📐 Viewport Size</h1>
+        
+        <div class="info">
+            <div class="label">Width</div>
+            <div class="value" id="width">-</div>
+        </div>
+        
+        <div class="info">
+            <div class="label">Height</div>
+            <div class="value" id="height">-</div>
+        </div>
+        
+        <div class="breakpoint">
+            <div class="breakpoint-label">Tailwind Breakpoint</div>
+            <div class="breakpoint-value" id="breakpoint">-</div>
+        </div>
+    </div>
+
+    <script>
+        function updateSize() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            
+            document.getElementById('width').textContent = width + 'px';
+            document.getElementById('height').textContent = height + 'px';
+            
+            let breakpoint = 'xs (mobile)';
+            if (width >= 1536) breakpoint = '2xl (1536px+)';
+            else if (width >= 1280) breakpoint = 'xl (1280px+)';
+            else if (width >= 1024) breakpoint = 'lg (1024px+)';
+            else if (width >= 768) breakpoint = 'md (768px+)';
+            else if (width >= 640) breakpoint = 'sm (640px+)';
+            
+            document.getElementById('breakpoint').textContent = breakpoint;
+        }
+        
+        updateSize();
+        window.addEventListener('resize', updateSize);
+    </script>
+</body>
+</html>

@@ -1,13 +1,16 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}MyPhotos - Home Cloud{% endblock %}
+{% block title %}MyPhotos - Home Cloud
+{% endblock %}
 
 {% block body %}
-  <div class="">
-    {{ component('Navbar', { title: 'MyPhotos' }) }}
-  </div>
-  <div class="flex flex-col items-center justify-center py-16">
-    <h2 class="text-2xl font-semibold text-gray-700 mb-4">Mes photos</h2>
-    {{ component('photo_gallery', { photos: photos }) }}
-  </div>
+	<div class="">
+		{{ component('Navbar', { title: 'MyPhotos' }) }}
+	</div>
+	<div class="flex flex-col items-center justify-center py-16">
+		<h2 class="gallery-title text-2xl font-semibold text-white mb-4">Mes photos</h2>
+	</div>
+	<div class="w-full px-4">
+		{{ component('photo_gallery', { photos: photos }) }}
+	</div>
 {% endblock %}

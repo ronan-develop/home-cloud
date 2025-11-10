@@ -1,16 +1,11 @@
 {# templates/components/photo_gallery.html.twig #}
 {# Mobile first, lazy loading, sécurité via controller #}
-<div class="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+	<div class="gallery-grid"> 
   {% for photo in photos %}
-    <figure class="glass-card group relative overflow-hidden flex items-center justify-center transition-all duration-300 hover:shadow-purple-400/60">
-      <img
-        src="{{ path('photo_view', {id: photo.id}) }}"
-        alt="{{ photo.title ?? photo.originalName }}"
-        loading="lazy"
-        class="w-full h-full object-cover"
-      >
-    </figure>
-  {% else %}
-    <div class="col-span-full text-center text-gray-300 py-8">Aucune photo à afficher.</div>
-  {% endfor %}
+		<figure class="glass-card group relative overflow-hidden flex items-center justify-center transition-all duration-300 hover:shadow-purple-400/60">
+			<img src="{{ path('photo_view', {id: photo.id}) }}" alt="{{ photo.title ?? photo.originalName }}" loading="lazy" class="w-full h-full object-cover">
+		</figure>
+	{% else %}
+		<div class="col-span-full text-center text-gray-300 py-8">Aucune photo à afficher.</div>
+	{% endfor %}
 </div>
