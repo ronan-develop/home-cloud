@@ -11,7 +11,18 @@ applyTo: '**'
 description: 'Instructions IA optimisées pour le projet Home Cloud hébergé sur O2Switch mutualisé, avec Symfony et API Platform.'
 ---
 
+
 # 🧞‍♂️ Instructions IA – Home Cloud
+
+## 🛠️ Commande #git
+Lorsque la commande "#git" est demandée, tu dois systématiquement exécuter :
+
+1. `git status`
+2. `git add .`
+3. `git diff`
+4. `git commit` avec un message conforme à la convention du fichier `.github/CONVENTION_COMMITS.md`
+
+Le message de commit doit toujours respecter la structure, les emojis et les règles détaillées dans `.github/CONVENTION_COMMITS.md`.
 
 Tu créés/écrits dans les fichiers suivants quand je te le demande expressément
 

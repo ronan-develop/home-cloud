@@ -1,0 +1,64 @@
+<?php
+
+namespace App\DataFixtures;
+
+use App\Entity\Album;
+use App\Entity\Photo;
+use App\Entity\User;
+use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Persistence\ObjectManager;
+use Doctrine\Common\Collections\ArrayCollection;
+
+class PhotoAlbumFixture extends Fixture
+{
+    public function load(ObjectManager $manager): void
+    {
+        // Récupère l'utilisateur admin existant
+        $user = $manager->getRepository(User::class)->findOneBy(['username' => 'admin']);
+        if (!$user) {
+            $user = new User();
+            $user->setUsername('admin');
+            $user->setRoles(['ROLE_ADMIN']);
+            $user->setPassword('$2y$13$xp5w9VmPOu6NbUUIRw2kfegQ7wVDP6OBcHhRQTC.t6f2Ke9ldDKG2');
+            $manager->persist($user);
+        }
+
+        // Création de quelques albums
+        $album1 = new Album();
+        $album1->setName('Vacances été 2025');
+        $album1->setDescription('Photos de vacances à la mer.');
+        $manager->persist($album1);
+
+        $album2 = new Album();
+        $album2->setName('Famille');
+        $album2->setDescription('Moments en famille.');
+        $manager->persist($album2);
+
+        // Création de photos associées aux albums
+        foreach (
+            [
+                ['album' => $album1, 'title' => 'Plage', 'filename' => 'plage.jpg'],
+                ['album' => $album1, 'title' => 'Coucher de soleil', 'filename' => 'sunset.jpg'],
+                ['album' => $album2, 'title' => 'Anniversaire', 'filename' => 'anniversaire.jpg'],
+            ] as $data
+        ) {
+            $photo = new Photo();
+            $photo->setUser($user);
+            $photo->setAlbum($data['album']);
+            $photo->setTitle($data['title']);
+            $photo->setFilename($data['filename']);
+            $photo->setOriginalName($data['filename']);
+            $photo->setMimeType('image/jpeg');
+            $photo->setSize(123456);
+            $photo->setUploadedAt(new \DateTimeImmutable('-1 days'));
+            $photo->setUpdatedAt(new \DateTimeImmutable());
+            $photo->setDescription('Description de la photo ' . $data['title']);
+            $photo->setIsFavorite(false);
+            $photo->setHash(md5($data['filename']));
+            $photo->setExifData([]);
+            $manager->persist($photo);
+        }
+
+        $manager->flush();
+    }
+}
