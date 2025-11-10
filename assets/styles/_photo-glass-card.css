@@ -1,0 +1,24 @@
+/* Style inspiré Modern UI Card pour la galerie photo */
+.glass-card {
+  position: relative;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: #181622;
+  border: 1.5px solid #a78bfa; /* violet-400 */
+  box-shadow: 0 4px 32px 0 #a78bfa33, 0 1.5px 0 0 #a78bfa;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.glass-card::after {
+  content: '';
+  position: absolute;
+  top: -3rem;
+  right: -3rem;
+  width: 10rem;
+  height: 10rem;
+  border-radius: 9999px;
+  background: rgba(167, 139, 250, 0.5); /* violet-300/50 */
+  filter: blur(32px);
+  z-index: 1;
+  pointer-events: none;
+}

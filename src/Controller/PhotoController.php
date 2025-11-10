@@ -12,15 +12,6 @@ use App\Service\PhotoFetcher;
 
 class PhotoController extends AbstractController
 {
-    #[Route('/photos/home', name: 'photos_home_page')]
-    public function home(PhotoFetcher $photoFetcher, UserInterface $user): Response
-    {
-        $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
-        $photos = $photoFetcher->forUser($user);
-        return $this->render('photos/home.html.twig', [
-            'photos' => $photos,
-        ]);
-    }
 
     #[Route('/photos', name: 'photos_home')]
     public function index(PhotoFetcher $photoFetcher, UserInterface $user): Response

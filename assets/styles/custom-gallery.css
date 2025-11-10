@@ -1,0 +1,38 @@
+/* Styles custom non purgés par Tailwind */
+.gallery-bg {
+  min-height: 100vh;
+  background-color: #181622;
+  background-image: radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.glass-card {
+  position: relative;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(24, 22, 34, 0.9) 0%, rgba(34, 28, 48, 0.8) 100%);
+  border: 1.5px solid #a78bfa; /* violet-400 */
+  box-shadow: 
+    0 4px 32px 0 #a78bfa33, 
+    0 1.5px 0 0 #a78bfa,
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  aspect-ratio: 3 / 4;
+  height: 15rem;
+}
+
+.glass-card:hover {
+  box-shadow: 
+    0 8px 48px 0 #a78bfa55, 
+    0 1.5px 0 0 #a78bfa,
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  border-color: #c4b5fd; /* violet-300 */
+}
+
+.glass-card img {
+  transition: transform 0.3s ease;
+}
+
+.glass-card:hover img {
+  transform: scale(1.05);
+}
