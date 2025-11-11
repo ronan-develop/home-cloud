@@ -5,7 +5,10 @@
 
 {% block body %}
 	{{ component('Navbar', { title: 'MyPhotos' }) }}
-	<div class="flex flex-col items-center justify-center py-16">
+	<div class="flex flex-col items-center justify-center py-8">
+		<div class="w-full flex justify-end mb-4 px-4">
+			{% include 'components/album_new_button.html.twig' %}
+		</div>
 		<h2 class="gallery-title text-2xl font-semibold text-white mb-4">Mes photos</h2>
 	</div>
 	<div class="w-full px-4">

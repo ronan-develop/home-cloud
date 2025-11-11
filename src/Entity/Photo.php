@@ -4,6 +4,9 @@ namespace App\Entity;
 
 use App\Repository\PhotoRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use App\Entity\Album;
 
 #[ORM\Entity(repositoryClass: PhotoRepository::class)]
 class Photo
@@ -50,22 +53,44 @@ class Photo
     #[ORM\Column]
     private array $exifData = [];
 
-    #[ORM\ManyToOne(targetEntity: Album::class, inversedBy: 'photos')]
-    private ?Album $album = null;
+
+    #[ORM\ManyToMany(targetEntity: Album::class, mappedBy: 'photos')]
+    private Collection $albums;
+
+
+    public function __construct()
+    {
+        $this->albums = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getAlbum(): ?Album
+
+    /**
+     * @return Collection<int, Album>
+     */
+    public function getAlbums(): Collection
     {
-        return $this->album;
+        return $this->albums;
     }
 
-    public function setAlbum(?Album $album): self
+    public function addAlbum(Album $album): self
     {
-        $this->album = $album;
+        if (!$this->albums->contains($album)) {
+            $this->albums[] = $album;
+            $album->addPhoto($this);
+        }
+        return $this;
+    }
+
+    public function removeAlbum(Album $album): self
+    {
+        if ($this->albums->removeElement($album)) {
+            $album->removePhoto($this);
+        }
         return $this;
     }
 

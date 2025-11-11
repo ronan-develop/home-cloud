@@ -1,0 +1,164 @@
+<?php
+
+namespace App\Controller;
+
+use App\Entity\Album;
+use App\Repository\AlbumRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Workflow\WorkflowInterface;
+
+#[Route('/albums', name: 'album_')]
+class AlbumController extends AbstractController
+{
+    #[Route('/', name: 'index', methods: ['GET'])]
+    public function index(AlbumRepository $albumRepository): Response
+    {
+        $albums = $albumRepository->findBy(['owner' => $this->getUser()]);
+        return $this->render('albums/index.html.twig', [
+            'albums' => $albums,
+        ]);
+    }
+
+    #[Route('/new', name: 'new', methods: ['GET', 'POST'])]
+    public function new(Request $request, EntityManagerInterface $em, #[Autowire(service: 'state_machine.album_creation')] WorkflowInterface $albumCreationStateMachine): Response
+    {
+        $session = $request->getSession();
+        // Réinitialiser le wizard à chaque accès GET (toujours repartir de zéro)
+        if ($request->isMethod('GET')) {
+            $session->remove('album_wizard');
+        }
+        $album = $session->get('album_wizard') ?: new Album();
+
+        // Initialiser l'état au premier appel si nécessaire
+        $marking = $albumCreationStateMachine->getMarking($album);
+        if (empty($marking->getPlaces())) {
+            $album->marking = 'titre';
+        }
+
+        $currentPlace = $albumCreationStateMachine->getMarking($album)->getPlaces();
+        $currentStep = array_key_first($currentPlace);
+
+        // ÉTAPE 1 : titre
+        if ($currentStep === 'titre') {
+            if ($request->isMethod('POST')) {
+                $title = $request->request->get('album_title');
+                if ($title) {
+                    $album->setName($title);
+                    $albumCreationStateMachine->apply($album, 'titre_to_description');
+                    $session->set('album_wizard', $album);
+                    return $this->redirectToRoute('album_new');
+                }
+            }
+            return $this->render('albums/new.html.twig', [
+                'step' => 'titre',
+                'album' => $album,
+            ]);
+        }
+
+        // ÉTAPE 2 : description
+        if ($currentStep === 'description') {
+            if ($request->isMethod('POST')) {
+                $desc = $request->request->get('album_description');
+                if ($desc) {
+                    $album->setDescription($desc);
+                    $albumCreationStateMachine->apply($album, 'description_to_photos');
+                    $session->set('album_wizard', $album);
+                    return $this->redirectToRoute('album_new');
+                }
+            }
+            return $this->render('albums/new.html.twig', [
+                'step' => 'description',
+                'album' => $album,
+            ]);
+        }
+
+        // ÉTAPE 3 : photos
+        if ($currentStep === 'photos') {
+            if ($request->isMethod('POST')) {
+                $ids = json_decode($request->request->get('selected_photos', '[]'), true);
+                if (is_array($ids) && count($ids) > 0) {
+                    $photoRepo = $em->getRepository(\App\Entity\Photo::class);
+                    $album->getPhotos()->clear();
+                    foreach ($ids as $id) {
+                        $photo = $photoRepo->find($id);
+                        if ($photo) {
+                            $album->addPhoto($photo);
+                        }
+                    }
+                    $albumCreationStateMachine->apply($album, 'photos_to_confirmation');
+                    $session->set('album_wizard', $album);
+                    return $this->redirectToRoute('album_new');
+                }
+            }
+            return $this->render('albums/new.html.twig', [
+                'step' => 'photos',
+                'album' => $album,
+            ]);
+        }
+
+        // ÉTAPE 4 : confirmation
+        if ($currentStep === 'confirmation') {
+            if ($request->isMethod('POST')) {
+                if ($request->request->has('back_to_photos')) {
+                    // Retour à l'étape précédente
+                    $albumCreationStateMachine->apply($album, 'retour_photos');
+                    $session->set('album_wizard', $album);
+                    return $this->redirectToRoute('album_new');
+                }
+                // Validation finale, on sauvegarde l'album
+                $album->setOwner($this->getUser());
+                $album->setCreatedAt(new \DateTimeImmutable());
+                $em->persist($album);
+                $em->flush();
+                $session->remove('album_wizard');
+                $this->addFlash('success', 'Album créé avec succès.');
+                return $this->redirectToRoute('album_index');
+            }
+            return $this->render('albums/new.html.twig', [
+                'step' => 'confirmation',
+                'album' => $album,
+            ]);
+        }
+
+        // Sécurité : si étape inconnue, reset
+        $session->remove('album_wizard');
+        return $this->redirectToRoute('album_new');
+    }
+
+    #[Route('/{id}/edit', name: 'edit', methods: ['GET', 'POST'])]
+    public function edit(Album $album, Request $request, EntityManagerInterface $em): Response
+    {
+        $this->denyAccessUnlessGranted('EDIT', $album);
+        $form = $this->createForm(\App\Form\AlbumType::class, $album);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $album->setUpdatedAt(new \DateTimeImmutable());
+            $em->flush();
+            $this->addFlash('success', 'Album modifié avec succès.');
+            return $this->redirectToRoute('album_index');
+        }
+
+        return $this->render('albums/edit.html.twig', [
+            'form' => $form->createView(),
+            'album' => $album,
+        ]);
+    }
+
+    #[Route('/{id}/delete', name: 'delete', methods: ['POST'])]
+    public function delete(Album $album, Request $request, EntityManagerInterface $em): Response
+    {
+        $this->denyAccessUnlessGranted('DELETE', $album);
+        if ($this->isCsrfTokenValid('delete_album_' . $album->getId(), $request->request->get('_token'))) {
+            $em->remove($album);
+            $em->flush();
+            $this->addFlash('success', 'Album supprimé.');
+        }
+        return $this->redirectToRoute('album_index');
+    }
+}

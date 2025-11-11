@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouvel album
+{% endblock %}
+
+{% block body %}
+	{% if step == 'titre' %}
+		{# Étape 1 : uniquement le formulaire de titre #}
+		{% include 'albums/_create_workflow.html.twig' %}
+	{% elseif step == 'description' %}
+		<div class="max-w-lg mx-auto mt-10 p-6 bg-white/90 rounded-xl shadow-lg">
+			<h2 class="text-xl font-bold mb-4">Ajouter une description à l'album</h2>
+			<form method="post" action="{{ path('album_new') }}">
+				<div class="mb-6">
+					<label for="album_description" class="block text-lg font-semibold mb-2">Description</label>
+					<textarea id="album_description" name="album_description" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none" rows="3" placeholder="Ex : Vacances d'été, souvenirs en famille...">{{ album.description ?? '' }}</textarea>
+				</div>
+				<button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">Continuer</button>
+			</form>
+		</div>
+	{% elseif step == 'photos' %}
+		{# Étape 3 : sélection des photos #}
+		{% include 'albums/_create_photos_step.html.twig' %}
+	{% elseif step == 'confirmation' %}
+		{% include 'albums/_create_confirmation_step.html.twig' %}
+	{% endif %}
+{% endblock %}

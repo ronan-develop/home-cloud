@@ -1,3 +1,4 @@
+import './photo-lazy-grid.js';
 import './stimulus_bootstrap.js';
 /*
  * Welcome to your app's main JavaScript file!
@@ -9,8 +10,8 @@ import './stimulus_bootstrap.js';
 import './styles/main.css';
 import './styles/custom-gallery.css';
 
-
-// --- Dark mode switch ---
+// Contrôleurs et initialiseurs
+import './controllers/album-photos-controller.js';
 document.addEventListener('DOMContentLoaded', () => {
 	const html = document.documentElement;
 	const btn = document.getElementById('dark-mode-toggle');
