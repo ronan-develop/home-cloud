@@ -15,7 +15,8 @@
 			{{ vite_entry_script_tags('app') }}
 		{% endblock %}
 	</head>
-	<body class="gallery-bg">
+	<body
+		class="gallery-bg photos-home">
 		{# Affichage des messages flash #}
 		{% for label, messages in app.flashes %}
 			{% for message in messages %}

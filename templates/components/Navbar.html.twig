@@ -1,22 +1,18 @@
-<div{{attributes}}>
-	{# Composant principal Navbar (MyPhotos) #}
-	<nav class="glass w-full flex items-center px-8 py-3 gap-4 shadow-lg text-gray-900 backdrop-blur-md">
-		<div class="flex items-center h-full">
-			<span class="text-2xl font-bold tracking-tight text-blue-700">{{ title }}</span>
-		</div>
-		<div class="flex-1 flex justify-center items-center h-full">
-			<div class="relative w-full max-w-md">
-				<input type="text" placeholder="Rechercher..." class="liquid w-full px-4 py-2 rounded-full bg-white/60 text-gray-800 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 shadow">
-				<span class="absolute left-3 top-2.5 text-gray-400">
-					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewbox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
-				</span>
-			</div>
-		</div>
-		<div class="flex items-center h-full">
-			<a href="{{ path('photo_upload') }}" class="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-600 text-white font-semibold shadow hover:bg-blue-700 transition ml-2" title="Ajouter une photo">
-				<span class="text-xl leading-none">+</span>
-				<span class="hidden sm:inline">Ajouter</span>
-			</a>
-		</div>
-	</nav>
-</div>
+<nav class="glass-navbar w-full grid grid-cols-3 items-center px-4 py-2 gap-2 shadow-lg sticky top-0 m-0">
+	<div class="flex items-center">
+		{% include 'components/partials/navbar-title.html.twig' %}
+	</div>
+	<div class="flex justify-center items-center">
+		{% include 'components/partials/navbar-search.html.twig' %}
+	</div>
+	<div class="flex items-center justify-end">
+		{% include 'components/partials/navbar-actions.html.twig' %}
+	</div>
+	<div class="glass-navbar-tint"></div>
+	<svg class="glass-navbar-svgfilter" width="0" height="0">
+		<filter id="glass-distort" x="-20%" y="-20%" width="140%" height="140%">
+			<feTurbulence type="turbulence" basefrequency="0.02 0.04" numoctaves="2" seed="2" result="turb"/>
+			<feDisplacementMap in2="turb" in="SourceGraphic" scale="8" xchannelselector="R" ychannelselector="G"/>
+		</filter>
+	</svg>
+</nav>

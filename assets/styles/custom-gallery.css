@@ -1,3 +1,45 @@
+/* Glass Navbar inspired by Webflow/Apple effect */
+.glass-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 9999;
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+  box-shadow: 0 0 24px 0 #a78bfa22, 0 6px 12px #fff2;
+  background: transparent;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  opacity: 0.98;
+  overflow: hidden;
+  transition: background 0.3s, opacity 0.3s, box-shadow 0.3s;
+}
+
+.glass-navbar-tint {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg,rgba(167,139,250,0.05) 0%,rgba(163,228,219,0.06) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.glass-navbar-svgfilter {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+/* Effet glass input recherche navbar */
+.navbar-search-glass {
+  border-radius: 1.5rem;
+  height: 1.5rem;
+  width: 60rem;
+  min-width: 8rem;
+  max-width: 100%;
+  box-shadow: inset -0.5px -0.5px 0.5px 0.5px #ffffff33, inset 1px 1px 0.5px 0.5px #ffffff33;
+  border: 1.5px solid #a78bfa;
+}
 /* Styles custom non purgés par Tailwind */
 
 /* Grille responsive - forçage de compilation */
@@ -54,6 +96,8 @@
   font-size: 2rem;
   font-weight: 600;
   letter-spacing: 0.025em;
+  padding: 0.75rem 1.25rem;
+  display: inline-block;
 }
 
 .glass-card {
