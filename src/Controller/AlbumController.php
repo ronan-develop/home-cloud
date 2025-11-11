@@ -28,8 +28,8 @@ class AlbumController extends AbstractController
     public function new(Request $request, EntityManagerInterface $em, #[Autowire(service: 'state_machine.album_creation')] WorkflowInterface $albumCreationStateMachine): Response
     {
         $session = $request->getSession();
-        // Réinitialiser le wizard à chaque accès GET (toujours repartir de zéro)
-        if ($request->isMethod('GET')) {
+        // Réinitialiser le wizard uniquement au premier accès GET (pas si déjà en cours)
+        if ($request->isMethod('GET') && !$session->has('album_wizard')) {
             $session->remove('album_wizard');
         }
         $album = $session->get('album_wizard') ?: new Album();
@@ -37,7 +37,7 @@ class AlbumController extends AbstractController
         // Initialiser l'état au premier appel si nécessaire
         $marking = $albumCreationStateMachine->getMarking($album);
         if (empty($marking->getPlaces())) {
-            $album->marking = 'titre';
+            $album->setMarking('titre');
         }
 
         $currentPlace = $albumCreationStateMachine->getMarking($album)->getPlaces();
@@ -45,11 +45,12 @@ class AlbumController extends AbstractController
 
         // ÉTAPE 1 : titre
         if ($currentStep === 'titre') {
+
             if ($request->isMethod('POST')) {
                 $title = $request->request->get('album_title');
                 if ($title) {
                     $album->setName($title);
-                    $albumCreationStateMachine->apply($album, 'titre_to_description');
+                    $albumCreationStateMachine->apply($album, 'titre_to_photos');
                     $session->set('album_wizard', $album);
                     return $this->redirectToRoute('album_new');
                 }
@@ -60,27 +61,15 @@ class AlbumController extends AbstractController
             ]);
         }
 
-        // ÉTAPE 2 : description
-        if ($currentStep === 'description') {
-            if ($request->isMethod('POST')) {
-                $desc = $request->request->get('album_description');
-                if ($desc) {
-                    $album->setDescription($desc);
-                    $albumCreationStateMachine->apply($album, 'description_to_photos');
-                    $session->set('album_wizard', $album);
-                    return $this->redirectToRoute('album_new');
-                }
-            }
-            return $this->render('albums/new.html.twig', [
-                'step' => 'description',
-                'album' => $album,
-            ]);
-        }
-
-        // ÉTAPE 3 : photos
+        // ÉTAPE 2 : photos
         if ($currentStep === 'photos') {
+            $stored = $session->get('album_wizard');
+            if ($stored instanceof Album) {
+                $album = $stored;
+            }
             if ($request->isMethod('POST')) {
                 $ids = json_decode($request->request->get('selected_photos', '[]'), true);
+                dd($ids);
                 if (is_array($ids) && count($ids) > 0) {
                     $photoRepo = $em->getRepository(\App\Entity\Photo::class);
                     $album->getPhotos()->clear();
@@ -90,13 +79,33 @@ class AlbumController extends AbstractController
                             $album->addPhoto($photo);
                         }
                     }
-                    $albumCreationStateMachine->apply($album, 'photos_to_confirmation');
+                    $albumCreationStateMachine->apply($album, 'photos_to_description');
+                    $session->set('album_wizard', $album);
+                    return $this->redirectToRoute('album_new');
+                }
+            }
+            // Passe l'URL API à la vue pour le JS
+            $apiUrl = $this->generateUrl('api_photos_lazy');
+            return $this->render('albums/new.html.twig', [
+                'step' => 'photos',
+                'album' => $album,
+                'api_photos_url' => $apiUrl,
+            ]);
+        }
+
+        // ÉTAPE 3 : description
+        if ($currentStep === 'description') {
+            if ($request->isMethod('POST')) {
+                $desc = $request->request->get('album_description');
+                if ($desc) {
+                    $album->setDescription($desc);
+                    $albumCreationStateMachine->apply($album, 'description_to_confirmation');
                     $session->set('album_wizard', $album);
                     return $this->redirectToRoute('album_new');
                 }
             }
             return $this->render('albums/new.html.twig', [
-                'step' => 'photos',
+                'step' => 'description',
                 'album' => $album,
             ]);
         }

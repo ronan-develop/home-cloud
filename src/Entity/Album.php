@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Entity;
 
 use App\Repository\AlbumRepository;
@@ -13,11 +15,6 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ORM\Entity(repositoryClass: AlbumRepository::class)]
 class Album
 {
-    /**
-     * @var string|null
-     */
-    public $marking;
-
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -27,6 +24,9 @@ class Album
     /**
      * @var string|null
      */
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private ?string $marking = null;
+
     #[ORM\Column(type: 'string', length: 255, nullable: false)]
     #[Groups(["album:read", "album:write"])]
     private ?string $name = null;
@@ -56,6 +56,16 @@ class Album
     {
         $this->photos = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
+    }
+
+    public function getMarking(): ?string
+    {
+        return $this->marking;
+    }
+
+    public function setMarking(?string $marking): void
+    {
+        $this->marking = $marking;
     }
 
     public function getId(): ?int
@@ -98,12 +108,14 @@ class Album
         if (!$this->photos->contains($photo)) {
             $this->photos[] = $photo;
         }
+
         return $this;
     }
 
     public function removePhoto(Photo $photo): self
     {
         $this->photos->removeElement($photo);
+
         return $this;
     }
 

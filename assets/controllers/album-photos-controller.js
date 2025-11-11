@@ -1,20 +1,18 @@
-// assets/controllers/album-photos-controller.js
+// Contrôleur universel pour lazy grid (wizard album ou galerie)
 import { initPhotoLazyGrid } from '../photo-lazy-grid.js';
 
-// Auto-init sur les éléments avec data-controller="album-photos"
 document.addEventListener('DOMContentLoaded', () => {
     const photoGrid = document.getElementById('photo-grid');
-    const selectedInput = document.getElementById('selected_photos');
-    const apiUrl = photoGrid?.dataset.apiUrl || '';
-    const preselected = photoGrid?.dataset.preselected ? JSON.parse(photoGrid.dataset.preselected) : [];
-
-    if (photoGrid && selectedInput && apiUrl) {
-        initPhotoLazyGrid({
-            gridSelector: '#photo-grid',
-            inputSelector: '#selected_photos',
-            apiUrl: apiUrl,
-            preselected: preselected
-        });
-    }
+    if (!photoGrid) return;
+    const apiUrl = photoGrid.dataset.apiUrl || '';
+    const preselected = photoGrid.dataset.preselected ? JSON.parse(photoGrid.dataset.preselected) : [];
+    const input = document.getElementById('selected_photos');
+    if (!input || !apiUrl) return;
+    initPhotoLazyGrid({
+        gridSelector: '#photo-grid',
+        inputSelector: '#selected_photos',
+        apiUrl,
+        preselected
+    });
 });
 

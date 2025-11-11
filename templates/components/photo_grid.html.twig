@@ -1,0 +1,4 @@
+{# templates/components/photo_grid.html.twig #}
+<div
+	id="photo-grid" class="gallery-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6" data-api-url="{{ api_url }}" data-preselected="{{ preselected|default('[]') }}">{# Les vignettes seront chargées dynamiquement en JS (lazy loading/infinite scroll) #}
+</div>

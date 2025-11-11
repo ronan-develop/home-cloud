@@ -34,7 +34,7 @@ class PhotoApiController extends AbstractController
                 return [
                     'id' => $photo->getId(),
                     'url' => $this->generateUrl('photo_view', ['id' => $photo->getId()]),
-                    'title' => $photo->getName(),
+                    'title' => $photo->getFileName(),
                     'originalName' => method_exists($photo, 'getOriginalName') ? $photo->getOriginalName() : null,
                 ];
             }, $photos),

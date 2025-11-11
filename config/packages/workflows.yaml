@@ -2,31 +2,37 @@ framework:
     workflows:
         album_creation:
             type: 'state_machine'
+            marking_store:
+                type: 'method'
+                property: 'marking'
             supports:
                 - App\Entity\Album
             initial_marking: titre
             places:
                 - titre
-                - description
                 - photos
+                - description
                 - confirmation
                 - termine
             transitions:
-                titre_to_description:
+                titre_to_photos:
                     from: titre
-                    to: description
-                description_to_photos:
-                    from: description
                     to: photos
-                photos_to_confirmation:
+                photos_to_description:
                     from: photos
+                    to: description
+                description_to_confirmation:
+                    from: description
                     to: confirmation
                 confirmation_to_termine:
                     from: confirmation
                     to: termine
-                retour_description:
+                retour_titre:
                     from: photos
-                    to: description
+                    to: titre
                 retour_photos:
-                    from: confirmation
+                    from: description
                     to: photos
+                retour_description:
+                    from: confirmation
+                    to: description

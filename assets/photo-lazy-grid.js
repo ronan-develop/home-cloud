@@ -57,7 +57,10 @@ export function initPhotoLazyGrid({ gridSelector, inputSelector, apiUrl, presele
             }
             
             data.photos.forEach(photo => {
-                grid.appendChild(renderPhoto(photo));
+                // Empêche les doublons : ne pas ajouter si déjà présent dans le DOM
+                if (!grid.querySelector(`[data-photo-id="${photo.id}"]`)) {
+                    grid.appendChild(renderPhoto(photo));
+                }
             });
             page++;
         } catch (error) {
