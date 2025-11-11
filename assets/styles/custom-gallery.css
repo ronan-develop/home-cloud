@@ -1,3 +1,32 @@
+/* Boutons circulaires actions navbar façon Google Photos */
+.navbar-action-btn {
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: transparent;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+.navbar-action-btn:hover {
+  background: rgba(255,255,255,0.18);
+  transform: translateY(-2px) scale(1.06);
+  transition: background 0.2s, transform 0.2s;
+}
+.navbar-actions-grid-debug {
+  outline: 2px solid blue !important;
+}
+
+.navbar-actions-plus {
+  outline: 2px solid limegreen !important;
+}
+/* Avatar dégradé navbar */
+.avatar-gradient {
+  background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+  border: none;
+}
 /* Glass Navbar inspired by Webflow/Apple effect */
  .glass-navbar {
   position: sticky;
@@ -37,7 +66,7 @@
   width: 60rem;
   min-width: 8rem;
   max-width: 100%;
-  box-shadow: 0 0 8px 2px #0ea5e988, 0 0 2px 0 #0ea5e944, inset -0.5px -0.5px 0.5px 0.5px #0ea5e955, inset 1px 1px 0.5px 0.5px #0ea5e955;
+  box-shadow: 0 0 4px 1px #0ea5e955, 0 0 1px 0 #0ea5e933, inset -0.5px -0.5px 0.5px 0.5px #0ea5e933, inset 1px 1px 0.5px 0.5px #0ea5e933;
   border: none;
 }
 /* Styles custom non purgés par Tailwind */
