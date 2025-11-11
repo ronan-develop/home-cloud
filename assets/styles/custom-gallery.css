@@ -1,3 +1,82 @@
+/* Boutons circulaires actions navbar façon Google Photos */
+.navbar-action-btn {
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: transparent;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+.navbar-action-btn:hover {
+  background: rgba(255,255,255,0.18);
+  transform: translateY(-2px) scale(1.06);
+  transition: background 0.2s, transform 0.2s;
+}
+.navbar-actions-grid-debug {
+  outline: 2px solid blue !important;
+}
+
+.navbar-actions-plus {
+  outline: 2px solid limegreen !important;
+}
+/* Avatar dégradé navbar */
+.avatar-gradient {
+  background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+  border: none;
+}
+/* Glass Navbar inspired by Webflow/Apple effect */
+ .glass-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 9999;
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+  box-shadow: 0 0 24px 0 #0ea5e988, 0 6px 12px #0ea5e944;
+  background: transparent;
+  border: none;
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  opacity: 0.98;
+  overflow: hidden;
+  transition: background 0.3s, opacity 0.3s, box-shadow 0.3s;
+}
+
+.glass-navbar-tint {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg,rgba(167,139,250,0.05) 0%,rgba(163,228,219,0.06) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.glass-navbar-svgfilter {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+/* Effet glass input recherche navbar */
+.navbar-search-glass {
+  border-radius: 1.5rem;
+  height: 1.5rem;
+  width: 60rem;
+  min-width: 8rem;
+  max-width: 100%;
+  box-shadow: 0 0 4px 1px #0ea5e955, 0 0 1px 0 #0ea5e933, inset -0.5px -0.5px 0.5px 0.5px #0ea5e933, inset 1px 1px 0.5px 0.5px #0ea5e933;
+  border: none;
+}
+
+/* Effet focus bleu thème sur la barre de recherche */
+.navbar-search-glass:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #0ea5e9cc, 0 0 4px 1px #0ea5e955, 0 0 1px 0 #0ea5e933, inset -0.5px -0.5px 0.5px 0.5px #0ea5e933, inset 1px 1px 0.5px 0.5px #0ea5e933;
+  background: rgba(14,165,233,0.08);
+  transition: box-shadow 0.2s, background 0.2s;
+}
 /* Styles custom non purgés par Tailwind */
 
 /* Grille responsive - forçage de compilation */
@@ -39,6 +118,7 @@
   }
 }
 
+
 .gallery-bg {
   min-height: 100vh;
   background-color: #181622;
@@ -46,14 +126,17 @@
   background-size: 24px 24px;
 }
 
-.gallery-title {
-  background: linear-gradient(135deg, #a3e4db 0%, #9d8fd1 100%);
+ .gallery-title {
+  font-family: 'Sora', sans-serif;
+  background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   font-size: 2rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.025em;
+  padding: 0.75rem 1.25rem;
+  display: inline-block;
 }
 
 .glass-card {
@@ -61,10 +144,10 @@
   border-radius: 0.75rem;
   overflow: hidden;
   background: linear-gradient(135deg, rgba(24, 22, 34, 0.9) 0%, rgba(34, 28, 48, 0.8) 100%);
-  border: 1.5px solid #a78bfa; /* violet-400 */
+  border: none; /* neon blue foncé */
   box-shadow: 
-    0 4px 32px 0 #a78bfa33, 
-    0 1.5px 0 0 #a78bfa,
+  0 4px 32px 0 #0ea5e988, 
+  0 1.5px 0 0 #0ea5e9,
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
   aspect-ratio: 3 / 4;
@@ -76,10 +159,10 @@
 
 .glass-card:hover {
   box-shadow: 
-    0 8px 48px 0 #a78bfa55, 
-    0 1.5px 0 0 #a78bfa,
+  0 8px 48px 0 #2563ebcc, 
+  0 1.5px 0 0 #2563eb,
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  border-color: #c4b5fd; /* violet-300 */
+  border-color: #2563eb; /* neon blue hover foncé */
 }
 
 .glass-card img {

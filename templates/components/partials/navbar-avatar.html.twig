@@ -1,0 +1,20 @@
+{# Avatar utilisateur à droite de la navbar #}
+{% set avatar_url = app.user and app.user.avatarUrl is defined and app.user.avatarUrl ? app.user.avatarUrl : null %}
+
+<span class="w-12 h-12 flex items-center justify-center rounded-full avatar-navbar">
+	{% if avatar_url %}
+		<img src="{{ avatar_url }}" alt="Avatar utilisateur" class="w-10 h-10 rounded-full object-cover" loading="lazy">
+	{% else %}
+		<svg viewbox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" width="28" height="28" style="fill:url(#avatar-gradient);">
+			<defs>
+				<linearGradient id="avatar-gradient" x1="0" y1="0" x2="16" y2="16" gradientunits="userSpaceOnUse">
+					<stop stop-color="#0ea5e9"/>
+					<stop offset="1" stop-color="#2563eb"/>
+				</linearGradient>
+			</defs>
+			<g id="SVGRepo_iconCarrier">
+				<path d="m 8 1 c -1.65625 0 -3 1.34375 -3 3 s 1.34375 3 3 3 s 3 -1.34375 3 -3 s -1.34375 -3 -3 -3 z m -1.5 7 c -2.492188 0 -4.5 2.007812 -4.5 4.5 v 0.5 c 0 1.109375 0.890625 2 2 2 h 8 c 1.109375 0 2 -0.890625 2 -2 v -0.5 c 0 -2.492188 -2.007812 -4.5 -4.5 -4.5 z m 0 0"/>
+			</g>
+		</svg>
+	{% endif %}
+</span>

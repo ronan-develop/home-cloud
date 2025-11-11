@@ -1,0 +1,6 @@
+/* Fond à points blancs sur fond noir pour la galerie */
+.gallery-bg {
+    background-color: #000000;
+    background-image: radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);
+    background-size: 24px 24px;
+}
