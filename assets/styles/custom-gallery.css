@@ -69,6 +69,14 @@
   box-shadow: 0 0 4px 1px #0ea5e955, 0 0 1px 0 #0ea5e933, inset -0.5px -0.5px 0.5px 0.5px #0ea5e933, inset 1px 1px 0.5px 0.5px #0ea5e933;
   border: none;
 }
+
+/* Effet focus bleu thème sur la barre de recherche */
+.navbar-search-glass:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #0ea5e9cc, 0 0 4px 1px #0ea5e955, 0 0 1px 0 #0ea5e933, inset -0.5px -0.5px 0.5px 0.5px #0ea5e933, inset 1px 1px 0.5px 0.5px #0ea5e933;
+  background: rgba(14,165,233,0.08);
+  transition: box-shadow 0.2s, background 0.2s;
+}
 /* Styles custom non purgés par Tailwind */
 
 /* Grille responsive - forçage de compilation */
