@@ -35,7 +35,7 @@ class Album
     #[Groups(["album:read", "album:write"])]
     private ?string $description = null;
 
-    #[ORM\ManyToMany(targetEntity: Photo::class, inversedBy: 'albums')]
+    #[ORM\ManyToMany(targetEntity: Photo::class, inversedBy: 'albums', cascade: ["persist"])]
     #[Groups(["album:read", "album:write"])]
     private Collection $photos;
 

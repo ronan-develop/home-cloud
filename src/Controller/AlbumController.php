@@ -3,14 +3,15 @@
 namespace App\Controller;
 
 use App\Entity\Album;
+use App\Entity\Photo;
 use App\Repository\AlbumRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Workflow\WorkflowInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 #[Route('/albums', name: 'album_')]
 class AlbumController extends AbstractController
@@ -69,18 +70,35 @@ class AlbumController extends AbstractController
             }
             if ($request->isMethod('POST')) {
                 $ids = json_decode($request->request->get('selected_photos', '[]'), true);
-                dd($ids);
                 if (is_array($ids) && count($ids) > 0) {
-                    $photoRepo = $em->getRepository(\App\Entity\Photo::class);
+                    $photoRepo = $em->getRepository(Photo::class);
                     $album->getPhotos()->clear();
+                    $debugPhotos = [];
                     foreach ($ids as $id) {
                         $photo = $photoRepo->find($id);
                         if ($photo) {
                             $album->addPhoto($photo);
+                            $debugPhotos[] = [
+                                'id' => $photo->getId(),
+                                'user_id' => $photo->getUser() ? $photo->getUser()->getId() : null,
+                                'user_class' => $photo->getUser() ? get_class($photo->getUser()) : null,
+                                'user_is_managed' => $photo->getUser() ? $em->contains($photo->getUser()) : null,
+                            ];
+                        } else {
+                            $debugPhotos[] = ['id' => $id, 'error' => 'Photo non trouvée en base'];
                         }
                     }
                     $albumCreationStateMachine->apply($album, 'photos_to_description');
                     $session->set('album_wizard', $album);
+                    // Dump détaillé pour debug
+                    dd([
+                        'album_photos' => $debugPhotos,
+                        'album_owner' => $album->getOwner() ? [
+                            'id' => $album->getOwner()->getId(),
+                            'is_managed' => $em->contains($album->getOwner()),
+                        ] : null,
+                        'album' => $album,
+                    ]);
                     return $this->redirectToRoute('album_new');
                 }
             }
@@ -119,7 +137,28 @@ class AlbumController extends AbstractController
                     $session->set('album_wizard', $album);
                     return $this->redirectToRoute('album_new');
                 }
-                // Validation finale, on sauvegarde l'album
+                // Réhydratation des photos et users AVANT persist/flush
+                $photoRepo = $em->getRepository(Photo::class);
+                $photos = [];
+                foreach ($album->getPhotos() as $photo) {
+                    $photos[] = $photo;
+                }
+                // On retire chaque photo de l'album
+                foreach ($photos as $photo) {
+                    $album->removePhoto($photo);
+                }
+                // On réhydrate avec les entités managées
+                foreach ($photos as $photo) {
+                    $freshPhoto = $photoRepo->find($photo->getId());
+                    if ($freshPhoto) {
+                        // On s'assure que le user est bien l'utilisateur courant (optionnel, sécurité)
+                        if ($freshPhoto->getUser() && $freshPhoto->getUser()->getId() !== $this->getUser()->getId()) {
+                            // Optionnel : lever une exception ou ignorer
+                            continue;
+                        }
+                        $album->addPhoto($freshPhoto);
+                    }
+                }
                 $album->setOwner($this->getUser());
                 $album->setCreatedAt(new \DateTimeImmutable());
                 $em->persist($album);

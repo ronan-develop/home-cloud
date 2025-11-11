@@ -1,0 +1,41 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mes albums
+{% endblock %}
+
+{% block body %}
+	<div class="container mx-auto px-4 py-6">
+		<h1 class="text-2xl font-bold mb-6">Mes albums</h1>
+		{% if albums is empty %}
+			<div class="text-gray-500">Aucun album pour le moment.</div>
+		{% else %}
+			<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+				{% for album in albums %}
+					<div class="bg-white rounded shadow p-4 flex flex-col">
+						<h2 class="text-lg font-semibold mb-2">{{ album.name }}</h2>
+						<div class="text-sm text-gray-600 mb-2">
+							Créé le
+							{{ album.createdAt ? album.createdAt|date('d/m/Y H:i') : 'N/A' }}
+						</div>
+						<div class="mb-2">
+							<span class="font-medium">Photos :</span>
+							{{ album.photos|length }}
+						</div>
+						<div class="flex-1"></div>
+						<div class="flex gap-2 mt-4">
+							<a href="#" class="text-blue-600 hover:underline">Voir</a>
+							<a href="{{ path('album_edit', {id: album.id}) }}" class="text-yellow-600 hover:underline">Modifier</a>
+							<form method="post" action="{{ path('album_delete', {id: album.id}) }}" onsubmit="return confirm('Supprimer cet album ?');">
+								<input type="hidden" name="_token" value="{{ csrf_token('delete_album_' ~ album.id) }}">
+								<button type="submit" class="text-red-600 hover:underline bg-transparent border-none p-0">Supprimer</button>
+							</form>
+						</div>
+					</div>
+				{% endfor %}
+			</div>
+		{% endif %}
+		<div class="mt-8">
+			<a href="{{ path('album_new') }}" class="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Créer un nouvel album</a>
+		</div>
+	</div>
+{% endblock %}
