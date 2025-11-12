@@ -8,7 +8,6 @@ use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
-use Doctrine\Common\Collections\ArrayCollection;
 
 class PhotoAlbumFixture extends Fixture implements DependentFixtureInterface
 {
@@ -43,7 +42,6 @@ class PhotoAlbumFixture extends Fixture implements DependentFixtureInterface
         ) {
             $photo = new Photo();
             $photo->setUser($user);
-            $photo->setAlbum($data['album']);
             $photo->setTitle($data['title']);
             $photo->setFilename($data['filename']);
             $photo->setOriginalName($data['filename']);

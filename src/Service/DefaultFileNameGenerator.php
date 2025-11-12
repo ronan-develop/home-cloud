@@ -2,6 +2,8 @@
 
 namespace App\Service;
 
+use App\Interface\FileNameGeneratorInterface;
+
 class DefaultFileNameGenerator implements FileNameGeneratorInterface
 {
     public function generate(string $originalName): string

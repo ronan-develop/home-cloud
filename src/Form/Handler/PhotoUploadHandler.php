@@ -2,16 +2,17 @@
 
 namespace App\Form\Handler;
 
+use Psr\Log\LoggerInterface;
 use App\Form\PhotoUploadType;
 use App\Service\PhotoUploader;
-use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Security\Core\User\UserInterface;
-use Symfony\Component\Form\FormFactoryInterface;
-use App\Form\Validator\UploadedFilePresenceValidator;
 use App\Form\Dto\PhotoUploadData;
 use App\Form\Dto\PhotoUploadResult;
-use Psr\Log\LoggerInterface;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Form\FormInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Form\FormFactoryInterface;
+use App\Form\Validator\UploadedFilePresenceValidator;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 class PhotoUploadHandler
 {
@@ -76,14 +77,12 @@ class PhotoUploadHandler
         }
     }
 
-    // La méthode fail() n'est plus nécessaire (remplacée par PhotoUploadResult)
-
     /**
      * Extrait les données du formulaire d'upload photo (hors fichier)
      * @param \Symfony\Component\Form\FormInterface $form
      * @return PhotoUploadData
      */
-    private function extractFormData(\Symfony\Component\Form\FormInterface $form): PhotoUploadData
+    private function extractFormData(FormInterface $form): PhotoUploadData
     {
         return new PhotoUploadData(
             $form->get('title')->getData(),
