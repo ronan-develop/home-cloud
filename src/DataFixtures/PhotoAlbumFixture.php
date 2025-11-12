@@ -22,14 +22,18 @@ class PhotoAlbumFixture extends Fixture implements DependentFixtureInterface
         $user = $this->getReference('admin', User::class);
 
         // Création de quelques albums
+
         $album1 = new Album();
         $album1->setName('Vacances été 2025');
         $album1->setDescription('Photos de vacances à la mer.');
+        $album1->setOwner($user);
         $manager->persist($album1);
+
 
         $album2 = new Album();
         $album2->setName('Famille');
         $album2->setDescription('Moments en famille.');
+        $album2->setOwner($user);
         $manager->persist($album2);
 
         // Création de photos associées aux albums
