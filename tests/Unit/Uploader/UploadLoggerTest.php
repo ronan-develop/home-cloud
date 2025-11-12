@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Tests\Unit\Service;
+namespace App\Tests\Unit\Uploader;
 
 use App\Uploader\UploadLogger;
 use PHPUnit\Framework\TestCase;
