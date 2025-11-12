@@ -10,10 +10,9 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use App\Service\ExifExtractor;
 use App\Service\PhotoMimeTypeValidator;
 use App\Form\Dto\PhotoUploadData;
-use App\Exception\PhotoUploadException;
 use App\Service\SafeFileMover;
 
-use App\Service\FileNameGeneratorInterface;
+use App\Interface\FileNameGeneratorInterface;
 
 class PhotoUploader
 {
