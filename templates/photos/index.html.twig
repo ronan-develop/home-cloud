@@ -6,8 +6,9 @@
 {% block body %}
 	{{ component('Navbar', { title: 'MyPhotos' }) }}
 	<div class="flex flex-col items-center justify-center py-8">
-		<div class="w-full flex justify-end mb-4 px-4">
+		<div class="w-full flex flex-col items-end mb-4 px-4 gap-2">
 			{% include 'components/album_new_button.html.twig' %}
+			<a href="{{ path('album_index') }}" class="text-sm text-blue-300 hover:underline hover:text-blue-100 transition">&larr; Voir mes albums</a>
 		</div>
 		<h2 class="gallery-title text-2xl font-semibold text-white mb-4">Mes photos</h2>
 	</div>
