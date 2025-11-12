@@ -1,3 +1,70 @@
+# 8. Fonctionnement détaillé de la UploaderFactory (Symfony)
+
+La `UploaderFactory` dans ce projet est conçue pour sélectionner dynamiquement le bon service d’upload selon le fichier à traiter, sans que le contrôleur ait à connaître les détails techniques.
+
+## a. Tagging des services
+
+Chaque uploader (`PhotoUploader`, `FileUploader`, etc.) est tagué dans la config Symfony :
+
+```yaml
+App\Uploader\PhotoUploader:
+    tags: [ 'uploader.service' ]
+App\Uploader\FileUploader:
+    tags: [ 'uploader.service' ]
+```
+
+## b. Injection automatique
+
+La factory reçoit tous les services tagués via l’argument `!tagged_iterator uploader.service` :
+
+```yaml
+App\Uploader\UploaderFactory:
+    arguments:
+        $uploaders: !tagged_iterator uploader.service
+```
+
+## c. Sélection dynamique
+
+- La méthode `getUploader(UploadedFile $file, array $context = [])` parcourt tous les uploaders disponibles.
+- Pour chaque uploader, elle appelle `supports($file, $context)` :
+  - Si `true`, c’est le bon service, il est retourné.
+  - Sinon, on continue.
+- Si aucun uploader ne supporte le fichier, une exception est levée.
+
+## d. Utilisation dans le contrôleur
+
+Dans `AlbumController`, tu fais simplement :
+
+```php
+$uploader = $uploaderFactory->getUploader($file);
+$photo = $uploader->upload($file, [
+    'user' => $this->getUser(),
+    // autres contextes métier
+]);
+```
+
+Tu n’as pas à te soucier du type de fichier : la factory choisit le bon service.
+
+## e. Avantages
+
+- **Extensible** : ajoute un nouvel uploader, tague-le, c’est tout.
+- **Testable** : chaque uploader est isolé, la factory est testable.
+- **Lisible** : le contrôleur reste simple, sans logique de type.
+
+## f. Exemple d’ajout d’un nouvel uploader
+
+1. Crée `VideoUploader` qui implémente `UploaderInterface`
+2. Ajoute le tag dans `services.yaml` :
+
+```yaml
+App\Uploader\VideoUploader:
+    tags: [ 'uploader.service' ]
+```
+
+3. La factory le prendra automatiquement en compte.
+
+---
+
 # 🏗️ Pattern Factory pour l’upload – Guide pédagogique
 
 ## Objectif
