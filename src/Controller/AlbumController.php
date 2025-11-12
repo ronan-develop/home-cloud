@@ -19,7 +19,11 @@ class AlbumController extends AbstractController
     #[Route('/', name: 'index', methods: ['GET'])]
     public function index(AlbumRepository $albumRepository): Response
     {
-        $albums = $albumRepository->findBy(['owner' => $this->getUser()]);
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
+        $albums = $albumRepository->findBy(
+            ['owner' => $this->getUser()],
+            ['createdAt' => 'DESC']
+        );
         return $this->render('albums/index.html.twig', [
             'albums' => $albums,
         ]);
