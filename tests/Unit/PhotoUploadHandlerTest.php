@@ -18,7 +18,7 @@ class PhotoUploadHandlerTest extends TestCase
         $formFactory = $this->createMock(\Symfony\Component\Form\FormFactoryInterface::class);
         $formFactory->method('create')->willReturn($form);
 
-        $photoUploader = $this->createMock(\App\Service\PhotoUploader::class);
+        $photoUploader = $this->createMock(\App\Uploader\PhotoUploader::class);
         $em = $this->createMock(\Doctrine\ORM\EntityManagerInterface::class);
         $filePresenceValidator = $this->createMock(\App\Form\Validator\UploadedFilePresenceValidator::class);
         $logger = $this->createMock(\Psr\Log\LoggerInterface::class);
@@ -49,7 +49,7 @@ class PhotoUploadHandlerTest extends TestCase
         $formFactory = $this->createMock(\Symfony\Component\Form\FormFactoryInterface::class);
         $formFactory->method('create')->willReturn($form);
 
-        $photoUploader = $this->createMock(\App\Service\PhotoUploader::class);
+        $photoUploader = $this->createMock(\App\Uploader\PhotoUploader::class);
         $photoUploader->method('uploadPhoto')->willThrowException(new \RuntimeException('Erreur technique !'));
 
         $em = $this->createMock(\Doctrine\ORM\EntityManagerInterface::class);
@@ -111,7 +111,7 @@ class PhotoUploadHandlerTest extends TestCase
     {
         return new PhotoUploadHandler(
             $this->createMock(\Symfony\Component\Form\FormFactoryInterface::class),
-            $this->createMock(\App\Service\PhotoUploader::class),
+            $this->createMock(\App\Uploader\PhotoUploader::class),
             $this->createMock(\Doctrine\ORM\EntityManagerInterface::class),
             $this->createMock(\App\Form\Validator\UploadedFilePresenceValidator::class),
             $this->createMock(\Psr\Log\LoggerInterface::class)

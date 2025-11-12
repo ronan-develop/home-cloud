@@ -3,8 +3,8 @@
 namespace App\Controller;
 
 use App\Form\FileUploadType;
-use App\Service\FileUploadService;
-use App\Service\FileUploadFormHandler;
+use App\Uploader\FileUploadService;
+use App\Uploader\FileUploadFormHandler;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;

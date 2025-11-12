@@ -1,0 +1,3 @@
+<?php
+namespace App\Archive;
+...existing code...

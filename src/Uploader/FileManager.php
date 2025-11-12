@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Service;
+namespace App\Uploader;
 
 use App\Entity\File;
 use App\Entity\User;

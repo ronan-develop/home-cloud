@@ -2,7 +2,7 @@
 
 namespace App\Tests\Unit\Service;
 
-use App\Service\UploadLogger;
+use App\Uploader\UploadLogger;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;

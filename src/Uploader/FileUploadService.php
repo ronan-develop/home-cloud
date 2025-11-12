@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Service;
+namespace App\Uploader;
 
 use App\Entity\User;
-use App\Service\FileUploader;
-use App\Service\FileManager;
-use App\Service\FileUploadValidator;
-use App\Service\UploadLogger;
+use App\Uploader\FileUploader;
+use App\Uploader\FileManager;
+use App\Uploader\FileUploadValidator;
+use App\Uploader\UploadLogger;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class FileUploadService

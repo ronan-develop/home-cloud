@@ -4,7 +4,7 @@ namespace App\Tests\Unit;
 
 use App\Entity\Photo;
 use App\Entity\User;
-use App\Service\PhotoUploader;
+use App\Uploader\PhotoUploader;
 use App\Form\Dto\PhotoUploadData;
 use App\Service\PhotoMimeTypeValidator;
 use App\Service\ExifExtractor;
@@ -31,10 +31,12 @@ class PhotoUploaderTest extends TestCase
         $user = $this->createMock(User::class);
         $data = new PhotoUploadData('Titre', 'Desc', true);
 
-        $directoryManager = $this->createMock(\App\Service\UploadDirectoryManager::class);
+        /** @var \App\Uploader\UploadDirectoryManager&\PHPUnit\Framework\MockObject\MockObject $directoryManager */
+        $directoryManager = $this->createMock(\App\Uploader\UploadDirectoryManager::class);
         $directoryManager->expects($this->once())->method('ensureDirectoryExists')->with($targetDir);
 
-        $fileMover = $this->createMock(\App\Service\SafeFileMover::class);
+        /** @var \App\Uploader\SafeFileMover&\PHPUnit\Framework\MockObject\MockObject $fileMover */
+        $fileMover = $this->createMock(\App\Uploader\SafeFileMover::class);
         $fileMover->expects($this->once())->method('move')->with($file, $targetDir, $this->anything());
 
 
@@ -44,7 +46,7 @@ class PhotoUploaderTest extends TestCase
             ->with('test.jpg')
             ->willReturn('unique_test.jpg');
 
-        $uploader = new \App\Service\PhotoUploader(
+        $uploader = new \App\Uploader\PhotoUploader(
             $targetDir,
             $extractor,
             $validator,

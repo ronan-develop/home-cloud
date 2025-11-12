@@ -1,0 +1,3 @@
+<?php
+namespace App\File;
+...existing code...

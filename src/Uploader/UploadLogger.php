@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Service;
+namespace App\Uploader;
 
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;

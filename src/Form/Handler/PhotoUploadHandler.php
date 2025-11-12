@@ -4,7 +4,7 @@ namespace App\Form\Handler;
 
 use Psr\Log\LoggerInterface;
 use App\Form\PhotoUploadType;
-use App\Service\PhotoUploader;
+use App\Uploader\PhotoUploader;
 use App\Form\Dto\PhotoUploadData;
 use App\Form\Dto\PhotoUploadResult;
 use Doctrine\ORM\EntityManagerInterface;

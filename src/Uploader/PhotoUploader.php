@@ -1,19 +1,17 @@
 <?php
 
-namespace App\Service;
+namespace App\Uploader;
 
 use App\Entity\Photo;
 use App\Entity\User;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
-
-
 use App\Service\ExifExtractor;
 use App\Service\PhotoMimeTypeValidator;
 use App\Form\Dto\PhotoUploadData;
 use App\Exception\PhotoUploadException;
-use App\Service\SafeFileMover;
-
+use App\Uploader\SafeFileMover;
 use App\Service\FileNameGeneratorInterface;
+use App\Uploader\UploadDirectoryManager;
 
 class PhotoUploader
 {
@@ -42,14 +40,10 @@ class PhotoUploader
         $filename = $this->fileNameGenerator->generate($file->getClientOriginalName());
         $originalName = $file->getClientOriginalName();
         $size = $file->getSize();
-
         $hash = hash_file('sha256', $file->getPathname());
-
-        // Extraction EXIF via service dédié (SRP)
         $autoExif = $this->exifExtractor->extract($file);
         $this->fileMover->move($file, $this->targetDirectory, $filename);
         $finalExif = array_merge($autoExif, $exifData);
-
         $photo = new Photo();
         $photo->setFilename($filename)
             ->setOriginalName($originalName)
@@ -62,7 +56,6 @@ class PhotoUploader
             ->setDescription($data->description)
             ->setIsFavorite($data->isFavorite)
             ->setExifData($finalExif);
-
         return $photo;
     }
 

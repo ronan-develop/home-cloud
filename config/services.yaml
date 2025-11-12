@@ -47,25 +47,25 @@ services:
 
 
     # Injection explicite du répertoire cible pour FileUploader
-    App\Service\FileUploader:
+    App\Uploader\FileUploader:
         arguments:
             $targetDirectory: '%app.files_dir%'
 
     # Injection explicite du répertoire cible et des dépendances pour PhotoUploader
-    App\Service\PhotoUploader:
+    App\Uploader\PhotoUploader:
         arguments:
             $targetDirectory: '%app.photos_dir%'
             $exifExtractor: '@App\Service\ExifExtractor'
             $mimeTypeValidator: '@App\Service\PhotoMimeTypeValidator'
             $directoryManager: '@App\Service\UploadDirectoryManager'
-            $fileNameGenerator: '@App\Service\DefaultFileNameGenerator'
+            $fileNameGenerator: '@App\Uploader\DefaultFileNameGenerator'
 
     App\Service\PhotoMimeTypeValidator:
         arguments:
             $allowedMimeTypes: '%app.photo_allowed_mime_types%'
 
-    App\Service\FileNameGeneratorInterface: '@App\Service\DefaultFileNameGenerator'
-    App\Service\DefaultFileNameGenerator: ~
+    App\Service\FileNameGeneratorInterface: '@App\Uploader\DefaultFileNameGenerator'
+    App\Uploader\DefaultFileNameGenerator: ~
 
     App\Service\UploadDirectoryManager: ~
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Service;
+namespace App\Uploader;
 
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
