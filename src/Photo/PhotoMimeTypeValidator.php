@@ -25,6 +25,7 @@ class PhotoMimeTypeValidator
             );
         }
     }
+
     /**
      * @param string[] $allowedMimeTypes
      */
@@ -43,5 +44,10 @@ class PhotoMimeTypeValidator
                 )
             );
         }
+    }
+
+    public function getAllowedMimeTypes(): array
+    {
+        return $this->allowedMimeTypes;
     }
 }

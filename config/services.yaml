@@ -1,22 +1,5 @@
-    # Déclaration de la factory d’upload
-    App\Uploader\UploaderFactory:
-        arguments:
-            $uploaders: !tagged_iterator uploader.service
-
-    # Tag les uploaders pour la factory
-    App\Uploader\PhotoUploader:
-        tags: [ 'uploader.service' ]
-        arguments:
-            $targetDirectory: '%app.photos_dir%'
-            $exifExtractor: '@App\Photo\ExifExtractor'
-            $mimeTypeValidator: '@App\Photo\PhotoMimeTypeValidator'
-            $directoryManager: '@App\Uploader\UploadDirectoryManager'
-            $fileNameGenerator: '@App\Uploader\DefaultFileNameGenerator'
-
-    App\Uploader\FileUploader:
-        tags: [ 'uploader.service' ]
-        arguments:
-            $targetDirectory: '%app.files_dir%'
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
 # This file is the entry point to configure your own services.
 # Files in the packages/ subdirectory configure your dependencies.
 
@@ -54,6 +37,21 @@ parameters:
         - 'image/x-raw'
 
 services:
+    App\Uploader\UploaderFactory:
+        arguments:
+            $uploaders: !tagged_iterator uploader.service
+    App\Uploader\PhotoUploader:
+        tags: [ 'uploader.service' ]
+        arguments:
+            $targetDirectory: '%app.photos_dir%'
+            $exifExtractor: '@App\Photo\ExifExtractor'
+            $mimeTypeValidator: '@App\Photo\PhotoMimeTypeValidator'
+            $directoryManager: '@App\Uploader\UploadDirectoryManager'
+            $fileNameGenerator: '@App\Uploader\DefaultFileNameGenerator'
+    App\Uploader\FileUploader:
+        tags: [ 'uploader.service' ]
+        arguments:
+            $targetDirectory: '%app.files_dir%'
     # default configuration for services in *this* file
     _defaults:
         autowire: true      # Automatically injects dependencies in your services.
@@ -63,22 +61,9 @@ services:
     # this creates a service per class whose id is the fully-qualified class name
     App\:
         resource: '../src/'
-
-
-    # Injection explicite du répertoire cible pour FileUploader
-    App\Uploader\FileUploader:
-        arguments:
-            $targetDirectory: '%app.files_dir%'
-
-    # Injection explicite du répertoire cible et des dépendances pour PhotoUploader
-    App\Uploader\PhotoUploader:
-        arguments:
-            $targetDirectory: '%app.photos_dir%'
-            $exifExtractor: '@App\Photo\ExifExtractor'
-            $mimeTypeValidator: '@App\Photo\PhotoMimeTypeValidator'
-            $directoryManager: '@App\Uploader\UploadDirectoryManager'
-            $fileNameGenerator: '@App\Uploader\DefaultFileNameGenerator'
-
+        exclude:
+            - '../src/Uploader/FileUploader.php'
+            - '../src/Uploader/PhotoUploader.php'
 
     App\Photo\PhotoMimeTypeValidator:
         arguments:

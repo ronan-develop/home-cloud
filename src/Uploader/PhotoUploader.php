@@ -13,7 +13,10 @@ use App\Uploader\SafeFileMover;
 use App\Uploader\UploadDirectoryManager;
 use App\Interface\FileNameGeneratorInterface;
 
-class PhotoUploader
+
+use App\Uploader\UploaderInterface;
+
+class PhotoUploader implements UploaderInterface
 {
     public function __construct(
         private readonly string $targetDirectory,
@@ -23,6 +26,7 @@ class PhotoUploader
         private readonly SafeFileMover $fileMover,
         private readonly FileNameGeneratorInterface $fileNameGenerator
     ) {}
+
 
     /**
      * Gère l'upload d'une photo et retourne une entité Photo complète
@@ -57,6 +61,31 @@ class PhotoUploader
             ->setIsFavorite($data->isFavorite)
             ->setExifData($finalExif);
         return $photo;
+    }
+
+    /**
+     * UploaderInterface: détermine si ce service gère ce fichier (image)
+     */
+    public function supports(UploadedFile $file, array $context = []): bool
+    {
+        $mimeType = $file->getClientMimeType();
+        // Utilise la liste des mimes autorisés du validateur
+        return in_array($mimeType, $this->mimeTypeValidator->getAllowedMimeTypes(), true);
+    }
+
+    /**
+     * UploaderInterface: upload générique (délègue à uploadPhoto)
+     * $context doit contenir 'user' (User) et 'data' (PhotoUploadData)
+     */
+    public function upload(UploadedFile $file, array $context = []): Photo
+    {
+        if (!isset($context['user']) || !isset($context['data'])) {
+            throw new \InvalidArgumentException('PhotoUploader nécessite user et data dans le contexte.');
+        }
+        $user = $context['user'];
+        $data = $context['data'];
+        $exifData = $context['exifData'] ?? [];
+        return $this->uploadPhoto($file, $user, $data, $exifData);
     }
 
     public function getTargetDirectory(): string
