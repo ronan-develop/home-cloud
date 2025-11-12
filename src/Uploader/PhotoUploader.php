@@ -8,16 +8,10 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use App\Photo\ExifExtractor;
 use App\Photo\PhotoMimeTypeValidator;
 use App\Form\Dto\PhotoUploadData;
-<<<<<<< HEAD:src/Uploader/PhotoUploader.php
 use App\Exception\PhotoUploadException;
 use App\Uploader\SafeFileMover;
-use App\Uploader\FileNameGeneratorInterface;
 use App\Uploader\UploadDirectoryManager;
-=======
-use App\Service\SafeFileMover;
-
 use App\Interface\FileNameGeneratorInterface;
->>>>>>> origin/feat/albums:src/Service/PhotoUploader.php
 
 class PhotoUploader
 {

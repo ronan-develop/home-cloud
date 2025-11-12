@@ -4,10 +4,7 @@ namespace App\Tests\Unit;
 
 use App\Entity\Photo;
 use App\Entity\User;
-<<<<<<< HEAD
 use App\Uploader\PhotoUploader;
-=======
->>>>>>> origin/feat/albums
 use App\Form\Dto\PhotoUploadData;
 use App\Photo\PhotoMimeTypeValidator;
 use App\Photo\ExifExtractor;
@@ -42,12 +39,7 @@ class PhotoUploaderTest extends TestCase
         $fileMover = $this->createMock(\App\Uploader\SafeFileMover::class);
         $fileMover->expects($this->once())->method('move')->with($file, $targetDir, $this->anything());
 
-<<<<<<< HEAD
-
-        $fileNameGenerator = $this->createMock(\App\Uploader\FileNameGeneratorInterface::class);
-=======
         $fileNameGenerator = $this->createMock(\App\Interface\FileNameGeneratorInterface::class);
->>>>>>> origin/feat/albums
         $fileNameGenerator->expects($this->once())
             ->method('generate')
             ->with('test.jpg')

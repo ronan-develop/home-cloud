@@ -2,8 +2,6 @@
 
 namespace App\Uploader;
 
-use App\Uploader\FileNameGeneratorInterface;
-
 use App\Interface\FileNameGeneratorInterface;
 
 class DefaultFileNameGenerator implements FileNameGeneratorInterface
