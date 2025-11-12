@@ -9,7 +9,8 @@ Documentation générale.
 - [🏠 Home Cloud](#-home-cloud)
   - [📚 Sommaire](#-sommaire)
   - [🚀 Fonctionnalités principales](#-fonctionnalités-principales)
-  - [🧩 Services métier](#-services-métier)
+  - [🖼️ Composant UX : Galerie photo](#️-composant-ux--galerie-photo)
+  - [🏗️ Architecture avancée : Pattern Factory pour l’upload](#️-architecture-avancée--pattern-factory-pour-lupload)
 
 ---
 
@@ -27,6 +28,7 @@ Documentation générale.
 - [Pattern contrôleur ultra-lean](docs/controller-ultra-lean.md)
 - [Endpoints API](docs/api_endpoints.md)
 - [Architecture](docs/architecture.md)
+- [Pattern Factory pour l’upload](docs/factory-upload.md)
 - [Fixtures & jeux de données](docs/fixtures.md)
 - [Tests & Qualité](docs/tests.md)
 - [Import Google Photos](docs/google-photos-api.md)
