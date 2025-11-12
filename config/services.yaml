@@ -1,3 +1,22 @@
+    # Déclaration de la factory d’upload
+    App\Uploader\UploaderFactory:
+        arguments:
+            $uploaders: !tagged_iterator uploader.service
+
+    # Tag les uploaders pour la factory
+    App\Uploader\PhotoUploader:
+        tags: [ 'uploader.service' ]
+        arguments:
+            $targetDirectory: '%app.photos_dir%'
+            $exifExtractor: '@App\Photo\ExifExtractor'
+            $mimeTypeValidator: '@App\Photo\PhotoMimeTypeValidator'
+            $directoryManager: '@App\Uploader\UploadDirectoryManager'
+            $fileNameGenerator: '@App\Uploader\DefaultFileNameGenerator'
+
+    App\Uploader\FileUploader:
+        tags: [ 'uploader.service' ]
+        arguments:
+            $targetDirectory: '%app.files_dir%'
 # This file is the entry point to configure your own services.
 # Files in the packages/ subdirectory configure your dependencies.
 

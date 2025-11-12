@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Album;
 use App\Entity\Photo;
+use App\Uploader\UploaderFactory;
 use App\Repository\AlbumRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -30,7 +31,7 @@ class AlbumController extends AbstractController
     }
 
     #[Route('/new', name: 'new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $em, #[Autowire(service: 'state_machine.album_creation')] WorkflowInterface $albumCreationStateMachine): Response
+    public function new(Request $request, EntityManagerInterface $em, UploaderFactory $uploaderFactory, #[Autowire(service: 'state_machine.album_creation')] WorkflowInterface $albumCreationStateMachine): Response
     {
         $session = $request->getSession();
         // Réinitialiser le wizard uniquement au premier accès GET (pas si déjà en cours)
@@ -73,23 +74,28 @@ class AlbumController extends AbstractController
                 $album = $stored;
             }
             if ($request->isMethod('POST')) {
-                $ids = json_decode($request->request->get('selected_photos', '[]'), true);
-                if (is_array($ids) && count($ids) > 0) {
-                    $photoRepo = $em->getRepository(Photo::class);
+                // Exemple : récupération des fichiers uploadés (clé 'photo_files[]')
+                $files = $request->files->all('photo_files');
+                $debugPhotos = [];
+                if (is_array($files) && count($files) > 0) {
                     $album->getPhotos()->clear();
-                    $debugPhotos = [];
-                    foreach ($ids as $id) {
-                        $photo = $photoRepo->find($id);
-                        if ($photo) {
-                            $album->addPhoto($photo);
-                            $debugPhotos[] = [
-                                'id' => $photo->getId(),
-                                'user_id' => $photo->getUser() ? $photo->getUser()->getId() : null,
-                                'user_class' => $photo->getUser() ? get_class($photo->getUser()) : null,
-                                'user_is_managed' => $photo->getUser() ? $em->contains($photo->getUser()) : null,
-                            ];
-                        } else {
-                            $debugPhotos[] = ['id' => $id, 'error' => 'Photo non trouvée en base'];
+                    foreach ($files as $file) {
+                        if ($file && $file instanceof \Symfony\Component\HttpFoundation\File\UploadedFile) {
+                            try {
+                                $uploader = $uploaderFactory->getUploader($file);
+                                $photo = $uploader->upload($file, [
+                                    'user' => $this->getUser(),
+                                    // Ajoute d'autres contextes métier si besoin
+                                ]);
+                                $album->addPhoto($photo);
+                                $debugPhotos[] = [
+                                    'id' => $photo->getId(),
+                                    'filename' => $photo->getFilename(),
+                                    'uploader' => get_class($uploader),
+                                ];
+                            } catch (\Throwable $e) {
+                                $debugPhotos[] = ['error' => $e->getMessage()];
+                            }
                         }
                     }
                     $albumCreationStateMachine->apply($album, 'photos_to_description');
