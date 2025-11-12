@@ -2,7 +2,7 @@
 
 namespace App\Tests\Unit;
 
-use App\Service\DefaultFileNameGenerator;
+use App\Uploader\DefaultFileNameGenerator;
 use PHPUnit\Framework\TestCase;
 
 class DefaultFileNameGeneratorTest extends TestCase

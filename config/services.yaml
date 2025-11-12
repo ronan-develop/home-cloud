@@ -55,19 +55,20 @@ services:
     App\Uploader\PhotoUploader:
         arguments:
             $targetDirectory: '%app.photos_dir%'
-            $exifExtractor: '@App\Service\ExifExtractor'
-            $mimeTypeValidator: '@App\Service\PhotoMimeTypeValidator'
-            $directoryManager: '@App\Service\UploadDirectoryManager'
+            $exifExtractor: '@App\Photo\ExifExtractor'
+            $mimeTypeValidator: '@App\Photo\PhotoMimeTypeValidator'
+            $directoryManager: '@App\Uploader\UploadDirectoryManager'
             $fileNameGenerator: '@App\Uploader\DefaultFileNameGenerator'
 
-    App\Service\PhotoMimeTypeValidator:
+
+    App\Photo\PhotoMimeTypeValidator:
         arguments:
             $allowedMimeTypes: '%app.photo_allowed_mime_types%'
 
     App\Service\FileNameGeneratorInterface: '@App\Uploader\DefaultFileNameGenerator'
     App\Uploader\DefaultFileNameGenerator: ~
 
-    App\Service\UploadDirectoryManager: ~
+    App\Uploader\UploadDirectoryManager: ~
 
     # Injection explicite du répertoire upload pour FilePathSecurity
     App\Security\FilePathSecurity:

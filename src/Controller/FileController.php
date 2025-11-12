@@ -3,15 +3,15 @@
 namespace App\Controller;
 
 use App\Entity\File;
-use App\Service\FilePathService;
+use App\File\FilePathService;
 use App\Security\FilePathSecurity;
-use App\Service\ZipArchiveService;
+use App\Archive\ZipArchiveService;
 use App\Security\FileAccessManager;
 use App\Security\FileMimeTypeGuesser;
-use App\Service\FileSelectionService;
-use App\Service\BulkFileDeleteService;
+use App\File\FileSelectionService;
+use App\File\BulkFileDeleteService;
 use Doctrine\ORM\EntityManagerInterface;
-use App\Service\FileErrorRedirectorService;
+use App\File\FileErrorRedirectorService;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;

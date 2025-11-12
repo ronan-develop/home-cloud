@@ -2,11 +2,11 @@
 
 namespace App\Uploader;
 
-use App\Service\FileNameGeneratorInterface;
+use App\Uploader\FileNameGeneratorInterface;
 
 class DefaultFileNameGenerator implements FileNameGeneratorInterface
 {
-    public function generate(string $originalName): string
+    public function generate(string $originalName, $userId = null): string
     {
         $basename = pathinfo($originalName, PATHINFO_BASENAME);
         $basename = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $basename);

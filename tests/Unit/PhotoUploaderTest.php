@@ -6,8 +6,8 @@ use App\Entity\Photo;
 use App\Entity\User;
 use App\Uploader\PhotoUploader;
 use App\Form\Dto\PhotoUploadData;
-use App\Service\PhotoMimeTypeValidator;
-use App\Service\ExifExtractor;
+use App\Photo\PhotoMimeTypeValidator;
+use App\Photo\ExifExtractor;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
@@ -40,7 +40,7 @@ class PhotoUploaderTest extends TestCase
         $fileMover->expects($this->once())->method('move')->with($file, $targetDir, $this->anything());
 
 
-        $fileNameGenerator = $this->createMock(\App\Service\FileNameGeneratorInterface::class);
+        $fileNameGenerator = $this->createMock(\App\Uploader\FileNameGeneratorInterface::class);
         $fileNameGenerator->expects($this->once())
             ->method('generate')
             ->with('test.jpg')

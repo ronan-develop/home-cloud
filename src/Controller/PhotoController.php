@@ -8,13 +8,13 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\User\UserInterface;
-use App\Service\PhotoFetcher;
+use App\Photo\PhotoFetcher;
 
 class PhotoController extends AbstractController
 {
 
     #[Route('/photos', name: 'photos_home')]
-    public function index(PhotoFetcher $photoFetcher, UserInterface $user): Response
+    public function index(\App\Photo\PhotoFetcher $photoFetcher, UserInterface $user): Response
     {
         $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
         $photos = $photoFetcher->forUser($user);

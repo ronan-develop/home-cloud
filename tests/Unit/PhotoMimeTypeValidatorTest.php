@@ -2,7 +2,7 @@
 
 namespace App\Tests\Unit;
 
-use App\Service\PhotoMimeTypeValidator;
+use App\Photo\PhotoMimeTypeValidator;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 

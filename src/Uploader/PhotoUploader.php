@@ -5,12 +5,12 @@ namespace App\Uploader;
 use App\Entity\Photo;
 use App\Entity\User;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
-use App\Service\ExifExtractor;
-use App\Service\PhotoMimeTypeValidator;
+use App\Photo\ExifExtractor;
+use App\Photo\PhotoMimeTypeValidator;
 use App\Form\Dto\PhotoUploadData;
 use App\Exception\PhotoUploadException;
 use App\Uploader\SafeFileMover;
-use App\Service\FileNameGeneratorInterface;
+use App\Uploader\FileNameGeneratorInterface;
 use App\Uploader\UploadDirectoryManager;
 
 class PhotoUploader
