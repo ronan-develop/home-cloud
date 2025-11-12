@@ -3,7 +3,6 @@
 namespace App\Controller;
 
 use App\Entity\File;
-use App\Entity\User;
 use App\Service\FilePathService;
 use App\Security\FilePathSecurity;
 use App\Service\ZipArchiveService;
