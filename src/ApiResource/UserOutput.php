@@ -17,6 +17,16 @@ use App\State\UserProvider;
     ],
     provider: UserProvider::class,
 )]
+/**
+ * DTO de sortie en lecture seule pour la ressource User.
+ *
+ * Rôle : expose uniquement les champs publics d'un utilisateur via l'API.
+ * Ne contient jamais de mot de passe ni de donnée sensible.
+ *
+ * Choix : classe séparée de l'entité User pour découpler le modèle de
+ * persistance du contrat d'API — toute modification du schéma DB n'impacte
+ * pas la réponse JSON tant que UserProvider assure le mapping.
+ */
 final class UserOutput
 {
     public string $id = '';
