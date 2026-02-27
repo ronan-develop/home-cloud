@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Repository\MediaRepository;
-use App\Service\EncryptionService;
-use App\Service\StorageService;
+use App\Service\EncryptionServiceInterface;
+use App\Service\StorageServiceInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -35,8 +35,8 @@ final class MediaThumbnailController extends AbstractController
 {
     public function __construct(
         private readonly MediaRepository $mediaRepository,
-        private readonly StorageService $storageService,
-        private readonly EncryptionService $encryption,
+        private readonly StorageServiceInterface $storageService,
+        private readonly EncryptionServiceInterface $encryption,
     ) {}
 
     #[Route('/api/v1/medias/{id}/thumbnail', name: 'media_thumbnail', methods: ['GET'])]

@@ -20,11 +20,11 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
  * - Chiffrement au repos : chaque fichier est chiffré par EncryptionService après move().
  *   Le fichier sur disque est du binaire opaque — illisible sans la clé APP_ENCRYPTION_KEY.
  */
-final class StorageService
+final class StorageService implements StorageServiceInterface
 {
     public function __construct(
         private readonly string $storageDir,
-        private readonly EncryptionService $encryption,
+        private readonly EncryptionServiceInterface $encryption,
     ) {}
 
     /**
