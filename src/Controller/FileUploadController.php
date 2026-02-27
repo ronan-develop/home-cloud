@@ -123,6 +123,8 @@ final class FileUploadController extends AbstractController
     private function rejectExecutable(UploadedFile $file): void
     {
         $blockedExtensions = [
+            // PHP (exécution côté serveur — RCE si le webserver interprète var/)
+            'php', 'php3', 'php4', 'php5', 'php7', 'php8', 'phtml', 'phar', 'phps',
             // Windows
             'exe', 'msi', 'com', 'bat', 'cmd', 'ps1', 'psm1', 'psd1', 'scr', 'pif', 'vbs', 'vbe', 'wsf', 'wsh', 'gadget', 'msc', 'msp', 'mst',
             // Linux / Unix
@@ -131,6 +133,8 @@ final class FileUploadController extends AbstractController
             'dmg', 'pkg', 'app',
             // JVM / cross-platform
             'jar', 'jnlp',
+            // Autres langages serveur
+            'py', 'rb', 'pl', 'cgi', 'asp', 'aspx', 'jsp', 'cfm',
         ];
 
         $ext = strtolower($file->getClientOriginalExtension() ?? '');
