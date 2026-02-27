@@ -23,3 +23,7 @@ services:
     App\Service\StorageService:
         arguments:
             $storageDir: '%app.storage_dir%'
+
+    App\Service\ThumbnailService:
+        arguments:
+            $storageDir: '%app.storage_dir%'
