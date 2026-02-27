@@ -1,6 +1,6 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-02-27 (Phase 3 Media en cours)
+> Dernière mise à jour : 2026-02-27 (Phase 3 Media complète)
 
 ---
 
@@ -97,7 +97,115 @@
 
 ---
 
-## ⚠️ Points d'attention
+## 🏛️ Décisions d'architecture
+
+### 1. Pourquoi des controllers Symfony pour certains endpoints ?
+
+API Platform gère automatiquement les opérations CRUD standard (GET, POST JSON, PATCH, DELETE) via ses **StateProcessors** et **StateProviders**. Mais deux cas nécessitent un controller Symfony classique (`AbstractController`) :
+
+#### `FileUploadController` — POST multipart/form-data
+
+API Platform ne sait pas désérialiser un body `multipart/form-data` nativement. Son système de désérialisation attend du JSON ou du JSON-LD. Pour un upload binaire, il faut accéder directement à `$request->files` — ce qui n'est possible que dans un controller bas-niveau.
+
+> **Règle** : `deserialize: false` sur l'opération + controller dédié = on court-circuite le pipeline API Platform et on gère la `Request` Symfony brute. Le controller DOIT retourner un objet `Response` (pas un DTO), sinon Symfony lève une exception.
+
+#### `FileDownloadController` — GET stream binaire
+
+Renvoyer un fichier binaire avec ses headers (`Content-Type`, `Content-Disposition`) ne rentre pas dans le modèle de sérialisation JSON d'API Platform. Il faut une `BinaryFileResponse` ou `Response` avec `file_get_contents()`.
+
+> **⚠️ Gotcha tests** : `BinaryFileResponse` retourne un body vide dans le client PHPUnit (il ne lit pas le disque). Solution : `new Response(file_get_contents($path))` dans les tests ou vérifier uniquement le status HTTP.
+
+#### `MediaThumbnailController` — GET /medias/{id}/thumbnail
+
+Même raison que le download : réponse binaire (image JPEG). De plus, la route ne suit pas le pattern d'une ressource API Platform standard (pas de collection, ID composite dans l'URL).
+
+**Résumé** : un controller Symfony est utilisé **uniquement** quand API Platform ne peut pas gérer nativement le format de la requête ou de la réponse. Tout le reste passe par les StateProviders/Processors.
+
+---
+
+### 2. Architecture en couches : DTOs, Providers, Processors
+
+```
+Requête HTTP
+    │
+    ▼
+ApiResource (DTO — src/ApiResource/)
+    │  Définit les opérations, la sérialisation, le provider/processor
+    │
+    ├─── Lecture  → StateProvider (src/State/) → Repository → DTO
+    └─── Écriture → StateProcessor (src/State/) ou Controller → Entity → DB
+```
+
+**Pourquoi ne jamais exposer les entités Doctrine directement ?**
+- Une entité peut changer de structure (refactoring DB) sans casser le contrat API
+- On contrôle exactement quels champs sont exposés
+- On évite les références circulaires de sérialisation (ex : User → Folder → User)
+- Les DTOs sont `readonly` : impossible de les modifier par erreur
+
+---
+
+### 3. Relation File ↔ Media : OneToOne vs héritage
+
+**Choix : OneToOne** (Media a une FK vers File, pas l'inverse).
+
+- `File` reste **générique** : il ne sait pas s'il est un média. C'est voulu — un PDF, un CSV, etc. sont des Files sans Media.
+- `Media` **enrichit optionnellement** un File avec EXIF, thumbnail, dimensions.
+- Héritage Doctrine (STI/CTI) aurait compliqué les requêtes et couplé les deux concepts.
+- La relation est nullable côté File : `$file->getMedia()` peut retourner `null`.
+
+**Idempotence du handler** : avant de créer un Media, le handler vérifie `mediaRepository->findOneBy(['file' => $file])`. Si un Media existe déjà, il ne fait rien. Protège contre les rejeux de messages Messenger.
+
+---
+
+### 4. Symfony Messenger : pourquoi async pour les médias ?
+
+L'extraction EXIF et la génération de thumbnail peuvent prendre plusieurs secondes sur de grosses images (RAW, vidéo). Faire ça dans la requête HTTP = timeout utilisateur.
+
+**Solution** : après le `flush()` du File, on dispatch un `MediaProcessMessage` dans le bus. Le worker Messenger le consomme en arrière-plan.
+
+| Environnement | Transport     | Pourquoi                                      |
+|---------------|---------------|-----------------------------------------------|
+| `prod/dev`    | `doctrine://` | Stockage en DB (`messenger_messages`), o2switch compatible, pas besoin de RabbitMQ |
+| `test`        | `in-memory://`| Messages capturables via `$transport->get()` sans worker, tests rapides |
+
+> **RabbitMQ** : non disponible sur o2switch mutualisé. Le transport Doctrine est suffisant pour un usage mono-utilisateur avec faible volume.
+
+---
+
+### 5. Sécurité fichiers : pourquoi blocage par extension et non par MIME ?
+
+Le MIME type est fourni par le client — il peut être falsifié. Cependant, pour les exécutables, on bloque **l'extension** (plus fiable côté serveur) **ET** on fait confiance au `getClientMimeType()` pour le routing (détection image/vidéo).
+
+**Pas de restriction de taille** : stockage illimité côté infra. La limite PHP (`upload_max_filesize`) est documentée dans `config/php.ini` et doit être déployée manuellement sur o2switch.
+
+---
+
+### 6. Stockage physique des fichiers
+
+```
+var/storage/
+├── {year}/
+│   └── {month}/
+│       └── {uuid}.{ext}        ← fichiers originaux
+└── thumbs/
+    └── {uuid}.jpg              ← thumbnails (320px wide, JPEG q=80)
+```
+
+- **Chemin en DB** : relatif à `var/storage/` (ex : `2026/02/uuid.jpg`). Permet de déplacer le stockage sans migration DB.
+- **`app.storage_dir`** : paramètre Symfony injecté dans `StorageService` et `ThumbnailService`. En prod, pointer vers un volume externe.
+
+---
+
+### 7. Tests fonctionnels API : choix techniques
+
+- **`ApiTestCase`** (API Platform) plutôt que `WebTestCase` : client HTTP intégré avec assertions JSON.
+- **`Accept: application/json`** obligatoire sur les collections : API Platform retourne `application/ld+json` par défaut (JSON-LD), ce qui change la structure (`hydra:member`, etc.).
+- **Nettoyage DB** avec `SET FOREIGN_KEY_CHECKS=0` avant `DELETE` pour éviter les violations de FK entre tables liées (users → files → medias).
+- **Pas de fixtures Doctrine** : données créées directement via l'EntityManager dans `setUp()` → plus rapide, plus explicite.
+
+---
+
+
 
 - **Base de données** : passer sur **MySQL/MariaDB 10.6** pour la prod o2switch (PostgreSQL 9.2 trop ancien)
 - **Versionnement API** : préfixer tous les endpoints `/api/v1/` (Orange API Guidelines)
