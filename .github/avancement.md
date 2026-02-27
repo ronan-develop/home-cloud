@@ -1,6 +1,6 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-02-27 (refactor SOLID + interfaces — 57/57 tests)
+> Dernière mise à jour : 2026-02-27 (nettoyage remote + namespace fixes — 58 commits, 57/57 tests)
 
 ---
 
@@ -78,13 +78,15 @@
 | 2026-02-27 | ♻️ **refactor/solid-interfaces** — extraction `EncryptionServiceInterface`, `StorageServiceInterface`, `DefaultFolderServiceInterface` (DIP) ✅ |
 | 2026-02-27 | ♻️ **refactor/interfaces-folder** — déplacement des interfaces dans `src/Interface/` (namespace `App\Interface`) ✅ |
 | 2026-02-27 | 57/57 tests passing ✅ |
+| 2026-02-27 | ♻️ **Namespace fix** — mise à jour des `use` statements dans controllers + FileProcessor (`App\Interface`) ✅ |
+| 2026-02-27 | 🛠️ **Remote cleanup** — force-push `main`, suppression 5 branches obsolètes (feat/Photo, feat/albums, fix/security-round2, refactor/album-controller, snapshot/avant-reset) ✅ |
 
 ---
 
 ## 🚧 En cours
 
-- Rien — `main` est propre et à jour (57/57 tests ✅)
-- Prochaine phase : **Phase 5** — déploiement o2switch (stratégie à définir)
+- Rien — `main` est propre, remote synchronisé (57/57 tests ✅)
+- Prochaine phase : **Phase 4** — Albums ou **Phase 5** — déploiement o2switch
 
 ---
 
