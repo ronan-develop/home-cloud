@@ -1,6 +1,6 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-02-27 (fix/security-hardening — hardening complet)
+> Dernière mise à jour : 2026-02-27 (feat/encryption-at-rest — chiffrement au repos complet)
 
 ---
 
@@ -48,12 +48,15 @@
 | 2026-02-27 | 42/42 tests passing ✅ (+ 3 sécurité + 1 thumbnail + fix setUp FK FolderTest/FileTest) |
 | 2026-02-27 | 🔒 **fix/security-hardening** — 8 correctifs de sécurité (voir section 8 ci-dessous) ✅ |
 | 2026-02-27 | 47/47 tests passing ✅ (+ nosniff, type filter, sanitize, folderName, security headers) |
+| 2026-02-27 | 🔐 **feat/encryption-at-rest** — chiffrement XChaCha20-Poly1305 de tous les fichiers + thumbnails ✅ |
+| 2026-02-27 | 🛡️ SVG, HTML, XML, JS, CSS acceptés à l'upload (neutralisés par chiffrement, binaire opaque sur disque) ✅ |
+| 2026-02-27 | 50/50 tests passing ✅ (+ vérification chiffrement disque + SVG/HTML acceptés) |
 
 ---
 
 ## 🚧 En cours
 
-- Rien — `main` est propre et à jour (47/47 tests ✅)
+- Rien — `feat/encryption-at-rest` prête à merger (50/50 tests ✅)
 
 ---
 
@@ -255,6 +258,44 @@ Audit réalisé avant merge de `feat/media`. Deux branches créées : `fix/secur
 - Pas de rate limiting (mono-utilisateur, o2switch)
 - Taille fichiers illimitée (choix utilisateur explicite)
 - Mot de passe DB par défaut (hors scope dev local)
+
+---
+
+### 9. Chiffrement au repos — feat/encryption-at-rest
+
+**Objectifs distincts :**
+1. **Confidentialité** : si la DB est compromise (les paths de fichiers sont exposés), les fichiers sur disque sont illisibles sans `APP_ENCRYPTION_KEY`.
+2. **Neutralisation** : les fichiers "sensibles" (SVG, HTML, JS…) sont stockés comme binaire chiffré opaque → non exécutables sur le serveur même en cas de path traversal.
+
+**Algorithme : XChaCha20-Poly1305 (sodium secretstream)**
+- Built-in PHP 8 (libsodium natif, zéro dépendance)
+- Authentifié : détecte toute falsification du fichier (auth tag par chunk)
+- Streaming : lecture/écriture par chunks de 8 Ko → aucune contrainte RAM pour les gros fichiers
+
+**Format sur disque :**
+```
+HEADER (24 bytes) | chunk1_len (4B) | chunk1_chiffré | chunk2_len | chunk2_chiffré | ...
+```
+
+**Pipeline :**
+| Étape | Comportement |
+|-------|--------------|
+| Upload (`StorageService::store`) | move() → encrypt() en place → fichier chiffré |
+| Download (`FileDownloadController`) | decryptToTempFile() pour finfo MIME → StreamedResponse via decryptToStream() |
+| Thumbnail génération (`ThumbnailService`) | decryptToTempFile() → GD → imagejpeg() → encrypt() thumbnail → unlink temp |
+| EXIF (`ExifService`) | decryptToTempFile() → exif_read_data() → unlink temp |
+| Thumbnail download (`MediaThumbnailController`) | decryptToStream() → StreamedResponse |
+
+**Fichiers sensibles acceptés (neutralisés par chiffrement) :**
+`svg`, `svgz`, `html`, `htm`, `xhtml`, `xml`, `xsl`, `xslt`, `js`, `mjs`, `css`
+
+**Toujours bloqués (défense en profondeur) :**
+`php`, `phar`, `exe`, `sh`, `py`, `rb`, `asp`, `jar`, et tous les exécutables OS
+
+**Clé :**
+- `APP_ENCRYPTION_KEY` dans `.env.local` (jamais commité)
+- 32 bytes, base64 encodé
+- Générer : `php -r "echo base64_encode(sodium_crypto_secretstream_xchacha20poly1305_keygen());"`
 
 ---
 

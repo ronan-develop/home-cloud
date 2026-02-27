@@ -5,19 +5,21 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Repository\MediaRepository;
+use App\Service\EncryptionService;
 use App\Service\StorageService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
  * Controller dédié au téléchargement des thumbnails média.
  *
- * Rôle : streamer le thumbnail depuis le disque avec le Content-Type approprié.
+ * Rôle : déchiffrer et streamer le thumbnail depuis le disque avec le Content-Type approprié.
  *
  * Sécurité :
- * - BinaryFileResponse streame sans charger en RAM.
+ * - Chiffrement au repos : le thumbnail sur disque est chiffré (XChaCha20-Poly1305).
+ *   EncryptionService déchiffre chunk par chunk vers la réponse HTTP.
  * - X-Content-Type-Options: nosniff empêche le MIME sniffing navigateur.
  * - Content-Type forcé à image/jpeg (les thumbnails sont toujours des JPEG — ThumbnailService).
  *
@@ -27,17 +29,18 @@ use Symfony\Component\Routing\Attribute\Route;
  * - Séparé de FileDownloadController car la logique de résolution est différente
  *   (Media → thumbnailPath vs File → path).
  *
- * ⚠️ Tests : BinaryFileResponse retourne un body vide dans PHPUnit — tests sur status + headers uniquement.
+ * ⚠️ Tests : StreamedResponse retourne un body vide dans PHPUnit — tests sur status + headers uniquement.
  */
 final class MediaThumbnailController extends AbstractController
 {
     public function __construct(
         private readonly MediaRepository $mediaRepository,
         private readonly StorageService $storageService,
+        private readonly EncryptionService $encryption,
     ) {}
 
     #[Route('/api/v1/medias/{id}/thumbnail', name: 'media_thumbnail', methods: ['GET'])]
-    public function __invoke(string $id): BinaryFileResponse
+    public function __invoke(string $id): StreamedResponse
     {
         $media = $this->mediaRepository->find($id)
             ?? throw new NotFoundHttpException('Media not found');
@@ -52,7 +55,10 @@ final class MediaThumbnailController extends AbstractController
             throw new NotFoundHttpException('Thumbnail file not found on disk');
         }
 
-        $response = new BinaryFileResponse($absolutePath);
+        $response = new StreamedResponse(function () use ($absolutePath): void {
+            $this->encryption->decryptToStream($absolutePath, fopen('php://output', 'wb'));
+        });
+
         $response->headers->set('Content-Type', 'image/jpeg');
         $response->headers->set('X-Content-Type-Options', 'nosniff');
 
