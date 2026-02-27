@@ -171,4 +171,19 @@ final class FolderTest extends ApiTestCase
 
         $this->assertResponseStatusCodeSame(404);
     }
+
+    public function testPatchFolderReturns400WhenParentIsSelf(): void
+    {
+        $user = $this->createUser();
+        $folder = new Folder('Mon Dossier', $user);
+        $this->em->persist($folder);
+        $this->em->flush();
+
+        static::createClient()->request('PATCH', '/api/v1/folders/'.$folder->getId(), [
+            'headers' => ['Content-Type' => 'application/merge-patch+json'],
+            'json' => ['parentId' => (string) $folder->getId()],
+        ]);
+
+        $this->assertResponseStatusCodeSame(400);
+    }
 }
