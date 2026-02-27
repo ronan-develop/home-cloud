@@ -28,3 +28,9 @@ services:
     App\Service\ThumbnailService:
         arguments:
             $storageDir: '%app.storage_dir%'
+
+when@test:
+    services:
+        Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface:
+            alias: security.password_hasher
+            public: true

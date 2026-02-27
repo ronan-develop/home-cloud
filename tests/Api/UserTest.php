@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Api;
 
-use ApiPlatform\Symfony\Bundle\Test\ApiTestCase;
 use App\Entity\User;
+use App\Tests\AuthenticatedApiTestCase;
 use Doctrine\ORM\EntityManagerInterface;
 
-final class UserTest extends ApiTestCase
+final class UserTest extends AuthenticatedApiTestCase
 {
     protected static ?bool $alwaysBootKernel = false;
     private EntityManagerInterface $em;
@@ -27,12 +27,9 @@ final class UserTest extends ApiTestCase
 
     public function testGetUserReturns200WithCorrectStructure(): void
     {
-        $user = new User('alice@example.com', 'Alice');
-        $this->em->persist($user);
-        $this->em->flush();
+        $user = $this->createUser();
 
-        $client = static::createClient();
-        $response = $client->request('GET', '/api/v1/users/'.$user->getId());
+        $response = $this->createAuthenticatedClient()->request('GET', '/api/v1/users/'.$user->getId());
 
         $this->assertResponseIsSuccessful();
         $this->assertResponseStatusCodeSame(200);
@@ -47,20 +44,22 @@ final class UserTest extends ApiTestCase
 
     public function testGetUserReturns404WhenNotFound(): void
     {
-        static::createClient()->request('GET', '/api/v1/users/00000000-0000-0000-0000-000000000000');
+        $this->createUser();
+        $this->createAuthenticatedClient()->request('GET', '/api/v1/users/00000000-0000-0000-0000-000000000000');
 
         $this->assertResponseStatusCodeSame(404);
     }
 
     public function testGetCollectionReturnsUsers(): void
     {
+        $this->createUser();
         $user1 = new User('bob@example.com', 'Bob');
         $user2 = new User('carol@example.com', 'Carol');
         $this->em->persist($user1);
         $this->em->persist($user2);
         $this->em->flush();
 
-        $response = static::createClient()->request('GET', '/api/v1/users', [
+        $response = $this->createAuthenticatedClient()->request('GET', '/api/v1/users', [
             'headers' => ['Accept' => 'application/json'],
         ]);
 
@@ -71,11 +70,12 @@ final class UserTest extends ApiTestCase
 
     public function testResponseHasSecurityHeaders(): void
     {
+        $this->createUser();
         $user = new User('headers@example.com', 'Headers');
         $this->em->persist($user);
         $this->em->flush();
 
-        static::createClient()->request('GET', '/api/v1/users/'.$user->getId());
+        $this->createAuthenticatedClient()->request('GET', '/api/v1/users/'.$user->getId());
 
         $this->assertResponseHeaderSame('x-content-type-options', 'nosniff');
         $this->assertResponseHeaderSame('x-frame-options', 'DENY');
