@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Repository\MediaRepository;
-use App\Service\EncryptionServiceInterface;
-use App\Service\StorageServiceInterface;
+use App\Interface\EncryptionServiceInterface;
+use App\Interface\StorageServiceInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
