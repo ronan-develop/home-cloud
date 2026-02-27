@@ -4,6 +4,25 @@
 
 ---
 
+## 🔴 AVERTISSEMENT CRITIQUE — CLÉ DE CHIFFREMENT
+
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  ⚠️  NE JAMAIS RÉGÉNÉRER APP_ENCRYPTION_KEY SI DES FICHIERS EXISTENT       ║
+║                                                                              ║
+║  Tous les fichiers uploadés sont chiffrés avec cette clé.                   ║
+║  Changer la clé = TOUS les fichiers deviennent ILLISIBLES et IRRÉCUPÉRABLES ║
+║                                                                              ║
+║  Procédure si changement de clé OBLIGATOIRE :                               ║
+║    1. Déchiffrer TOUS les fichiers avec l'ancienne clé                       ║
+║    2. Générer la nouvelle clé                                                ║
+║    3. Rechiffrer TOUS les fichiers avec la nouvelle clé                      ║
+║    4. Vérifier chaque fichier avant de supprimer l'ancienne clé              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+```
+
+---
+
 ## ✅ Fait
 
 | Date       | Tâche                                                                           |
