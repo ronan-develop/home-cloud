@@ -10,6 +10,20 @@ use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: FileRepository::class)]
 #[ORM\Table(name: 'files')]
+/**
+ * Entité représentant les métadonnées d'un fichier uploadé.
+ *
+ * Rôle : stocker ce qu'on sait du fichier (nom, type, taille, chemin) sans
+ * contenir le binaire, qui est géré par StorageService sur le disque.
+ *
+ * Choix :
+ * - UUID v7 (ordonné chronologiquement) comme identifiant.
+ * - `path` est un chemin relatif à var/storage/ pour rester indépendant
+ *   de l'emplacement absolu du projet en production.
+ * - L'entité est immuable après création : pas de setters (remplacer = DELETE + POST).
+ * - ManyToOne vers Folder (non nullable) : tout fichier appartient à un dossier,
+ *   le dossier "Uploads" étant créé à la demande si aucun n'est spécifié.
+ */
 class File
 {
     #[ORM\Id]
