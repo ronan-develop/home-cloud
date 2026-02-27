@@ -12,29 +12,75 @@ Tu ne réponds jamais avec des informations inventées ou non vérifiées.
 
 ## 📖 Ordre de Lecture Recommandé
 
-1. **Ce fichier** (tu es ici) → Context métier Orange + Références essentielles
-2. **[.github/dev+.chatmode.md](./.github/dev+.chatmode.md)** → Bonnes pratiques de développement + utilisation optimale du chat mode
+**⚠️ À LIRE AVANT CHAQUE RÉPONSE :**
+1. **Ce fichier** (tu es ici) → Règles globales du projet
+2. **[.github/CONVENTION_DE_COMMIT.md](./.github/CONVENTION_DE_COMMIT.md)** → Convention de commit (emoji OBLIGATOIRE, scope EXPLICITE)
+3. **[.github/dev+.chatmode.md](./.github/dev+.chatmode.md)** → Bonnes pratiques de développement
 
 ---
 
 ## 🔗 Références Essentielles
 
-### 2️⃣ Conventions & Commit
-→ **[docs/CONVENTION_DE_COMMIT.md](../docs/CONVENTION_DE_COMMIT.md)**
-- Format: `<type>(<scope>): <sujet>`
-- Types: ✨ feat, 🔧 fix, 📖 docs, ♻️ refactor, ⚡ perf, etc.
+### 2️⃣ Conventions de Commit — RÈGLES STRICTES
+→ Fichier de référence : **[.github/CONVENTION_DE_COMMIT.md](./.github/CONVENTION_DE_COMMIT.md)**
+
+**Format OBLIGATOIRE :** `<emoji> <type>(<scope>): <sujet>`
+
+**Règles non négociables :**
+- L'**emoji** est TOUJOURS présent en début de message (ex: `✨`, `🔧`, `✅`, `🏗️`)
+- Le **scope** doit être **explicite et concret** : nom de la classe, du module ou du composant concerné
+  - ✅ `feat(FileUploadController)`, `fix(UserTest)`, `test(FileTest)`
+  - ❌ `feat(file)`, `feat(api)`, `fix(tests)` ← trop vague
+- Les commits sont **atomiques** : un commit = une responsabilité logique
+- Pour `#git` : créer autant de commits que nécessaire, jamais `git add .` en un seul bloc
+
+**Correspondance emoji ↔ type :**
+| Emoji | Type |
+|-------|------|
+| ✨ | feat |
+| 🔧 | fix |
+| 📖 | docs |
+| ♻️ | refactor |
+| ⚡ | perf |
+| ✅ | test |
+| 🏗️ | build |
+| 🏭 | ci |
+| 🛠️ | chore |
+| 🎨 | style |
+| 🔒 | security |
+| ⏪ | revert |
+| 🚧 | WIP |
 
 ### 3️⃣ Git Workflow
-Quand je tape la comande `#git` dans le chat ou la CLI, tu me réponds avec les étapes suivantes pour le workflow de commit local :
-Toujours respecter [les conventions de commit] (../docs/CONVENTION_DE_COMMIT.md) et suivre ce workflow pour les commits locaux (sans push) :
+Quand je tape la commande `#git` dans le chat ou la CLI, suivre ce workflow :
 ```bash
-git diff                             # Vérifier les changements non stagés et regrouper logiquement les changements
-git status                           # Check changes
-git add .                            # Stage all
-git commit -m "✨ feat(PSC): desc"   # Commit with convention (user does NOT push)
+git diff                    # Identifier les changements et regrouper logiquement
+git status                  # Vérifier l'état
+# Stager et commiter par groupe logique (commits atomiques)
+git add <fichiers-liés>
+git commit -m "✨ feat(NomExplicite): description courte"
+# Répéter pour chaque groupe logique
 ```
+**Le user ne push PAS — commits locaux uniquement.**
+
 ---
 
 ## 📋 Mémoire & Suivi des Travaux
 
 Un fichier d'avancement des travaux est présent dans [`.github/avancement.md`](./.github/avancement.md). Ce fichier doit être mis à jour régulièrement pour refléter l'état actuel des travaux. Tu peux effectuer seul ces mises à jour.
+
+---
+
+## 🧪 Méthodologie TDD — OBLIGATOIRE
+
+**Pour toute nouvelle fonctionnalité ou entité, la règle est :**
+
+1. **RED** — Écrire le test d'abord (il doit échouer)
+2. **GREEN** — Écrire le minimum de code pour le faire passer
+3. **REFACTOR** — Nettoyer sans casser les tests
+
+**Règles strictes :**
+- Ne jamais écrire du code de production sans test préalable
+- Un commit RED (test seul) avant le commit GREEN (implémentation)
+- Les tests fonctionnels API couvrent : status HTTP, structure JSON, cas d'erreur (404, 400...)
+- Stack : PHPUnit + `symfony/test-pack` + `ApiTestCase` (API Platform)
