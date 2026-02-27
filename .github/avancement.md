@@ -137,6 +137,7 @@ ApiResource (DTO — src/ApiResource/)
 ```
 
 **Pourquoi ne jamais exposer les entités Doctrine directement ?**
+
 - Une entité peut changer de structure (refactoring DB) sans casser le contrat API
 - On contrôle exactement quels champs sont exposés
 - On évite les références circulaires de sérialisation (ex : User → Folder → User)
