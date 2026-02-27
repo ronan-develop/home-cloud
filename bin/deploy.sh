@@ -1,0 +1,279 @@
+#!/usr/bin/env bash
+# =============================================================================
+# HomeCloud — Script de déploiement sur o2switch
+# Usage : bash bin/deploy.sh
+#
+# Ce script :
+#   1. Demande le prénom de l'utilisateur
+#   2. Se connecte en SSH sur ron2cuba@lenouvel.me
+#   3. Clone/met à jour le repo sur le serveur
+#   4. Génère .env.local avec toutes les variables de prod
+#   5. Installe les dépendances Composer
+#   6. Lance les migrations Doctrine
+#   7. Tente de créer la base de données MySQL via SSH
+#      → Si impossible : affiche la checklist cPanel à faire manuellement
+# =============================================================================
+
+set -euo pipefail
+
+# ── Couleurs ─────────────────────────────────────────────────────────────────
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+BOLD='\033[1m'
+NC='\033[0m'
+
+info()    { echo -e "${BLUE}ℹ${NC}  $*"; }
+success() { echo -e "${GREEN}✔${NC}  $*"; }
+warn()    { echo -e "${YELLOW}⚠${NC}  $*"; }
+error()   { echo -e "${RED}✖${NC}  $*" >&2; }
+title()   { echo -e "\n${BOLD}$*${NC}"; }
+
+# ── Configuration fixe ────────────────────────────────────────────────────────
+SSH_USER="ron2cuba"
+SSH_HOST="lenouvel.me"
+SSH_PORT=22
+GIT_REPO="https://github.com/ronan-develop/home-cloud"
+GIT_BRANCH="main"
+# PHP CLI sur o2switch (ajuster si version différente)
+PHP_BIN="/usr/local/php82/bin/php"
+COMPOSER_BIN="/usr/local/php82/bin/composer"
+
+# ── Questionnaire ─────────────────────────────────────────────────────────────
+title "═══════════════════════════════════════"
+title "  HomeCloud — Déploiement o2switch"
+title "═══════════════════════════════════════"
+
+echo ""
+read -rp "$(echo -e "${BOLD}Prénom de l'utilisateur :${NC} ")" PRENOM
+
+if [[ -z "$PRENOM" ]]; then
+    error "Le prénom ne peut pas être vide."
+    exit 1
+fi
+
+# Normalisation : minuscules, sans accents basiques
+PRENOM_LOWER=$(echo "$PRENOM" | tr '[:upper:]' '[:lower:]' | iconv -f utf-8 -t ascii//TRANSLIT 2>/dev/null || echo "$PRENOM" | tr '[:upper:]' '[:lower:]')
+
+SUBDOMAIN="${PRENOM_LOWER}.lenouvel.me"
+DEPLOY_PATH="/home/${SSH_USER}/${SUBDOMAIN}"
+DB_NAME="${SSH_USER}_${PRENOM_LOWER}"
+DB_USER="${SSH_USER}_${PRENOM_LOWER}"
+
+title "── Récapitulatif ──────────────────────"
+echo -e "  Prénom          : ${BOLD}${PRENOM}${NC}"
+echo -e "  Sous-domaine    : ${BOLD}https://${SUBDOMAIN}${NC}"
+echo -e "  Chemin serveur  : ${BOLD}${DEPLOY_PATH}${NC}"
+echo -e "  Base de données : ${BOLD}${DB_NAME}${NC}"
+echo -e "  Utilisateur DB  : ${BOLD}${DB_USER}${NC}"
+echo ""
+
+read -rp "$(echo -e "${BOLD}Continuer ? [o/N] :${NC} ")" CONFIRM
+if [[ "$CONFIRM" != "o" && "$CONFIRM" != "O" ]]; then
+    info "Annulé."
+    exit 0
+fi
+
+# ── Secrets à générer localement ─────────────────────────────────────────────
+title "── Génération des secrets ──────────────"
+
+APP_SECRET=$(php -r "echo bin2hex(random_bytes(16));")
+success "APP_SECRET généré"
+
+APP_ENCRYPTION_KEY=$(php -r "echo base64_encode(sodium_crypto_secretstream_xchacha20poly1305_keygen());")
+success "APP_ENCRYPTION_KEY générée"
+
+JWT_PASSPHRASE=$(php -r "echo bin2hex(random_bytes(24));")
+success "JWT_PASSPHRASE générée"
+
+# ── Demande du mot de passe DB ────────────────────────────────────────────────
+title "── Base de données ─────────────────────"
+warn "o2switch : les bases de données doivent être créées via cPanel (Bases de données MySQL)."
+echo ""
+echo -e "  Nom de la base  : ${BOLD}${DB_NAME}${NC}"
+echo -e "  Utilisateur DB  : ${BOLD}${DB_USER}${NC}"
+echo ""
+read -rsp "$(echo -e "${BOLD}Mot de passe MySQL pour ${DB_USER} (sera stocké dans .env.local) :${NC} ")" DB_PASSWORD
+echo ""
+
+if [[ -z "$DB_PASSWORD" ]]; then
+    error "Le mot de passe DB ne peut pas être vide."
+    exit 1
+fi
+
+DATABASE_URL="mysql://${DB_USER}:${DB_PASSWORD}@127.0.0.1:3306/${DB_NAME}?serverVersion=mariadb-10.6.0&charset=utf8mb4"
+
+# ── Vérification SSH ──────────────────────────────────────────────────────────
+title "── Connexion SSH ───────────────────────"
+info "Test de connexion SSH vers ${SSH_USER}@${SSH_HOST}…"
+
+if ! ssh -p "${SSH_PORT}" -o ConnectTimeout=10 -o BatchMode=yes "${SSH_USER}@${SSH_HOST}" "echo OK" &>/dev/null; then
+    error "Impossible de se connecter en SSH. Vérifiez votre clé SSH et les accès o2switch."
+    error "  ssh-copy-id -p ${SSH_PORT} ${SSH_USER}@${SSH_HOST}"
+    exit 1
+fi
+success "Connexion SSH OK"
+
+# ── Déploiement via SSH ───────────────────────────────────────────────────────
+title "── Déploiement ─────────────────────────"
+
+# Construction du .env.local (transmis via heredoc SSH)
+ENV_LOCAL=$(cat <<ENVEOF
+APP_ENV=prod
+APP_DEBUG=0
+APP_SECRET=${APP_SECRET}
+DATABASE_URL=${DATABASE_URL}
+APP_URL=https://${SUBDOMAIN}
+CORS_ALLOW_ORIGIN=^https://${PRENOM_LOWER}\\.lenouvel\\.me$
+APP_ENCRYPTION_KEY=${APP_ENCRYPTION_KEY}
+MESSENGER_TRANSPORT_DSN=doctrine://default?auto_setup=0
+JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
+JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
+JWT_PASSPHRASE=${JWT_PASSPHRASE}
+JWT_TTL=3600
+ENVEOF
+)
+
+ssh -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" bash -s -- \
+    "$DEPLOY_PATH" "$GIT_REPO" "$GIT_BRANCH" "$PHP_BIN" "$COMPOSER_BIN" "$JWT_PASSPHRASE" \
+    <<'SSHSCRIPT'
+set -euo pipefail
+
+DEPLOY_PATH="$1"
+GIT_REPO="$2"
+GIT_BRANCH="$3"
+PHP_BIN="$4"
+COMPOSER_BIN="$5"
+JWT_PASSPHRASE="$6"
+
+echo "→ Répertoire : ${DEPLOY_PATH}"
+
+# Clone ou mise à jour du repo
+if [ -d "${DEPLOY_PATH}/.git" ]; then
+    echo "→ Mise à jour du repo…"
+    git -C "${DEPLOY_PATH}" fetch origin
+    git -C "${DEPLOY_PATH}" reset --hard "origin/${GIT_BRANCH}"
+else
+    echo "→ Clone du repo…"
+    git clone --branch "${GIT_BRANCH}" --depth 1 "${GIT_REPO}" "${DEPLOY_PATH}"
+fi
+
+# Composer install
+echo "→ Installation des dépendances Composer…"
+${PHP_BIN} ${COMPOSER_BIN} install \
+    --working-dir="${DEPLOY_PATH}" \
+    --no-dev \
+    --optimize-autoloader \
+    --no-interaction \
+    --quiet
+
+# Génération des clés JWT si absentes
+JWT_DIR="${DEPLOY_PATH}/config/jwt"
+mkdir -p "${JWT_DIR}"
+if [ ! -f "${JWT_DIR}/private.pem" ]; then
+    echo "→ Génération des clés JWT…"
+    openssl genpkey -algorithm RSA \
+        -out "${JWT_DIR}/private.pem" \
+        -aes256 -pass "pass:${JWT_PASSPHRASE}" \
+        -pkeyopt rsa_keygen_bits:4096 2>/dev/null
+    openssl pkey \
+        -in "${JWT_DIR}/private.pem" \
+        -out "${JWT_DIR}/public.pem" \
+        -pubout -passin "pass:${JWT_PASSPHRASE}" 2>/dev/null
+    chmod 600 "${JWT_DIR}/private.pem"
+fi
+
+# Répertoires var/
+mkdir -p "${DEPLOY_PATH}/var/cache/prod"
+mkdir -p "${DEPLOY_PATH}/var/log"
+mkdir -p "${DEPLOY_PATH}/var/storage"
+chmod -R 775 "${DEPLOY_PATH}/var"
+
+echo "→ Déploiement côté serveur terminé."
+SSHSCRIPT
+
+success "Repo déployé sur le serveur"
+
+# ── Envoi du .env.local ───────────────────────────────────────────────────────
+info "Envoi du .env.local…"
+echo "$ENV_LOCAL" | ssh -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
+    "cat > ${DEPLOY_PATH}/.env.local && chmod 600 ${DEPLOY_PATH}/.env.local"
+success ".env.local déployé"
+
+# ── Tentative de création de la DB via SSH ────────────────────────────────────
+title "── Base de données MySQL ────────────────"
+
+DB_CREATED=false
+if ssh -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
+    "mysql -u ${DB_USER} -p${DB_PASSWORD} -e 'SELECT 1;' ${DB_NAME}" &>/dev/null 2>&1; then
+    success "Base de données ${DB_NAME} accessible"
+    DB_CREATED=true
+fi
+
+if [ "$DB_CREATED" = false ]; then
+    warn "La base de données n'est pas accessible via SSH."
+    echo ""
+    echo -e "${BOLD}════════════════════════════════════════════════════════${NC}"
+    echo -e "${BOLD}  ⚠️  ACTION MANUELLE REQUISE dans cPanel o2switch${NC}"
+    echo -e "${BOLD}════════════════════════════════════════════════════════${NC}"
+    echo ""
+    echo "  1. Connectez-vous sur : https://cpanel.o2switch.net"
+    echo "     (ou votre URL cPanel o2switch)"
+    echo ""
+    echo "  2. Rubrique 'Bases de données MySQL' :"
+    echo "     → Créer la base :      ${BOLD}${DB_NAME}${NC}"
+    echo "     → Créer l'utilisateur : ${BOLD}${DB_USER}${NC}"
+    echo "       Mot de passe :         ${BOLD}(celui que vous avez saisi)${NC}"
+    echo "     → Associer l'utilisateur à la base"
+    echo "       avec ${BOLD}TOUS LES PRIVILÈGES${NC}"
+    echo ""
+    echo "  3. Rubrique 'Sous-domaines' :"
+    echo "     → Créer le sous-domaine : ${BOLD}${PRENOM_LOWER}.lenouvel.me${NC}"
+    echo "       Répertoire racine :      ${BOLD}${DEPLOY_PATH}/public${NC}"
+    echo ""
+    echo "  4. Une fois la DB créée, relancez ce script ou exécutez"
+    echo "     manuellement sur le serveur :"
+    echo ""
+    echo "     ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_HOST}"
+    echo "     cd ${DEPLOY_PATH}"
+    echo "     ${PHP_BIN} bin/console doctrine:migrations:migrate --no-interaction"
+    echo ""
+    echo -e "${BOLD}════════════════════════════════════════════════════════${NC}"
+    echo ""
+
+    read -rp "$(echo -e "${BOLD}La DB est-elle configurée dans cPanel ? Lancer les migrations maintenant ? [o/N] :${NC} ")" RUN_MIGRATIONS
+else
+    RUN_MIGRATIONS="o"
+fi
+
+# ── Migrations ────────────────────────────────────────────────────────────────
+if [[ "$RUN_MIGRATIONS" == "o" || "$RUN_MIGRATIONS" == "O" ]]; then
+    info "Lancement des migrations Doctrine…"
+    ssh -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
+        "cd ${DEPLOY_PATH} && ${PHP_BIN} bin/console doctrine:migrations:migrate --no-interaction --env=prod"
+    success "Migrations appliquées"
+
+    # Cache Symfony
+    info "Warm-up du cache Symfony…"
+    ssh -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
+        "cd ${DEPLOY_PATH} && ${PHP_BIN} bin/console cache:warmup --env=prod" 2>/dev/null || true
+    success "Cache généré"
+fi
+
+# ── Résumé final ──────────────────────────────────────────────────────────────
+title "═══════════════════════════════════════"
+title "  Déploiement terminé 🎉"
+title "═══════════════════════════════════════"
+echo ""
+echo -e "  URL de l'API    : ${GREEN}https://${SUBDOMAIN}/api${NC}"
+echo -e "  Swagger UI      : ${GREEN}https://${SUBDOMAIN}/api/docs${NC}"
+echo -e "  Chemin serveur  : ${BOLD}${DEPLOY_PATH}${NC}"
+echo ""
+echo -e "${YELLOW}  ► Créer le premier utilisateur :${NC}"
+echo ""
+echo "    ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_HOST}"
+echo "    cd ${DEPLOY_PATH}"
+echo "    ${PHP_BIN} bin/console app:create-user <email> <password> \"${PRENOM}\""
+echo ""
+SSHSCRIPT
