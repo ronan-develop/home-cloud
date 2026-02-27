@@ -6,6 +6,7 @@ namespace App\Service;
 
 use App\Entity\Folder;
 use App\Entity\User;
+use App\Interface\DefaultFolderServiceInterface;
 use App\Repository\FolderRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
