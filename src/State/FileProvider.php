@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\State;
 
 use ApiPlatform\Metadata\Operation;
+use ApiPlatform\State\Pagination\Pagination;
+use ApiPlatform\State\Pagination\TraversablePaginator;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\FileOutput;
 use App\Entity\File;
@@ -30,6 +32,7 @@ final class FileProvider implements ProviderInterface
         private readonly FileRepository $repository,
         private readonly FolderRepository $folderRepository,
         private readonly RequestStack $requestStack,
+        private readonly Pagination $pagination,
     ) {}
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): object|array|null
@@ -44,21 +47,29 @@ final class FileProvider implements ProviderInterface
         // Filtre optionnel par dossier : GET /api/v1/files?folderId=<uuid>
         $folderId = $this->requestStack->getCurrentRequest()?->query->get('folderId');
 
+        [$page, $offset, $limit] = $this->pagination->getPagination($operation, $context);
+
         if ($folderId !== null) {
             try {
                 $folder = $this->folderRepository->find(Uuid::fromString($folderId));
             } catch (\InvalidArgumentException) {
-                return [];
+                return new TraversablePaginator(new \ArrayIterator([]), $page, $limit, 0);
             }
 
             if ($folder === null) {
-                return [];
+                return new TraversablePaginator(new \ArrayIterator([]), $page, $limit, 0);
             }
 
-            return array_map($this->toOutput(...), $this->repository->findBy(['folder' => $folder]));
+            $total = $this->repository->count(['folder' => $folder]);
+            $items = array_map($this->toOutput(...), $this->repository->findBy(['folder' => $folder], [], $limit, $offset));
+
+            return new TraversablePaginator(new \ArrayIterator($items), $page, $limit, $total);
         }
 
-        return array_map($this->toOutput(...), $this->repository->findAll());
+        $total = $this->repository->count([]);
+        $items = array_map($this->toOutput(...), $this->repository->findBy([], [], $limit, $offset));
+
+        return new TraversablePaginator(new \ArrayIterator($items), $page, $limit, $total);
     }
 
     /**
