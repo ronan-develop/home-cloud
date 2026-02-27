@@ -102,6 +102,9 @@ final class FolderProcessor implements ProcessorInterface
         }
 
         if (array_key_exists('parentId', (array) $data)) {
+            if ($data->parentId !== null && $data->parentId === $uriVariables['id']) {
+                throw new BadRequestHttpException('A folder cannot be its own parent');
+            }
             $parent = $data->parentId !== null
                 ? ($this->folderRepository->find($data->parentId) ?? throw new NotFoundHttpException('Parent folder not found'))
                 : null;
