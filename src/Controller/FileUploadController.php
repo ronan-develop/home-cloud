@@ -115,10 +115,19 @@ final class FileUploadController extends AbstractController
     }
 
     /**
-     * Rejette les fichiers exécutables (binaires natifs + scripts shell/batch).
-     * Tous les autres formats sont acceptés sans restriction de taille.
+     * Rejette les fichiers exécutables natifs (binaires OS + interpréteurs serveur).
      *
-     * Extensions bloquées : exécutables OS communs (Windows, Linux, macOS, scripts).
+     * Stratégie de sécurité en deux couches :
+     * 1. BLOCAGE (cette méthode) : fichiers qui n'ont aucune raison d'être sur un NAS
+     *    ET qui représentent un risque d'exécution serveur même chiffrés (défense en profondeur).
+     * 2. NEUTRALISATION (chiffrement au repos) : tous les autres fichiers, y compris
+     *    les "fichiers sensibles" comme SVG, HTML, XML, JS — stockés chiffrés = binaire opaque,
+     *    non exécutables sur le serveur même en cas de path traversal résiduel.
+     *
+     * Fichiers sensibles ACCEPTÉS (neutralisés par chiffrement) :
+     *   svg, svgz, html, htm, xhtml, xml, xsl, xslt, js, mjs, css
+     *
+     * Extensions BLOQUÉES : exécutables OS + scripts interprétés côté serveur uniquement.
      * Le MIME type n'est pas fiable (spoofable) → vérification par extension uniquement.
      */
     private function rejectExecutable(UploadedFile $file): void

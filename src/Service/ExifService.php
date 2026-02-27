@@ -15,13 +15,17 @@ namespace App\Service;
  * - Retourne un tableau normalisé avec des clés fixes — le handler ne manipule
  *   jamais les données EXIF brutes.
  * - Toutes les valeurs sont nullable : une photo sans GPS ou sans date est valide.
+ * - Chiffrement au repos : le fichier sur disque est chiffré. ExifService déchiffre
+ *   vers un fichier temp, lit les EXIF, puis supprime le temp dans un finally.
  */
 class ExifService
 {
+    public function __construct(private readonly EncryptionService $encryption) {}
+
     /**
-     * Extrait les métadonnées EXIF d'une image.
+     * Extrait les métadonnées EXIF d'une image (déchiffre en temp avant lecture).
      *
-     * @param string $absolutePath Chemin absolu vers le fichier image
+     * @param string $absolutePath Chemin absolu vers le fichier image (chiffré sur disque)
      * @return array{
      *     width: int|null,
      *     height: int|null,
@@ -46,7 +50,20 @@ class ExifService
             return $result;
         }
 
-        $exif = @exif_read_data($absolutePath, null, false);
+        $tempPath = null;
+        $exif = false;
+        try {
+            $tempPath = $this->encryption->decryptToTempFile($absolutePath);
+            $exif = @exif_read_data($tempPath, null, false);
+        } catch (\RuntimeException) {
+            // Déchiffrement impossible — fichier corrompu ou clé incorrecte
+            return $result;
+        } finally {
+            if ($tempPath !== null && file_exists($tempPath)) {
+                unlink($tempPath);
+            }
+        }
+
         if ($exif === false) {
             return $result;
         }

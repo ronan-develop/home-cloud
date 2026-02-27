@@ -427,4 +427,61 @@ final class FileTest extends ApiTestCase
         // '   ' → trim() → '' → InvalidArgumentException → 404
         $this->assertResponseStatusCodeSame(404);
     }
+
+    // --- Chiffrement au repos ---
+
+    public function testUploadedFileIsEncryptedOnDisk(): void
+    {
+        $user = $this->createUser();
+        $content = 'contenu en clair très secret';
+
+        $response = static::createClient()->request('POST', '/api/v1/files', [
+            'extra' => [
+                'files' => ['file' => $this->makeTempFile($content, 'secret.txt')],
+                'parameters' => ['ownerId' => (string) $user->getId()],
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(201);
+        $path = $response->toArray()['path'];
+
+        $storagePath = static::getContainer()->getParameter('app.storage_dir').'/'.$path;
+        $this->assertFileExists($storagePath);
+
+        // Le fichier sur disque ne doit PAS contenir le contenu en clair
+        $diskContent = file_get_contents($storagePath);
+        $this->assertStringNotContainsString($content, $diskContent, 'Le fichier sur disque ne doit pas être en clair');
+    }
+
+    public function testSvgFileIsAccepted(): void
+    {
+        $user = $this->createUser();
+        $svg = '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><rect width="10" height="10"/></svg>';
+
+        static::createClient()->request('POST', '/api/v1/files', [
+            'extra' => [
+                'files' => ['file' => $this->makeTempFile($svg, 'image.svg')],
+                'parameters' => ['ownerId' => (string) $user->getId()],
+            ],
+        ]);
+
+        // SVG accepté (neutralisé par chiffrement) — plus bloqué
+        $this->assertResponseStatusCodeSame(201);
+    }
+
+    public function testHtmlFileIsAccepted(): void
+    {
+        $user = $this->createUser();
+        $html = '<html><body><script>alert(document.cookie)</script></body></html>';
+
+        static::createClient()->request('POST', '/api/v1/files', [
+            'extra' => [
+                'files' => ['file' => $this->makeTempFile($html, 'page.html')],
+                'parameters' => ['ownerId' => (string) $user->getId()],
+            ],
+        ]);
+
+        // HTML accepté (neutralisé par chiffrement)
+        $this->assertResponseStatusCodeSame(201);
+    }
 }

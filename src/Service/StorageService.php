@@ -13,18 +13,22 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
  * création des répertoires, déplacement du fichier temporaire.
  *
  * Choix :
- * - Stockage dans `var/storage/{year}/{month}/{uuid}.{ext}` pour éviter les
- *   collisions et faciliter les purges par période.
+ * - Stockage dans `var/storage/{year}/{month}/{uuid}.{ext}`.
  * - Retourne un chemin relatif à `var/storage/` pour que l'entité soit
  *   indépendante de l'emplacement absolu du projet.
  * - Pas de lib externe (VichUploader, Flysystem) — contrôle total, dépendances minimales.
+ * - Chiffrement au repos : chaque fichier est chiffré par EncryptionService après move().
+ *   Le fichier sur disque est du binaire opaque — illisible sans la clé APP_ENCRYPTION_KEY.
  */
 final class StorageService
 {
-    public function __construct(private readonly string $storageDir) {}
+    public function __construct(
+        private readonly string $storageDir,
+        private readonly EncryptionService $encryption,
+    ) {}
 
     /**
-     * Déplace le fichier uploadé vers le stockage permanent.
+     * Déplace le fichier uploadé vers le stockage permanent et le chiffre.
      *
      * @param UploadedFile $file Fichier reçu via multipart/form-data
      * @return string            Chemin relatif stocké en base (ex: "2026/02/uuid.pdf")
@@ -38,8 +42,12 @@ final class StorageService
 
         $subDir = sprintf('%s/%s', $year, $month);
         $filename = sprintf('%s.%s', $uuid, $ext);
+        $fullPath = $this->storageDir.'/'.$subDir.'/'.$filename;
 
         $file->move($this->storageDir.'/'.$subDir, $filename);
+
+        // Chiffrement en place : le fichier en clair est immédiatement remplacé
+        $this->encryption->encrypt($fullPath, $fullPath);
 
         return sprintf('%s/%s', $subDir, $filename);
     }
@@ -72,7 +80,6 @@ final class StorageService
         $resolved  = realpath($candidate);
 
         if ($resolved === false) {
-            // Le fichier n'existe pas encore (ex: thumbnail en cours de création) — on retourne le chemin brut
             return $candidate;
         }
 
