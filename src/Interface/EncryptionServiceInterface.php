@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Interface;
 
 /**
  * Contrat pour le chiffrement au repos des fichiers (encryption at rest).
