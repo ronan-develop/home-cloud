@@ -41,12 +41,17 @@
 | 2026-02-27 | **MediaThumbnailController** — GET /api/v1/medias/{id}/thumbnail ✅             |
 | 2026-02-27 | Messenger configuré : doctrine transport (prod), in-memory (tests) ✅           |
 | 2026-02-27 | 38/38 tests passing ✅ (User 3 + Folder 9 + File 15 + Media 8 + Handler 3)      |
+| 2026-02-27 | 🔒 **Audit sécurité** — extensions PHP bloquées (.php, .phar, .phtml, .py, .rb, .asp…) ✅ |
+| 2026-02-27 | 🔒 **Audit sécurité** — `HeaderUtils::makeDisposition()` RFC 6266 (remplace addslashes) ✅ |
+| 2026-02-27 | 🔒 **Audit sécurité** — `realpath()` + vérification sortie du storageDir (path traversal) ✅ |
+| 2026-02-27 | 🔧 **Bug** — suppression thumbnail disque lors du DELETE File (était orphelin) ✅   |
+| 2026-02-27 | 42/42 tests passing ✅ (+ 3 sécurité + 1 thumbnail + fix setUp FK FolderTest/FileTest) |
 
 ---
 
 ## 🚧 En cours
 
-- **feat/media** — Phase 3 terminée (38/38 tests), en attente de merge dans `main`
+- Rien — `main` est propre et à jour (42/42 tests ✅)
 
 ---
 
@@ -206,9 +211,31 @@ var/storage/
 
 ---
 
+### 8. Audit sécurité — résultats et corrections (2026-02-27)
 
+Audit réalisé avant merge de `feat/media`. Voici ce qui a été identifié et corrigé :
 
-- **Base de données** : passer sur **MySQL/MariaDB 10.6** pour la prod o2switch (PostgreSQL 9.2 trop ancien)
+| Sévérité | Problème | Fichier | Correction |
+|----------|----------|---------|------------|
+| 🔴 RCE | `.php`, `.phar`, `.phtml`, `.py`, `.rb`, `.asp`… non bloqués | `FileUploadController` | Ajout de toutes les extensions serveur dans `rejectExecutable()` |
+| 🟡 Header | `addslashes()` pour `Content-Disposition` (invalide RFC 6266) | `FileDownloadController` | Remplacé par `HeaderUtils::makeDisposition()` |
+| 🟡 Path traversal | `getAbsolutePath()` sans validation — chemin `../../etc/passwd` en DB passerait | `StorageService` | `realpath()` + vérification que le chemin reste sous `$storageDir` |
+| 🟡 Fuite disque | Thumbnail non supprimé quand un File est supprimé (cascade DB enlève Media, pas le fichier) | `FileProcessor` | Charge le `Media` via `MediaRepository`, supprime `thumbnailPath` avant le flush |
+
+**Ce qui était déjà sécurisé :**
+- `var/storage/` hors de `public/` → non accessible directement par le webserver
+- IDs UUID v7 → non énumérables
+- Paths en DB issus de UUIDs générés par l'app → pas d'injection possible depuis l'URL
+- Pas d'exposition des entités Doctrine → pas de fuite de champs sensibles
+
+**Ce qui reste hors scope (intentionnel) :**
+- Pas d'authentification (Phase future)
+- Pas de rate limiting (mono-utilisateur, o2switch)
+- Taille fichiers illimitée (choix utilisateur explicite)
+
+---
+
+## ⚠️ Points d'attention
 - **Versionnement API** : préfixer tous les endpoints `/api/v1/` (Orange API Guidelines)
 - **DTOs** : ne jamais exposer les entités directement — toujours passer par des DTOs
 - **Sécurité** : `APP_SECRET` à définir en prod, `APP_ENV=prod`
