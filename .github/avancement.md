@@ -56,7 +56,7 @@
 
 ## 🚧 En cours
 
-- Rien — `feat/encryption-at-rest` prête à merger (50/50 tests ✅)
+- Rien — `main` est propre et à jour (50/50 tests ✅)
 
 ---
 
