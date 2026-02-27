@@ -80,12 +80,14 @@
 | 2026-02-27 | 57/57 tests passing ✅ |
 | 2026-02-27 | ♻️ **Namespace fix** — mise à jour des `use` statements dans controllers + FileProcessor (`App\Interface`) ✅ |
 | 2026-02-27 | 🛠️ **Remote cleanup** — force-push `main`, suppression 5 branches obsolètes (feat/Photo, feat/albums, fix/security-round2, refactor/album-controller, snapshot/avant-reset) ✅ |
+| 2026-02-27 | ✨ **feat/jwt-refresh-token** — RefreshToken entity + migration + listener + controller `POST /api/v1/auth/token/refresh` (rotation, 7j TTL) ✅ |
+| 2026-02-27 | 61/61 tests passing ✅ (+ 4 tests refresh token) |
 
 ---
 
 ## 🚧 En cours
 
-- Rien — `main` est propre, remote synchronisé (57/57 tests ✅)
+- Rien — `main` est propre, remote synchronisé (61/61 tests ✅)
 - Prochaine phase : **Phase 4** — Albums ou **Phase 5** — déploiement o2switch
 
 ---
