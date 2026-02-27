@@ -1,6 +1,6 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-02-27 (feat/jwt-auth — authentification JWT stateless, 57/57 tests)
+> Dernière mise à jour : 2026-02-27 (refactor SOLID + interfaces — 57/57 tests)
 
 ---
 
@@ -75,7 +75,9 @@
 | 2026-02-27 | ✨ **feat/sec2-pagination** — pagination `TraversablePaginator` sur UserProvider, FolderProvider, FileProvider (DB-level offset/limit) ✅ |
 | 2026-02-27 | ✨ **feat/deploy-secrets-gen** — script `bin/generate-secrets.sh` (APP_ENCRYPTION_KEY + APP_SECRET → .env.local) ✅ |
 | 2026-02-27 | ✨ **feat/jwt-auth** — Phase 4 authentification JWT stateless (Lexik, firewall, User entity, AuthenticatedApiTestCase) ✅ |
-| 2026-02-27 | 57/57 tests passing ✅ (+ 5 AuthTest : login, 401, token valide) |
+| 2026-02-27 | ♻️ **refactor/solid-interfaces** — extraction `EncryptionServiceInterface`, `StorageServiceInterface`, `DefaultFolderServiceInterface` (DIP) ✅ |
+| 2026-02-27 | ♻️ **refactor/interfaces-folder** — déplacement des interfaces dans `src/Interface/` (namespace `App\Interface`) ✅ |
+| 2026-02-27 | 57/57 tests passing ✅ |
 
 ---
 
