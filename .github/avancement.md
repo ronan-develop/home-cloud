@@ -1,6 +1,6 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-02-27 (nettoyage remote + namespace fixes — 58 commits, 57/57 tests)
+> Dernière mise à jour : 2026-02-27 (JWT refresh token live ✅ + CreateUserCommand — 61/61 tests)
 
 ---
 
@@ -82,12 +82,17 @@
 | 2026-02-27 | 🛠️ **Remote cleanup** — force-push `main`, suppression 5 branches obsolètes (feat/Photo, feat/albums, fix/security-round2, refactor/album-controller, snapshot/avant-reset) ✅ |
 | 2026-02-27 | ✨ **feat/jwt-refresh-token** — RefreshToken entity + migration + listener + controller `POST /api/v1/auth/token/refresh` (rotation, 7j TTL) ✅ |
 | 2026-02-27 | 61/61 tests passing ✅ (+ 4 tests refresh token) |
+| 2026-02-27 | ✨ **feat(CreateUserCommand)** — CLI `app:create-user <email> <password> [displayName]` pour créer un utilisateur en dev/prod ✅ |
+| 2026-02-27 | 🔧 **fix(Version20260227201400)** — migration `refresh_tokens` corrigée : BINARY(16) au lieu de CHAR(36) (cohérence DBAL 4) ✅ |
+| 2026-02-27 | 🏗️ **build(maker-bundle)** — `symfony/maker-bundle` installé en dev ✅ |
+| 2026-02-27 | 🔥 **Live test validé** — login → refresh_token → rotation → route protégée, tout OK sur 127.0.0.1:8000 ✅ |
 
 ---
 
 ## 🚧 En cours
 
 - Rien — `main` est propre, remote synchronisé (61/61 tests ✅)
+- `CreateUserCommand` implémentée et testée en live
 - Prochaine phase : **Phase 4** — Albums ou **Phase 5** — déploiement o2switch
 
 ---
