@@ -16,18 +16,23 @@ namespace App\Service;
  *   créé, juste sans thumbnail.
  * - Thumbnail stocké dans var/storage/thumbs/{uuid}.jpg (JPEG q=80 pour équilibre taille/qualité).
  * - Taille max : 320px de large, hauteur proportionnelle.
+ * - Chiffrement au repos : le fichier source est déchiffré vers un temp avant GD,
+ *   le thumbnail généré est chiffré avant persistence. Le temp est supprimé dans finally.
  */
 class ThumbnailService
 {
     private const THUMB_WIDTH = 320;
     private const THUMB_QUALITY = 80;
 
-    public function __construct(private readonly string $storageDir) {}
+    public function __construct(
+        private readonly string $storageDir,
+        private readonly EncryptionService $encryption,
+    ) {}
 
     /**
      * Génère un thumbnail et retourne son chemin relatif, ou null si impossible.
      *
-     * @param string $absolutePath Chemin absolu de l'image source
+     * @param string $absolutePath Chemin absolu de l'image source (chiffrée sur disque)
      * @return string|null         Chemin relatif du thumbnail (ex: "thumbs/uuid.jpg") ou null
      */
     public function generate(string $absolutePath): ?string
@@ -36,7 +41,25 @@ class ThumbnailService
             return null;
         }
 
-        $content = @file_get_contents($absolutePath);
+        $tempPath = null;
+        try {
+            $tempPath = $this->encryption->decryptToTempFile($absolutePath);
+            return $this->generateFromPlain($tempPath);
+        } catch (\RuntimeException) {
+            return null;
+        } finally {
+            if ($tempPath !== null && file_exists($tempPath)) {
+                unlink($tempPath);
+            }
+        }
+    }
+
+    /**
+     * Génère le thumbnail depuis un fichier en clair (temp), chiffre le résultat.
+     */
+    private function generateFromPlain(string $plainPath): ?string
+    {
+        $content = @file_get_contents($plainPath);
         if ($content === false) {
             return null;
         }
@@ -73,6 +96,13 @@ class ThumbnailService
         $saved = imagejpeg($thumb, $fullPath, self::THUMB_QUALITY);
         imagedestroy($thumb);
 
-        return $saved ? 'thumbs/'.$filename : null;
+        if (!$saved) {
+            return null;
+        }
+
+        // Chiffrer le thumbnail généré — même protection que les fichiers originaux
+        $this->encryption->encrypt($fullPath, $fullPath);
+
+        return 'thumbs/'.$filename;
     }
 }
