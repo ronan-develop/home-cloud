@@ -80,5 +80,6 @@ final class UserTest extends ApiTestCase
         $this->assertResponseHeaderSame('x-content-type-options', 'nosniff');
         $this->assertResponseHeaderSame('x-frame-options', 'DENY');
         $this->assertResponseHeaderSame('referrer-policy', 'no-referrer');
+        $this->assertResponseHeaderSame('content-security-policy', "default-src 'none'");
     }
 }
