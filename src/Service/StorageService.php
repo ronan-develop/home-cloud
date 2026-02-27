@@ -60,9 +60,28 @@ final class StorageService
 
     /**
      * Retourne le chemin absolu d'un fichier à partir de son chemin relatif.
+     *
+     * Sécurité : vérifie que le chemin résolu reste bien sous $storageDir
+     * pour prévenir toute attaque par path traversal (ex: "../../etc/passwd").
+     *
+     * @throws \RuntimeException si le chemin sort du répertoire de stockage
      */
     public function getAbsolutePath(string $relativePath): string
     {
-        return $this->storageDir.'/'.$relativePath;
+        $candidate = $this->storageDir.'/'.$relativePath;
+        $resolved  = realpath($candidate);
+
+        if ($resolved === false) {
+            // Le fichier n'existe pas encore (ex: thumbnail en cours de création) — on retourne le chemin brut
+            return $candidate;
+        }
+
+        $storageReal = realpath($this->storageDir);
+
+        if ($storageReal === false || !str_starts_with($resolved, $storageReal.DIRECTORY_SEPARATOR)) {
+            throw new \RuntimeException(sprintf('Path "%s" is outside the storage directory.', $relativePath));
+        }
+
+        return $resolved;
     }
 }
