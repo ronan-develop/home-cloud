@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Repository\FileRepository;
 use App\Service\StorageService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
@@ -40,9 +41,9 @@ final class FileDownloadController extends AbstractController
             throw new NotFoundHttpException('Physical file not found');
         }
 
-        $disposition = sprintf(
-            'attachment; filename="%s"',
-            addslashes($file->getOriginalName()),
+        $disposition = HeaderUtils::makeDisposition(
+            HeaderUtils::DISPOSITION_ATTACHMENT,
+            $file->getOriginalName(),
         );
 
         return new Response(
