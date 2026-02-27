@@ -1,0 +1,7 @@
+
+# Expose services needed in tests via static::getContainer()->get()
+when@test:
+    services:
+        Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface:
+            alias: security.password_hasher
+            public: true

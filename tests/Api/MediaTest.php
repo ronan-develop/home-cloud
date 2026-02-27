@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Tests\Api;
 
-use ApiPlatform\Symfony\Bundle\Test\ApiTestCase;
 use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\Media;
 use App\Entity\User;
+use App\Tests\AuthenticatedApiTestCase;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
-final class MediaTest extends ApiTestCase
+final class MediaTest extends AuthenticatedApiTestCase
 {
     protected static ?bool $alwaysBootKernel = false;
     private EntityManagerInterface $em;
@@ -28,6 +28,7 @@ final class MediaTest extends ApiTestCase
         $conn->executeStatement('DELETE FROM users');
         $conn->executeStatement('SET FOREIGN_KEY_CHECKS=1');
         $this->em->clear();
+        $this->createUser();
     }
 
     private function createMedia(string $type = 'photo'): Media
@@ -54,7 +55,7 @@ final class MediaTest extends ApiTestCase
     {
         $media = $this->createMedia();
 
-        $response = static::createClient()->request('GET', '/api/v1/medias/'.$media->getId());
+        $response = $this->createAuthenticatedClient()->request('GET', '/api/v1/medias/'.$media->getId());
 
         $this->assertResponseStatusCodeSame(200);
         $data = $response->toArray();
@@ -75,7 +76,7 @@ final class MediaTest extends ApiTestCase
 
     public function testGetMediaReturns404WhenNotFound(): void
     {
-        static::createClient()->request('GET', '/api/v1/medias/00000000-0000-0000-0000-000000000000');
+        $this->createAuthenticatedClient()->request('GET', '/api/v1/medias/00000000-0000-0000-0000-000000000000');
 
         $this->assertResponseStatusCodeSame(404);
     }
@@ -86,7 +87,7 @@ final class MediaTest extends ApiTestCase
     {
         $this->createMedia('photo');
 
-        $response = static::createClient()->request('GET', '/api/v1/medias', [
+        $response = $this->createAuthenticatedClient()->request('GET', '/api/v1/medias', [
             'headers' => ['Accept' => 'application/json'],
         ]);
 
@@ -98,7 +99,7 @@ final class MediaTest extends ApiTestCase
     {
         $this->createMedia('photo');
 
-        $response = static::createClient()->request('GET', '/api/v1/medias?type=video', [
+        $response = $this->createAuthenticatedClient()->request('GET', '/api/v1/medias?type=video', [
             'headers' => ['Accept' => 'application/json'],
         ]);
 
@@ -108,7 +109,7 @@ final class MediaTest extends ApiTestCase
 
     public function testGetMediaCollectionReturns400WhenInvalidType(): void
     {
-        static::createClient()->request('GET', '/api/v1/medias?type=invalid_type', [
+        $this->createAuthenticatedClient()->request('GET', '/api/v1/medias?type=invalid_type', [
             'headers' => ['Accept' => 'application/json'],
         ]);
 
@@ -121,14 +122,14 @@ final class MediaTest extends ApiTestCase
     {
         $media = $this->createMedia(); // thumbnailPath est null
 
-        static::createClient()->request('GET', '/api/v1/medias/'.$media->getId().'/thumbnail');
+        $this->createAuthenticatedClient()->request('GET', '/api/v1/medias/'.$media->getId().'/thumbnail');
 
         $this->assertResponseStatusCodeSame(404);
     }
 
     public function testGetThumbnailReturns404WhenMediaNotFound(): void
     {
-        static::createClient()->request('GET', '/api/v1/medias/00000000-0000-0000-0000-000000000000/thumbnail');
+        $this->createAuthenticatedClient()->request('GET', '/api/v1/medias/00000000-0000-0000-0000-000000000000/thumbnail');
 
         $this->assertResponseStatusCodeSame(404);
     }
@@ -145,7 +146,7 @@ final class MediaTest extends ApiTestCase
         file_put_contents($tmp, 'fake-image-content');
         $uploadedFile = new UploadedFile($tmp, 'photo.jpg', 'image/jpeg', null, true);
 
-        static::createClient()->request('POST', '/api/v1/files', [
+        $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
             'extra' => [
                 'files' => ['file' => $uploadedFile],
                 'parameters' => ['ownerId' => (string) $user->getId()],
@@ -168,7 +169,7 @@ final class MediaTest extends ApiTestCase
         file_put_contents($tmp, 'fake-pdf-content');
         $uploadedFile = new UploadedFile($tmp, 'doc.pdf', 'application/pdf', null, true);
 
-        static::createClient()->request('POST', '/api/v1/files', [
+        $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
             'extra' => [
                 'files' => ['file' => $uploadedFile],
                 'parameters' => ['ownerId' => (string) $user->getId()],
@@ -209,7 +210,7 @@ final class MediaTest extends ApiTestCase
 
         $this->assertFileExists($thumbFile);
 
-        static::createClient()->request('DELETE', '/api/v1/files/'.$file->getId());
+        $this->createAuthenticatedClient()->request('DELETE', '/api/v1/files/'.$file->getId());
 
         $this->assertResponseStatusCodeSame(204);
         $this->assertFileDoesNotExist($thumbFile);

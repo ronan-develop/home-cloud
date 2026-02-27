@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Tests\Api;
 
-use ApiPlatform\Symfony\Bundle\Test\ApiTestCase;
 use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\User;
 use App\Service\DefaultFolderService;
+use App\Tests\AuthenticatedApiTestCase;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
-final class FileTest extends ApiTestCase
+final class FileTest extends AuthenticatedApiTestCase
 {
     protected static ?bool $alwaysBootKernel = false;
     private EntityManagerInterface $em;
@@ -28,15 +28,6 @@ final class FileTest extends ApiTestCase
         $conn->executeStatement('DELETE FROM users');
         $conn->executeStatement('SET FOREIGN_KEY_CHECKS=1');
         $this->em->clear();
-    }
-
-    private function createUser(): User
-    {
-        $user = new User('owner@example.com', 'Owner');
-        $this->em->persist($user);
-        $this->em->flush();
-
-        return $user;
     }
 
     private function makeTempFile(string $content = 'hello', string $name = 'test.txt'): UploadedFile
@@ -58,7 +49,7 @@ final class FileTest extends ApiTestCase
         $this->em->persist($file);
         $this->em->flush();
 
-        $response = static::createClient()->request('GET', '/api/v1/files/'.$file->getId());
+        $response = $this->createAuthenticatedClient()->request('GET', '/api/v1/files/'.$file->getId());
 
         $this->assertResponseStatusCodeSame(200);
         $data = $response->toArray();
@@ -74,7 +65,8 @@ final class FileTest extends ApiTestCase
 
     public function testGetFileReturns404WhenNotFound(): void
     {
-        static::createClient()->request('GET', '/api/v1/files/00000000-0000-0000-0000-000000000000');
+        $this->createUser();
+        $this->createAuthenticatedClient()->request('GET', '/api/v1/files/00000000-0000-0000-0000-000000000000');
 
         $this->assertResponseStatusCodeSame(404);
     }
@@ -90,7 +82,7 @@ final class FileTest extends ApiTestCase
         $this->em->persist(new File('b.png', 'image/png', 1024, '2026/02/b.png', $folder, $user));
         $this->em->flush();
 
-        $response = static::createClient()->request('GET', '/api/v1/files', [
+        $response = $this->createAuthenticatedClient()->request('GET', '/api/v1/files', [
             'headers' => ['Accept' => 'application/json'],
         ]);
 
@@ -109,7 +101,7 @@ final class FileTest extends ApiTestCase
         $this->em->persist(new File('in-f2.txt', 'text/plain', 200, 'path/f2.txt', $folder2, $user));
         $this->em->flush();
 
-        $response = static::createClient()->request('GET', '/api/v1/files?folderId='.$folder1->getId(), [
+        $response = $this->createAuthenticatedClient()->request('GET', '/api/v1/files?folderId='.$folder1->getId(), [
             'headers' => ['Accept' => 'application/json'],
         ]);
 
@@ -128,7 +120,7 @@ final class FileTest extends ApiTestCase
         $this->em->persist($folder);
         $this->em->flush();
 
-        $response = static::createClient()->request('POST', '/api/v1/files', [
+        $response = $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
             'extra' => [
                 'files' => ['file' => $this->makeTempFile('♫', 'song.txt')],
                 'parameters' => [
@@ -150,7 +142,7 @@ final class FileTest extends ApiTestCase
     {
         $user = $this->createUser();
 
-        $response = static::createClient()->request('POST', '/api/v1/files', [
+        $response = $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
             'extra' => [
                 'files' => ['file' => $this->makeTempFile('data', 'data.txt')],
                 'parameters' => [
@@ -171,7 +163,7 @@ final class FileTest extends ApiTestCase
     {
         $user = $this->createUser();
 
-        $response = static::createClient()->request('POST', '/api/v1/files', [
+        $response = $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
             'extra' => [
                 'files' => ['file' => $this->makeTempFile('content', 'note.txt')],
                 'parameters' => [
@@ -190,7 +182,7 @@ final class FileTest extends ApiTestCase
     {
         $user = $this->createUser();
 
-        static::createClient()->request('POST', '/api/v1/files', [
+        $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
             'json' => ['ownerId' => (string) $user->getId()],
         ]);
 
@@ -201,7 +193,7 @@ final class FileTest extends ApiTestCase
     {
         $user = $this->createUser();
 
-        static::createClient()->request('POST', '/api/v1/files', [
+        $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
             'extra' => [
                 'files' => ['file' => $this->makeTempFile()],
                 'parameters' => [
@@ -220,7 +212,7 @@ final class FileTest extends ApiTestCase
     {
         $user = $this->createUser();
 
-        static::createClient()->request('POST', '/api/v1/files', [
+        $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
             'extra' => [
                 'files' => ['file' => $this->makeTempFile('MZ...', 'virus.exe')],
                 'parameters' => ['ownerId' => (string) $user->getId()],
@@ -239,7 +231,7 @@ final class FileTest extends ApiTestCase
         $this->em->persist($file);
         $this->em->flush();
 
-        static::createClient()->request('DELETE', '/api/v1/files/'.$file->getId());
+        $this->createAuthenticatedClient()->request('DELETE', '/api/v1/files/'.$file->getId());
 
         $this->assertResponseStatusCodeSame(204);
     }
@@ -251,7 +243,7 @@ final class FileTest extends ApiTestCase
         $this->em->persist($folder);
 
         // Upload réel pour avoir un fichier sur disque
-        $client = static::createClient();
+        $client = $this->createAuthenticatedClient();
         $response = $client->request('POST', '/api/v1/files', [
             'extra' => [
                 'files' => ['file' => $this->makeTempFile('to-delete', 'todelete.txt')],
@@ -277,7 +269,7 @@ final class FileTest extends ApiTestCase
     {
         $user = $this->createUser();
 
-        $client = static::createClient();
+        $client = $this->createAuthenticatedClient();
         $response = $client->request('POST', '/api/v1/files', [
             'extra' => [
                 'files' => ['file' => $this->makeTempFile('binary-content', 'doc.txt')],
@@ -297,14 +289,16 @@ final class FileTest extends ApiTestCase
 
     public function testDownloadFileReturns404WhenNotFound(): void
     {
-        static::createClient()->request('GET', '/api/v1/files/00000000-0000-0000-0000-000000000000/download');
+        $this->createUser();
+        $this->createAuthenticatedClient()->request('GET', '/api/v1/files/00000000-0000-0000-0000-000000000000/download');
 
         $this->assertResponseStatusCodeSame(404);
     }
 
     public function testDeleteFileReturns404WhenNotFound(): void
     {
-        static::createClient()->request('DELETE', '/api/v1/files/00000000-0000-0000-0000-000000000000');
+        $this->createUser();
+        $this->createAuthenticatedClient()->request('DELETE', '/api/v1/files/00000000-0000-0000-0000-000000000000');
 
         $this->assertResponseStatusCodeSame(404);
     }
@@ -315,7 +309,7 @@ final class FileTest extends ApiTestCase
     {
         $user = $this->createUser();
 
-        static::createClient()->request('POST', '/api/v1/files', [
+        $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
             'extra' => [
                 'files' => ['file' => $this->makeTempFile('<?php echo "rce"; ?>', 'shell.php')],
                 'parameters' => ['ownerId' => (string) $user->getId()],
@@ -329,7 +323,7 @@ final class FileTest extends ApiTestCase
     {
         $user = $this->createUser();
 
-        static::createClient()->request('POST', '/api/v1/files', [
+        $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
             'extra' => [
                 'files' => ['file' => $this->makeTempFile('fake', 'archive.phar')],
                 'parameters' => ['ownerId' => (string) $user->getId()],
@@ -345,7 +339,7 @@ final class FileTest extends ApiTestCase
     {
         $user = $this->createUser();
 
-        $client = static::createClient();
+        $client = $this->createAuthenticatedClient();
         $response = $client->request('POST', '/api/v1/files', [
             'extra' => [
                 'files' => ['file' => $this->makeTempFile('data', 'mon fichier (2).txt')],
@@ -376,7 +370,7 @@ final class FileTest extends ApiTestCase
         $maliciousName = "mon\x00fichier\x0Adangerous\x09.txt";
         $uploadedFile = new UploadedFile($tmp, $maliciousName, 'text/plain', null, true);
 
-        $response = static::createClient()->request('POST', '/api/v1/files', [
+        $response = $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
             'extra' => [
                 'files' => ['file' => $uploadedFile],
                 'parameters' => ['ownerId' => (string) $user->getId()],
@@ -397,7 +391,7 @@ final class FileTest extends ApiTestCase
     {
         $user = $this->createUser();
 
-        static::createClient()->request('POST', '/api/v1/files', [
+        $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
             'extra' => [
                 'files' => ['file' => $this->makeTempFile('data', 'file.txt')],
                 'parameters' => [
@@ -414,7 +408,7 @@ final class FileTest extends ApiTestCase
     {
         $user = $this->createUser();
 
-        static::createClient()->request('POST', '/api/v1/files', [
+        $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
             'extra' => [
                 'files' => ['file' => $this->makeTempFile('data', 'file.txt')],
                 'parameters' => [
@@ -435,7 +429,7 @@ final class FileTest extends ApiTestCase
         $user = $this->createUser();
         $content = 'contenu en clair très secret';
 
-        $response = static::createClient()->request('POST', '/api/v1/files', [
+        $response = $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
             'extra' => [
                 'files' => ['file' => $this->makeTempFile($content, 'secret.txt')],
                 'parameters' => ['ownerId' => (string) $user->getId()],
@@ -458,7 +452,7 @@ final class FileTest extends ApiTestCase
         $user = $this->createUser();
         $svg = '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><rect width="10" height="10"/></svg>';
 
-        static::createClient()->request('POST', '/api/v1/files', [
+        $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
             'extra' => [
                 'files' => ['file' => $this->makeTempFile($svg, 'image.svg')],
                 'parameters' => ['ownerId' => (string) $user->getId()],
@@ -474,7 +468,7 @@ final class FileTest extends ApiTestCase
         $user = $this->createUser();
         $html = '<html><body><script>alert(document.cookie)</script></body></html>';
 
-        static::createClient()->request('POST', '/api/v1/files', [
+        $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
             'extra' => [
                 'files' => ['file' => $this->makeTempFile($html, 'page.html')],
                 'parameters' => ['ownerId' => (string) $user->getId()],
@@ -493,12 +487,14 @@ final class FileTest extends ApiTestCase
 
         // Créer un second user avec son propre folder
         $other = new User('other@example.com', 'Other');
+        $hasher = static::getContainer()->get(\Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface::class);
+        $other->setPassword($hasher->hashPassword($other, 'pass'));
         $this->em->persist($other);
         $otherFolder = new Folder('Dossier Autre', $other);
         $this->em->persist($otherFolder);
         $this->em->flush();
 
-        static::createClient()->request('POST', '/api/v1/files', [
+        $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
             'extra' => [
                 'files' => ['file' => $this->makeTempFile('data', 'file.txt')],
                 'parameters' => [
