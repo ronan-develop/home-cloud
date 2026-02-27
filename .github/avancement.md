@@ -1,6 +1,6 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-02-27 (feat/deploy-secrets-gen + pagination — toutes tâches actionnables terminées)
+> Dernière mise à jour : 2026-02-27 (feat/jwt-auth — authentification JWT stateless, 57/57 tests)
 
 ---
 
@@ -74,13 +74,15 @@
 | 2026-02-27 | 52/52 tests passing ✅ (+ CSP, folder cycle, GD bomb, IDOR ownership) |
 | 2026-02-27 | ✨ **feat/sec2-pagination** — pagination `TraversablePaginator` sur UserProvider, FolderProvider, FileProvider (DB-level offset/limit) ✅ |
 | 2026-02-27 | ✨ **feat/deploy-secrets-gen** — script `bin/generate-secrets.sh` (APP_ENCRYPTION_KEY + APP_SECRET → .env.local) ✅ |
+| 2026-02-27 | ✨ **feat/jwt-auth** — Phase 4 authentification JWT stateless (Lexik, firewall, User entity, AuthenticatedApiTestCase) ✅ |
+| 2026-02-27 | 57/57 tests passing ✅ (+ 5 AuthTest : login, 401, token valide) |
 
 ---
 
 ## 🚧 En cours
 
-- Rien — `main` est propre et à jour (52/52 tests ✅)
-- Prochaines phases : **Phase 4** (JWT/auth) et **Phase 5** (déploiement o2switch)
+- Rien — `main` est propre et à jour (57/57 tests ✅)
+- Prochaine phase : **Phase 5** — déploiement o2switch (stratégie à définir)
 
 ---
 
