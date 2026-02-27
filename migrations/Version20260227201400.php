@@ -17,11 +17,11 @@ final class Version20260227201400 extends AbstractMigration
     public function up(Schema $schema): void
     {
         $this->addSql('CREATE TABLE refresh_tokens (
-            id CHAR(36) NOT NULL COMMENT \'(DC2Type:uuid)\',
+            id BINARY(16) NOT NULL COMMENT \'(DC2Type:uuid)\',
             token VARCHAR(128) NOT NULL,
             expires_at DATETIME NOT NULL COMMENT \'(DC2Type:datetime_immutable)\',
             created_at DATETIME NOT NULL COMMENT \'(DC2Type:datetime_immutable)\',
-            user_id CHAR(36) NOT NULL COMMENT \'(DC2Type:uuid)\',
+            user_id BINARY(16) NOT NULL COMMENT \'(DC2Type:uuid)\',
             UNIQUE INDEX UNIQ_9BACE7E15F37A13B (token),
             INDEX IDX_9BACE7E1A76ED395 (user_id),
             PRIMARY KEY (id)
