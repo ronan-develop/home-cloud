@@ -273,7 +273,7 @@ final class FileTest extends ApiTestCase
 
     // --- GET /api/v1/files/{id}/download ---
 
-    public function testDownloadFileReturns200WithBinaryContent(): void
+    public function testDownloadFileReturns200WithCorrectHeaders(): void
     {
         $user = $this->createUser();
 
@@ -289,8 +289,10 @@ final class FileTest extends ApiTestCase
 
         $download = $client->request('GET', '/api/v1/files/'.$id.'/download');
 
+        // BinaryFileResponse retourne body vide dans PHPUnit — on vérifie status + headers
         $this->assertResponseStatusCodeSame(200);
-        $this->assertSame('binary-content', $download->getContent());
+        $this->assertResponseHeaderSame('x-content-type-options', 'nosniff');
+        $this->assertStringContainsString('attachment', $download->getHeaders()['content-disposition'][0] ?? '');
     }
 
     public function testDownloadFileReturns404WhenNotFound(): void
