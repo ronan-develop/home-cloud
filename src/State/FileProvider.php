@@ -4,15 +4,20 @@ declare(strict_types=1);
 
 namespace App\State;
 
+use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\Pagination\Pagination;
 use ApiPlatform\State\Pagination\TraversablePaginator;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\FileOutput;
 use App\Entity\File;
+use App\Entity\User;
 use App\Repository\FileRepository;
 use App\Repository\FolderRepository;
+use App\Service\ShareAccessChecker;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Uid\Uuid;
 
 /**
@@ -33,15 +38,27 @@ final class FileProvider implements ProviderInterface
         private readonly FolderRepository $folderRepository,
         private readonly RequestStack $requestStack,
         private readonly Pagination $pagination,
+        private readonly Security $security,
+        private readonly ShareAccessChecker $shareAccessChecker,
     ) {}
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): object|array|null
     {
         if (isset($uriVariables['id'])) {
             $file = $this->repository->find($uriVariables['id']);
+            if ($file === null) {
+                return null;
+            }
 
-            // null → API Platform répond automatiquement 404
-            return $file ? $this->toOutput($file) : null;
+            /** @var User|null $currentUser */
+            $currentUser = $this->security->getUser();
+            if ($operation instanceof Get && $currentUser !== null && $currentUser->getId() != $file->getOwner()->getId()) {
+                if (!$this->shareAccessChecker->canAccess($currentUser, 'file', $file->getId())) {
+                    throw new AccessDeniedHttpException();
+                }
+            }
+
+            return $this->toOutput($file);
         }
 
         // Filtre optionnel par dossier : GET /api/v1/files?folderId=<uuid>
