@@ -8,8 +8,8 @@ use App\ApiResource\FileOutput;
 use App\Entity\File;
 use App\Message\MediaProcessMessage;
 use App\Repository\UserRepository;
-use App\Service\DefaultFolderService;
-use App\Service\StorageService;
+use App\Service\DefaultFolderServiceInterface;
+use App\Service\StorageServiceInterface;
 use App\State\FileProvider;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -44,8 +44,8 @@ final class FileUploadController extends AbstractController
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly UserRepository $userRepository,
-        private readonly StorageService $storageService,
-        private readonly DefaultFolderService $defaultFolderService,
+        private readonly StorageServiceInterface $storageService,
+        private readonly DefaultFolderServiceInterface $defaultFolderService,
         private readonly FileProvider $provider,
         private readonly SerializerInterface $serializer,
         private readonly MessageBusInterface $bus,

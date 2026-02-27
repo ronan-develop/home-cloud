@@ -9,7 +9,7 @@ use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\FileOutput;
 use App\Repository\FileRepository;
 use App\Repository\MediaRepository;
-use App\Service\StorageService;
+use App\Service\StorageServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -35,7 +35,7 @@ final class FileProcessor implements ProcessorInterface
         private readonly EntityManagerInterface $em,
         private readonly FileRepository $fileRepository,
         private readonly MediaRepository $mediaRepository,
-        private readonly StorageService $storageService,
+        private readonly StorageServiceInterface $storageService,
     ) {}
 
     /**
