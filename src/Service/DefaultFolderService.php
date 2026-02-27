@@ -45,6 +45,10 @@ final class DefaultFolderService
             if ($folder === null) {
                 throw new \InvalidArgumentException(sprintf('Folder "%s" not found', $folderId));
             }
+            // Vérifier que le folder appartient bien à l'owner — empêche l'accès cross-user
+            if ((string) $folder->getOwner()->getId() !== (string) $owner->getId()) {
+                throw new \InvalidArgumentException(sprintf('Folder "%s" not found', $folderId));
+            }
 
             return $folder;
         }

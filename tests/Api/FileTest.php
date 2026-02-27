@@ -484,4 +484,31 @@ final class FileTest extends ApiTestCase
         // HTML accepté (neutralisé par chiffrement)
         $this->assertResponseStatusCodeSame(201);
     }
+
+    // --- Sécurité : ownership cross-user ---
+
+    public function testPostFileReturns404WhenFolderBelongsToAnotherUser(): void
+    {
+        $owner = $this->createUser();
+
+        // Créer un second user avec son propre folder
+        $other = new User('other@example.com', 'Other');
+        $this->em->persist($other);
+        $otherFolder = new Folder('Dossier Autre', $other);
+        $this->em->persist($otherFolder);
+        $this->em->flush();
+
+        static::createClient()->request('POST', '/api/v1/files', [
+            'extra' => [
+                'files' => ['file' => $this->makeTempFile('data', 'file.txt')],
+                'parameters' => [
+                    'ownerId' => (string) $owner->getId(),
+                    'folderId' => (string) $otherFolder->getId(),
+                ],
+            ],
+        ]);
+
+        // Le folder existe mais appartient à un autre user → 404 (même message que "not found")
+        $this->assertResponseStatusCodeSame(404);
+    }
 }
