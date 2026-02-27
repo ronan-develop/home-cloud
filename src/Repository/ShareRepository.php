@@ -30,7 +30,7 @@ class ShareRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('s')
             ->where('s.owner = :user OR s.guest = :user')
-            ->setParameter('user', $user)
+            ->setParameter('user', $user->getId(), 'uuid')
             ->orderBy('s.createdAt', 'DESC')
             ->setMaxResults($limit)
             ->setFirstResult($offset)
@@ -43,7 +43,7 @@ class ShareRepository extends ServiceEntityRepository
         return (int) $this->createQueryBuilder('s')
             ->select('COUNT(s.id)')
             ->where('s.owner = :user OR s.guest = :user')
-            ->setParameter('user', $user)
+            ->setParameter('user', $user->getId(), 'uuid')
             ->getQuery()
             ->getSingleScalarResult();
     }
@@ -57,9 +57,9 @@ class ShareRepository extends ServiceEntityRepository
             ->andWhere('s.resourceId = :rid')
             ->andWhere('s.permission = :perm OR s.permission = :write')
             ->andWhere('s.expiresAt IS NULL OR s.expiresAt > :now')
-            ->setParameter('guest', $guest)
+            ->setParameter('guest', $guest->getId(), 'uuid')
             ->setParameter('type', $resourceType)
-            ->setParameter('rid', $resourceId)
+            ->setParameter('rid', $resourceId, 'uuid')
             ->setParameter('perm', $permission)
             ->setParameter('write', 'write')
             ->setParameter('now', new \DateTimeImmutable())
