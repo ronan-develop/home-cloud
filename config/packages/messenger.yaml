@@ -1,0 +1,16 @@
+framework:
+    messenger:
+        failure_transport: failed
+
+        transports:
+            async: 'doctrine://default?queue_name=async'
+            failed: 'doctrine://default?queue_name=failed'
+
+        routing:
+            'App\Message\MediaProcessMessage': async
+
+when@test:
+    framework:
+        messenger:
+            transports:
+                async: 'in-memory://'
