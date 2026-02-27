@@ -67,7 +67,7 @@ final class MediaTest extends ApiTestCase
         $this->assertArrayHasKey('takenAt', $data);
         $this->assertArrayHasKey('gpsLat', $data);
         $this->assertArrayHasKey('gpsLon', $data);
-        $this->assertArrayHasKey('thumbnailPath', $data);
+        $this->assertArrayHasKey('thumbnailUrl', $data);
         $this->assertSame('photo', $data['mediaType']);
         $this->assertSame(1920, $data['width']);
         $this->assertSame('Apple iPhone 15', $data['cameraModel']);
@@ -104,6 +104,15 @@ final class MediaTest extends ApiTestCase
 
         $this->assertResponseStatusCodeSame(200);
         $this->assertCount(0, $response->toArray());
+    }
+
+    public function testGetMediaCollectionReturns400WhenInvalidType(): void
+    {
+        static::createClient()->request('GET', '/api/v1/medias?type=invalid_type', [
+            'headers' => ['Accept' => 'application/json'],
+        ]);
+
+        $this->assertResponseStatusCodeSame(400);
     }
 
     // --- GET /api/v1/medias/{id}/thumbnail ---

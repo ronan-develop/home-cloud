@@ -90,7 +90,8 @@ final class FileUploadController extends AbstractController
         }
 
         // Récupérer les métadonnées AVANT store() qui déplace le fichier
-        $originalName = $uploadedFile->getClientOriginalName();
+        // Stripper les caractères de contrôle du nom (null bytes, newlines…) — défense XSS côté client
+        $originalName = preg_replace('/[\x00-\x1F\x7F]/u', '', $uploadedFile->getClientOriginalName()) ?: 'unnamed';
         $mimeType = $uploadedFile->getClientMimeType() ?? $uploadedFile->getMimeType() ?? 'application/octet-stream';
         $size = $uploadedFile->getSize();
 

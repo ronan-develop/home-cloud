@@ -68,4 +68,17 @@ final class UserTest extends ApiTestCase
         $data = $response->toArray();
         $this->assertGreaterThanOrEqual(2, count($data));
     }
+
+    public function testResponseHasSecurityHeaders(): void
+    {
+        $user = new User('headers@example.com', 'Headers');
+        $this->em->persist($user);
+        $this->em->flush();
+
+        static::createClient()->request('GET', '/api/v1/users/'.$user->getId());
+
+        $this->assertResponseHeaderSame('x-content-type-options', 'nosniff');
+        $this->assertResponseHeaderSame('x-frame-options', 'DENY');
+        $this->assertResponseHeaderSame('referrer-policy', 'no-referrer');
+    }
 }

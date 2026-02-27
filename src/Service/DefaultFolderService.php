@@ -50,7 +50,14 @@ final class DefaultFolderService
         }
 
         if ($newFolderName !== null && $newFolderName !== '') {
-            $folder = new Folder($newFolderName, $owner);
+            $trimmed = trim($newFolderName);
+            if ($trimmed === '') {
+                throw new \InvalidArgumentException('newFolderName cannot be blank');
+            }
+            if (mb_strlen($trimmed) > 255) {
+                throw new \InvalidArgumentException('newFolderName must not exceed 255 characters');
+            }
+            $folder = new Folder($trimmed, $owner);
             $this->em->persist($folder);
 
             return $folder;

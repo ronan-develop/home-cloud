@@ -7,7 +7,7 @@ namespace App\Controller;
 use App\Repository\MediaRepository;
 use App\Service\StorageService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -16,11 +16,18 @@ use Symfony\Component\Routing\Attribute\Route;
  *
  * Rôle : streamer le thumbnail depuis le disque avec le Content-Type approprié.
  *
+ * Sécurité :
+ * - BinaryFileResponse streame sans charger en RAM.
+ * - X-Content-Type-Options: nosniff empêche le MIME sniffing navigateur.
+ * - Content-Type forcé à image/jpeg (les thumbnails sont toujours des JPEG — ThumbnailService).
+ *
  * Choix :
  * - Retourne 404 si aucun Media n'existe pour cet ID ou si le thumbnailPath est null
  *   (Media traité mais GD absent au moment du traitement).
  * - Séparé de FileDownloadController car la logique de résolution est différente
  *   (Media → thumbnailPath vs File → path).
+ *
+ * ⚠️ Tests : BinaryFileResponse retourne un body vide dans PHPUnit — tests sur status + headers uniquement.
  */
 final class MediaThumbnailController extends AbstractController
 {
@@ -30,7 +37,7 @@ final class MediaThumbnailController extends AbstractController
     ) {}
 
     #[Route('/api/v1/medias/{id}/thumbnail', name: 'media_thumbnail', methods: ['GET'])]
-    public function __invoke(string $id): Response
+    public function __invoke(string $id): BinaryFileResponse
     {
         $media = $this->mediaRepository->find($id)
             ?? throw new NotFoundHttpException('Media not found');
@@ -45,10 +52,10 @@ final class MediaThumbnailController extends AbstractController
             throw new NotFoundHttpException('Thumbnail file not found on disk');
         }
 
-        return new Response(
-            file_get_contents($absolutePath),
-            Response::HTTP_OK,
-            ['Content-Type' => 'image/jpeg'],
-        );
+        $response = new BinaryFileResponse($absolutePath);
+        $response->headers->set('Content-Type', 'image/jpeg');
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+
+        return $response;
     }
 }
