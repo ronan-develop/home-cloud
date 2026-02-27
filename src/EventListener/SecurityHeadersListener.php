@@ -37,6 +37,14 @@ final class SecurityHeadersListener
         $headers->set('X-Content-Type-Options', 'nosniff');
         $headers->set('X-Frame-Options', 'DENY');
         $headers->set('Referrer-Policy', 'no-referrer');
+
+        // Pas de CSP strict sur la documentation Swagger UI :
+        // elle charge des scripts, styles et fait des requêtes fetch vers l'API.
+        $path = $event->getRequest()->getPathInfo();
+        if (str_starts_with($path, '/api/docs')) {
+            return;
+        }
+
         // L'API ne sert que du JSON — aucune ressource externe autorisée
         $headers->set('Content-Security-Policy', "default-src 'none'");
     }
