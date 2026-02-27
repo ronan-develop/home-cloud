@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tests\Api;
 
-use ApiPlatform\Symfony\Bundle\Test\ApiTestCase;
 use App\Entity\Folder;
 use App\Entity\User;
+use App\Tests\AuthenticatedApiTestCase;
 use Doctrine\ORM\EntityManagerInterface;
 
-final class FolderTest extends ApiTestCase
+final class FolderTest extends AuthenticatedApiTestCase
 {
     protected static ?bool $alwaysBootKernel = false;
     private EntityManagerInterface $em;
@@ -27,15 +27,6 @@ final class FolderTest extends ApiTestCase
         $this->em->clear();
     }
 
-    private function createUser(): User
-    {
-        $user = new User('owner@example.com', 'Owner');
-        $this->em->persist($user);
-        $this->em->flush();
-
-        return $user;
-    }
-
     // --- GET /api/v1/folders/{id} ---
 
     public function testGetFolderReturns200WithCorrectStructure(): void
@@ -45,7 +36,7 @@ final class FolderTest extends ApiTestCase
         $this->em->persist($folder);
         $this->em->flush();
 
-        $response = static::createClient()->request('GET', '/api/v1/folders/'.$folder->getId());
+        $response = $this->createAuthenticatedClient()->request('GET', '/api/v1/folders/'.$folder->getId());
 
         $this->assertResponseStatusCodeSame(200);
         $data = $response->toArray();
@@ -59,7 +50,8 @@ final class FolderTest extends ApiTestCase
 
     public function testGetFolderReturns404WhenNotFound(): void
     {
-        static::createClient()->request('GET', '/api/v1/folders/00000000-0000-0000-0000-000000000000');
+        $this->createUser();
+        $this->createAuthenticatedClient()->request('GET', '/api/v1/folders/00000000-0000-0000-0000-000000000000');
 
         $this->assertResponseStatusCodeSame(404);
     }
@@ -73,7 +65,7 @@ final class FolderTest extends ApiTestCase
         $this->em->persist(new Folder('Videos', $owner));
         $this->em->flush();
 
-        $response = static::createClient()->request('GET', '/api/v1/folders', [
+        $response = $this->createAuthenticatedClient()->request('GET', '/api/v1/folders', [
             'headers' => ['Accept' => 'application/json'],
         ]);
 
@@ -88,7 +80,7 @@ final class FolderTest extends ApiTestCase
     {
         $owner = $this->createUser();
 
-        $response = static::createClient()->request('POST', '/api/v1/folders', [
+        $response = $this->createAuthenticatedClient()->request('POST', '/api/v1/folders', [
             'json' => [
                 'name' => 'Music',
                 'ownerId' => (string) $owner->getId(),
@@ -109,7 +101,7 @@ final class FolderTest extends ApiTestCase
         $this->em->persist($parent);
         $this->em->flush();
 
-        $response = static::createClient()->request('POST', '/api/v1/folders', [
+        $response = $this->createAuthenticatedClient()->request('POST', '/api/v1/folders', [
             'json' => [
                 'name' => 'SubFolder',
                 'ownerId' => (string) $owner->getId(),
@@ -126,7 +118,7 @@ final class FolderTest extends ApiTestCase
     {
         $owner = $this->createUser();
 
-        static::createClient()->request('POST', '/api/v1/folders', [
+        $this->createAuthenticatedClient()->request('POST', '/api/v1/folders', [
             'json' => ['ownerId' => (string) $owner->getId()],
         ]);
 
@@ -142,7 +134,7 @@ final class FolderTest extends ApiTestCase
         $this->em->persist($folder);
         $this->em->flush();
 
-        $response = static::createClient()->request('PATCH', '/api/v1/folders/'.$folder->getId(), [
+        $response = $this->createAuthenticatedClient()->request('PATCH', '/api/v1/folders/'.$folder->getId(), [
             'headers' => ['Content-Type' => 'application/merge-patch+json'],
             'json' => ['name' => 'NewName'],
         ]);
@@ -160,14 +152,15 @@ final class FolderTest extends ApiTestCase
         $this->em->persist($folder);
         $this->em->flush();
 
-        static::createClient()->request('DELETE', '/api/v1/folders/'.$folder->getId());
+        $this->createAuthenticatedClient()->request('DELETE', '/api/v1/folders/'.$folder->getId());
 
         $this->assertResponseStatusCodeSame(204);
     }
 
     public function testDeleteFolderReturns404WhenNotFound(): void
     {
-        static::createClient()->request('DELETE', '/api/v1/folders/00000000-0000-0000-0000-000000000000');
+        $this->createUser();
+        $this->createAuthenticatedClient()->request('DELETE', '/api/v1/folders/00000000-0000-0000-0000-000000000000');
 
         $this->assertResponseStatusCodeSame(404);
     }
@@ -179,7 +172,7 @@ final class FolderTest extends ApiTestCase
         $this->em->persist($folder);
         $this->em->flush();
 
-        static::createClient()->request('PATCH', '/api/v1/folders/'.$folder->getId(), [
+        $this->createAuthenticatedClient()->request('PATCH', '/api/v1/folders/'.$folder->getId(), [
             'headers' => ['Content-Type' => 'application/merge-patch+json'],
             'json' => ['parentId' => (string) $folder->getId()],
         ]);
