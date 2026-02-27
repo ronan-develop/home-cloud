@@ -363,4 +363,31 @@ final class FileTest extends ApiTestCase
         $this->assertStringStartsWith('attachment', $disposition);
         $this->assertStringNotContainsString('addslashes', $disposition);
     }
+
+    // --- Sécurité : sanitisation originalName ---
+
+    public function testPostFileSanitizesControlCharsInOriginalName(): void
+    {
+        $user = $this->createUser();
+
+        $tmp = tempnam(sys_get_temp_dir(), 'hc_');
+        file_put_contents($tmp, 'content');
+        // Nom avec null byte + newline + tab + contenu normal
+        $maliciousName = "mon\x00fichier\x0Adangerous\x09.txt";
+        $uploadedFile = new UploadedFile($tmp, $maliciousName, 'text/plain', null, true);
+
+        $response = static::createClient()->request('POST', '/api/v1/files', [
+            'extra' => [
+                'files' => ['file' => $uploadedFile],
+                'parameters' => ['ownerId' => (string) $user->getId()],
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(201);
+        $originalName = $response->toArray()['originalName'];
+        $this->assertStringNotContainsString("\x00", $originalName);
+        $this->assertStringNotContainsString("\n", $originalName);
+        $this->assertStringNotContainsString("\t", $originalName);
+        $this->assertSame('monfichierdangerous.txt', $originalName);
+    }
 }
