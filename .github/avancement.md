@@ -1,6 +1,6 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-02-27 (feat/encryption-at-rest — chiffrement au repos complet)
+> Dernière mise à jour : 2026-02-27 (fix/security-round2 — sécurité round 2 mergé)
 
 ---
 
@@ -51,12 +51,14 @@
 | 2026-02-27 | 🔐 **feat/encryption-at-rest** — chiffrement XChaCha20-Poly1305 de tous les fichiers + thumbnails ✅ |
 | 2026-02-27 | 🛡️ SVG, HTML, XML, JS, CSS acceptés à l'upload (neutralisés par chiffrement, binaire opaque sur disque) ✅ |
 | 2026-02-27 | 50/50 tests passing ✅ (+ vérification chiffrement disque + SVG/HTML acceptés) |
+| 2026-02-27 | 🔒 **fix/security-round2** — 4 correctifs : CSP header, cycle parent dossier, GD memory bomb, ownership cross-user ✅ |
+| 2026-02-27 | 52/52 tests passing ✅ (+ CSP, folder cycle, GD bomb, IDOR ownership) |
 
 ---
 
 ## 🚧 En cours
 
-- Rien — `main` est propre et à jour (50/50 tests ✅)
+- Rien — `main` est propre et à jour (52/52 tests ✅)
 
 ---
 
