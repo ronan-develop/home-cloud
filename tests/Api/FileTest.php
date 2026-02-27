@@ -305,4 +305,59 @@ final class FileTest extends ApiTestCase
 
         $this->assertResponseStatusCodeSame(404);
     }
+
+    // --- Sécurité : extensions serveur bloquées ---
+
+    public function testPostFileReturns400WhenPhpExtension(): void
+    {
+        $user = $this->createUser();
+
+        static::createClient()->request('POST', '/api/v1/files', [
+            'extra' => [
+                'files' => ['file' => $this->makeTempFile('<?php echo "rce"; ?>', 'shell.php')],
+                'parameters' => ['ownerId' => (string) $user->getId()],
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(400);
+    }
+
+    public function testPostFileReturns400WhenPharExtension(): void
+    {
+        $user = $this->createUser();
+
+        static::createClient()->request('POST', '/api/v1/files', [
+            'extra' => [
+                'files' => ['file' => $this->makeTempFile('fake', 'archive.phar')],
+                'parameters' => ['ownerId' => (string) $user->getId()],
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(400);
+    }
+
+    // --- Sécurité : Content-Disposition ---
+
+    public function testDownloadContentDispositionIsRfc6266Compliant(): void
+    {
+        $user = $this->createUser();
+
+        $client = static::createClient();
+        $response = $client->request('POST', '/api/v1/files', [
+            'extra' => [
+                'files' => ['file' => $this->makeTempFile('data', 'mon fichier (2).txt')],
+                'parameters' => ['ownerId' => (string) $user->getId()],
+            ],
+        ]);
+        $this->assertResponseStatusCodeSame(201);
+        $id = $response->toArray()['id'];
+
+        $download = $client->request('GET', '/api/v1/files/'.$id.'/download');
+
+        $this->assertResponseStatusCodeSame(200);
+        $disposition = $download->getHeaders()['content-disposition'][0] ?? '';
+        // HeaderUtils génère attachment; filename=...; filename*=UTF-8''...
+        $this->assertStringStartsWith('attachment', $disposition);
+        $this->assertStringNotContainsString('addslashes', $disposition);
+    }
 }
