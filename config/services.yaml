@@ -29,6 +29,10 @@ services:
         arguments:
             $storageDir: '%app.storage_dir%'
 
+    App\EventListener\AuthenticationSuccessListener:
+        tags:
+            - { name: kernel.event_listener, event: lexik_jwt_authentication.on_authentication_success, method: onAuthenticationSuccess }
+
 when@test:
     services:
         Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface:
