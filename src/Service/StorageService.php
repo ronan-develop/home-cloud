@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Interface\EncryptionServiceInterface;
+use App\Interface\StorageServiceInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**
