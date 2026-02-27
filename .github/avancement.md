@@ -20,12 +20,23 @@
 | 2026-02-27 | Fix: `@method` PHPDoc sur repositories (Intelephense P1013)                      |
 | 2026-02-27 | 📖 Documentation classes non-entité (rôle, choix, intention) — UserOutput, FolderOutput, UserProvider |
 | 2026-02-27 | Setup PHPUnit 13 + symfony/test-pack — 3 tests / 9 assertions ✅                |
+| 2026-02-27 | **File upload** — Entity + migration + StorageService + DefaultFolderService ✅ |
+| 2026-02-27 | **File upload** — FileOutput DTO + FileProvider + FileProcessor ✅              |
+| 2026-02-27 | **File upload** — FileUploadController (multipart/form-data) ✅                 |
+| 2026-02-27 | **File upload** — FileDownloadController `GET /api/v1/files/{id}/download` ✅   |
+| 2026-02-27 | **File upload** — DELETE supprime fichier physique + métadonnées ✅             |
+| 2026-02-27 | **File upload** — Blocage exécutables (.exe, .sh, .bat, .ps1, .dmg…) ✅        |
+| 2026-02-27 | **File upload** — Aucune restriction de taille (stockage illimité) ✅           |
+| 2026-02-27 | 📖 Documentation PHPDoc — FileOutput, FileProvider, FileProcessor, StorageService, DefaultFolderService, FileUploadController, FileDownloadController, File entity |
+| 2026-02-27 | 27/27 tests passing ✅ (User 3 + Folder 9 + File 15)                            |
+| 2026-02-27 | Conventions de commit clarifiées dans copilot-instructions.md (emoji + scope explicite) |
+| 2026-02-27 | Branches : `main` ← feat/user-entity mergé ; `feat/file-upload` en cours        |
 
 ---
 
 ## 🚧 En cours
 
-> _(rien pour l'instant)_
+- **feat/file-upload** — Phase 2 terminée, en attente de merge dans `main`
 
 ---
 
@@ -41,13 +52,18 @@
   - `PATCH /api/v1/folders/{id}`
   - `DELETE /api/v1/folders/{id}`
 
-### 🔵 Phase 2 — Fichiers
+### 🔵 Phase 2 — Fichiers ✅
 
-- [ ] **File** — Entity + migration + ApiResource (upload, lié à Folder + User)
-  - `GET /api/v1/files` (filtrable par folder)
-  - `POST /api/v1/files`
+- [x] **File** — Entity + migration + ApiResource (upload, lié à Folder + User)
+  - `GET /api/v1/files` (filtrable par `?folderId=`)
+  - `POST /api/v1/files` (multipart/form-data : file + ownerId + folderId? + newFolderName?)
   - `GET /api/v1/files/{id}`
-  - `DELETE /api/v1/files/{id}`
+  - `GET /api/v1/files/{id}/download` (stream binaire avec Content-Type)
+  - `DELETE /api/v1/files/{id}` (supprime DB + fichier physique)
+- [x] **StorageService** — stockage `var/storage/{year}/{month}/{uuid}.{ext}`
+- [x] **DefaultFolderService** — résolution dossier : folderId > newFolderName > Uploads (lazy)
+- [x] Blocage exécutables, pas de restriction de taille
+- [x] `config/php.ini` — référence pour déploiement (`upload_max_filesize=10G`)
 
 ### 🔵 Phase 3 — Médias
 
@@ -71,3 +87,4 @@
 - **Versionnement API** : préfixer tous les endpoints `/api/v1/` (Orange API Guidelines)
 - **DTOs** : ne jamais exposer les entités directement — toujours passer par des DTOs
 - **Sécurité** : `APP_SECRET` à définir en prod, `APP_ENV=prod`
+- **PHP ini** : copier `config/php.ini` dans `/etc/php/{version}/fpm/conf.d/99-homecloud.ini` au déploiement
