@@ -22,6 +22,7 @@ final class FileTest extends ApiTestCase
         $this->em = static::getContainer()->get(EntityManagerInterface::class);
         $conn = $this->em->getConnection();
         $conn->executeStatement('SET FOREIGN_KEY_CHECKS=0');
+        $conn->executeStatement('DELETE FROM medias');
         $conn->executeStatement('DELETE FROM files');
         $conn->executeStatement('DELETE FROM folders');
         $conn->executeStatement('DELETE FROM users');
