@@ -390,4 +390,41 @@ final class FileTest extends ApiTestCase
         $this->assertStringNotContainsString("\t", $originalName);
         $this->assertSame('monfichierdangerous.txt', $originalName);
     }
+
+    // --- Sécurité : validation newFolderName ---
+
+    public function testPostFileReturns404WhenNewFolderNameTooLong(): void
+    {
+        $user = $this->createUser();
+
+        static::createClient()->request('POST', '/api/v1/files', [
+            'extra' => [
+                'files' => ['file' => $this->makeTempFile('data', 'file.txt')],
+                'parameters' => [
+                    'ownerId' => (string) $user->getId(),
+                    'newFolderName' => str_repeat('a', 256),
+                ],
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(404);
+    }
+
+    public function testPostFileReturns404WhenNewFolderNameIsBlank(): void
+    {
+        $user = $this->createUser();
+
+        static::createClient()->request('POST', '/api/v1/files', [
+            'extra' => [
+                'files' => ['file' => $this->makeTempFile('data', 'file.txt')],
+                'parameters' => [
+                    'ownerId' => (string) $user->getId(),
+                    'newFolderName' => '   ',
+                ],
+            ],
+        ]);
+
+        // '   ' → trim() → '' → InvalidArgumentException → 404
+        $this->assertResponseStatusCodeSame(404);
+    }
 }
