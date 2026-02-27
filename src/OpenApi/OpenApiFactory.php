@@ -19,6 +19,8 @@ use Symfony\Component\DependencyInjection\Attribute\AsDecorator;
  *    - GET  /api/v1/files/{id}/download
  *    - GET  /api/v1/medias/{id}/thumbnail
  *    - POST /api/v1/auth/token/refresh
+ *    - POST /api/v1/albums/{id}/medias
+ *    - DELETE /api/v1/albums/{id}/medias/{mediaId}
  * 4. Corrige le requestBody de POST /api/v1/files en multipart/form-data
  */
 #[AsDecorator(decorates: 'api_platform.openapi.factory')]
@@ -35,6 +37,7 @@ final class OpenApiFactory implements OpenApiFactoryInterface
         $this->addFileDownloadRoute($openApi);
         $this->addMediaThumbnailRoute($openApi);
         $this->addTokenRefreshRoute($openApi);
+        $this->addAlbumMediaRoutes($openApi);
         $this->fixFileUploadRequestBody($openApi);
 
         return $openApi;
@@ -251,6 +254,57 @@ final class OpenApiFactory implements OpenApiFactoryInterface
 
         $openApi->getPaths()->addPath($path, $pathItem->withPost(
             $pathItem->getPost()->withRequestBody($multipartRequestBody)
+        ));
+    }
+
+    /** POST /api/v1/albums/{id}/medias et DELETE /api/v1/albums/{id}/medias/{mediaId}. */
+    private function addAlbumMediaRoutes(OpenApi $openApi): void
+    {
+        $addPath = '/api/v1/albums/{id}/medias';
+        $openApi->getPaths()->addPath($addPath, new Model\PathItem(
+            post: new Model\Operation(
+                operationId: 'addMediaToAlbum',
+                tags: ['Album'],
+                responses: [
+                    '200' => new Model\Response(
+                        description: 'Média ajouté. Retourne le nouvel état de l\'album.',
+                        content: new \ArrayObject(['application/json' => ['schema' => ['type' => 'object', 'properties' => ['id' => ['type' => 'string', 'format' => 'uuid'], 'mediaCount' => ['type' => 'integer']]]]]),
+                    ),
+                    '404' => new Model\Response(description: 'Album ou média introuvable.'),
+                ],
+                summary: 'Ajoute un média à un album.',
+                description: 'Idempotent : si le média est déjà dans l\'album, retourne 200 sans doublon.',
+                parameters: [
+                    new Model\Parameter(name: 'id', in: 'path', description: 'UUID de l\'album', required: true, schema: ['type' => 'string', 'format' => 'uuid']),
+                ],
+                requestBody: new Model\RequestBody(
+                    required: true,
+                    content: new \ArrayObject(['application/json' => ['schema' => ['type' => 'object', 'required' => ['mediaId'], 'properties' => ['mediaId' => ['type' => 'string', 'format' => 'uuid']]]]]),
+                ),
+                security: [['JWT' => []]],
+            )
+        ));
+
+        $removePath = '/api/v1/albums/{id}/medias/{mediaId}';
+        $openApi->getPaths()->addPath($removePath, new Model\PathItem(
+            delete: new Model\Operation(
+                operationId: 'removeMediaFromAlbum',
+                tags: ['Album'],
+                responses: [
+                    '200' => new Model\Response(
+                        description: 'Média retiré. Le média lui-même n\'est pas supprimé.',
+                        content: new \ArrayObject(['application/json' => ['schema' => ['type' => 'object', 'properties' => ['id' => ['type' => 'string', 'format' => 'uuid'], 'mediaCount' => ['type' => 'integer']]]]]),
+                    ),
+                    '404' => new Model\Response(description: 'Album ou média introuvable.'),
+                ],
+                summary: 'Retire un média d\'un album.',
+                description: 'Supprime uniquement l\'association album↔média. Le Media et son File ne sont pas supprimés.',
+                parameters: [
+                    new Model\Parameter(name: 'id', in: 'path', description: 'UUID de l\'album', required: true, schema: ['type' => 'string', 'format' => 'uuid']),
+                    new Model\Parameter(name: 'mediaId', in: 'path', description: 'UUID du média', required: true, schema: ['type' => 'string', 'format' => 'uuid']),
+                ],
+                security: [['JWT' => []]],
+            )
         ));
     }
 }
