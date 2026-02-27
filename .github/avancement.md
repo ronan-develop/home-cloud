@@ -1,6 +1,6 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-02-27
+> Dernière mise à jour : 2026-02-27 (Phase 3 Media en cours)
 
 ---
 
@@ -31,12 +31,22 @@
 | 2026-02-27 | 27/27 tests passing ✅ (User 3 + Folder 9 + File 15)                            |
 | 2026-02-27 | Conventions de commit clarifiées dans copilot-instructions.md (emoji + scope explicite) |
 | 2026-02-27 | Branches : `main` ← feat/user-entity mergé ; `feat/file-upload` en cours        |
+| 2026-02-27 | `feat/file-upload` → mergé dans `main`, toutes branches nettoyées               |
+| 2026-02-27 | **Media** — Entity + migration + Repository (`medias` table) ✅                 |
+| 2026-02-27 | **MediaProcessMessage** — message Messenger pour traitement async ✅            |
+| 2026-02-27 | **ExifService** — extraction EXIF (exif_read_data + GPS decimal) ✅             |
+| 2026-02-27 | **ThumbnailService** — génération thumbnail GD 320px JPEG (graceful si absent) ✅ |
+| 2026-02-27 | **MediaProcessHandler** — handler async idempotent (image/* + video/*) ✅       |
+| 2026-02-27 | **MediaOutput + MediaProvider** — GET /api/v1/medias, GET /api/v1/medias/{id}, filtre ?type= ✅ |
+| 2026-02-27 | **MediaThumbnailController** — GET /api/v1/medias/{id}/thumbnail ✅             |
+| 2026-02-27 | Messenger configuré : doctrine transport (prod), in-memory (tests) ✅           |
+| 2026-02-27 | 38/38 tests passing ✅ (User 3 + Folder 9 + File 15 + Media 8 + Handler 3)      |
 
 ---
 
 ## 🚧 En cours
 
-- **feat/file-upload** — Phase 2 terminée, en attente de merge dans `main`
+- **feat/media** — Phase 3 terminée (38/38 tests), en attente de merge dans `main`
 
 ---
 
@@ -65,11 +75,17 @@
 - [x] Blocage exécutables, pas de restriction de taille
 - [x] `config/php.ini` — référence pour déploiement (`upload_max_filesize=10G`)
 
-### 🔵 Phase 3 — Médias
+### 🔵 Phase 3 — Médias ✅
 
-- [ ] **Media** — Entity + migration + ApiResource (enrichit File : EXIF, thumbnail, type photo/vidéo)
-  - `GET /api/v1/medias` (filtrable par type, date, album)
+- [x] **Media** — Entity + migration + ApiResource (enrichit File : EXIF, thumbnail, type photo/vidéo)
+  - `GET /api/v1/medias` (filtrable par `?type=`)
   - `GET /api/v1/medias/{id}`
+  - `GET /api/v1/medias/{id}/thumbnail`
+- [x] **MediaProcessMessage** — dispatch async après upload image/* ou video/*
+- [x] **ExifService** — extraction EXIF (orientation, GPS, date, modèle caméra)
+- [x] **ThumbnailService** — génération 320px JPEG (GD, graceful si absent)
+- [x] **MediaProcessHandler** — création Media idempotente depuis File
+- [x] Symfony Messenger configuré (doctrine prod, in-memory tests)
 
 ### 🔵 Phase 4 — Albums _(à venir)_
 
