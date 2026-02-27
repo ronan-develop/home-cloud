@@ -15,6 +15,11 @@
 | 2026-02-27 | Flex recipes appliquées (api_platform, doctrine, nelmio_cors, twig...)          |
 | 2026-02-27 | Serveur dev fonctionnel — `/api` opérationnel                                   |
 | 2026-02-27 | Migration DB : PostgreSQL → **MySQL/MariaDB 10.6** (compatibilité o2switch)     |
+| 2026-02-27 | **User** — Entity + DTO + StateProvider + migration + tests fonctionnels (TDD RED→GREEN) ✅ |
+| 2026-02-27 | **Folder** — Entity + DTO + StateProvider/Processor + migration + tests TDD ✅ |
+| 2026-02-27 | Fix: `@method` PHPDoc sur repositories (Intelephense P1013)                      |
+| 2026-02-27 | 📖 Documentation classes non-entité (rôle, choix, intention) — UserOutput, FolderOutput, UserProvider |
+| 2026-02-27 | Setup PHPUnit 13 + symfony/test-pack — 3 tests / 9 assertions ✅                |
 
 ---
 
@@ -28,8 +33,8 @@
 
 ### 🔵 Phase 1 — Fondations (User + Folder)
 
-- [ ] **User** — Entity + migration + ApiResource (`GET /api/v1/users/{id}`, `POST /api/v1/users`)
-- [ ] **Folder** — Entity + migration + ApiResource (arborescence parent/enfants)
+- [x] **User** — Entity + migration + ApiResource (`GET /api/v1/users/{id}`, `POST /api/v1/users`) ✅
+- [x] **Folder** — Entity + migration + ApiResource (arborescence parent/enfants) ✅
   - `GET /api/v1/folders` (paginé)
   - `POST /api/v1/folders`
   - `GET /api/v1/folders/{id}`
