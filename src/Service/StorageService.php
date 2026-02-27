@@ -43,4 +43,26 @@ final class StorageService
 
         return sprintf('%s/%s', $subDir, $filename);
     }
+
+    /**
+     * Supprime le fichier physique du disque.
+     *
+     * @param string $relativePath Chemin relatif tel que stocké en base (ex: "2026/02/uuid.pdf")
+     */
+    public function delete(string $relativePath): void
+    {
+        $fullPath = $this->storageDir.'/'.$relativePath;
+
+        if (file_exists($fullPath)) {
+            unlink($fullPath);
+        }
+    }
+
+    /**
+     * Retourne le chemin absolu d'un fichier à partir de son chemin relatif.
+     */
+    public function getAbsolutePath(string $relativePath): string
+    {
+        return $this->storageDir.'/'.$relativePath;
+    }
 }
