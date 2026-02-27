@@ -21,7 +21,9 @@ use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
  *   Messenger après upload — il n'est pas manipulable directement via l'API.
  * - SKIP_NULL_VALUES => false : tous les champs sont toujours présents en réponse
  *   (même null) pour que le client sache ce qui existe vs ce qui est absent.
- * - Filtre ?type= sur la collection pour distinguer photos et vidéos.
+ * - `thumbnailUrl` expose l'URL de l'endpoint thumbnail (ex: "/api/v1/medias/{id}/thumbnail")
+ *   plutôt que le chemin disque interne — le client ne doit jamais connaître la structure
+ *   de stockage physique.
  */
 #[ApiResource(
     shortName: 'Media',
@@ -51,7 +53,8 @@ final class MediaOutput
         public readonly ?string $gpsLat,
         public readonly ?string $gpsLon,
         public readonly ?string $cameraModel,
-        public readonly ?string $thumbnailPath,
+        /** URL de l'endpoint thumbnail, null si pas encore généré */
+        public readonly ?string $thumbnailUrl,
         public readonly string $createdAt,
     ) {}
 }
