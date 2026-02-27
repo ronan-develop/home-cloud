@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\State;
 
 use ApiPlatform\Metadata\Operation;
+use ApiPlatform\State\Pagination\Pagination;
+use ApiPlatform\State\Pagination\TraversablePaginator;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\FolderOutput;
 use App\Entity\Folder;
@@ -24,7 +26,10 @@ use App\Repository\FolderRepository;
  */
 final class FolderProvider implements ProviderInterface
 {
-    public function __construct(private readonly FolderRepository $repository) {}
+    public function __construct(
+        private readonly FolderRepository $repository,
+        private readonly Pagination $pagination,
+    ) {}
 
     /**
      * Fournit un FolderOutput unique (GET /v1/folders/{id})
@@ -39,7 +44,11 @@ final class FolderProvider implements ProviderInterface
             return $folder ? $this->toOutput($folder) : null;
         }
 
-        return array_map($this->toOutput(...), $this->repository->findAll());
+        [$page, $offset, $limit] = $this->pagination->getPagination($operation, $context);
+        $total = $this->repository->count([]);
+        $items = array_map($this->toOutput(...), $this->repository->findBy([], [], $limit, $offset));
+
+        return new TraversablePaginator(new \ArrayIterator($items), $page, $limit, $total);
     }
 
     /**

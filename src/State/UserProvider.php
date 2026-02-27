@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\State;
 
 use ApiPlatform\Metadata\Operation;
+use ApiPlatform\State\Pagination\Pagination;
+use ApiPlatform\State\Pagination\TraversablePaginator;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\UserOutput;
 use App\Entity\User;
@@ -24,7 +26,10 @@ use App\Repository\UserRepository;
  */
 final class UserProvider implements ProviderInterface
 {
-    public function __construct(private readonly UserRepository $repository) {}
+    public function __construct(
+        private readonly UserRepository $repository,
+        private readonly Pagination $pagination,
+    ) {}
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): object|array|null
     {
@@ -34,7 +39,11 @@ final class UserProvider implements ProviderInterface
             return $user ? $this->toOutput($user) : null;
         }
 
-        return array_map($this->toOutput(...), $this->repository->findAll());
+        [$page, $offset, $limit] = $this->pagination->getPagination($operation, $context);
+        $total = $this->repository->count([]);
+        $items = array_map($this->toOutput(...), $this->repository->findBy([], [], $limit, $offset));
+
+        return new TraversablePaginator(new \ArrayIterator($items), $page, $limit, $total);
     }
 
     private function toOutput(User $user): UserOutput
