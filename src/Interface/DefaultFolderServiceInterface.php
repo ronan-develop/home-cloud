@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Interface;
 
 use App\Entity\Folder;
 use App\Entity\User;

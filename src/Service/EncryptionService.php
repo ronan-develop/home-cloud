@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Interface\EncryptionServiceInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**

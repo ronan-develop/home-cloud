@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Interface\EncryptionServiceInterface;
+
 /**
  * Extrait les métadonnées EXIF d'un fichier image.
  *
