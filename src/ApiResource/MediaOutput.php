@@ -7,6 +7,7 @@ namespace App\ApiResource;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\OpenApi\Model;
 use App\State\MediaProvider;
 use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
 
@@ -34,10 +35,18 @@ use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
         new Get(
             uriTemplate: '/v1/medias/{id}',
             provider: MediaProvider::class,
+            openapi: new Model\Operation(
+                summary: 'Récupère les métadonnées enrichies d\'un média.',
+                description: 'Retourne les données EXIF, dimensions, GPS, modèle caméra et l\'URL du thumbnail pour un média.',
+            ),
         ),
         new GetCollection(
             uriTemplate: '/v1/medias',
             provider: MediaProvider::class,
+            openapi: new Model\Operation(
+                summary: 'Liste les médias (paginé, filtrable par type).',
+                description: 'Retourne la liste paginée des médias. Paramètre optionnel : `?type=photo|video|audio|document`.',
+            ),
         ),
     ],
 )]
