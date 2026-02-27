@@ -21,7 +21,7 @@ use Doctrine\ORM\EntityManagerInterface;
  * - La résolution est déléguée à ce service pour garder FileProcessor simple
  *   et testable indépendamment.
  */
-final class DefaultFolderService
+final class DefaultFolderService implements DefaultFolderServiceInterface
 {
     public const DEFAULT_FOLDER_NAME = 'Uploads';
 

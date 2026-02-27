@@ -26,7 +26,7 @@ class ThumbnailService
 
     public function __construct(
         private readonly string $storageDir,
-        private readonly EncryptionService $encryption,
+        private readonly EncryptionServiceInterface $encryption,
     ) {}
 
     /**

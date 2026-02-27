@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Repository\FileRepository;
-use App\Service\EncryptionService;
-use App\Service\StorageService;
+use App\Service\EncryptionServiceInterface;
+use App\Service\StorageServiceInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
@@ -36,8 +36,8 @@ final class FileDownloadController extends AbstractController
 {
     public function __construct(
         private readonly FileRepository $fileRepository,
-        private readonly StorageService $storageService,
-        private readonly EncryptionService $encryption,
+        private readonly StorageServiceInterface $storageService,
+        private readonly EncryptionServiceInterface $encryption,
     ) {}
 
     #[Route('/api/v1/files/{id}/download', name: 'file_download', methods: ['GET'])]
