@@ -106,6 +106,15 @@ final class MediaTest extends ApiTestCase
         $this->assertCount(0, $response->toArray());
     }
 
+    public function testGetMediaCollectionReturns400WhenInvalidType(): void
+    {
+        static::createClient()->request('GET', '/api/v1/medias?type=invalid_type', [
+            'headers' => ['Accept' => 'application/json'],
+        ]);
+
+        $this->assertResponseStatusCodeSame(400);
+    }
+
     // --- GET /api/v1/medias/{id}/thumbnail ---
 
     public function testGetThumbnailReturns404WhenNoThumbnail(): void
