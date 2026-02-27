@@ -1,6 +1,6 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-02-27 (Phase 4 Albums ✅ + OpenAPI/Swagger complet — 79/79 tests)
+> Dernière mise à jour : 2026-02-27 (Phase 5 Partage ✅ — 98/98 tests)
 
 ---
 
@@ -92,14 +92,15 @@
 | 2026-02-27 | ✨ **feat(OpenApiFactory)** — JWT Bearer global, 3 routes manquantes (download, thumbnail, token/refresh), multipart/form-data sur POST /files, summaries sur toutes les opérations ✅ |
 | 2026-02-27 | 🔧 **fix(SecurityHeadersListener)** — CSP `default-src 'none'` skippé pour `/api/docs*` (Swagger UI était bloqué) ✅ |
 | 2026-02-27 | ✨ **feat/albums** — Phase 4 Albums : Entity + migration + CRUD + POST/DELETE medias (79/79 tests ✅) |
+| 2026-02-27 | ✨ **feat/sharing** — Phase 5 Partage : Share entity + migration + CRUD + ShareAccessChecker (98/98 tests ✅) |
 
 ---
 
 ## 🚧 En cours
 
-- `main` propre — 79/79 tests ✅
-- OpenAPI/Swagger UI complet et documenté
-- Prochaine phase : **Phase 5** — déploiement o2switch
+- `main` propre — 98/98 tests ✅
+- Phase 5 Partage terminée
+- Prochaine phase : **Phase 6** — déploiement o2switch
 
 ---
 
@@ -151,9 +152,16 @@
   - `POST /api/v1/albums/{id}/medias` (ajout media, idempotent)
   - `DELETE /api/v1/albums/{id}/medias/{mediaId}` (retrait media)
 
-### 🔵 Phase 5 — Domotique / Dashboard _(futur)_
+### 🔵 Phase 5 — Partage de ressources ✅
 
-- [ ] À définir
+- [x] **Share** — partage File/Folder/Album entre utilisateurs (read/write, expiration optionnelle)
+  - `GET /api/v1/shares` (collection : partages où je suis owner OU guest)
+  - `POST /api/v1/shares` (créer un partage)
+  - `GET /api/v1/shares/{id}`
+  - `PATCH /api/v1/shares/{id}` (modifier permission/expiration, owner uniquement)
+  - `DELETE /api/v1/shares/{id}` (owner uniquement)
+- [x] **ShareAccessChecker** — vérifie l'accès actif sur un fichier partagé (FileProvider GET)
+- [x] Contrôle d'accès : non-owner sans partage actif → 403 sur `GET /api/v1/files/{id}`
 
 ---
 
