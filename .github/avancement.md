@@ -1,6 +1,6 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-02-27 (JWT refresh token live ✅ + CreateUserCommand — 61/61 tests)
+> Dernière mise à jour : 2026-02-27 (Phase 4 Albums ✅ + OpenAPI/Swagger complet — 79/79 tests)
 
 ---
 
@@ -90,14 +90,16 @@
 | 2026-02-27 | 📖 **API Docs** — Swagger UI accessible à `https://127.0.0.1:8000/api/docs` (ou `/api/docs?ui=re_doc` pour ReDoc) · spec OpenAPI : `/api/docs.jsonopenapi` |
 | 2026-02-27 | 📖 **docs(api_platform.yaml)** — titre HomeCloud API + description |
 | 2026-02-27 | ✨ **feat(OpenApiFactory)** — JWT Bearer global, 3 routes manquantes (download, thumbnail, token/refresh), multipart/form-data sur POST /files, summaries sur toutes les opérations ✅ |
+| 2026-02-27 | 🔧 **fix(SecurityHeadersListener)** — CSP `default-src 'none'` skippé pour `/api/docs*` (Swagger UI était bloqué) ✅ |
+| 2026-02-27 | ✨ **feat/albums** — Phase 4 Albums : Entity + migration + CRUD + POST/DELETE medias (79/79 tests ✅) |
 
 ---
 
 ## 🚧 En cours
 
-- `main` propre — 61/61 tests ✅
+- `main` propre — 79/79 tests ✅
 - OpenAPI/Swagger UI complet et documenté
-- Prochaine phase : **Phase 4** — Albums ou **Phase 5** — déploiement o2switch
+- Prochaine phase : **Phase 5** — déploiement o2switch
 
 ---
 
@@ -138,9 +140,16 @@
 - [x] **MediaProcessHandler** — création Media idempotente depuis File
 - [x] Symfony Messenger configuré (doctrine prod, in-memory tests)
 
-### 🔵 Phase 4 — Albums _(à venir)_
+### 🔵 Phase 4 — Albums ✅
 
-- [ ] **Album** — collection de Media, sans structure de dossier
+- [x] **Album** — collection de Media, sans structure de dossier
+  - `GET /api/v1/albums` (paginé)
+  - `POST /api/v1/albums`
+  - `GET /api/v1/albums/{id}`
+  - `PATCH /api/v1/albums/{id}` (renommage)
+  - `DELETE /api/v1/albums/{id}`
+  - `POST /api/v1/albums/{id}/medias` (ajout media, idempotent)
+  - `DELETE /api/v1/albums/{id}/medias/{mediaId}` (retrait media)
 
 ### 🔵 Phase 5 — Domotique / Dashboard _(futur)_
 
