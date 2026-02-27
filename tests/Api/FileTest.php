@@ -243,6 +243,62 @@ final class FileTest extends ApiTestCase
         $this->assertResponseStatusCodeSame(204);
     }
 
+    public function testDeleteFileAlsoRemovesPhysicalFile(): void
+    {
+        $user = $this->createUser();
+        $folder = new Folder('Temp', $user);
+        $this->em->persist($folder);
+
+        // Upload réel pour avoir un fichier sur disque
+        $client = static::createClient();
+        $response = $client->request('POST', '/api/v1/files', [
+            'extra' => [
+                'files' => ['file' => $this->makeTempFile('to-delete', 'todelete.txt')],
+                'parameters' => ['ownerId' => (string) $user->getId()],
+            ],
+        ]);
+        $this->assertResponseStatusCodeSame(201);
+        $id = $response->toArray()['id'];
+        $path = $response->toArray()['path'];
+
+        $storageDir = static::getContainer()->getParameter('app.storage_dir');
+        $fullPath = $storageDir.'/'.$path;
+        $this->assertFileExists($fullPath);
+
+        $client->request('DELETE', '/api/v1/files/'.$id);
+        $this->assertResponseStatusCodeSame(204);
+        $this->assertFileDoesNotExist($fullPath);
+    }
+
+    // --- GET /api/v1/files/{id}/download ---
+
+    public function testDownloadFileReturns200WithBinaryContent(): void
+    {
+        $user = $this->createUser();
+
+        $client = static::createClient();
+        $response = $client->request('POST', '/api/v1/files', [
+            'extra' => [
+                'files' => ['file' => $this->makeTempFile('binary-content', 'doc.txt')],
+                'parameters' => ['ownerId' => (string) $user->getId()],
+            ],
+        ]);
+        $this->assertResponseStatusCodeSame(201);
+        $id = $response->toArray()['id'];
+
+        $download = $client->request('GET', '/api/v1/files/'.$id.'/download');
+
+        $this->assertResponseStatusCodeSame(200);
+        $this->assertSame('binary-content', $download->getContent());
+    }
+
+    public function testDownloadFileReturns404WhenNotFound(): void
+    {
+        static::createClient()->request('GET', '/api/v1/files/00000000-0000-0000-0000-000000000000/download');
+
+        $this->assertResponseStatusCodeSame(404);
+    }
+
     public function testDeleteFileReturns404WhenNotFound(): void
     {
         static::createClient()->request('DELETE', '/api/v1/files/00000000-0000-0000-0000-000000000000');
