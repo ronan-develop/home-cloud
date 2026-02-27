@@ -67,7 +67,7 @@ final class MediaTest extends ApiTestCase
         $this->assertArrayHasKey('takenAt', $data);
         $this->assertArrayHasKey('gpsLat', $data);
         $this->assertArrayHasKey('gpsLon', $data);
-        $this->assertArrayHasKey('thumbnailPath', $data);
+        $this->assertArrayHasKey('thumbnailUrl', $data);
         $this->assertSame('photo', $data['mediaType']);
         $this->assertSame(1920, $data['width']);
         $this->assertSame('Apple iPhone 15', $data['cameraModel']);

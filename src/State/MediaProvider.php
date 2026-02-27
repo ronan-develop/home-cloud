@@ -61,7 +61,9 @@ final class MediaProvider implements ProviderInterface
             gpsLat: $media->getGpsLat(),
             gpsLon: $media->getGpsLon(),
             cameraModel: $media->getCameraModel(),
-            thumbnailPath: $media->getThumbnailPath(),
+            thumbnailUrl: $media->getThumbnailPath() !== null
+                ? '/api/v1/medias/'.$media->getId().'/thumbnail'
+                : null,
             createdAt: $media->getCreatedAt()->format(\DateTimeInterface::ATOM),
         );
     }
