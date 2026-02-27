@@ -16,6 +16,16 @@
 
 set -euo pipefail
 
+# ── Prérequis o2switch ────────────────────────────────────────────────────────
+# Avant de lancer ce script, vous devez avoir :
+#   1. Whitelisté votre IP dans cPanel → Outils → "Autorisation SSH"
+#      Votre IP : https://mon-ip.io
+#   2. (Optionnel mais recommandé) Ajouté votre clé SSH publique sur le serveur :
+#      ssh-keygen -t ed25519 -f ~/.ssh/o2switch
+#      Puis copier ~/.ssh/o2switch.pub dans ~/.ssh/authorized_keys sur le serveur
+#      (via cPanel File Manager ou ssh-copy-id)
+# ─────────────────────────────────────────────────────────────────────────────
+
 # ── Couleurs ─────────────────────────────────────────────────────────────────
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -44,6 +54,17 @@ COMPOSER_BIN="/usr/local/php82/bin/composer"
 title "═══════════════════════════════════════"
 title "  HomeCloud — Déploiement o2switch"
 title "═══════════════════════════════════════"
+echo ""
+echo -e "${YELLOW}  Prérequis avant de continuer :${NC}"
+echo "  1. Votre IP est whitelistée dans cPanel → Outils → 'Autorisation SSH'"
+echo "     Voir votre IP : https://mon-ip.io"
+echo "  2. Vous avez accès SSH : ssh ${SSH_USER}@${SSH_HOST}"
+echo ""
+read -rp "$(echo -e "${BOLD}Les prérequis SSH sont remplis ? [o/N] :${NC} ")" PREREQ
+if [[ "$PREREQ" != "o" && "$PREREQ" != "O" ]]; then
+    warn "Whitelistez votre IP dans cPanel → Outils → 'Autorisation SSH' puis relancez."
+    exit 0
+fi
 
 echo ""
 read -rp "$(echo -e "${BOLD}Prénom de l'utilisateur :${NC} ")" PRENOM
@@ -108,9 +129,9 @@ DATABASE_URL="mysql://${DB_USER}:${DB_PASSWORD}@127.0.0.1:3306/${DB_NAME}?server
 title "── Connexion SSH ───────────────────────"
 info "Test de connexion SSH vers ${SSH_USER}@${SSH_HOST}…"
 
-if ! ssh -p "${SSH_PORT}" -o ConnectTimeout=10 -o BatchMode=yes "${SSH_USER}@${SSH_HOST}" "echo OK" &>/dev/null; then
-    error "Impossible de se connecter en SSH. Vérifiez votre clé SSH et les accès o2switch."
-    error "  ssh-copy-id -p ${SSH_PORT} ${SSH_USER}@${SSH_HOST}"
+if ! ssh -p "${SSH_PORT}" -o ConnectTimeout=10 "${SSH_USER}@${SSH_HOST}" "echo OK" &>/dev/null; then
+    error "Impossible de se connecter en SSH."
+    error "Vérifiez que votre IP est bien whitelistée dans cPanel → Outils → 'Autorisation SSH'"
     exit 1
 fi
 success "Connexion SSH OK"
