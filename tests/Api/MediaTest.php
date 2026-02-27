@@ -171,4 +171,38 @@ final class MediaTest extends ApiTestCase
         $transport = static::getContainer()->get('messenger.transport.async');
         $this->assertCount(0, $transport->get());
     }
+
+    // --- DELETE File supprime aussi le thumbnail ---
+
+    public function testDeleteFileAlsoRemovesThumbnailFromDisk(): void
+    {
+        $storageDir = static::getContainer()->getParameter('app.storage_dir');
+
+        // Créer un faux thumbnail sur disque
+        $thumbDir = $storageDir.'/thumbs';
+        if (!is_dir($thumbDir)) {
+            mkdir($thumbDir, 0777, true);
+        }
+        $thumbFile = $thumbDir.'/fake-thumb.jpg';
+        file_put_contents($thumbFile, 'fake-jpeg-data');
+
+        // Créer File + Media avec thumbnailPath
+        $user = new User('thumb-del@example.com', 'Owner');
+        $this->em->persist($user);
+        $folder = new Folder('Photos', $user);
+        $this->em->persist($folder);
+        $file = new File('photo.jpg', 'image/jpeg', 2048, '2026/02/fake.jpg', $folder, $user);
+        $this->em->persist($file);
+        $media = new Media($file, 'photo');
+        $media->setThumbnailPath('thumbs/fake-thumb.jpg');
+        $this->em->persist($media);
+        $this->em->flush();
+
+        $this->assertFileExists($thumbFile);
+
+        static::createClient()->request('DELETE', '/api/v1/files/'.$file->getId());
+
+        $this->assertResponseStatusCodeSame(204);
+        $this->assertFileDoesNotExist($thumbFile);
+    }
 }
