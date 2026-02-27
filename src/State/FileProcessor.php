@@ -9,7 +9,7 @@ use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\FileOutput;
 use App\Repository\FileRepository;
 use App\Repository\MediaRepository;
-use App\Service\StorageServiceInterface;
+use App\Interface\StorageServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 

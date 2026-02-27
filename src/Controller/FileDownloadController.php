@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Repository\FileRepository;
-use App\Service\EncryptionServiceInterface;
-use App\Service\StorageServiceInterface;
+use App\Interface\EncryptionServiceInterface;
+use App\Interface\StorageServiceInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
