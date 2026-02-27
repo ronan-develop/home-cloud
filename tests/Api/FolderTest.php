@@ -17,8 +17,14 @@ final class FolderTest extends ApiTestCase
     protected function setUp(): void
     {
         $this->em = static::getContainer()->get(EntityManagerInterface::class);
-        $this->em->getConnection()->executeStatement('DELETE FROM folders');
-        $this->em->getConnection()->executeStatement('DELETE FROM users');
+        $conn = $this->em->getConnection();
+        $conn->executeStatement('SET FOREIGN_KEY_CHECKS=0');
+        $conn->executeStatement('DELETE FROM medias');
+        $conn->executeStatement('DELETE FROM files');
+        $conn->executeStatement('DELETE FROM folders');
+        $conn->executeStatement('DELETE FROM users');
+        $conn->executeStatement('SET FOREIGN_KEY_CHECKS=1');
+        $this->em->clear();
     }
 
     private function createUser(): User
