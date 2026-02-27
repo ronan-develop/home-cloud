@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\ApiResource\FileOutput;
 use App\Entity\File;
+use App\Message\MediaProcessMessage;
 use App\Repository\UserRepository;
 use App\Service\DefaultFolderService;
 use App\Service\StorageService;
@@ -19,6 +20,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 
 /**
@@ -46,6 +48,7 @@ final class FileUploadController extends AbstractController
         private readonly DefaultFolderService $defaultFolderService,
         private readonly FileProvider $provider,
         private readonly SerializerInterface $serializer,
+        private readonly MessageBusInterface $bus,
     ) {}
 
     /**
@@ -88,7 +91,7 @@ final class FileUploadController extends AbstractController
 
         // Récupérer les métadonnées AVANT store() qui déplace le fichier
         $originalName = $uploadedFile->getClientOriginalName();
-        $mimeType = $uploadedFile->getMimeType() ?? $uploadedFile->getClientMimeType() ?? 'application/octet-stream';
+        $mimeType = $uploadedFile->getClientMimeType() ?? $uploadedFile->getMimeType() ?? 'application/octet-stream';
         $size = $uploadedFile->getSize();
 
         $path = $this->storageService->store($uploadedFile);
@@ -96,6 +99,11 @@ final class FileUploadController extends AbstractController
         $file = new File($originalName, $mimeType, $size, $path, $folder, $owner);
         $this->em->persist($file);
         $this->em->flush();
+
+        // Dispatch async si c'est un média (image/* ou video/*)
+        if (str_starts_with($mimeType, 'image/') || str_starts_with($mimeType, 'video/')) {
+            $this->bus->dispatch(new MediaProcessMessage((string) $file->getId()));
+        }
 
         $output = $this->provider->toOutput($file);
 
