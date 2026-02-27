@@ -27,7 +27,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
  * La clé (32 bytes) est injectée via APP_ENCRYPTION_KEY (base64) → services.yaml.
  * Ne jamais stocker la clé en DB ni dans le code.
  */
-final class EncryptionService
+final class EncryptionService implements EncryptionServiceInterface
 {
     private const CHUNK_SIZE = 8192;
 

@@ -20,7 +20,7 @@ namespace App\Service;
  */
 class ExifService
 {
-    public function __construct(private readonly EncryptionService $encryption) {}
+    public function __construct(private readonly EncryptionServiceInterface $encryption) {}
 
     /**
      * Extrait les métadonnées EXIF d'une image (déchiffre en temp avant lecture).
