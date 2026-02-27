@@ -1,6 +1,6 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-02-27 (Phase 3 Media complète)
+> Dernière mise à jour : 2026-02-27 (fix/security-hardening — hardening complet)
 
 ---
 
@@ -46,12 +46,14 @@
 | 2026-02-27 | 🔒 **Audit sécurité** — `realpath()` + vérification sortie du storageDir (path traversal) ✅ |
 | 2026-02-27 | 🔧 **Bug** — suppression thumbnail disque lors du DELETE File (était orphelin) ✅   |
 | 2026-02-27 | 42/42 tests passing ✅ (+ 3 sécurité + 1 thumbnail + fix setUp FK FolderTest/FileTest) |
+| 2026-02-27 | 🔒 **fix/security-hardening** — 8 correctifs de sécurité (voir section 8 ci-dessous) ✅ |
+| 2026-02-27 | 47/47 tests passing ✅ (+ nosniff, type filter, sanitize, folderName, security headers) |
 
 ---
 
 ## 🚧 En cours
 
-- Rien — `main` est propre et à jour (42/42 tests ✅)
+- Rien — `main` est propre et à jour (47/47 tests ✅)
 
 ---
 
@@ -213,14 +215,34 @@ var/storage/
 
 ### 8. Audit sécurité — résultats et corrections (2026-02-27)
 
-Audit réalisé avant merge de `feat/media`. Voici ce qui a été identifié et corrigé :
+Audit réalisé avant merge de `feat/media`. Deux branches créées : `fix/security-upload` (3 correctifs critiques, mergée en premier) et `fix/security-hardening` (8 correctifs supplémentaires).
+
+#### Branche `fix/security-upload`
 
 | Sévérité | Problème | Fichier | Correction |
 |----------|----------|---------|------------|
 | 🔴 RCE | `.php`, `.phar`, `.phtml`, `.py`, `.rb`, `.asp`… non bloqués | `FileUploadController` | Ajout de toutes les extensions serveur dans `rejectExecutable()` |
 | 🟡 Header | `addslashes()` pour `Content-Disposition` (invalide RFC 6266) | `FileDownloadController` | Remplacé par `HeaderUtils::makeDisposition()` |
 | 🟡 Path traversal | `getAbsolutePath()` sans validation — chemin `../../etc/passwd` en DB passerait | `StorageService` | `realpath()` + vérification que le chemin reste sous `$storageDir` |
+
+#### Branche `fix/thumbnail-cleanup`
+
+| Sévérité | Problème | Fichier | Correction |
+|----------|----------|---------|------------|
 | 🟡 Fuite disque | Thumbnail non supprimé quand un File est supprimé (cascade DB enlève Media, pas le fichier) | `FileProcessor` | Charge le `Media` via `MediaRepository`, supprime `thumbnailPath` avant le flush |
+
+#### Branche `fix/security-hardening`
+
+| Sévérité | Problème | Fichier | Correction |
+|----------|----------|---------|------------|
+| 🔴 Config | `APP_SECRET` vide dans `.env` | `.env` / `.env.example` | Commentaire + template `.env.example` avec instructions `php bin/console secrets:generate-keys` |
+| 🟠 Fuite info | `thumbnailPath` (chemin disque interne) exposé dans la réponse API | `MediaOutput` / `MediaProvider` | Renommé `thumbnailUrl` → génération d'une URL publique `/api/v1/medias/{id}/thumbnail` |
+| 🟠 MIME spoofing | `Content-Type` en download issu de la DB (contrôlé par l'uploadeur) | `FileDownloadController` / `MediaThumbnailController` | `finfo_open()` revalidation au moment du download (MIME depuis le contenu réel du fichier) |
+| 🟠 RAM DoS | `file_get_contents()` charge le fichier entier en RAM | `FileDownloadController` / `MediaThumbnailController` | Remplacé par `BinaryFileResponse` (streaming noyau, aucune lecture en RAM) |
+| 🟡 Injection | `originalName` avec caractères de contrôle (`\x00`, `\n`, `\t`…) | `FileUploadController` | `preg_replace('/[\x00-\x1F\x7F]/u', '', $name)` avant persist |
+| 🟡 Logique | `?type=` non validé → Doctrine `findBy(['type' => 'DROP TABLE'])` | `MediaProvider` | Validation contre `['photo', 'video', 'audio', 'document']`, `BadRequestHttpException` si invalide |
+| 🟡 Validation | `newFolderName` sans limite de longueur ni vérification blank | `DefaultFolderService` | `trim()` → `''` → `InvalidArgumentException` ; `mb_strlen() > 255` → `InvalidArgumentException` |
+| 🟡 Headers HTTP | Aucun header de sécurité global | `SecurityHeadersListener` | EventListener `kernel.response` → `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer` |
 
 **Ce qui était déjà sécurisé :**
 - `var/storage/` hors de `public/` → non accessible directement par le webserver
@@ -232,6 +254,7 @@ Audit réalisé avant merge de `feat/media`. Voici ce qui a été identifié et 
 - Pas d'authentification (Phase future)
 - Pas de rate limiting (mono-utilisateur, o2switch)
 - Taille fichiers illimitée (choix utilisateur explicite)
+- Mot de passe DB par défaut (hors scope dev local)
 
 ---
 
