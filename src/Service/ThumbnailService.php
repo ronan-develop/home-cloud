@@ -54,11 +54,23 @@ class ThumbnailService
         }
     }
 
+    private const MAX_IMAGE_DIMENSION = 10000; // pixels — au-delà, risque GD memory bomb
+
     /**
      * Génère le thumbnail depuis un fichier en clair (temp), chiffre le résultat.
      */
     private function generateFromPlain(string $plainPath): ?string
     {
+        // Vérifier les dimensions AVANT de charger l'image en mémoire GD
+        // Une image 100000x100000 peut allouer des dizaines de Go RAM (GD bomb)
+        $size = @getimagesize($plainPath);
+        if ($size === false) {
+            return null;
+        }
+        if ($size[0] > self::MAX_IMAGE_DIMENSION || $size[1] > self::MAX_IMAGE_DIMENSION) {
+            return null;
+        }
+
         $content = @file_get_contents($plainPath);
         if ($content === false) {
             return null;
