@@ -1,6 +1,6 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-02-27 (fix/security-round2 — sécurité round 2 mergé)
+> Dernière mise à jour : 2026-02-27 (feat/deploy-secrets-gen + pagination — toutes tâches actionnables terminées)
 
 ---
 
@@ -53,12 +53,15 @@
 | 2026-02-27 | 50/50 tests passing ✅ (+ vérification chiffrement disque + SVG/HTML acceptés) |
 | 2026-02-27 | 🔒 **fix/security-round2** — 4 correctifs : CSP header, cycle parent dossier, GD memory bomb, ownership cross-user ✅ |
 | 2026-02-27 | 52/52 tests passing ✅ (+ CSP, folder cycle, GD bomb, IDOR ownership) |
+| 2026-02-27 | ✨ **feat/sec2-pagination** — pagination `TraversablePaginator` sur UserProvider, FolderProvider, FileProvider (DB-level offset/limit) ✅ |
+| 2026-02-27 | ✨ **feat/deploy-secrets-gen** — script `bin/generate-secrets.sh` (APP_ENCRYPTION_KEY + APP_SECRET → .env.local) ✅ |
 
 ---
 
 ## 🚧 En cours
 
 - Rien — `main` est propre et à jour (52/52 tests ✅)
+- Prochaines phases : **Phase 4** (JWT/auth) et **Phase 5** (déploiement o2switch)
 
 ---
 
