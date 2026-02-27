@@ -273,7 +273,7 @@ final class FileTest extends ApiTestCase
 
     // --- GET /api/v1/files/{id}/download ---
 
-    public function testDownloadFileReturns200WithBinaryContent(): void
+    public function testDownloadFileReturns200WithCorrectHeaders(): void
     {
         $user = $this->createUser();
 
@@ -289,8 +289,10 @@ final class FileTest extends ApiTestCase
 
         $download = $client->request('GET', '/api/v1/files/'.$id.'/download');
 
+        // BinaryFileResponse retourne body vide dans PHPUnit — on vérifie status + headers
         $this->assertResponseStatusCodeSame(200);
-        $this->assertSame('binary-content', $download->getContent());
+        $this->assertResponseHeaderSame('x-content-type-options', 'nosniff');
+        $this->assertStringContainsString('attachment', $download->getHeaders()['content-disposition'][0] ?? '');
     }
 
     public function testDownloadFileReturns404WhenNotFound(): void
@@ -360,5 +362,69 @@ final class FileTest extends ApiTestCase
         // HeaderUtils génère attachment; filename=...; filename*=UTF-8''...
         $this->assertStringStartsWith('attachment', $disposition);
         $this->assertStringNotContainsString('addslashes', $disposition);
+    }
+
+    // --- Sécurité : sanitisation originalName ---
+
+    public function testPostFileSanitizesControlCharsInOriginalName(): void
+    {
+        $user = $this->createUser();
+
+        $tmp = tempnam(sys_get_temp_dir(), 'hc_');
+        file_put_contents($tmp, 'content');
+        // Nom avec null byte + newline + tab + contenu normal
+        $maliciousName = "mon\x00fichier\x0Adangerous\x09.txt";
+        $uploadedFile = new UploadedFile($tmp, $maliciousName, 'text/plain', null, true);
+
+        $response = static::createClient()->request('POST', '/api/v1/files', [
+            'extra' => [
+                'files' => ['file' => $uploadedFile],
+                'parameters' => ['ownerId' => (string) $user->getId()],
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(201);
+        $originalName = $response->toArray()['originalName'];
+        $this->assertStringNotContainsString("\x00", $originalName);
+        $this->assertStringNotContainsString("\n", $originalName);
+        $this->assertStringNotContainsString("\t", $originalName);
+        $this->assertSame('monfichierdangerous.txt', $originalName);
+    }
+
+    // --- Sécurité : validation newFolderName ---
+
+    public function testPostFileReturns404WhenNewFolderNameTooLong(): void
+    {
+        $user = $this->createUser();
+
+        static::createClient()->request('POST', '/api/v1/files', [
+            'extra' => [
+                'files' => ['file' => $this->makeTempFile('data', 'file.txt')],
+                'parameters' => [
+                    'ownerId' => (string) $user->getId(),
+                    'newFolderName' => str_repeat('a', 256),
+                ],
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(404);
+    }
+
+    public function testPostFileReturns404WhenNewFolderNameIsBlank(): void
+    {
+        $user = $this->createUser();
+
+        static::createClient()->request('POST', '/api/v1/files', [
+            'extra' => [
+                'files' => ['file' => $this->makeTempFile('data', 'file.txt')],
+                'parameters' => [
+                    'ownerId' => (string) $user->getId(),
+                    'newFolderName' => '   ',
+                ],
+            ],
+        ]);
+
+        // '   ' → trim() → '' → InvalidArgumentException → 404
+        $this->assertResponseStatusCodeSame(404);
     }
 }

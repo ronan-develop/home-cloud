@@ -10,6 +10,7 @@ use App\ApiResource\MediaOutput;
 use App\Entity\Media;
 use App\Repository\MediaRepository;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Uid\Uuid;
 
@@ -41,6 +42,16 @@ final class MediaProvider implements ProviderInterface
         }
 
         $type = $this->requestStack->getCurrentRequest()?->query->get('type');
+
+        if ($type !== null) {
+            $allowed = ['photo', 'video', 'audio', 'document'];
+            if (!in_array($type, $allowed, true)) {
+                throw new BadRequestHttpException(
+                    sprintf('Invalid type "%s". Allowed values: %s.', $type, implode(', ', $allowed))
+                );
+            }
+        }
+
         $criteria = $type !== null ? ['mediaType' => $type] : [];
 
         return array_map(
@@ -61,7 +72,9 @@ final class MediaProvider implements ProviderInterface
             gpsLat: $media->getGpsLat(),
             gpsLon: $media->getGpsLon(),
             cameraModel: $media->getCameraModel(),
-            thumbnailPath: $media->getThumbnailPath(),
+            thumbnailUrl: $media->getThumbnailPath() !== null
+                ? '/api/v1/medias/'.$media->getId().'/thumbnail'
+                : null,
             createdAt: $media->getCreatedAt()->format(\DateTimeInterface::ATOM),
         );
     }
