@@ -88,13 +88,15 @@
 | 2026-02-27 | 🔥 **Live test validé** — login → refresh_token → rotation → route protégée, tout OK sur 127.0.0.1:8000 ✅ |
 | 2026-02-27 | 🔧 **fix(security.yaml)** — `/api/docs` ajouté en `PUBLIC_ACCESS` (était bloqué par firewall JWT) ✅ |
 | 2026-02-27 | 📖 **API Docs** — Swagger UI accessible à `https://127.0.0.1:8000/api/docs` (ou `/api/docs?ui=re_doc` pour ReDoc) · spec OpenAPI : `/api/docs.jsonopenapi` |
+| 2026-02-27 | 📖 **docs(api_platform.yaml)** — titre HomeCloud API + description |
+| 2026-02-27 | ✨ **feat(OpenApiFactory)** — JWT Bearer global, 3 routes manquantes (download, thumbnail, token/refresh), multipart/form-data sur POST /files, summaries sur toutes les opérations ✅ |
 
 ---
 
 ## 🚧 En cours
 
-- Rien — `main` est propre, remote synchronisé (61/61 tests ✅)
-- `CreateUserCommand` implémentée et testée en live
+- `main` propre — 61/61 tests ✅
+- OpenAPI/Swagger UI complet et documenté
 - Prochaine phase : **Phase 4** — Albums ou **Phase 5** — déploiement o2switch
 
 ---
