@@ -86,6 +86,8 @@
 | 2026-02-27 | 🔧 **fix(Version20260227201400)** — migration `refresh_tokens` corrigée : BINARY(16) au lieu de CHAR(36) (cohérence DBAL 4) ✅ |
 | 2026-02-27 | 🏗️ **build(maker-bundle)** — `symfony/maker-bundle` installé en dev ✅ |
 | 2026-02-27 | 🔥 **Live test validé** — login → refresh_token → rotation → route protégée, tout OK sur 127.0.0.1:8000 ✅ |
+| 2026-02-27 | 🔧 **fix(security.yaml)** — `/api/docs` ajouté en `PUBLIC_ACCESS` (était bloqué par firewall JWT) ✅ |
+| 2026-02-27 | 📖 **API Docs** — Swagger UI accessible à `https://127.0.0.1:8000/api/docs` (ou `/api/docs?ui=re_doc` pour ReDoc) · spec OpenAPI : `/api/docs.jsonopenapi` |
 
 ---
 
