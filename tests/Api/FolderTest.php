@@ -67,7 +67,9 @@ final class FolderTest extends ApiTestCase
         $this->em->persist(new Folder('Videos', $owner));
         $this->em->flush();
 
-        $response = static::createClient()->request('GET', '/api/v1/folders');
+        $response = static::createClient()->request('GET', '/api/v1/folders', [
+            'headers' => ['Accept' => 'application/json'],
+        ]);
 
         $this->assertResponseStatusCodeSame(200);
         $data = $response->toArray();

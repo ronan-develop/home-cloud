@@ -54,7 +54,9 @@ final class UserTest extends ApiTestCase
         $this->em->persist($user2);
         $this->em->flush();
 
-        $response = static::createClient()->request('GET', '/api/v1/users');
+        $response = static::createClient()->request('GET', '/api/v1/users', [
+            'headers' => ['Accept' => 'application/json'],
+        ]);
 
         $this->assertResponseIsSuccessful();
         $data = $response->toArray();
