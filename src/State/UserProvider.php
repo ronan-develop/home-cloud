@@ -11,6 +11,15 @@ use App\Entity\User;
 use App\Repository\UserRepository;
 
 /**
+ * Fournit les données lues pour les opérations GET sur la ressource User.
+ *
+ * Rôle : couche de lecture — transforme les entités Doctrine User en DTOs
+ * UserOutput exposés par l'API, sans jamais exposer l'entité directement.
+ *
+ * Choix : provider dédié plutôt que d'exposer l'entité via #[ApiResource]
+ * sur User directement, afin de contrôler précisément les champs sérialisés
+ * et de respecter le principe de séparation des responsabilités.
+ *
  * @implements ProviderInterface<UserOutput>
  */
 final class UserProvider implements ProviderInterface
