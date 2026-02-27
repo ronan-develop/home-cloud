@@ -38,3 +38,19 @@ git commit -m "✨ feat(PSC): desc"   # Commit with convention (user does NOT pu
 ## 📋 Mémoire & Suivi des Travaux
 
 Un fichier d'avancement des travaux est présent dans [`.github/avancement.md`](./.github/avancement.md). Ce fichier doit être mis à jour régulièrement pour refléter l'état actuel des travaux. Tu peux effectuer seul ces mises à jour.
+
+---
+
+## 🧪 Méthodologie TDD — OBLIGATOIRE
+
+**Pour toute nouvelle fonctionnalité ou entité, la règle est :**
+
+1. **RED** — Écrire le test d'abord (il doit échouer)
+2. **GREEN** — Écrire le minimum de code pour le faire passer
+3. **REFACTOR** — Nettoyer sans casser les tests
+
+**Règles strictes :**
+- Ne jamais écrire du code de production sans test préalable
+- Un commit RED (test seul) avant le commit GREEN (implémentation)
+- Les tests fonctionnels API couvrent : status HTTP, structure JSON, cas d'erreur (404, 400...)
+- Stack : PHPUnit + `symfony/test-pack` + `ApiTestCase` (API Platform)
