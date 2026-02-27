@@ -7,13 +7,26 @@ namespace App\ApiResource;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\OpenApi\Model;
 use App\State\UserProvider;
 
 #[ApiResource(
     shortName: 'User',
     operations: [
-        new Get(uriTemplate: '/v1/users/{id}'),
-        new GetCollection(uriTemplate: '/v1/users'),
+        new Get(
+            uriTemplate: '/v1/users/{id}',
+            openapi: new Model\Operation(
+                summary: 'Récupère un utilisateur par son UUID.',
+                description: 'Retourne les métadonnées publiques d\'un utilisateur (id, email, displayName, createdAt).',
+            ),
+        ),
+        new GetCollection(
+            uriTemplate: '/v1/users',
+            openapi: new Model\Operation(
+                summary: 'Liste tous les utilisateurs (paginé).',
+                description: 'Retourne la liste paginée des utilisateurs. Paramètres : `page` (défaut 1), `itemsPerPage` (défaut 30).',
+            ),
+        ),
     ],
     provider: UserProvider::class,
 )]

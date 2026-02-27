@@ -10,6 +10,7 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
+use ApiPlatform\OpenApi\Model;
 use App\State\FolderProcessor;
 use App\State\FolderProvider;
 use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
@@ -17,11 +18,41 @@ use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
 #[ApiResource(
     shortName: 'Folder',
     operations: [
-        new Get(uriTemplate: '/v1/folders/{id}'),
-        new GetCollection(uriTemplate: '/v1/folders'),
-        new Post(uriTemplate: '/v1/folders'),
-        new Patch(uriTemplate: '/v1/folders/{id}'),
-        new Delete(uriTemplate: '/v1/folders/{id}'),
+        new Get(
+            uriTemplate: '/v1/folders/{id}',
+            openapi: new Model\Operation(
+                summary: 'Récupère un dossier par son UUID.',
+                description: 'Retourne les métadonnées d\'un dossier (id, name, parentId, ownerId, createdAt).',
+            ),
+        ),
+        new GetCollection(
+            uriTemplate: '/v1/folders',
+            openapi: new Model\Operation(
+                summary: 'Liste tous les dossiers (paginé).',
+                description: 'Retourne la liste paginée des dossiers de l\'utilisateur courant.',
+            ),
+        ),
+        new Post(
+            uriTemplate: '/v1/folders',
+            openapi: new Model\Operation(
+                summary: 'Crée un nouveau dossier.',
+                description: 'Crée un dossier. `parentId` est optionnel ; si absent, le dossier est à la racine.',
+            ),
+        ),
+        new Patch(
+            uriTemplate: '/v1/folders/{id}',
+            openapi: new Model\Operation(
+                summary: 'Met à jour un dossier.',
+                description: 'Permet de renommer le dossier ou de déplacer dans un autre parent (`parentId`).',
+            ),
+        ),
+        new Delete(
+            uriTemplate: '/v1/folders/{id}',
+            openapi: new Model\Operation(
+                summary: 'Supprime un dossier.',
+                description: 'Supprime le dossier. Attention : les sous-dossiers et fichiers liés doivent être supprimés préalablement.',
+            ),
+        ),
     ],
     provider: FolderProvider::class,
     processor: FolderProcessor::class,
