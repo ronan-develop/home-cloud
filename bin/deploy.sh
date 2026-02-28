@@ -47,8 +47,8 @@ SSH_PORT=8888
 GIT_REPO="https://github.com/ronan-develop/home-cloud"
 GIT_BRANCH="main"
 # PHP CLI sur o2switch (ajuster si version différente)
-PHP_BIN="/usr/local/php82/bin/php"
-COMPOSER_BIN="/usr/local/php82/bin/composer"
+PHP_BIN="/usr/local/bin/php"
+COMPOSER_BIN="/opt/cpanel/composer/bin/composer"
 
 # ── Questionnaire ─────────────────────────────────────────────────────────────
 title "═══════════════════════════════════════"
