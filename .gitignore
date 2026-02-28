@@ -17,3 +17,7 @@
 ###> lexik/jwt-authentication-bundle ###
 /config/jwt/*.pem
 ###< lexik/jwt-authentication-bundle ###
+
+# Secrets locaux non versionnés
+/.secrets
+id_rsa
