@@ -18,7 +18,7 @@ final class Version20260227000001 extends AbstractMigration
     {
         $this->addSql(<<<'SQL'
             CREATE TABLE users (
-                id CHAR(36) NOT NULL COMMENT '(DC2Type:uuid)',
+                id BINARY(16) NOT NULL COMMENT '(DC2Type:uuid)',
                 email VARCHAR(180) NOT NULL,
                 display_name VARCHAR(100) NOT NULL,
                 created_at DATETIME NOT NULL COMMENT '(DC2Type:datetime_immutable)',
