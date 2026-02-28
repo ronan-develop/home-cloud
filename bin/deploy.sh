@@ -1,17 +1,9 @@
 #!/usr/bin/env bash
 # =============================================================================
 # HomeCloud — Script de déploiement sur o2switch
-# Usage : bash bin/deploy.sh
-#
-# Ce script :
-#   1. Demande le prénom de l'utilisateur
-#   2. Se connecte en SSH sur ron2cuba@lenouvel.me
-#   3. Clone/met à jour le repo sur le serveur
-#   4. Génère .env.local avec toutes les variables de prod
-#   5. Installe les dépendances Composer
-#   6. Lance les migrations Doctrine
-#   7. Tente de créer la base de données MySQL via SSH
-#      → Si impossible : affiche la checklist cPanel à faire manuellement
+# Usage :
+#   bash bin/deploy.sh           → Premier déploiement (setup complet)
+#   bash bin/deploy.sh --update  → Mise à jour du code uniquement
 # =============================================================================
 
 # ── Chargement des secrets locaux (non versionnés) ────────────────────────────
@@ -25,6 +17,12 @@ if [[ -f "$SECRETS_FILE" ]]; then
 fi
 
 set -euo pipefail
+
+# ── Mode : déploiement initial ou mise à jour ─────────────────────────────────
+UPDATE_MODE=false
+if [[ "${1:-}" == "--update" ]]; then
+    UPDATE_MODE=true
+fi
 
 # ── Prérequis o2switch ────────────────────────────────────────────────────────
 # Avant de lancer ce script, vous devez avoir :
@@ -68,7 +66,11 @@ COMPOSER_BIN="/opt/cpanel/composer/bin/composer"
 
 # ── Questionnaire ─────────────────────────────────────────────────────────────
 title "═══════════════════════════════════════"
-title "  HomeCloud — Déploiement o2switch"
+if [[ "$UPDATE_MODE" == true ]]; then
+    title "  HomeCloud — Mise à jour o2switch"
+else
+    title "  HomeCloud — Déploiement o2switch"
+fi
 title "═══════════════════════════════════════"
 echo ""
 echo -e "${YELLOW}  Prérequis avant de continuer :${NC}"
@@ -119,39 +121,41 @@ if [[ "$CONFIRM" != "o" && "$CONFIRM" != "O" ]]; then
 fi
 
 # ── Secrets à générer localement ─────────────────────────────────────────────
-title "── Génération des secrets ──────────────"
+if [[ "$UPDATE_MODE" == false ]]; then
+    title "── Génération des secrets ──────────────"
 
-APP_SECRET=$(php -r "echo bin2hex(random_bytes(16));")
-success "APP_SECRET généré"
+    APP_SECRET=$(php -r "echo bin2hex(random_bytes(16));")
+    success "APP_SECRET généré"
 
-APP_ENCRYPTION_KEY=$(php -r "echo base64_encode(sodium_crypto_secretstream_xchacha20poly1305_keygen());")
-success "APP_ENCRYPTION_KEY générée"
+    APP_ENCRYPTION_KEY=$(php -r "echo base64_encode(sodium_crypto_secretstream_xchacha20poly1305_keygen());")
+    success "APP_ENCRYPTION_KEY générée"
 
-JWT_PASSPHRASE=$(php -r "echo bin2hex(random_bytes(24));")
-success "JWT_PASSPHRASE générée"
+    JWT_PASSPHRASE=$(php -r "echo bin2hex(random_bytes(24));")
+    success "JWT_PASSPHRASE générée"
 
-# ── Demande du mot de passe DB ────────────────────────────────────────────────
-title "── Base de données ─────────────────────"
-warn "o2switch : les bases de données doivent être créées via cPanel (Bases de données MySQL)."
-echo ""
-echo -e "  Nom de la base  : ${BOLD}${DB_NAME}${NC}"
-echo -e "  Utilisateur DB  : ${BOLD}${DB_USER}${NC}"
-echo ""
-
-if [[ -n "$DB_PASSWORD_PRESET" ]]; then
-    DB_PASSWORD="$DB_PASSWORD_PRESET"
-    success "Mot de passe DB chargé depuis DB_PASSWORD_PRESET"
-else
-    read -rsp "$(echo -e "${BOLD}Mot de passe MySQL pour ${DB_USER} (sera stocké dans .env.local) :${NC} ")" DB_PASSWORD
+    # ── Demande du mot de passe DB ────────────────────────────────────────────────
+    title "── Base de données ─────────────────────"
+    warn "o2switch : les bases de données doivent être créées via cPanel (Bases de données MySQL)."
     echo ""
-fi
+    echo -e "  Nom de la base  : ${BOLD}${DB_NAME}${NC}"
+    echo -e "  Utilisateur DB  : ${BOLD}${DB_USER}${NC}"
+    echo ""
 
-if [[ -z "$DB_PASSWORD" ]]; then
-    error "Le mot de passe DB ne peut pas être vide."
-    exit 1
-fi
+    if [[ -n "$DB_PASSWORD_PRESET" ]]; then
+        DB_PASSWORD="$DB_PASSWORD_PRESET"
+        success "Mot de passe DB chargé depuis DB_PASSWORD_PRESET"
+    else
+        read -rsp "$(echo -e "${BOLD}Mot de passe MySQL pour ${DB_USER} (sera stocké dans .env.local) :${NC} ")" DB_PASSWORD
+        echo ""
+    fi
 
-DATABASE_URL="mysql://${DB_USER}:${DB_PASSWORD}@127.0.0.1:3306/${DB_NAME}?serverVersion=mariadb-10.6.0&charset=utf8mb4"
+    if [[ -z "$DB_PASSWORD" ]]; then
+        error "Le mot de passe DB ne peut pas être vide."
+        exit 1
+    fi
+
+    DATABASE_URL="mysql://${DB_USER}:${DB_PASSWORD}@127.0.0.1:3306/${DB_NAME}?serverVersion=mariadb-10.6.0&charset=utf8mb4"
+fi
 
 # ── Vérification SSH ──────────────────────────────────────────────────────────
 title "── Connexion SSH ───────────────────────"
@@ -237,59 +241,65 @@ SSHSCRIPT
 success "Repo déployé sur le serveur"
 
 # ── Envoi du .env.local ───────────────────────────────────────────────────────
-info "Envoi du .env.local…"
-echo "$ENV_LOCAL" | ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
-    "cat > ${DEPLOY_PATH}/.env.local && chmod 600 ${DEPLOY_PATH}/.env.local"
-success ".env.local déployé"
+if [[ "$UPDATE_MODE" == false ]]; then
+    info "Envoi du .env.local…"
+    echo "$ENV_LOCAL" | ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
+        "cat > ${DEPLOY_PATH}/.env.local && chmod 600 ${DEPLOY_PATH}/.env.local"
+    success ".env.local déployé"
 
-# ── Génération des clés JWT ───────────────────────────────────────────────────
-info "Génération des clés JWT…"
-ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
-    "cd ${DEPLOY_PATH} && ${PHP_BIN} bin/console lexik:jwt:generate-keypair --overwrite --no-interaction --env=prod"
-success "Clés JWT générées"
-
-# ── Tentative de création de la DB via SSH ────────────────────────────────────
-title "── Base de données MySQL ────────────────"
-
-DB_CREATED=false
-if ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
-    "mysql -u ${DB_USER} -p${DB_PASSWORD} -e 'SELECT 1;' ${DB_NAME}" &>/dev/null 2>&1; then
-    success "Base de données ${DB_NAME} accessible"
-    DB_CREATED=true
+    # ── Génération des clés JWT ───────────────────────────────────────────────────
+    info "Génération des clés JWT…"
+    ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
+        "cd ${DEPLOY_PATH} && ${PHP_BIN} bin/console lexik:jwt:generate-keypair --overwrite --no-interaction --env=prod"
+    success "Clés JWT générées"
 fi
 
-if [ "$DB_CREATED" = false ]; then
-    warn "La base de données n'est pas accessible via SSH."
-    echo ""
-    echo -e "${BOLD}════════════════════════════════════════════════════════${NC}"
-    echo -e "${BOLD}  ⚠️  ACTION MANUELLE REQUISE dans cPanel o2switch${NC}"
-    echo -e "${BOLD}════════════════════════════════════════════════════════${NC}"
-    echo ""
-    echo "  1. Connectez-vous sur : https://cpanel.o2switch.net"
-    echo "     (ou votre URL cPanel o2switch)"
-    echo ""
-    echo "  2. Rubrique 'Bases de données MySQL' :"
-    echo "     → Créer la base :      ${BOLD}${DB_NAME}${NC}"
-    echo "     → Créer l'utilisateur : ${BOLD}${DB_USER}${NC}"
-    echo "       Mot de passe :         ${BOLD}(celui que vous avez saisi)${NC}"
-    echo "     → Associer l'utilisateur à la base"
-    echo "       avec ${BOLD}TOUS LES PRIVILÈGES${NC}"
-    echo ""
-    echo "  3. Rubrique 'Sous-domaines' :"
-    echo "     → Créer le sous-domaine : ${BOLD}${PRENOM_LOWER}.lenouvel.me${NC}"
-    echo "       Répertoire racine :      ${BOLD}${DEPLOY_PATH}/public${NC}"
-    echo ""
-    echo "  4. Une fois la DB créée, relancez ce script ou exécutez"
-    echo "     manuellement sur le serveur :"
-    echo ""
-    echo "     ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_HOST}"
-    echo "     cd ${DEPLOY_PATH}"
-    echo "     ${PHP_BIN} bin/console doctrine:migrations:migrate --no-interaction"
-    echo ""
-    echo -e "${BOLD}════════════════════════════════════════════════════════${NC}"
-    echo ""
+# ── Tentative de création de la DB via SSH ────────────────────────────────────
+if [[ "$UPDATE_MODE" == false ]]; then
+    title "── Base de données MySQL ────────────────"
 
-    if [[ -n "${RUN_MIGRATIONS_PRESET:-}" ]]; then RUN_MIGRATIONS="$RUN_MIGRATIONS_PRESET"; else read -rp "$(echo -e "${BOLD}La DB est-elle configurée dans cPanel ? Lancer les migrations maintenant ? [o/N] :${NC} ")" RUN_MIGRATIONS; fi
+    DB_CREATED=false
+    if ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
+        "mysql -u ${DB_USER} -p${DB_PASSWORD} -e 'SELECT 1;' ${DB_NAME}" &>/dev/null 2>&1; then
+        success "Base de données ${DB_NAME} accessible"
+        DB_CREATED=true
+    fi
+
+    if [ "$DB_CREATED" = false ]; then
+        warn "La base de données n'est pas accessible via SSH."
+        echo ""
+        echo -e "${BOLD}════════════════════════════════════════════════════════${NC}"
+        echo -e "${BOLD}  ⚠️  ACTION MANUELLE REQUISE dans cPanel o2switch${NC}"
+        echo -e "${BOLD}════════════════════════════════════════════════════════${NC}"
+        echo ""
+        echo "  1. Connectez-vous sur : https://cpanel.o2switch.net"
+        echo "     (ou votre URL cPanel o2switch)"
+        echo ""
+        echo "  2. Rubrique 'Bases de données MySQL' :"
+        echo "     → Créer la base :      ${BOLD}${DB_NAME}${NC}"
+        echo "     → Créer l'utilisateur : ${BOLD}${DB_USER}${NC}"
+        echo "       Mot de passe :         ${BOLD}(celui que vous avez saisi)${NC}"
+        echo "     → Associer l'utilisateur à la base"
+        echo "       avec ${BOLD}TOUS LES PRIVILÈGES${NC}"
+        echo ""
+        echo "  3. Rubrique 'Sous-domaines' :"
+        echo "     → Créer le sous-domaine : ${BOLD}${PRENOM_LOWER}.lenouvel.me${NC}"
+        echo "       Répertoire racine :      ${BOLD}${DEPLOY_PATH}/public${NC}"
+        echo ""
+        echo "  4. Une fois la DB créée, relancez ce script ou exécutez"
+        echo "     manuellement sur le serveur :"
+        echo ""
+        echo "     ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_HOST}"
+        echo "     cd ${DEPLOY_PATH}"
+        echo "     ${PHP_BIN} bin/console doctrine:migrations:migrate --no-interaction"
+        echo ""
+        echo -e "${BOLD}════════════════════════════════════════════════════════${NC}"
+        echo ""
+
+        if [[ -n "${RUN_MIGRATIONS_PRESET:-}" ]]; then RUN_MIGRATIONS="$RUN_MIGRATIONS_PRESET"; else read -rp "$(echo -e "${BOLD}La DB est-elle configurée dans cPanel ? Lancer les migrations maintenant ? [o/N] :${NC} ")" RUN_MIGRATIONS; fi
+    else
+        RUN_MIGRATIONS="o"
+    fi
 else
     RUN_MIGRATIONS="o"
 fi
@@ -310,32 +320,39 @@ fi
 
 # ── Résumé final ──────────────────────────────────────────────────────────────
 title "═══════════════════════════════════════"
-title "  Déploiement terminé 🎉"
+if [[ "$UPDATE_MODE" == true ]]; then
+    title "  Mise à jour terminée 🎉"
+else
+    title "  Déploiement terminé 🎉"
+fi
 title "═══════════════════════════════════════"
 echo ""
 echo -e "  URL de l'API    : ${GREEN}https://${SUBDOMAIN}/api${NC}"
 echo -e "  Swagger UI      : ${GREEN}https://${SUBDOMAIN}/api/docs${NC}"
 echo -e "  Chemin serveur  : ${BOLD}${DEPLOY_PATH}${NC}"
 echo ""
-echo -e "${YELLOW}  ► Créer le premier utilisateur :${NC}"
-echo ""
-echo "    ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_HOST}"
-echo "    cd ${DEPLOY_PATH}"
-echo "    ${PHP_BIN} bin/console app:create-user <email> <password> \"${PRENOM}\""
-echo ""
 
-# ── Création du premier utilisateur (optionnel) ───────────────────────────────
-if [[ -z "${CREATE_USER_PRESET:-}" ]]; then
-    read -rp "$(echo -e "${BOLD}Créer le premier utilisateur maintenant ? [o/N] :${NC} ")" CREATE_USER
-else
-    CREATE_USER="$CREATE_USER_PRESET"
-fi
-
-if [[ "$CREATE_USER" == "o" || "$CREATE_USER" == "O" ]]; then
-    read -rp "Email : " USER_EMAIL
-    read -rsp "Mot de passe : " USER_PASSWORD
+# ── Création du premier utilisateur (premier déploiement uniquement) ──────────
+if [[ "$UPDATE_MODE" == false ]]; then
+    echo -e "${YELLOW}  ► Créer le premier utilisateur :${NC}"
     echo ""
-    ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
-        "cd ${DEPLOY_PATH} && ${PHP_BIN} bin/console app:create-user '${USER_EMAIL}' '${USER_PASSWORD}' '${PRENOM}' --env=prod"
-    success "Utilisateur créé"
+    echo "    ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_HOST}"
+    echo "    cd ${DEPLOY_PATH}"
+    echo "    ${PHP_BIN} bin/console app:create-user <email> <password> \"${PRENOM}\""
+    echo ""
+
+    if [[ -z "${CREATE_USER_PRESET:-}" ]]; then
+        read -rp "$(echo -e "${BOLD}Créer le premier utilisateur maintenant ? [o/N] :${NC} ")" CREATE_USER
+    else
+        CREATE_USER="$CREATE_USER_PRESET"
+    fi
+
+    if [[ "$CREATE_USER" == "o" || "$CREATE_USER" == "O" ]]; then
+        read -rp "Email : " USER_EMAIL
+        read -rsp "Mot de passe : " USER_PASSWORD
+        echo ""
+        ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
+            "cd ${DEPLOY_PATH} && ${PHP_BIN} bin/console app:create-user '${USER_EMAIL}' '${USER_PASSWORD}' '${PRENOM}' --env=prod"
+        success "Utilisateur créé"
+    fi
 fi
