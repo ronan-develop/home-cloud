@@ -1,25 +1,6 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-02-28 (Phase 6 Déploiement o2switch ✅ — Phase 7 Frontend en cours)
-
----
-
-## 🔴 AVERTISSEMENT CRITIQUE — CLÉ DE CHIFFREMENT
-
-```
-╔══════════════════════════════════════════════════════════════════════════════╗
-║  ⚠️  NE JAMAIS RÉGÉNÉRER APP_ENCRYPTION_KEY SI DES FICHIERS EXISTENT       ║
-║                                                                              ║
-║  Tous les fichiers uploadés sont chiffrés avec cette clé.                   ║
-║  Changer la clé = TOUS les fichiers deviennent ILLISIBLES et IRRÉCUPÉRABLES ║
-║                                                                              ║
-║  Procédure si changement de clé OBLIGATOIRE :                               ║
-║    1. Déchiffrer TOUS les fichiers avec l'ancienne clé                       ║
-║    2. Générer la nouvelle clé                                                ║
-║    3. Rechiffrer TOUS les fichiers avec la nouvelle clé                      ║
-║    4. Vérifier chaque fichier avant de supprimer l'ancienne clé              ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-```
+> Dernière mise à jour : 2026-02-28 (Phase 8 Refactor stockage ✅ — en cours de merge)
 
 ---
 
@@ -101,14 +82,23 @@
 | 2026-02-28 | 🚀 **Déploiement prod validé** — API live sur `https://ronan.lenouvel.me/api`, login JWT fonctionnel ✅ |
 | 2026-02-28 | 🔧 **fix(deploy)** — génération clés JWT via `lexik:jwt:generate-keypair` après envoi `.env.local` (évite mismatch passphrase) ✅ |
 | 2026-02-28 | ✨ **feat(deploy)** — mode `--update` : mise à jour code seule (git pull + composer + migrations + cache) sans regénérer secrets/JWT ✅ |
+| 2026-02-28 | ♻️ **Phase 8 — refactor/storage-neutralize** — suppression chiffrement global XChaCha20-Poly1305 ✅ |
+| 2026-02-28 | ♻️ **refactor(StorageService)** — stockage en clair pour fichiers ordinaires ; `.bin` pour extensions neutralisées ✅ |
+| 2026-02-28 | ✨ **feat(File)** — colonne `is_neutralized` (migration + entité + getter) ✅ |
+| 2026-02-28 | ♻️ **refactor(FileUploadController)** — `sh`, `py`, `rb`, `pl`, `bash` déplacés de BLOQUÉS vers NEUTRALISÉS ✅ |
+| 2026-02-28 | ♻️ **refactor(FileDownloadController)** — suppression décryptage, service direct sur fichier disque ✅ |
+| 2026-02-28 | ♻️ **refactor(MediaThumbnailController)** — suppression décryptage, streaming direct ✅ |
+| 2026-02-28 | ♻️ **refactor(ThumbnailService,ExifService)** — suppression dépendance `EncryptionServiceInterface` ✅ |
+| 2026-02-28 | 🛠️ **chore(EncryptionService)** — suppression de `EncryptionService` + `EncryptionServiceInterface` (plus aucun consommateur) ✅ |
+| 2026-02-28 | 34/34 tests passing ✅ (FileTest — Phase 8 GREEN complet) |
 
 ---
 
 ## 🚧 En cours
 
-- `main` propre — 97/97 tests ✅ (sans `--no-coverage`)
-- Phase 6 Déploiement o2switch terminée ✅
-- **Phase 7 — Frontend** en cours de démarrage
+- `refactor/storage-neutralize` — Phase 8 terminée, à merger dans `main`
+- **Phase 8** — 34/34 tests ✅, prêt pour merge
+- **Phase 7 — Frontend** en attente (post-merge Phase 8)
 
 ### 🚀 Déploiement o2switch — Infos prod
 
@@ -295,13 +285,16 @@ Le MIME type est fourni par le client — il peut être falsifié. Cependant, po
 var/storage/
 ├── {year}/
 │   └── {month}/
-│       └── {uuid}.{ext}        ← fichiers originaux
+│       ├── {uuid}.{ext}        ← fichiers ordinaires (en clair)
+│       └── {uuid}.bin          ← fichiers neutralisés (ext dangereuse, contenu intact)
 └── thumbs/
-    └── {uuid}.jpg              ← thumbnails (320px wide, JPEG q=80)
+    └── {uuid}.jpg              ← thumbnails (320px wide, JPEG q=80, en clair)
 ```
 
-- **Chemin en DB** : relatif à `var/storage/` (ex : `2026/02/uuid.jpg`). Permet de déplacer le stockage sans migration DB.
+- **Chemin en DB** : relatif à `var/storage/` (ex : `2026/02/uuid.jpg` ou `2026/02/uuid.bin`). Permet de déplacer le stockage sans migration DB.
 - **`app.storage_dir`** : paramètre Symfony injecté dans `StorageService` et `ThumbnailService`. En prod, pointer vers un volume externe.
+- **`is_neutralized`** : flag booléen en DB pour distinguer les fichiers `.bin` (permet au frontend d'afficher le vrai nom et l'icône correcte).
+- **Download** : `Content-Disposition: attachment; filename="image.svg"` restitue toujours l'`originalName` stocké en DB — transparent pour l'utilisateur.
 
 ---
 
@@ -359,41 +352,35 @@ Audit réalisé avant merge de `feat/media`. Deux branches créées : `fix/secur
 
 ---
 
-### 9. Chiffrement au repos — feat/encryption-at-rest
+### 9. Neutralisation ciblée — Phase 8 (`refactor/storage-neutralize`) ✅
 
-**Objectifs distincts :**
-1. **Confidentialité** : si la DB est compromise (les paths de fichiers sont exposés), les fichiers sur disque sont illisibles sans `APP_ENCRYPTION_KEY`.
-2. **Neutralisation** : les fichiers "sensibles" (SVG, HTML, JS…) sont stockés comme binaire chiffré opaque → non exécutables sur le serveur même en cas de path traversal.
+> **Phase 3 (chiffrement global XChaCha20-Poly1305) remplacée par la Phase 8.** Le chiffrement de tous les fichiers était coûteux en CPU et complexifiait inutilement le pipeline. Seuls les fichiers activement dangereux côté navigateur/serveur sont neutralisés.
 
-**Algorithme : XChaCha20-Poly1305 (sodium secretstream)**
-- Built-in PHP 8 (libsodium natif, zéro dépendance)
-- Authentifié : détecte toute falsification du fichier (auth tag par chunk)
-- Streaming : lecture/écriture par chunks de 8 Ko → aucune contrainte RAM pour les gros fichiers
+**Stratégie en trois niveaux :**
 
-**Format sur disque :**
-```
-HEADER (24 bytes) | chunk1_len (4B) | chunk1_chiffré | chunk2_len | chunk2_chiffré | ...
-```
+| Catégorie | Extensions | Comportement | Stocké sur disque |
+|-----------|------------|--------------|-------------------|
+| **Bloqués** | `php*`, `phar`, `exe`, `msi`, `bat`, `cmd`, `ps1`, `jar`, `asp`, `aspx`, `jsp`… | 400 — refusés à l'upload | — |
+| **Neutralisés** | `sh`, `bash`, `py`, `rb`, `pl`, `svg`, `svgz`, `html`, `htm`, `js`, `mjs`, `css`, `xml`, `xsl`… | Renommés `.bin` — non interprétables par le serveur | `{uuid}.bin` (contenu intact) |
+| **Directs** | `jpg`, `pdf`, `mp4`, `docx`, `txt`… | Aucun traitement | `{uuid}.{ext}` (en clair) |
 
-**Pipeline :**
-| Étape | Comportement |
-|-------|--------------|
-| Upload (`StorageService::store`) | move() → encrypt() en place → fichier chiffré |
-| Download (`FileDownloadController`) | decryptToTempFile() pour finfo MIME → StreamedResponse via decryptToStream() |
-| Thumbnail génération (`ThumbnailService`) | decryptToTempFile() → GD → imagejpeg() → encrypt() thumbnail → unlink temp |
-| EXIF (`ExifService`) | decryptToTempFile() → exif_read_data() → unlink temp |
-| Thumbnail download (`MediaThumbnailController`) | decryptToStream() → StreamedResponse |
+**Pourquoi le renommage `.bin` suffit :**
+- Le webserver (`Apache`/`nginx`) interprète un fichier selon son extension — pas son contenu.
+- `var/storage/` est hors de `public/` : inaccessible directement par le web (défense primaire).
+- `.bin` n'est associé à aucun interpréteur connu.
 
-**Fichiers sensibles acceptés (neutralisés par chiffrement) :**
-`svg`, `svgz`, `html`, `htm`, `xhtml`, `xml`, `xsl`, `xslt`, `js`, `mjs`, `css`
+**Download transparent :**
+- `Content-Disposition: attachment; filename="image.svg"` → l'`originalName` DB est restitué.
+- L'utilisateur reçoit son fichier avec le bon nom, le bon MIME.
 
-**Toujours bloqués (défense en profondeur) :**
-`php`, `phar`, `exe`, `sh`, `py`, `rb`, `asp`, `jar`, et tous les exécutables OS
+**`is_neutralized` en DB :**
+- Permet au frontend de distinguer les fichiers neutralisés (icône, badge).
+- Migration `Version20260228123005` : `ALTER TABLE files ADD neutralized TINYINT(1) DEFAULT 0`.
 
-**Clé :**
-- `APP_ENCRYPTION_KEY` dans `.env.local` (jamais commité)
-- 32 bytes, base64 encodé
-- Générer : `php -r "echo base64_encode(sodium_crypto_secretstream_xchacha20poly1305_keygen());"`
+**Supprimé en Phase 8 :**
+- `EncryptionService` (XChaCha20-Poly1305 secretstream)
+- `EncryptionServiceInterface`
+- Appels à `encrypt()`, `decrypt()`, `decryptToTempFile()` dans tous les services
 
 ---
 
@@ -405,30 +392,24 @@ HEADER (24 bytes) | chunk1_len (4B) | chunk1_chiffré | chunk2_len | chunk2_chif
 
 ---
 
-### 🔵 Phase 8 — Refactor stockage : neutralisation ciblée (backlog)
+### 🔵 Phase 8 — Refactor stockage : neutralisation ciblée ✅
 
-**Contexte :** le chiffrement global (XChaCha20) de tous les fichiers est trop coûteux en CPU. Seuls les fichiers "dangereux côté navigateur" doivent être neutralisés.
+Phase terminée. Voir section 9 pour les détails techniques.
 
-**Règles cibles :**
-
-| Catégorie | Extensions | Comportement |
-|-----------|-----------|--------------|
-| **Bloqués** | `php*`, `phar`, `exe`, `msi`, `bat`, `cmd`, `ps1`, `jar` | 400 — refusés |
-| **Neutralisés** | `sh`, `bash`, `py`, `rb`, `pl`, `svg`, `svgz`, `html`, `htm`, `js`, `mjs`, `css`, `xml`, `xsl` | Stockés en `.bin` sur disque — reversible au download (Content-Disposition restitue le vrai nom) |
-| **Directs** | tout le reste (`jpg`, `pdf`, `mp4`, `docx`…) | Stockés tels quels, aucun chiffrement |
-
-**Branche :** `refactor/storage-neutralize`
-
-**Ordre TDD :**
-1. `enc-red-tests` — RED : écrire les tests (upload → disque, download → nom restitué)
-2. `enc-migration-neutralized` — migration `is_neutralized` sur `files`
-3. `enc-green-storage` — GREEN : StorageService sans chiffrement global
-4. `enc-green-download` — GREEN : FileDownloadController sans décryptage
-5. `enc-green-thumb-exif` — GREEN : ExifService + ThumbnailService sans décryptage
-6. `enc-refactor-cleanup` — REFACTOR : supprimer EncryptionService si plus utilisé
-7. `enc-done` — vérification finale, merge dans main
+### 🔵 Phase 7 — Frontend (stack choisie)
 
 **Stack :** Twig + Symfony UX Live Components + Stimulus + Tailwind CSS v4 + AssetMapper
+
+| Composant | Choix |
+|---|---|
+| Templates | Twig (déjà installé) |
+| Interactivité | Symfony UX Live Components |
+| JS progressif | Stimulus |
+| CSS | Tailwind CSS v4 (standalone CLI, sans Node.js) |
+| Assets | Symfony AssetMapper |
+| Auth web | Session Symfony (séparée du JWT API) |
+
+**Principe :** le frontend appelle les services Symfony directement. Le JWT + REST API restent la couche pour les apps mobiles (futures).
 
 - [ ] **A — Fondation**
   - [ ] Installer AssetMapper + `symfony/ux-live-component`
