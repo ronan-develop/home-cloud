@@ -333,4 +333,19 @@ echo "    ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_HOST}"
 echo "    cd ${DEPLOY_PATH}"
 echo "    ${PHP_BIN} bin/console app:create-user <email> <password> \"${PRENOM}\""
 echo ""
-SSHSCRIPT
+
+# ── Création du premier utilisateur (optionnel) ───────────────────────────────
+if [[ -z "${CREATE_USER_PRESET:-}" ]]; then
+    read -rp "$(echo -e "${BOLD}Créer le premier utilisateur maintenant ? [o/N] :${NC} ")" CREATE_USER
+else
+    CREATE_USER="$CREATE_USER_PRESET"
+fi
+
+if [[ "$CREATE_USER" == "o" || "$CREATE_USER" == "O" ]]; then
+    read -rp "Email : " USER_EMAIL
+    read -rsp "Mot de passe : " USER_PASSWORD
+    echo ""
+    ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
+        "cd ${DEPLOY_PATH} && ${PHP_BIN} bin/console app:create-user '${USER_EMAIL}' '${USER_PASSWORD}' '${PRENOM}' --env=prod"
+    success "Utilisateur créé"
+fi
