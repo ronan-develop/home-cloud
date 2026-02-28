@@ -14,6 +14,16 @@
 #      → Si impossible : affiche la checklist cPanel à faire manuellement
 # =============================================================================
 
+# ── Chargement des secrets locaux (non versionnés) ────────────────────────────
+# Crée un fichier .secrets à la racine du projet (voir .gitignore).
+# Il sera sourcé automatiquement si présent.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SECRETS_FILE="${SCRIPT_DIR}/../.secrets"
+if [[ -f "$SECRETS_FILE" ]]; then
+    # shellcheck source=../.secrets
+    source "$SECRETS_FILE"
+fi
+
 set -euo pipefail
 
 # ── Prérequis o2switch ────────────────────────────────────────────────────────
@@ -45,6 +55,12 @@ SSH_USER="ron2cuba"
 SSH_HOST="lenouvel.me"
 SSH_PORT=8888
 GIT_REPO="https://github.com/ronan-develop/home-cloud"
+
+# Options SSH : utilise la clé dédiée si définie dans .secrets
+SSH_KEY_OPTS=""
+if [[ -n "${SSH_KEY_PATH:-}" && -f "$SSH_KEY_PATH" ]]; then
+    SSH_KEY_OPTS="-i ${SSH_KEY_PATH}"
+fi
 GIT_BRANCH="main"
 # PHP CLI sur o2switch (ajuster si version différente)
 PHP_BIN="/opt/cpanel/ea-php84/root/usr/bin/php"
@@ -60,14 +76,19 @@ echo "  1. Votre IP est whitelistée dans cPanel → Outils → 'Autorisation SS
 echo "     Voir votre IP : https://mon-ip.io"
 echo "  2. Vous avez accès SSH : ssh ${SSH_USER}@${SSH_HOST}"
 echo ""
-read -rp "$(echo -e "${BOLD}Les prérequis SSH sont remplis ? [o/N] :${NC} ")" PREREQ
+if [[ -n "${PREREQ_PRESET:-}" ]]; then PREREQ="$PREREQ_PRESET"; else read -rp "$(echo -e "${BOLD}Les prérequis SSH sont remplis ? [o/N] :${NC} ")" PREREQ; fi
 if [[ "$PREREQ" != "o" && "$PREREQ" != "O" ]]; then
     warn "Whitelistez votre IP dans cPanel → Outils → 'Autorisation SSH' puis relancez."
     exit 0
 fi
 
 echo ""
-read -rp "$(echo -e "${BOLD}Prénom de l'utilisateur :${NC} ")" PRENOM
+if [[ -n "${PRENOM_PRESET:-}" ]]; then
+    PRENOM="$PRENOM_PRESET"
+    success "Prénom chargé depuis PRENOM_PRESET : ${PRENOM}"
+else
+    read -rp "$(echo -e "${BOLD}Prénom de l'utilisateur :${NC} ")" PRENOM
+fi
 
 if [[ -z "$PRENOM" ]]; then
     error "Le prénom ne peut pas être vide."
@@ -91,7 +112,7 @@ echo -e "  Base de données : ${BOLD}${DB_NAME}${NC}"
 echo -e "  Utilisateur DB  : ${BOLD}${DB_USER}${NC}"
 echo ""
 
-read -rp "$(echo -e "${BOLD}Continuer ? [o/N] :${NC} ")" CONFIRM
+if [[ -n "${CONFIRM_PRESET:-}" ]]; then CONFIRM="$CONFIRM_PRESET"; else read -rp "$(echo -e "${BOLD}Continuer ? [o/N] :${NC} ")" CONFIRM; fi
 if [[ "$CONFIRM" != "o" && "$CONFIRM" != "O" ]]; then
     info "Annulé."
     exit 0
@@ -116,8 +137,14 @@ echo ""
 echo -e "  Nom de la base  : ${BOLD}${DB_NAME}${NC}"
 echo -e "  Utilisateur DB  : ${BOLD}${DB_USER}${NC}"
 echo ""
-read -rsp "$(echo -e "${BOLD}Mot de passe MySQL pour ${DB_USER} (sera stocké dans .env.local) :${NC} ")" DB_PASSWORD
-echo ""
+
+if [[ -n "$DB_PASSWORD_PRESET" ]]; then
+    DB_PASSWORD="$DB_PASSWORD_PRESET"
+    success "Mot de passe DB chargé depuis DB_PASSWORD_PRESET"
+else
+    read -rsp "$(echo -e "${BOLD}Mot de passe MySQL pour ${DB_USER} (sera stocké dans .env.local) :${NC} ")" DB_PASSWORD
+    echo ""
+fi
 
 if [[ -z "$DB_PASSWORD" ]]; then
     error "Le mot de passe DB ne peut pas être vide."
@@ -130,7 +157,7 @@ DATABASE_URL="mysql://${DB_USER}:${DB_PASSWORD}@127.0.0.1:3306/${DB_NAME}?server
 title "── Connexion SSH ───────────────────────"
 info "Test de connexion SSH vers ${SSH_USER}@${SSH_HOST}…"
 
-if ! ssh -p "${SSH_PORT}" -o ConnectTimeout=10 "${SSH_USER}@${SSH_HOST}" "echo OK" &>/dev/null; then
+if ! ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" -o ConnectTimeout=10 "${SSH_USER}@${SSH_HOST}" "echo OK" &>/dev/null; then
     error "Impossible de se connecter en SSH."
     error "Vérifiez que votre IP est bien whitelistée dans cPanel → Outils → 'Autorisation SSH'"
     exit 1
@@ -138,7 +165,7 @@ fi
 success "Connexion SSH OK"
 
 # Récupère le $HOME réel du serveur pour construire le chemin de déploiement
-REMOTE_HOME=$(ssh -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" 'echo $HOME')
+REMOTE_HOME=$(ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" 'echo $HOME')
 DEPLOY_PATH="${REMOTE_HOME}/${SUBDOMAIN}"
 info "Chemin de déploiement : ${DEPLOY_PATH}"
 
@@ -162,7 +189,7 @@ JWT_TTL=3600
 ENVEOF
 )
 
-ssh -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" bash -s -- \
+ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" bash -s -- \
     "$SUBDOMAIN" "$GIT_REPO" "$GIT_BRANCH" "$PHP_BIN" "$COMPOSER_BIN" "$JWT_PASSPHRASE" \
     <<'SSHSCRIPT'
 set -euo pipefail
@@ -227,7 +254,7 @@ success "Repo déployé sur le serveur"
 
 # ── Envoi du .env.local ───────────────────────────────────────────────────────
 info "Envoi du .env.local…"
-echo "$ENV_LOCAL" | ssh -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
+echo "$ENV_LOCAL" | ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
     "cat > ${DEPLOY_PATH}/.env.local && chmod 600 ${DEPLOY_PATH}/.env.local"
 success ".env.local déployé"
 
@@ -235,7 +262,7 @@ success ".env.local déployé"
 title "── Base de données MySQL ────────────────"
 
 DB_CREATED=false
-if ssh -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
+if ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
     "mysql -u ${DB_USER} -p${DB_PASSWORD} -e 'SELECT 1;' ${DB_NAME}" &>/dev/null 2>&1; then
     success "Base de données ${DB_NAME} accessible"
     DB_CREATED=true
@@ -272,7 +299,7 @@ if [ "$DB_CREATED" = false ]; then
     echo -e "${BOLD}════════════════════════════════════════════════════════${NC}"
     echo ""
 
-    read -rp "$(echo -e "${BOLD}La DB est-elle configurée dans cPanel ? Lancer les migrations maintenant ? [o/N] :${NC} ")" RUN_MIGRATIONS
+    if [[ -n "${RUN_MIGRATIONS_PRESET:-}" ]]; then RUN_MIGRATIONS="$RUN_MIGRATIONS_PRESET"; else read -rp "$(echo -e "${BOLD}La DB est-elle configurée dans cPanel ? Lancer les migrations maintenant ? [o/N] :${NC} ")" RUN_MIGRATIONS; fi
 else
     RUN_MIGRATIONS="o"
 fi
@@ -280,13 +307,13 @@ fi
 # ── Migrations ────────────────────────────────────────────────────────────────
 if [[ "$RUN_MIGRATIONS" == "o" || "$RUN_MIGRATIONS" == "O" ]]; then
     info "Lancement des migrations Doctrine…"
-    ssh -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
+    ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
         "cd ${DEPLOY_PATH} && ${PHP_BIN} bin/console doctrine:migrations:migrate --no-interaction --env=prod"
     success "Migrations appliquées"
 
     # Cache Symfony
     info "Warm-up du cache Symfony…"
-    ssh -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
+    ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
         "cd ${DEPLOY_PATH} && ${PHP_BIN} bin/console cache:warmup --env=prod" 2>/dev/null || true
     success "Cache généré"
 fi
