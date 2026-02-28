@@ -181,11 +181,11 @@ ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" bash -s -- \
     <<'SSHSCRIPT'
 set -euo pipefail
 
-SUBDOMAIN="$1"
-GIT_REPO="$2"
-GIT_BRANCH="$3"
-PHP_BIN="$4"
-COMPOSER_BIN="$5"
+SUBDOMAIN="${1:-}"
+GIT_REPO="${2:-}"
+GIT_BRANCH="${3:-}"
+PHP_BIN="${4:-}"
+COMPOSER_BIN="${5:-}"
 JWT_PASSPHRASE="${6:-}"
 
 # Calcul du chemin réel côté serveur (évite les erreurs de chemin absolu)
