@@ -56,7 +56,12 @@ final class MediaThumbnailController extends AbstractController
         }
 
         $response = new StreamedResponse(function () use ($absolutePath): void {
-            $this->encryption->decryptToStream($absolutePath, fopen('php://output', 'wb'));
+            $tempPath = $this->encryption->decryptToTempFile($absolutePath);
+            try {
+                readfile($tempPath);
+            } finally {
+                unlink($tempPath);
+            }
         });
 
         $response->headers->set('Content-Type', 'image/jpeg');

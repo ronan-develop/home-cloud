@@ -24,10 +24,4 @@ interface EncryptionServiceInterface
      * L'appelant est responsable de supprimer le fichier temporaire (unlink).
      */
     public function decryptToTempFile(string $sourcePath): string;
-
-    /**
-     * Déchiffre $sourcePath et écrit le contenu en clair dans $output (resource).
-     * Utilisé pour les StreamedResponse (zéro copie disque intermédiaire).
-     */
-    public function decryptToStream(string $sourcePath, mixed $output): void;
 }

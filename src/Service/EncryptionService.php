@@ -129,48 +129,4 @@ final class EncryptionService implements EncryptionServiceInterface
 
         return $tempPath;
     }
-
-    /**
-     * Déchiffre $sourcePath et écrit le contenu en clair directement dans $output (resource).
-     * Utilisé pour les StreamedResponse (aucun fichier temp, streaming direct vers HTTP).
-     *
-     * @param resource $output
-     *
-     * @throws \RuntimeException si le déchiffrement échoue
-     */
-    public function decryptToStream(string $sourcePath, mixed $output): void
-    {
-        $in = fopen($sourcePath, 'rb')
-            ?? throw new \RuntimeException("Cannot open encrypted file: $sourcePath");
-
-        try {
-            $header = fread($in, SODIUM_CRYPTO_SECRETSTREAM_XCHACHA20POLY1305_HEADERBYTES);
-            if ($header === false || strlen($header) !== SODIUM_CRYPTO_SECRETSTREAM_XCHACHA20POLY1305_HEADERBYTES) {
-                throw new \RuntimeException('Invalid encrypted file: missing header');
-            }
-
-            $state = sodium_crypto_secretstream_xchacha20poly1305_init_pull($header, $this->key);
-
-            while (!feof($in)) {
-                $lenBytes = fread($in, 4);
-                if ($lenBytes === false || strlen($lenBytes) < 4) {
-                    break;
-                }
-                $len = unpack('V', $lenBytes)[1];
-                $cipher = fread($in, $len);
-                if ($cipher === false || strlen($cipher) !== $len) {
-                    throw new \RuntimeException('Truncated encrypted chunk');
-                }
-                $result = sodium_crypto_secretstream_xchacha20poly1305_pull($state, $cipher);
-                if ($result === false) {
-                    throw new \RuntimeException('Decryption failed: authentication tag mismatch');
-                }
-                [$plain] = $result;
-                fwrite($output, $plain);
-            }
-        } finally {
-            fclose($in);
-            sodium_memzero($state);
-        }
-    }
 }

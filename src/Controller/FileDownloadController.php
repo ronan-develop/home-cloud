@@ -52,25 +52,21 @@ final class FileDownloadController extends AbstractController
             throw new NotFoundHttpException('Physical file not found');
         }
 
-        // Détecter le MIME réel depuis un temp déchiffré — ne pas faire confiance à la DB
-        $tempPath = null;
-        try {
-            $tempPath = $this->encryption->decryptToTempFile($absolutePath);
-            $detectedMime = (new \finfo(FILEINFO_MIME_TYPE))->file($tempPath)
-                ?: 'application/octet-stream';
-        } finally {
-            if ($tempPath !== null && file_exists($tempPath)) {
-                unlink($tempPath);
-            }
-        }
+        // Détecter le MIME réel depuis le fichier déchiffré — ne pas faire confiance à la DB
+        $tempPath = $this->encryption->decryptToTempFile($absolutePath);
+        $detectedMime = (new \finfo(FILEINFO_MIME_TYPE))->file($tempPath) ?: 'application/octet-stream';
 
         $disposition = HeaderUtils::makeDisposition(
             ResponseHeaderBag::DISPOSITION_ATTACHMENT,
             $file->getOriginalName(),
         );
 
-        $response = new StreamedResponse(function () use ($absolutePath): void {
-            $this->encryption->decryptToStream($absolutePath, fopen('php://output', 'wb'));
+        $response = new StreamedResponse(function () use ($tempPath): void {
+            try {
+                readfile($tempPath);
+            } finally {
+                unlink($tempPath);
+            }
         });
 
         $response->headers->set('Content-Type', $detectedMime);
