@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use App\Interface\EncryptionServiceInterface;
 use App\Interface\StorageServiceInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
@@ -19,39 +18,57 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
  * - Retourne un chemin relatif à `var/storage/` pour que l'entité soit
  *   indépendante de l'emplacement absolu du projet.
  * - Pas de lib externe (VichUploader, Flysystem) — contrôle total, dépendances minimales.
- * - Chiffrement au repos : chaque fichier est chiffré par EncryptionService après move().
- *   Le fichier sur disque est du binaire opaque — illisible sans la clé APP_ENCRYPTION_KEY.
+ * - Neutralisation ciblée : les fichiers dangereux (scripts, SVG, HTML…) sont renommés
+ *   en .bin pour les rendre non-exécutables. Les fichiers ordinaires sont stockés en clair.
  */
 final class StorageService implements StorageServiceInterface
 {
+    /**
+     * Extensions neutralisées : renommées en .bin sur disque (contenu intact,
+     * extension empêche l'interprétation par le serveur web ou le navigateur).
+     */
+    private const NEUTRALIZED_EXTENSIONS = [
+        // Scripts interprétés côté serveur ou shell
+        'sh', 'bash', 'zsh', 'fish', 'ksh', 'csh', 'py', 'rb', 'pl', 'cgi',
+        // Markup/scripts actifs côté navigateur
+        'svg', 'svgz', 'html', 'htm', 'xhtml',
+        'js', 'mjs', 'css',
+        'xml', 'xsl', 'xslt',
+    ];
+
     public function __construct(
         private readonly string $storageDir,
-        private readonly EncryptionServiceInterface $encryption,
     ) {}
 
     /**
-     * Déplace le fichier uploadé vers le stockage permanent et le chiffre.
+     * Déplace le fichier uploadé vers le stockage permanent.
+     *
+     * Les fichiers à extension dangereuse (scripts, SVG, HTML…) sont neutralisés :
+     * renommés en .bin pour empêcher toute exécution serveur ou interprétation navigateur.
+     * Les fichiers ordinaires sont stockés tels quels.
      *
      * @param UploadedFile $file Fichier reçu via multipart/form-data
-     * @return string            Chemin relatif stocké en base (ex: "2026/02/uuid.pdf")
+     * @return array{path: string, neutralized: bool}
      */
-    public function store(UploadedFile $file): string
+    public function store(UploadedFile $file): array
     {
         $year = date('Y');
         $month = date('m');
         $uuid = \Symfony\Component\Uid\Uuid::v7()->toRfc4122();
-        $ext = $file->guessExtension() ?? $file->getClientOriginalExtension() ?? 'bin';
+        $originalExt = strtolower($file->getClientOriginalExtension() ?? $file->guessExtension() ?? 'bin');
+
+        $neutralized = in_array($originalExt, self::NEUTRALIZED_EXTENSIONS, true);
+        $ext = $neutralized ? 'bin' : ($file->guessExtension() ?? $originalExt);
 
         $subDir = sprintf('%s/%s', $year, $month);
         $filename = sprintf('%s.%s', $uuid, $ext);
-        $fullPath = $this->storageDir.'/'.$subDir.'/'.$filename;
 
         $file->move($this->storageDir.'/'.$subDir, $filename);
 
-        // Chiffrement en place : le fichier en clair est immédiatement remplacé
-        $this->encryption->encrypt($fullPath, $fullPath);
-
-        return sprintf('%s/%s', $subDir, $filename);
+        return [
+            'path'       => sprintf('%s/%s', $subDir, $filename),
+            'neutralized' => $neutralized,
+        ];
     }
 
     /**

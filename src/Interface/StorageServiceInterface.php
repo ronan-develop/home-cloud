@@ -15,9 +15,15 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 interface StorageServiceInterface
 {
     /**
-     * Stocke le fichier uploadé sur disque et retourne le chemin relatif.
+     * Stocke le fichier uploadé sur disque.
+     *
+     * Retourne un tableau avec :
+     *   - 'path'       : chemin relatif stocké en base (ex: "2026/02/uuid.pdf" ou "2026/02/uuid.bin")
+     *   - 'neutralized': true si le fichier a été renommé en .bin (extension dangereuse neutralisée)
+     *
+     * @return array{path: string, neutralized: bool}
      */
-    public function store(UploadedFile $file): string;
+    public function store(UploadedFile $file): array;
 
     /**
      * Supprime le fichier identifié par son chemin relatif.

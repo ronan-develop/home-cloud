@@ -44,6 +44,15 @@ class File
     #[ORM\Column(length: 1024)]
     private string $path;
 
+    /**
+     * Indique si le fichier a été neutralisé au stockage (stocké en .bin)
+     * car son extension est potentiellement dangereuse côté navigateur
+     * (svg, html, js, sh, py…). Le contenu reste intact, seule l'extension
+     * sur disque est masquée. Le download restitue le vrai nom via Content-Disposition.
+     */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $neutralized = false;
+
     #[ORM\ManyToOne(targetEntity: Folder::class)]
     #[ORM\JoinColumn(nullable: false)]
     private Folder $folder;
@@ -62,6 +71,7 @@ class File
         string $path,
         Folder $folder,
         User $owner,
+        bool $neutralized = false,
     ) {
         $this->id = Uuid::v7();
         $this->originalName = $originalName;
@@ -70,6 +80,7 @@ class File
         $this->path = $path;
         $this->folder = $folder;
         $this->owner = $owner;
+        $this->neutralized = $neutralized;
         $this->createdAt = new \DateTimeImmutable();
     }
 
@@ -81,4 +92,5 @@ class File
     public function getFolder(): Folder { return $this->folder; }
     public function getOwner(): User { return $this->owner; }
     public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
+    public function isNeutralized(): bool { return $this->neutralized; }
 }
