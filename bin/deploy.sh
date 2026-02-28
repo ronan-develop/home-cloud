@@ -53,7 +53,7 @@ title()   { echo -e "\n${BOLD}$*${NC}"; }
 # ── Configuration fixe ────────────────────────────────────────────────────────
 SSH_USER="ron2cuba"
 SSH_HOST="lenouvel.me"
-SSH_PORT=8888
+SSH_PORT=22
 GIT_REPO="https://github.com/ronan-develop/home-cloud"
 
 # Options SSH : utilise la clé dédiée si définie dans .secrets
@@ -63,7 +63,7 @@ if [[ -n "${SSH_KEY_PATH:-}" && -f "$SSH_KEY_PATH" ]]; then
 fi
 GIT_BRANCH="main"
 # PHP CLI sur o2switch (ajuster si version différente)
-PHP_BIN="/opt/cpanel/ea-php84/root/usr/bin/php"
+PHP_BIN="/usr/local/bin/php"
 COMPOSER_BIN="/opt/cpanel/composer/bin/composer"
 
 # ── Questionnaire ─────────────────────────────────────────────────────────────
