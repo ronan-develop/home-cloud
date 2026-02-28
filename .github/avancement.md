@@ -405,7 +405,28 @@ HEADER (24 bytes) | chunk1_len (4B) | chunk1_chiffré | chunk2_len | chunk2_chif
 
 ---
 
-### 🔵 Phase 7 — Frontend Web 🚧
+### 🔵 Phase 8 — Refactor stockage : neutralisation ciblée (backlog)
+
+**Contexte :** le chiffrement global (XChaCha20) de tous les fichiers est trop coûteux en CPU. Seuls les fichiers "dangereux côté navigateur" doivent être neutralisés.
+
+**Règles cibles :**
+
+| Catégorie | Extensions | Comportement |
+|-----------|-----------|--------------|
+| **Bloqués** | `php*`, `phar`, `exe`, `msi`, `bat`, `cmd`, `ps1`, `jar` | 400 — refusés |
+| **Neutralisés** | `sh`, `bash`, `py`, `rb`, `pl`, `svg`, `svgz`, `html`, `htm`, `js`, `mjs`, `css`, `xml`, `xsl` | Stockés en `.bin` sur disque — reversible au download (Content-Disposition restitue le vrai nom) |
+| **Directs** | tout le reste (`jpg`, `pdf`, `mp4`, `docx`…) | Stockés tels quels, aucun chiffrement |
+
+**Branche :** `refactor/storage-neutralize`
+
+**Ordre TDD :**
+1. `enc-red-tests` — RED : écrire les tests (upload → disque, download → nom restitué)
+2. `enc-migration-neutralized` — migration `is_neutralized` sur `files`
+3. `enc-green-storage` — GREEN : StorageService sans chiffrement global
+4. `enc-green-download` — GREEN : FileDownloadController sans décryptage
+5. `enc-green-thumb-exif` — GREEN : ExifService + ThumbnailService sans décryptage
+6. `enc-refactor-cleanup` — REFACTOR : supprimer EncryptionService si plus utilisé
+7. `enc-done` — vérification finale, merge dans main
 
 **Stack :** Twig + Symfony UX Live Components + Stimulus + Tailwind CSS v4 + AssetMapper
 
