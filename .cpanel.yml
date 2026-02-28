@@ -23,5 +23,8 @@ deployment:
     # Warmup du cache Symfony prod
     - /opt/cpanel/ea-php84/root/usr/bin/php bin/console cache:warmup --env=prod
 
+    # Publication des assets (Swagger UI, etc.)
+    - /opt/cpanel/ea-php84/root/usr/bin/php bin/console assets:install --env=prod
+
     # Permissions sur var/
     - /bin/chmod -R 775 var/
