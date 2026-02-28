@@ -15,13 +15,13 @@
 deployment:
   tasks:
     # Installation des dépendances Composer (sans les dev, autoloader optimisé)
-    - /usr/local/bin/php /opt/cpanel/composer/bin/composer install --no-dev --optimize-autoloader --no-interaction --quiet
+    - /opt/cpanel/ea-php84/root/usr/bin/php /opt/cpanel/composer/bin/composer install --no-dev --optimize-autoloader --no-interaction --quiet
 
     # Migrations Doctrine (idempotent — sans effet si déjà à jour)
-    - /usr/local/bin/php bin/console doctrine:migrations:migrate --no-interaction --env=prod
+    - /opt/cpanel/ea-php84/root/usr/bin/php bin/console doctrine:migrations:migrate --no-interaction --env=prod
 
     # Warmup du cache Symfony prod
-    - /usr/local/bin/php bin/console cache:warmup --env=prod
+    - /opt/cpanel/ea-php84/root/usr/bin/php bin/console cache:warmup --env=prod
 
     # Permissions sur var/
     - /bin/chmod -R 775 var/
