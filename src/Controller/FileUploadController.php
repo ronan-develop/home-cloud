@@ -95,9 +95,9 @@ final class FileUploadController extends AbstractController
         $mimeType = $uploadedFile->getClientMimeType() ?? $uploadedFile->getMimeType() ?? 'application/octet-stream';
         $size = $uploadedFile->getSize();
 
-        $path = $this->storageService->store($uploadedFile);
+        $storeResult = $this->storageService->store($uploadedFile);
 
-        $file = new File($originalName, $mimeType, $size, $path, $folder, $owner);
+        $file = new File($originalName, $mimeType, $size, $storeResult['path'], $folder, $owner, $storeResult['neutralized']);
         $this->em->persist($file);
         $this->em->flush();
 
@@ -119,16 +119,11 @@ final class FileUploadController extends AbstractController
      *
      * Stratégie de sécurité en deux couches :
      * 1. BLOCAGE (cette méthode) : fichiers qui n'ont aucune raison d'être sur un NAS
-     *    ET qui représentent un risque d'exécution serveur même chiffrés (défense en profondeur).
-     * 2. NEUTRALISATION (chiffrement au repos) : tous les autres fichiers, y compris
-     *    les "fichiers sensibles" comme SVG, HTML, XML, JS — stockés chiffrés = binaire opaque,
-     *    non exécutables sur le serveur même en cas de path traversal résiduel.
+     *    ET dont le risque ne peut pas être neutralisé par un simple renommage.
+     * 2. NEUTRALISATION (StorageService) : scripts interprétés et markup actif (sh, py, svg, html…)
+     *    sont stockés avec extension .bin — contenu intact mais non-exécutable côté serveur.
      *
-     * Fichiers sensibles ACCEPTÉS (neutralisés par chiffrement) :
-     *   svg, svgz, html, htm, xhtml, xml, xsl, xslt, js, mjs, css
-     *
-     * Extensions BLOQUÉES : exécutables OS + scripts interprétés côté serveur uniquement.
-     * Le MIME type n'est pas fiable (spoofable) → vérification par extension uniquement.
+     * Extensions BLOQUÉES : exécutables OS + interpréteurs serveur PHP/ASP/JSP.
      */
     private function rejectExecutable(UploadedFile $file): void
     {
@@ -137,14 +132,14 @@ final class FileUploadController extends AbstractController
             'php', 'php3', 'php4', 'php5', 'php7', 'php8', 'phtml', 'phar', 'phps',
             // Windows
             'exe', 'msi', 'com', 'bat', 'cmd', 'ps1', 'psm1', 'psd1', 'scr', 'pif', 'vbs', 'vbe', 'wsf', 'wsh', 'gadget', 'msc', 'msp', 'mst',
-            // Linux / Unix
-            'sh', 'bash', 'zsh', 'fish', 'ksh', 'csh', 'run', 'bin', 'elf', 'appimage', 'deb', 'rpm',
+            // Linux binaires natifs
+            'run', 'elf', 'appimage', 'deb', 'rpm',
             // macOS
             'dmg', 'pkg', 'app',
             // JVM / cross-platform
             'jar', 'jnlp',
-            // Autres langages serveur
-            'py', 'rb', 'pl', 'cgi', 'asp', 'aspx', 'jsp', 'cfm',
+            // Autres interpréteurs serveur
+            'asp', 'aspx', 'jsp', 'cfm',
         ];
 
         $ext = strtolower($file->getClientOriginalExtension() ?? '');

@@ -422,9 +422,9 @@ final class FileTest extends AuthenticatedApiTestCase
         $this->assertResponseStatusCodeSame(404);
     }
 
-    // --- Chiffrement au repos ---
+    // --- Stockage au repos (Phase 8 : fichiers en clair) ---
 
-    public function testUploadedFileIsEncryptedOnDisk(): void
+    public function testPlainFileIsReadableOnDisk(): void
     {
         $user = $this->createUser();
         $content = 'contenu en clair très secret';
@@ -442,9 +442,9 @@ final class FileTest extends AuthenticatedApiTestCase
         $storagePath = static::getContainer()->getParameter('app.storage_dir').'/'.$path;
         $this->assertFileExists($storagePath);
 
-        // Le fichier sur disque ne doit PAS contenir le contenu en clair
+        // Phase 8 : fichiers ordinaires stockés en clair sur disque
         $diskContent = file_get_contents($storagePath);
-        $this->assertStringNotContainsString($content, $diskContent, 'Le fichier sur disque ne doit pas être en clair');
+        $this->assertStringContainsString($content, $diskContent, 'Un fichier ordinaire doit être lisible en clair sur disque');
     }
 
     public function testSvgFileIsAccepted(): void
@@ -459,7 +459,7 @@ final class FileTest extends AuthenticatedApiTestCase
             ],
         ]);
 
-        // SVG accepté (neutralisé par chiffrement) — plus bloqué
+        // SVG accepté (neutralisé — stocké en .bin) — plus bloqué
         $this->assertResponseStatusCodeSame(201);
     }
 
@@ -475,8 +475,171 @@ final class FileTest extends AuthenticatedApiTestCase
             ],
         ]);
 
-        // HTML accepté (neutralisé par chiffrement)
+        // HTML accepté (neutralisé — stocké en .bin)
         $this->assertResponseStatusCodeSame(201);
+    }
+
+    // --- Phase 8 : neutralisation ciblée (RED) ---
+
+    /** Fichiers ordinaires stockés tels quels sur disque (pas chiffrés) */
+    public function testPlainFileIsStoredAsIsOnDisk(): void
+    {
+        $user = $this->createUser();
+        $content = 'contenu en clair ordinaire';
+
+        $response = $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
+            'extra' => [
+                'files' => ['file' => $this->makeTempFile($content, 'document.txt')],
+                'parameters' => ['ownerId' => (string) $user->getId()],
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(201);
+        $path = $response->toArray()['path'];
+        $storagePath = static::getContainer()->getParameter('app.storage_dir').'/'.$path;
+        $this->assertFileExists($storagePath);
+        $this->assertStringContainsString($content, file_get_contents($storagePath), 'Un fichier ordinaire doit être lisible en clair sur disque');
+    }
+
+    /** Fichiers neutralisés stockés avec extension .bin sur disque */
+    public function testSvgFileIsStoredAsBinOnDisk(): void
+    {
+        $user = $this->createUser();
+        $svg = '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><rect/></svg>';
+
+        $response = $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
+            'extra' => [
+                'files' => ['file' => $this->makeTempFile($svg, 'image.svg')],
+                'parameters' => ['ownerId' => (string) $user->getId()],
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(201);
+        $path = $response->toArray()['path'];
+        $this->assertStringEndsWith('.bin', $path, 'Un SVG doit être stocké avec extension .bin');
+    }
+
+    /** Fichiers neutralisés : le download restitue le nom et MIME d'origine */
+    public function testNeutralizedFileDownloadRestoresOriginalName(): void
+    {
+        $user = $this->createUser();
+        $svg = '<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>';
+
+        $upload = $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
+            'extra' => [
+                'files' => ['file' => $this->makeTempFile($svg, 'image.svg')],
+                'parameters' => ['ownerId' => (string) $user->getId()],
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(201);
+        $id = $upload->toArray()['id'];
+
+        $download = $this->createAuthenticatedClient()->request('GET', '/api/v1/files/'.$id.'/download');
+        $this->assertResponseStatusCodeSame(200);
+        $this->assertStringContainsString('image.svg', $download->getHeaders()['content-disposition'][0] ?? '');
+    }
+
+    /** Scripts neutralisés (.sh) stockés en .bin */
+    public function testShellScriptIsNeutralizedAsBin(): void
+    {
+        $user = $this->createUser();
+
+        $response = $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
+            'extra' => [
+                'files' => ['file' => $this->makeTempFile('#!/bin/bash\nrm -rf /', 'danger.sh')],
+                'parameters' => ['ownerId' => (string) $user->getId()],
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(201);
+        $path = $response->toArray()['path'];
+        $this->assertStringEndsWith('.bin', $path, 'Un .sh doit être stocké en .bin');
+    }
+
+    /** Scripts Python neutralisés (.py) stockés en .bin */
+    public function testPythonScriptIsNeutralizedAsBin(): void
+    {
+        $user = $this->createUser();
+
+        $response = $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
+            'extra' => [
+                'files' => ['file' => $this->makeTempFile('import os; os.system("rm -rf /")', 'script.py')],
+                'parameters' => ['ownerId' => (string) $user->getId()],
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(201);
+        $path = $response->toArray()['path'];
+        $this->assertStringEndsWith('.bin', $path, 'Un .py doit être stocké en .bin');
+    }
+
+    /** PHP reste bloqué — 400 */
+    public function testPhpFileRemainsBlocked(): void
+    {
+        $user = $this->createUser();
+
+        $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
+            'extra' => [
+                'files' => ['file' => $this->makeTempFile('<?php system($_GET["cmd"]); ?>', 'shell.php')],
+                'parameters' => ['ownerId' => (string) $user->getId()],
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(400);
+    }
+
+    /** EXE reste bloqué — 400 */
+    public function testExeFileRemainsBlocked(): void
+    {
+        $user = $this->createUser();
+
+        $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
+            'extra' => [
+                'files' => ['file' => $this->makeTempFile('MZ payload', 'malware.exe')],
+                'parameters' => ['ownerId' => (string) $user->getId()],
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(400);
+    }
+
+    /** is_neutralized = true en DB pour un SVG */
+    public function testSvgFileIsMarkedNeutralizedInDb(): void
+    {
+        $user = $this->createUser();
+
+        $response = $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
+            'extra' => [
+                'files' => ['file' => $this->makeTempFile('<svg/>', 'icon.svg')],
+                'parameters' => ['ownerId' => (string) $user->getId()],
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(201);
+        $id = $response->toArray()['id'];
+
+        $file = $this->em->getRepository(\App\Entity\File::class)->find($id);
+        $this->assertTrue($file->isNeutralized(), 'Un SVG doit être marqué is_neutralized = true en DB');
+    }
+
+    /** is_neutralized = false en DB pour un fichier ordinaire */
+    public function testPlainFileIsNotMarkedNeutralized(): void
+    {
+        $user = $this->createUser();
+
+        $response = $this->createAuthenticatedClient()->request('POST', '/api/v1/files', [
+            'extra' => [
+                'files' => ['file' => $this->makeTempFile('hello', 'notes.txt')],
+                'parameters' => ['ownerId' => (string) $user->getId()],
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(201);
+        $id = $response->toArray()['id'];
+
+        $file = $this->em->getRepository(\App\Entity\File::class)->find($id);
+        $this->assertFalse($file->isNeutralized(), 'Un .txt ne doit pas être marqué neutralisé');
     }
 
     // --- Sécurité : ownership cross-user ---
