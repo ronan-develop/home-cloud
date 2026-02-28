@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Repository\MediaRepository;
-use App\Interface\EncryptionServiceInterface;
 use App\Interface\StorageServiceInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -15,11 +14,10 @@ use Symfony\Component\Routing\Attribute\Route;
 /**
  * Controller dédié au téléchargement des thumbnails média.
  *
- * Rôle : déchiffrer et streamer le thumbnail depuis le disque avec le Content-Type approprié.
+ * Rôle : streamer le thumbnail depuis le disque avec le Content-Type approprié.
  *
  * Sécurité :
- * - Chiffrement au repos : le thumbnail sur disque est chiffré (XChaCha20-Poly1305).
- *   EncryptionService déchiffre chunk par chunk vers la réponse HTTP.
+ * - Les thumbnails sont stockés en clair — streaming direct sans déchiffrement.
  * - X-Content-Type-Options: nosniff empêche le MIME sniffing navigateur.
  * - Content-Type forcé à image/jpeg (les thumbnails sont toujours des JPEG — ThumbnailService).
  *
@@ -36,7 +34,6 @@ final class MediaThumbnailController extends AbstractController
     public function __construct(
         private readonly MediaRepository $mediaRepository,
         private readonly StorageServiceInterface $storageService,
-        private readonly EncryptionServiceInterface $encryption,
     ) {}
 
     #[Route('/api/v1/medias/{id}/thumbnail', name: 'media_thumbnail', methods: ['GET'])]
@@ -56,12 +53,7 @@ final class MediaThumbnailController extends AbstractController
         }
 
         $response = new StreamedResponse(function () use ($absolutePath): void {
-            $tempPath = $this->encryption->decryptToTempFile($absolutePath);
-            try {
-                readfile($tempPath);
-            } finally {
-                unlink($tempPath);
-            }
+            readfile($absolutePath);
         });
 
         $response->headers->set('Content-Type', 'image/jpeg');
