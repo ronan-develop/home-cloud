@@ -225,22 +225,6 @@ ${PHP_BIN} ${COMPOSER_BIN} install \
     --no-interaction \
     --quiet
 
-# Génération des clés JWT si absentes
-JWT_DIR="${DEPLOY_PATH}/config/jwt"
-mkdir -p "${JWT_DIR}"
-if [ ! -f "${JWT_DIR}/private.pem" ]; then
-    echo "→ Génération des clés JWT…"
-    openssl genpkey -algorithm RSA \
-        -out "${JWT_DIR}/private.pem" \
-        -aes256 -pass "pass:${JWT_PASSPHRASE}" \
-        -pkeyopt rsa_keygen_bits:4096 2>/dev/null
-    openssl pkey \
-        -in "${JWT_DIR}/private.pem" \
-        -out "${JWT_DIR}/public.pem" \
-        -pubout -passin "pass:${JWT_PASSPHRASE}" 2>/dev/null
-    chmod 600 "${JWT_DIR}/private.pem"
-fi
-
 # Répertoires var/
 mkdir -p "${DEPLOY_PATH}/var/cache/prod"
 mkdir -p "${DEPLOY_PATH}/var/log"
@@ -257,6 +241,12 @@ info "Envoi du .env.local…"
 echo "$ENV_LOCAL" | ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
     "cat > ${DEPLOY_PATH}/.env.local && chmod 600 ${DEPLOY_PATH}/.env.local"
 success ".env.local déployé"
+
+# ── Génération des clés JWT ───────────────────────────────────────────────────
+info "Génération des clés JWT…"
+ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
+    "cd ${DEPLOY_PATH} && ${PHP_BIN} bin/console lexik:jwt:generate-keypair --overwrite --no-interaction --env=prod"
+success "Clés JWT générées"
 
 # ── Tentative de création de la DB via SSH ────────────────────────────────────
 title "── Base de données MySQL ────────────────"
