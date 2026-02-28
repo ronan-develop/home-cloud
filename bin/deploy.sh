@@ -43,7 +43,7 @@ title()   { echo -e "\n${BOLD}$*${NC}"; }
 # ── Configuration fixe ────────────────────────────────────────────────────────
 SSH_USER="ron2cuba"
 SSH_HOST="lenouvel.me"
-SSH_PORT=22
+SSH_PORT=8888
 GIT_REPO="https://github.com/ronan-develop/home-cloud"
 GIT_BRANCH="main"
 # PHP CLI sur o2switch (ajuster si version différente)
@@ -78,14 +78,15 @@ fi
 PRENOM_LOWER=$(echo "$PRENOM" | tr '[:upper:]' '[:lower:]' | iconv -f utf-8 -t ascii//TRANSLIT 2>/dev/null || echo "$PRENOM" | tr '[:upper:]' '[:lower:]')
 
 SUBDOMAIN="${PRENOM_LOWER}.lenouvel.me"
-DEPLOY_PATH="/home/${SSH_USER}/${SUBDOMAIN}"
+# Le chemin réel sera calculé côté serveur ($HOME peut différer de /home/user sur o2switch)
+DEPLOY_PATH_HINT="~/${SUBDOMAIN}"
 DB_NAME="${SSH_USER}_${PRENOM_LOWER}"
 DB_USER="${SSH_USER}_${PRENOM_LOWER}"
 
 title "── Récapitulatif ──────────────────────"
 echo -e "  Prénom          : ${BOLD}${PRENOM}${NC}"
 echo -e "  Sous-domaine    : ${BOLD}https://${SUBDOMAIN}${NC}"
-echo -e "  Chemin serveur  : ${BOLD}${DEPLOY_PATH}${NC}"
+echo -e "  Chemin serveur  : ${BOLD}\$HOME/${SUBDOMAIN}${NC}"
 echo -e "  Base de données : ${BOLD}${DB_NAME}${NC}"
 echo -e "  Utilisateur DB  : ${BOLD}${DB_USER}${NC}"
 echo ""
@@ -136,6 +137,11 @@ if ! ssh -p "${SSH_PORT}" -o ConnectTimeout=10 "${SSH_USER}@${SSH_HOST}" "echo O
 fi
 success "Connexion SSH OK"
 
+# Récupère le $HOME réel du serveur pour construire le chemin de déploiement
+REMOTE_HOME=$(ssh -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" 'echo $HOME')
+DEPLOY_PATH="${REMOTE_HOME}/${SUBDOMAIN}"
+info "Chemin de déploiement : ${DEPLOY_PATH}"
+
 # ── Déploiement via SSH ───────────────────────────────────────────────────────
 title "── Déploiement ─────────────────────────"
 
@@ -157,16 +163,19 @@ ENVEOF
 )
 
 ssh -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" bash -s -- \
-    "$DEPLOY_PATH" "$GIT_REPO" "$GIT_BRANCH" "$PHP_BIN" "$COMPOSER_BIN" "$JWT_PASSPHRASE" \
+    "$SUBDOMAIN" "$GIT_REPO" "$GIT_BRANCH" "$PHP_BIN" "$COMPOSER_BIN" "$JWT_PASSPHRASE" \
     <<'SSHSCRIPT'
 set -euo pipefail
 
-DEPLOY_PATH="$1"
+SUBDOMAIN="$1"
 GIT_REPO="$2"
 GIT_BRANCH="$3"
 PHP_BIN="$4"
 COMPOSER_BIN="$5"
 JWT_PASSPHRASE="$6"
+
+# Calcul du chemin réel côté serveur (évite les erreurs de chemin absolu)
+DEPLOY_PATH="${HOME}/${SUBDOMAIN}"
 
 echo "→ Répertoire : ${DEPLOY_PATH}"
 
