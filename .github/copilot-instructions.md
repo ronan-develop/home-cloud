@@ -52,8 +52,14 @@ Tu ne réponds jamais avec des informations inventées ou non vérifiées.
 | 🚧 | WIP |
 
 ### 3️⃣ Git Workflow
+**RÈGLE ABSOLUE : ne jamais commiter directement sur `main`.**
+Toujours créer une branche avant de travailler.
+
 Quand je tape la commande `#git` dans le chat ou la CLI, suivre ce workflow :
 ```bash
+# Si pas encore sur une branche de travail, en créer une
+git checkout -b feat/NomExplicite   # ou fix/, refactor/, chore/...
+
 git diff                    # Identifier les changements et regrouper logiquement
 git status                  # Vérifier l'état
 # Stager et commiter par groupe logique (commits atomiques)
@@ -62,6 +68,7 @@ git commit -m "✨ feat(NomExplicite): description courte"
 # Répéter pour chaque groupe logique
 ```
 **Le user ne push PAS — commits locaux uniquement.**
+**Le merge dans main est décidé par le user, pas par l'agent.**
 
 ---
 
