@@ -1,6 +1,6 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-02-27 (Phase 5 Partage ✅ — 98/98 tests)
+> Dernière mise à jour : 2026-02-28 (Phase 6 Déploiement o2switch ✅ — Phase 7 Frontend en cours)
 
 ---
 
@@ -93,14 +93,30 @@
 | 2026-02-27 | 🔧 **fix(SecurityHeadersListener)** — CSP `default-src 'none'` skippé pour `/api/docs*` (Swagger UI était bloqué) ✅ |
 | 2026-02-27 | ✨ **feat/albums** — Phase 4 Albums : Entity + migration + CRUD + POST/DELETE medias (79/79 tests ✅) |
 | 2026-02-27 | ✨ **feat/sharing** — Phase 5 Partage : Share entity + migration + CRUD + ShareAccessChecker (98/98 tests ✅) |
+| 2026-02-28 | 🚀 **Phase 6** — Déploiement o2switch : PHP 8.4, MariaDB 11.4, JWT, chiffrement, cache warmup, user prod créé ✅ |
+| 2026-02-28 | 🔧 **fix(deploy)** — `assets:install` ajouté dans `.cpanel.yml` (Swagger UI CSS/JS manquants) ✅ |
+| 2026-02-28 | ♻️ **refactor(EncryptionService)** — suppression `decryptToStream` (KISS : code dupliqué), `FileDownloadController` déchiffre une seule fois ✅ |
 
 ---
 
 ## 🚧 En cours
 
-- `main` propre — 98/98 tests ✅
-- Phase 5 Partage terminée
-- Prochaine phase : **Phase 6** — déploiement o2switch
+- `main` propre — 97/97 tests ✅ (sans `--no-coverage`)
+- Phase 6 Déploiement o2switch terminée
+- **Phase 7 — Frontend** en cours de démarrage
+
+### Phase 7 — Frontend (stack choisie)
+
+| Composant | Choix |
+|---|---|
+| Templates | Twig (déjà installé) |
+| Interactivité | Symfony UX Live Components |
+| JS progressif | Stimulus |
+| CSS | Tailwind CSS v4 (standalone CLI, sans Node.js) |
+| Assets | Symfony AssetMapper |
+| Auth web | Session Symfony (séparée du JWT API) |
+
+**Principe :** le frontend appelle les services Symfony directement. Le JWT + REST API restent la couche pour les apps mobiles (futures).
 
 ---
 
@@ -362,3 +378,33 @@ HEADER (24 bytes) | chunk1_len (4B) | chunk1_chiffré | chunk2_len | chunk2_chif
 - **DTOs** : ne jamais exposer les entités directement — toujours passer par des DTOs
 - **Sécurité** : `APP_SECRET` à définir en prod, `APP_ENV=prod`
 - **PHP ini** : copier `config/php.ini` dans `/etc/php/{version}/fpm/conf.d/99-homecloud.ini` au déploiement
+
+---
+
+### 🔵 Phase 7 — Frontend Web 🚧
+
+**Stack :** Twig + Symfony UX Live Components + Stimulus + Tailwind CSS v4 + AssetMapper
+
+- [ ] **A — Fondation**
+  - [ ] Installer AssetMapper + `symfony/ux-live-component`
+  - [ ] Tailwind CSS v4 standalone CLI (`./tailwindcss --watch`)
+  - [ ] Layout `base.html.twig` (navbar, sidebar, zone contenu)
+- [ ] **B — Auth web**
+  - [ ] Firewall session dans `security.yaml` (séparé du firewall JWT `/api`)
+  - [ ] `LoginController` + `login.html.twig`
+  - [ ] Logout
+- [ ] **C — Explorateur fichiers**
+  - [ ] Live Component `FolderBrowser` (arborescence, navigation)
+  - [ ] Live Component `FileList` (liste fichiers, pagination)
+  - [ ] Stimulus Controller `FileUpload` (drag & drop → upload)
+  - [ ] Téléchargement + suppression avec confirmation
+- [ ] **D — Galerie médias**
+  - [ ] Live Component `MediaGallery` (grille thumbnails)
+  - [ ] Lightbox (Bootstrap modal ou plugin léger)
+- [ ] **E — Albums**
+  - [ ] Liste + création + détail album
+- [ ] **F — Partages**
+  - [ ] Modal partage + page "Partagé avec moi"
+
+> **Apps mobiles futures :** l'API REST `/api/v1/*` + JWT est déjà complète pour les clients mobiles.
+
