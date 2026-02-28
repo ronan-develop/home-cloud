@@ -422,9 +422,9 @@ final class FileTest extends AuthenticatedApiTestCase
         $this->assertResponseStatusCodeSame(404);
     }
 
-    // --- Chiffrement au repos ---
+    // --- Stockage au repos (Phase 8 : fichiers en clair) ---
 
-    public function testUploadedFileIsEncryptedOnDisk(): void
+    public function testPlainFileIsReadableOnDisk(): void
     {
         $user = $this->createUser();
         $content = 'contenu en clair très secret';
@@ -442,9 +442,9 @@ final class FileTest extends AuthenticatedApiTestCase
         $storagePath = static::getContainer()->getParameter('app.storage_dir').'/'.$path;
         $this->assertFileExists($storagePath);
 
-        // Le fichier sur disque ne doit PAS contenir le contenu en clair
+        // Phase 8 : fichiers ordinaires stockés en clair sur disque
         $diskContent = file_get_contents($storagePath);
-        $this->assertStringNotContainsString($content, $diskContent, 'Le fichier sur disque ne doit pas être en clair');
+        $this->assertStringContainsString($content, $diskContent, 'Un fichier ordinaire doit être lisible en clair sur disque');
     }
 
     public function testSvgFileIsAccepted(): void
@@ -459,7 +459,7 @@ final class FileTest extends AuthenticatedApiTestCase
             ],
         ]);
 
-        // SVG accepté (neutralisé par chiffrement) — plus bloqué
+        // SVG accepté (neutralisé — stocké en .bin) — plus bloqué
         $this->assertResponseStatusCodeSame(201);
     }
 
@@ -475,7 +475,7 @@ final class FileTest extends AuthenticatedApiTestCase
             ],
         ]);
 
-        // HTML accepté (neutralisé par chiffrement)
+        // HTML accepté (neutralisé — stocké en .bin)
         $this->assertResponseStatusCodeSame(201);
     }
 
