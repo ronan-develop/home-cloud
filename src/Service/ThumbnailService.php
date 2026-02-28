@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use App\Interface\EncryptionServiceInterface;
-
 /**
  * Génère un thumbnail (miniature) à partir d'un fichier image.
  *
@@ -18,8 +16,7 @@ use App\Interface\EncryptionServiceInterface;
  *   créé, juste sans thumbnail.
  * - Thumbnail stocké dans var/storage/thumbs/{uuid}.jpg (JPEG q=80 pour équilibre taille/qualité).
  * - Taille max : 320px de large, hauteur proportionnelle.
- * - Chiffrement au repos : le fichier source est déchiffré vers un temp avant GD,
- *   le thumbnail généré est chiffré avant persistence. Le temp est supprimé dans finally.
+ * - Les fichiers source sont stockés en clair — lecture directe sans déchiffrement.
  */
 class ThumbnailService
 {
@@ -28,7 +25,6 @@ class ThumbnailService
 
     public function __construct(
         private readonly string $storageDir,
-        private readonly EncryptionServiceInterface $encryption,
     ) {}
 
     /**
@@ -43,23 +39,17 @@ class ThumbnailService
             return null;
         }
 
-        $tempPath = null;
         try {
-            $tempPath = $this->encryption->decryptToTempFile($absolutePath);
-            return $this->generateFromPlain($tempPath);
+            return $this->generateFromPlain($absolutePath);
         } catch (\RuntimeException) {
             return null;
-        } finally {
-            if ($tempPath !== null && file_exists($tempPath)) {
-                unlink($tempPath);
-            }
         }
     }
 
     private const MAX_IMAGE_DIMENSION = 10000; // pixels — au-delà, risque GD memory bomb
 
     /**
-     * Génère le thumbnail depuis un fichier en clair (temp), chiffre le résultat.
+     * Génère le thumbnail depuis un fichier image en clair.
      */
     private function generateFromPlain(string $plainPath): ?string
     {
@@ -113,9 +103,6 @@ class ThumbnailService
         if (!$saved) {
             return null;
         }
-
-        // Chiffrer le thumbnail généré — même protection que les fichiers originaux
-        $this->encryption->encrypt($fullPath, $fullPath);
 
         return 'thumbs/'.$filename;
     }
