@@ -1,0 +1,27 @@
+---
+# HomeCloud — Déploiement automatique via cPanel Git Version Control (o2switch)
+#
+# Prérequis (à faire une seule fois via bin/deploy.sh) :
+#   - .env.local configuré dans le répertoire du repo sur le serveur
+#   - Base de données MySQL créée dans cPanel
+#   - Clés JWT générées dans config/jwt/
+#
+# Ce fichier est exécuté automatiquement par cPanel à chaque push sur main,
+# ou manuellement via cPanel → Git Version Control → Deploy HEAD Commit.
+#
+# Les commandes s'exécutent dans le répertoire racine du repo cloné.
+# ─────────────────────────────────────────────────────────────────────────────
+
+deployment:
+  tasks:
+    # Installation des dépendances Composer (sans les dev, autoloader optimisé)
+    - /usr/local/php82/bin/php /usr/local/php82/bin/composer install --no-dev --optimize-autoloader --no-interaction --quiet
+
+    # Migrations Doctrine (idempotent — sans effet si déjà à jour)
+    - /usr/local/php82/bin/php bin/console doctrine:migrations:migrate --no-interaction --env=prod
+
+    # Warmup du cache Symfony prod
+    - /usr/local/php82/bin/php bin/console cache:warmup --env=prod
+
+    # Permissions sur var/
+    - /bin/chmod -R 775 var/
