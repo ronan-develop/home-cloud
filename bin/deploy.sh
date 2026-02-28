@@ -176,25 +176,8 @@ info "Chemin de déploiement : ${DEPLOY_PATH}"
 # ── Déploiement via SSH ───────────────────────────────────────────────────────
 title "── Déploiement ─────────────────────────"
 
-# Construction du .env.local (transmis via heredoc SSH)
-ENV_LOCAL=$(cat <<ENVEOF
-APP_ENV=prod
-APP_DEBUG=0
-APP_SECRET=${APP_SECRET}
-DATABASE_URL=${DATABASE_URL}
-APP_URL=https://${SUBDOMAIN}
-CORS_ALLOW_ORIGIN=^https://${PRENOM_LOWER}\\.lenouvel\\.me$
-APP_ENCRYPTION_KEY=${APP_ENCRYPTION_KEY}
-MESSENGER_TRANSPORT_DSN=doctrine://default?auto_setup=0
-JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
-JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
-JWT_PASSPHRASE=${JWT_PASSPHRASE}
-JWT_TTL=3600
-ENVEOF
-)
-
 ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" bash -s -- \
-    "$SUBDOMAIN" "$GIT_REPO" "$GIT_BRANCH" "$PHP_BIN" "$COMPOSER_BIN" "$JWT_PASSPHRASE" \
+    "$SUBDOMAIN" "$GIT_REPO" "$GIT_BRANCH" "$PHP_BIN" "$COMPOSER_BIN" "${JWT_PASSPHRASE:-}" \
     <<'SSHSCRIPT'
 set -euo pipefail
 
@@ -203,7 +186,7 @@ GIT_REPO="$2"
 GIT_BRANCH="$3"
 PHP_BIN="$4"
 COMPOSER_BIN="$5"
-JWT_PASSPHRASE="$6"
+JWT_PASSPHRASE="${6:-}"
 
 # Calcul du chemin réel côté serveur (évite les erreurs de chemin absolu)
 DEPLOY_PATH="${HOME}/${SUBDOMAIN}"
@@ -242,6 +225,22 @@ success "Repo déployé sur le serveur"
 
 # ── Envoi du .env.local ───────────────────────────────────────────────────────
 if [[ "$UPDATE_MODE" == false ]]; then
+    # Construction du .env.local (uniquement en déploiement initial)
+    ENV_LOCAL=$(cat <<ENVEOF
+APP_ENV=prod
+APP_DEBUG=0
+APP_SECRET=${APP_SECRET}
+DATABASE_URL=${DATABASE_URL}
+APP_URL=https://${SUBDOMAIN}
+CORS_ALLOW_ORIGIN=^https://${PRENOM_LOWER}\\.lenouvel\\.me$
+APP_ENCRYPTION_KEY=${APP_ENCRYPTION_KEY}
+MESSENGER_TRANSPORT_DSN=doctrine://default?auto_setup=0
+JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
+JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
+JWT_PASSPHRASE=${JWT_PASSPHRASE}
+JWT_TTL=3600
+ENVEOF
+)
     info "Envoi du .env.local…"
     echo "$ENV_LOCAL" | ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
         "cat > ${DEPLOY_PATH}/.env.local && chmod 600 ${DEPLOY_PATH}/.env.local"
