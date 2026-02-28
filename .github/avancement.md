@@ -96,14 +96,38 @@
 | 2026-02-28 | 🚀 **Phase 6** — Déploiement o2switch : PHP 8.4, MariaDB 11.4, JWT, chiffrement, cache warmup, user prod créé ✅ |
 | 2026-02-28 | 🔧 **fix(deploy)** — `assets:install` ajouté dans `.cpanel.yml` (Swagger UI CSS/JS manquants) ✅ |
 | 2026-02-28 | ♻️ **refactor(EncryptionService)** — suppression `decryptToStream` (KISS : code dupliqué), `FileDownloadController` déchiffre une seule fois ✅ |
+| 2026-02-28 | 🔧 **fix(deploy)** — SSH port 22 (o2switch), chemin PHP `/usr/local/bin/php` ✅ |
+| 2026-02-28 | 🔧 **fix(migrations)** — UUID type BINARY(16) cohérent sur toutes les migrations (users, folders, files) + suppression duplication création table folders ✅ |
+| 2026-02-28 | 🚀 **Déploiement prod validé** — API live sur `https://ronan.lenouvel.me/api`, login JWT fonctionnel ✅ |
+| 2026-02-28 | 🔧 **fix(deploy)** — génération clés JWT via `lexik:jwt:generate-keypair` après envoi `.env.local` (évite mismatch passphrase) ✅ |
+| 2026-02-28 | ✨ **feat(deploy)** — mode `--update` : mise à jour code seule (git pull + composer + migrations + cache) sans regénérer secrets/JWT ✅ |
 
 ---
 
 ## 🚧 En cours
 
 - `main` propre — 97/97 tests ✅ (sans `--no-coverage`)
-- Phase 6 Déploiement o2switch terminée
+- Phase 6 Déploiement o2switch terminée ✅
 - **Phase 7 — Frontend** en cours de démarrage
+
+### 🚀 Déploiement o2switch — Infos prod
+
+| Info | Valeur |
+|------|--------|
+| URL API | `https://ronan.lenouvel.me/api` |
+| Swagger UI | `https://ronan.lenouvel.me/api/docs` |
+| Chemin serveur | `/home9/ron2cuba/ronan.lenouvel.me` |
+| PHP | `/usr/local/bin/php` (8.4.17) |
+| Composer | `/opt/cpanel/composer/bin/composer` |
+| SSH | `ssh -p 22 ron2cuba@lenouvel.me` |
+
+**Scripts de déploiement :**
+```bash
+bash bin/deploy.sh           # Premier déploiement (setup complet : secrets, DB, JWT, user)
+bash bin/deploy.sh --update  # Mise à jour code (git pull + composer + migrations + cache)
+```
+
+**⚠️ Ne jamais lancer `deploy.sh` (sans `--update`) sur un serveur déjà en prod** — cela regénère les secrets et invalide tous les tokens JWT actifs.
 
 ### Phase 7 — Frontend (stack choisie)
 
