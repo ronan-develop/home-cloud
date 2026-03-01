@@ -1,11 +1,19 @@
 import { Controller } from '@hotwired/stimulus';
 
 export default class extends Controller {
-    static targets = ['menu', 'fileInput', 'folderInput'];
 
     connect() {
+        this._menu        = document.getElementById('new-menu');
+        this._fileInput   = document.getElementById('new-menu-file-input');
+        this._folderInput = document.getElementById('new-menu-folder-input');
+        this._folderBtn   = document.getElementById('new-menu-new-folder-btn');
+
         this._onDocumentClick = this._handleDocumentClick.bind(this);
         document.addEventListener('click', this._onDocumentClick);
+
+        this._fileInput.addEventListener('change', () => this._fileSelected());
+        this._folderInput.addEventListener('change', () => this._folderSelected());
+        this._folderBtn.addEventListener('click', () => this._openFolderModal());
     }
 
     disconnect() {
@@ -14,51 +22,45 @@ export default class extends Controller {
 
     toggle(event) {
         event.stopPropagation();
-        const menu = this.menuTarget;
-        if (menu.classList.contains('hidden')) {
+        if (this._menu.classList.contains('hidden')) {
             this._positionMenu();
-            menu.classList.remove('hidden');
+            this._menu.classList.remove('hidden');
         } else {
-            menu.classList.add('hidden');
+            this._menu.classList.add('hidden');
         }
-    }
-
-    openFolderModal(event) {
-        event.stopPropagation();
-        this.menuTarget.classList.add('hidden');
-        document.dispatchEvent(new CustomEvent('new-menu:open-folder-modal'));
-    }
-
-    fileSelected() {
-        const file = this.fileInputTarget.files[0];
-        this.fileInputTarget.value = '';
-        if (!file) return;
-        this.menuTarget.classList.add('hidden');
-        document.dispatchEvent(new CustomEvent('new-menu:file-selected', { detail: { file } }));
-    }
-
-    folderSelected() {
-        this.folderInputTarget.value = '';
-        this.menuTarget.classList.add('hidden');
-        alert('Folder import — coming soon 🚧');
     }
 
     // ── Private ────────────────────────────────────────────────────────
 
+    _openFolderModal() {
+        this._menu.classList.add('hidden');
+        document.dispatchEvent(new CustomEvent('new-menu:open-folder-modal'));
+    }
+
+    _fileSelected() {
+        const file = this._fileInput.files[0];
+        this._fileInput.value = '';
+        if (!file) return;
+        this._menu.classList.add('hidden');
+        document.dispatchEvent(new CustomEvent('new-menu:file-selected', { detail: { file } }));
+    }
+
+    _folderSelected() {
+        this._folderInput.value = '';
+        this._menu.classList.add('hidden');
+        alert('Folder import — coming soon 🚧');
+    }
+
     _positionMenu() {
-        const btn  = this.element.querySelector('[data-testid="new-btn"]');
-        const menu = this.menuTarget;
-        const rect = btn.getBoundingClientRect();
-        menu.style.top   = (rect.bottom + 4) + 'px';
-        menu.style.left  = rect.left + 'px';
-        menu.style.width = rect.width + 'px';
+        const rect = this.element.getBoundingClientRect();
+        this._menu.style.top   = (rect.bottom + 4) + 'px';
+        this._menu.style.left  = rect.left + 'px';
+        this._menu.style.width = rect.width + 'px';
     }
 
     _handleDocumentClick(event) {
-        const menu = this.menuTarget;
-        const btn  = this.element.querySelector('[data-testid="new-btn"]');
-        if (!btn.contains(event.target) && !menu.contains(event.target)) {
-            menu.classList.add('hidden');
+        if (!this.element.contains(event.target) && !this._menu.contains(event.target)) {
+            this._menu.classList.add('hidden');
         }
     }
 }
