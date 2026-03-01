@@ -23,12 +23,12 @@
 <div class="flex min-h-[calc(100vh-53px)]">
 
     {# Sidebar Liquid Glass #}
-    <aside class="w-56 shrink-0 bg-white/70 backdrop-blur-md border-r border-white/40 p-3 flex flex-col gap-0.5">
+    <aside class="w-56 shrink-0 bg-white/70 backdrop-blur-md border-r border-white/40 p-3 flex flex-col gap-0.5 relative z-20">
 
         {# Bouton "Nouveau" — style Google Drive #}
         <div class="relative mb-2">
             <button data-testid="nouveau-btn"
-                    onclick="toggleNouveauMenu()"
+                    onclick="toggleNouveauMenu(event)"
                     class="w-full flex items-center gap-2 px-4 py-2.5 rounded-2xl
                            bg-white border border-gray-200 shadow-sm hover:shadow-md
                            text-sm font-semibold text-gray-700 transition-all">
@@ -192,9 +192,14 @@
     };
 
     // ── Menu Nouveau ────────────────────────────────────────────────────
-    window.toggleNouveauMenu = function () {
+    window.toggleNouveauMenu = function (e) {
+        if (e) e.stopPropagation();
         document.getElementById('nouveau-menu').classList.toggle('hidden');
     };
+    // Les clics DANS le menu ne doivent jamais remonter jusqu'au handler document
+    document.getElementById('nouveau-menu').addEventListener('click', function (e) {
+        e.stopPropagation();
+    });
     document.addEventListener('click', function (e) {
         var btn = document.querySelector('[data-testid="nouveau-btn"]');
         var menu = document.getElementById('nouveau-menu');
