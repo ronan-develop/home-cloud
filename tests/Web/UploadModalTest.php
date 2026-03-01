@@ -83,7 +83,7 @@ final class UploadModalTest extends WebTestCase
         $this->createUser();
         $this->login();
 
-        $this->assertSelectorExists('[data-testid="nouveau-btn"]');
+        $this->assertSelectorExists('[data-testid="new-btn"]');
     }
 
     public function testSidebarNouveauMenuHasOptions(): void
@@ -91,9 +91,9 @@ final class UploadModalTest extends WebTestCase
         $this->createUser();
         $this->login();
 
-        $this->assertSelectorExists('[data-testid="nouveau-menu"]');
-        $this->assertSelectorTextContains('[data-testid="nouveau-menu"]', 'Nouveau dossier');
-        $this->assertSelectorTextContains('[data-testid="nouveau-menu"]', 'Importer un fichier');
+        $this->assertSelectorExists('[data-testid="new-menu"]');
+        $this->assertSelectorTextContains('[data-testid="new-menu"]', 'Nouveau dossier');
+        $this->assertSelectorTextContains('[data-testid="new-menu"]', 'Importer un fichier');
     }
 
     // --- Dossiers disponibles dans le modal ---
