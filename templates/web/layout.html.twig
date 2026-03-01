@@ -25,39 +25,8 @@
     {# Sidebar Liquid Glass #}
     <aside class="w-56 shrink-0 bg-white/70 backdrop-blur-md border-r border-white/40 p-3 flex flex-col gap-0.5 relative z-20">
 
-        {# Bouton "Nouveau" — style Google Drive #}
-        <div class="relative mb-2">
-            <button data-testid="nouveau-btn"
-                    onclick="toggleNouveauMenu(event)"
-                    class="w-full flex items-center gap-2 px-4 py-2.5 rounded-2xl
-                           bg-white border border-gray-200 shadow-sm hover:shadow-md
-                           text-sm font-semibold text-gray-700 transition-all">
-                <span class="text-lg font-light">＋</span> Nouveau
-            </button>
-
-            <div id="nouveau-menu" data-testid="nouveau-menu"
-                 class="hidden fixed bg-white rounded-2xl shadow-xl border border-gray-100 py-1 z-[9999]">
-                <button onclick="openNewFolderModal()"
-                        class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700
-                               hover:bg-gray-50 transition-colors text-left cursor-pointer">
-                    <span>📁</span> Nouveau dossier
-                </button>
-                <hr class="my-1 border-gray-100">
-                <label class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700
-                              hover:bg-gray-50 transition-colors cursor-pointer">
-                    <span>📄</span> Importer un fichier
-                    <input type="file" id="sidebar-file-input" class="hidden"
-                           onchange="onFileSelected(this)">
-                </label>
-                <label class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700
-                              hover:bg-gray-50 transition-colors cursor-pointer">
-                    <span>📂</span> Importer un dossier
-                    <input type="file" id="sidebar-folder-input" class="hidden"
-                           webkitdirectory multiple
-                           onchange="onFolderSelected(this)">
-                </label>
-            </div>
-        </div>
+        {# New button — Google Drive style #}
+        <twig:NewMenu />
 
         {% set nav_items = [
             { route: 'app_home', icon: '📁', label: 'Mes fichiers' },
@@ -190,50 +159,15 @@
         }
     };
 
-    // ── Menu Nouveau ────────────────────────────────────────────────────
-    window.toggleNouveauMenu = function (e) {
-        if (e) e.stopPropagation();
-        var menu = document.getElementById('nouveau-menu');
-        var btn  = document.querySelector('[data-testid="nouveau-btn"]');
-        if (menu.classList.contains('hidden')) {
-            var r = btn.getBoundingClientRect();
-            menu.style.top   = (r.bottom + 4) + 'px';
-            menu.style.left  = r.left + 'px';
-            menu.style.width = r.width + 'px';
-            menu.classList.remove('hidden');
-        } else {
-            menu.classList.add('hidden');
-        }
-    };
-    // Les clics DANS le menu ne doivent jamais remonter jusqu'au handler document
-    document.getElementById('nouveau-menu').addEventListener('click', function (e) {
-        e.stopPropagation();
+    // ── Menu Nouveau — géré par new_menu_controller.js (Stimulus) ───────
+    // Écoute les events CustomEvent émis par le controller
+    document.addEventListener('new-menu:open-folder-modal', function () {
+        document.getElementById('new-folder-input').value = '';
+        document.getElementById('new-folder-modal').classList.remove('hidden');
+        document.getElementById('new-folder-input').focus();
     });
-    document.addEventListener('click', function (e) {
-        var btn = document.querySelector('[data-testid="nouveau-btn"]');
-        var menu = document.getElementById('nouveau-menu');
-        if (btn && !btn.contains(e.target) && menu && !menu.contains(e.target)) {
-            menu.classList.add('hidden');
-        }
-    });
-
-    // ── Utilitaires modal ───────────────────────────────────────────────
-    window.closeModal = function (id) {
-        document.getElementById(id).classList.add('hidden');
-    };
-    document.querySelectorAll('#upload-modal, #new-folder-modal').forEach(function (el) {
-        el.addEventListener('click', function (e) { if (e.target === this) closeModal(this.id); });
-    });
-
-    // ── Upload fichier ──────────────────────────────────────────────────
-    var _pendingFile = null;
-    var _uploadFolderId = '';
-
-    window.onFileSelected = function (input) {
-        var file = input.files && input.files[0];
-        input.value = '';
-        if (!file) return;
-        document.getElementById('nouveau-menu').classList.add('hidden');
+    document.addEventListener('new-menu:file-selected', function (e) {
+        var file = e.detail.file;
         _pendingFile = file;
         _uploadFolderId = '';
         document.getElementById('upload-filename').textContent = '\uD83D\uDCCE ' + file.name;
@@ -246,7 +180,7 @@
         if (first) { first.classList.add('active-folder', 'bg-blue-50', 'text-blue-700'); first.classList.remove('text-gray-600'); }
         document.getElementById('upload-progress').classList.add('hidden');
         document.getElementById('upload-modal').classList.remove('hidden');
-    };
+    });
 
     window.selectUploadFolder = function (id, btn) {
         _uploadFolderId = id;
@@ -312,13 +246,6 @@
     };
 
     // ── Nouveau dossier ─────────────────────────────────────────────────
-    window.openNewFolderModal = function () {
-        document.getElementById('nouveau-menu').classList.add('hidden');
-        document.getElementById('new-folder-input').value = '';
-        document.getElementById('new-folder-modal').classList.remove('hidden');
-        document.getElementById('new-folder-input').focus();
-    };
-
     document.getElementById('new-folder-input').addEventListener('keydown', function (e) {
         if (e.key === 'Enter') submitNewFolder();
         if (e.key === 'Escape') closeModal('new-folder-modal');
