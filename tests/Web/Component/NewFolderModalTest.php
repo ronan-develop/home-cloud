@@ -56,7 +56,14 @@ class NewFolderModalTest extends KernelTestCase
 
     public function testFolderListRendersProps(): void
     {
-        $em   = static::getContainer()->get(EntityManagerInterface::class);
+        $em = static::getContainer()->get(EntityManagerInterface::class);
+        $conn = $em->getConnection();
+        $conn->executeStatement('SET FOREIGN_KEY_CHECKS=0');
+        $conn->executeStatement('DELETE FROM folders');
+        $conn->executeStatement('DELETE FROM users');
+        $conn->executeStatement('SET FOREIGN_KEY_CHECKS=1');
+        $em->clear();
+
         $user = new User('test@example.com', 'Test', 'test', 'hash');
         $em->persist($user);
         $f1 = new Folder('Photos', $user);
@@ -71,10 +78,11 @@ class NewFolderModalTest extends KernelTestCase
         $this->assertStringContainsString('Photos', $html);
         $this->assertStringContainsString('Vidéos', $html);
 
-        $em->remove($f1);
-        $em->remove($f2);
-        $em->remove($user);
-        $em->flush();
+        $conn->executeStatement('SET FOREIGN_KEY_CHECKS=0');
+        $conn->executeStatement('DELETE FROM folders');
+        $conn->executeStatement('DELETE FROM users');
+        $conn->executeStatement('SET FOREIGN_KEY_CHECKS=1');
+        $em->clear();
     }
 
     public function testHasSubmitButton(): void
