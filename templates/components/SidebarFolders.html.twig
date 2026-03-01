@@ -1,0 +1,12 @@
+{# Composant SidebarFolders — Liste des dossiers dans la sidebar #}
+<div class="sidebar-folders">
+  {% for folder in folders %}
+    <a href="{{ path('app_home', { folder: folder.id }) }}"
+       class="sidebar-folder-link{% if currentFolder and currentFolder.id == folder.id %} active{% endif %}">
+      <span>📁</span> {{ folder.name }}
+    </a>
+  {% else %}
+    <div class="sidebar-folder-empty">Aucun dossier</div>
+  {% endfor %}
+</div>
+{# Props attendues : folders (liste), currentFolder #}
