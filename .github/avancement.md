@@ -1,6 +1,14 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-02-28 (Phase 8 Refactor stockage ✅ — en cours de merge)
+> Dernière mise à jour : 2026-03-01 (Phase 7C Explorateur fichiers ✅)
+
+---
+
+## ⚠️ Bugs connus
+
+| Priorité | Bug | Détail |
+|----------|-----|--------|
+| 🟡 Moyen | **Drag & drop upload non fonctionnel** | Quand on glisse un fichier sur la zone, le navigateur l'ouvre au lieu de déclencher l'upload. L'upload via le bouton "parcourir" fonctionne. À investiguer. |
 
 ---
 
