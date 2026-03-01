@@ -9,7 +9,7 @@
 	font-weight: 700;
 	font-size: 1.18rem;
 	padding: 1.1rem 0;
-	box-shadow: 0 4px 24px 0 rgba(31, 38, 135, 0.13);
+	box-shadow: 0 4px 24px 0 var(--clr-shadow);
 	transition: all 0.2s;
 	cursor: pointer;
 	font-family: 'Inter', Arial, sans-serif;
@@ -22,4 +22,4 @@
 	filter: brightness(1.05);
 }
 .lg-btn:active { transform: translateY(0); }
-.lg-btn:focus { box-shadow: 0 0 0 3px #a5b4fc, 0 4px 24px 0 rgba(31,38,135,0.13); }
+.lg-btn:focus { box-shadow: 0 0 0 3px var(--clr-focus-ring), 0 4px 24px 0 var(--clr-shadow); }

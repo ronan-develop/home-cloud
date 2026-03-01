@@ -1,12 +1,43 @@
+/* === Variables de thème (light / dark automatique via OS) === */
+:root {
+	--clr-bg:            #f7f8fa;
+	--clr-text:          #222;
+	--clr-text-muted:    #6b7280;
+	--clr-surface:       #fff;
+	--clr-surface-hover: #f0f4fa;
+	--clr-border:        #e0e7ef;
+	--clr-focus-ring:    #a5b4fc;
+	--clr-error-bg:      #fee2e2;
+	--clr-error-border:  #fecaca;
+	--clr-error-text:    #b91c1c;
+	--clr-shadow:        rgba(31, 38, 135, 0.07);
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--clr-bg:            #0f172a;
+		--clr-text:          #f1f5f9;
+		--clr-text-muted:    #94a3b8;
+		--clr-surface:       rgba(255, 255, 255, 0.08);
+		--clr-surface-hover: rgba(255, 255, 255, 0.13);
+		--clr-border:        rgba(255, 255, 255, 0.15);
+		--clr-focus-ring:    #818cf8;
+		--clr-error-bg:      rgba(239, 68, 68, 0.15);
+		--clr-error-border:  rgba(239, 68, 68, 0.30);
+		--clr-error-text:    #fca5a5;
+		--clr-shadow:        rgba(0, 0, 0, 0.30);
+	}
+}
+
 /* === Layout général === */
 body {
 	box-sizing: border-box;
 	min-height: 100vh;
 	margin: 0;
-	background: #f7f8fa;
+	background: var(--clr-bg);
 	font-family: 'Inter', Arial, sans-serif;
 	font-size: 1.15rem;
-	color: #222;
+	color: var(--clr-text);
 }
 
 .login-wrapper {
