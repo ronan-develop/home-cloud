@@ -1,0 +1,47 @@
+<div data-controller="new-menu" class="relative mb-2">
+
+    <button data-testid="new-btn"
+            data-action="click->new-menu#toggle"
+            class="w-full flex items-center gap-2 px-4 py-2.5 rounded-2xl
+                   bg-white border border-gray-200 shadow-sm hover:shadow-md
+                   text-sm font-semibold text-gray-700 transition-all cursor-pointer">
+        <span class="text-lg font-light">＋</span> Nouveau
+    </button>
+
+    <div id="new-menu"
+         data-testid="new-menu"
+         data-new-menu-target="menu"
+         class="hidden fixed bg-white rounded-2xl shadow-xl border border-gray-100 py-1 z-[9999]">
+
+        <button data-testid="new-menu-new-folder"
+                data-action="click->new-menu#openFolderModal"
+                class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700
+                       hover:bg-gray-50 transition-colors text-left cursor-pointer">
+            <span>📁</span> Nouveau dossier
+        </button>
+
+        <hr class="my-1 border-gray-100">
+
+        <label data-testid="new-menu-import-file"
+               class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700
+                      hover:bg-gray-50 transition-colors cursor-pointer">
+            <span>📄</span> Importer un fichier
+            <input type="file"
+                   data-new-menu-target="fileInput"
+                   data-action="change->new-menu#fileSelected"
+                   class="hidden">
+        </label>
+
+        <label data-testid="new-menu-import-folder"
+               class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700
+                      hover:bg-gray-50 transition-colors cursor-pointer">
+            <span>📂</span> Importer un dossier
+            <input type="file"
+                   data-new-menu-target="folderInput"
+                   data-action="change->new-menu#folderSelected"
+                   webkitdirectory multiple
+                   class="hidden">
+        </label>
+    </div>
+
+</div>
