@@ -9,53 +9,44 @@ class NewMenuTest extends KernelTestCase
 {
     use InteractsWithTwigComponents;
 
+    private function crawl(): \Symfony\Component\DomCrawler\Crawler
+    {
+        return $this->renderTwigComponent('NewMenu')->crawler();
+    }
+
     public function testRendersNewButton(): void
     {
-        $rendered = $this->renderTwigComponent('NewMenu');
-
-        $rendered->assertSuccessful();
-        $rendered->assertHasElement('[data-testid="new-btn"]');
+        $this->assertCount(1, $this->crawl()->filter('[data-testid="new-btn"]'));
     }
 
     public function testRendersDropdownMenu(): void
     {
-        $rendered = $this->renderTwigComponent('NewMenu');
-
-        $rendered->assertHasElement('[data-testid="new-menu"]');
+        $this->assertCount(1, $this->crawl()->filter('[data-testid="new-menu"]'));
     }
 
     public function testMenuHasNewFolderItem(): void
     {
-        $rendered = $this->renderTwigComponent('NewMenu');
-
-        $rendered->assertHasElement('[data-testid="new-menu-new-folder"]');
+        $this->assertCount(1, $this->crawl()->filter('[data-testid="new-menu-new-folder"]'));
     }
 
     public function testMenuHasImportFileItem(): void
     {
-        $rendered = $this->renderTwigComponent('NewMenu');
-
-        $rendered->assertHasElement('[data-testid="new-menu-import-file"]');
+        $this->assertCount(1, $this->crawl()->filter('[data-testid="new-menu-import-file"]'));
     }
 
     public function testMenuHasImportFolderItem(): void
     {
-        $rendered = $this->renderTwigComponent('NewMenu');
-
-        $rendered->assertHasElement('[data-testid="new-menu-import-folder"]');
+        $this->assertCount(1, $this->crawl()->filter('[data-testid="new-menu-import-folder"]'));
     }
 
     public function testMenuIsHiddenByDefault(): void
     {
-        $rendered = $this->renderTwigComponent('NewMenu');
-
-        $rendered->assertHasElement('[data-testid="new-menu"].hidden');
+        $node = $this->crawl()->filter('[data-testid="new-menu"]');
+        $this->assertStringContainsString('hidden', $node->attr('class') ?? '');
     }
 
     public function testHasStimulusController(): void
     {
-        $rendered = $this->renderTwigComponent('NewMenu');
-
-        $rendered->assertHasElement('[data-controller="new-menu"]');
+        $this->assertCount(1, $this->crawl()->filter('[data-controller="new-menu"]'));
     }
 }
