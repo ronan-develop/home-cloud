@@ -179,4 +179,68 @@ final class FolderTest extends AuthenticatedApiTestCase
 
         $this->assertResponseStatusCodeSame(400);
     }
+
+    // --- mediaType ---
+
+    public function testFolderDefaultMediaTypeIsGeneral(): void
+    {
+        $owner = $this->createUser();
+
+        $response = $this->createAuthenticatedClient()->request('POST', '/api/v1/folders', [
+            'json' => [
+                'name'    => 'My Folder',
+                'ownerId' => (string) $owner->getId(),
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(201);
+        $this->assertSame('general', $response->toArray()['mediaType']);
+    }
+
+    public function testPostFolderWithMediaTypePhoto(): void
+    {
+        $owner = $this->createUser();
+
+        $response = $this->createAuthenticatedClient()->request('POST', '/api/v1/folders', [
+            'json' => [
+                'name'      => 'Photos 2024',
+                'ownerId'   => (string) $owner->getId(),
+                'mediaType' => 'photo',
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(201);
+        $this->assertSame('photo', $response->toArray()['mediaType']);
+    }
+
+    public function testPostFolderWithInvalidMediaTypeReturns400(): void
+    {
+        $owner = $this->createUser();
+
+        $this->createAuthenticatedClient()->request('POST', '/api/v1/folders', [
+            'json' => [
+                'name'      => 'Invalid',
+                'ownerId'   => (string) $owner->getId(),
+                'mediaType' => 'invalid_type',
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(400);
+    }
+
+    public function testPatchFolderUpdatesMediaType(): void
+    {
+        $owner  = $this->createUser();
+        $folder = new Folder('Folder', $owner);
+        $this->em->persist($folder);
+        $this->em->flush();
+
+        $response = $this->createAuthenticatedClient()->request('PATCH', '/api/v1/folders/'.$folder->getId(), [
+            'headers' => ['Content-Type' => 'application/merge-patch+json'],
+            'json'    => ['mediaType' => 'video'],
+        ]);
+
+        $this->assertResponseStatusCodeSame(200);
+        $this->assertSame('video', $response->toArray()['mediaType']);
+    }
 }
