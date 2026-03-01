@@ -98,30 +98,73 @@ Un fichier d'avancement des travaux est présent dans [`.github/avancement.md`](
 
 **Style visuel :** Material Design + Liquid Glass — simple, épuré, efficace.
 
-### Principes
-- **Material Design** : surfaces élevées, ombres douces, typographie claire, couleurs intentionnelles, états interactifs (hover, focus, active) explicites
-- **Liquid Glass** : fond semi-transparent avec backdrop-blur, bordures subtiles, effet de profondeur en couches
-- **KISS** : jamais de décoration inutile — chaque élément a un rôle
+### 📚 Références
 
-### Palette recommandée (Tailwind CSS v4)
-| Rôle | Classe |
+| Source | URL | Ce qu'on y trouve |
+|--------|-----|-------------------|
+| FreeFrontend Liquid Glass | https://freefrontend.com/css-liquid-glass/ | Catalogue de démos, descriptions techniques |
+| Apple Liquid Glass UI (CSS pur) | https://codepen.io/adamcurzon/pen/NPqwOby | Implémentation CSS reference (glassmorphism + mouse-tracking) |
+| CSS Liquid Glass (alexerlandsson) | https://codepen.io/alexerlandsson/pen/GgJQEKE | `feDisplacementMap` + `feSpecularLighting` — recréation fidèle Apple |
+
+### Qu'est-ce que le Liquid Glass (vs glassmorphism simple) ?
+
+| Technique | Glassmorphism classique | Liquid Glass |
+|-----------|------------------------|--------------|
+| Fond flou | `backdrop-filter: blur()` | `backdrop-filter: blur() saturate() brightness()` |
+| Distorsion | ❌ | SVG `feTurbulence` + `feDisplacementMap` |
+| Reflets | ❌ | `feSpecularLighting` ou gradient CSS multicouches |
+| Bord lumineux | `border: 1px solid rgba(white, 0.2)` | Ligne interne `via-white/60` + border subtile |
+| Fond requis | Quelconque | **Obligatoire** : fond coloré/dynamique visible derrière |
+
+### Architecture d'un composant Liquid Glass (HTML/CSS pur)
+
+```html
+<!-- Fond animé (blobs de couleur) — OBLIGATOIRE pour que l'effet soit visible -->
+<div class="animated-bg">...</div>
+
+<!-- SVG filter caché -->
+<svg class="hidden">
+  <defs>
+    <filter id="lg">
+      <feTurbulence type="fractalNoise" baseFrequency="0.55 0.65" numOctaves="2" seed="5"/>
+      <feDisplacementMap in="SourceGraphic" scale="6" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+</svg>
+
+<!-- Carte Liquid Glass (4 couches) -->
+<div class="lg-card"> <!-- position: relative; overflow: hidden; border-radius -->
+  <!-- Couche 1 : distorsion + flou -->
+  <div class="lg-blur"/> <!-- backdrop-filter: blur(24px) saturate(200%); filter: url(#lg) -->
+  <!-- Couche 2 : teinte -->
+  <div class="lg-tint"/> <!-- bg-white/10 ou bg-white/15 -->
+  <!-- Couche 3 : reflet spéculaire (gradient diagonale claire → sombre) -->
+  <div class="lg-shine"/> <!-- background: linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0.05)) -->
+  <!-- Couche 4 : ligne de reflet supérieure -->
+  <div class="lg-topline"/> <!-- gradient horizontal blanc translucide -->
+  <!-- Couche 5 : contenu -->
+  <div class="lg-content relative z-10">...</div>
+</div>
+```
+
+### Principes Material Design
+- Surfaces élevées, ombres douces, typographie claire
+- États interactifs explicites (hover, focus, active)
+- Hiérarchie visuelle via taille/poids de police, pas via couleurs
+
+### Palette (Tailwind CSS v4)
+| Rôle | Valeur |
 |------|--------|
-| Fond principal | `bg-white/80 backdrop-blur-xl` |
-| Surface carte | `bg-white/60 backdrop-blur-md border border-white/30 shadow-sm` |
-| Accent primaire | `bg-blue-600` / `text-blue-600` |
-| Texte principal | `text-gray-900` |
-| Texte secondaire | `text-gray-500` |
-| Danger | `text-red-600` |
-
-### Composants type
-- **Cartes** : `rounded-2xl bg-white/60 backdrop-blur-md border border-white/20 shadow-sm`
-- **Boutons primaires** : `bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-4 py-2 font-medium transition-colors`
-- **Inputs** : `bg-white/50 border border-gray-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500`
-- **Sidebar** : `bg-white/70 backdrop-blur-md border-r border-white/30`
-- **Navbar** : `bg-white/80 backdrop-blur-xl border-b border-white/30`
+| Fond page (dark) | `from-slate-900 via-blue-950 to-indigo-900` |
+| Surface Liquid Glass | `bg-white/10 backdrop-blur-2xl` + SVG filter |
+| Reflet spéculaire | `linear-gradient(135deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.05) 100%)` |
+| Accent primaire | `bg-blue-500` / `text-blue-400` (sur fond sombre) |
+| Texte principal | `text-white` (fond sombre) ou `text-gray-900` (fond clair) |
+| Texte secondaire | `text-white/60` ou `text-gray-400` |
 
 ### Règles strictes
-- Toujours `rounded-2xl` ou `rounded-xl` (jamais `rounded`)
-- `transition-colors` sur tous les éléments interactifs
-- `focus:outline-none focus:ring-2 focus:ring-blue-500` sur tous les inputs/boutons
-- Pas de couleurs vives non intentionnelles
+- Toujours `rounded-2xl` ou `rounded-3xl` sur les cartes
+- `transition-all` sur tous les éléments interactifs
+- `focus:outline-none focus:ring-2 focus:ring-blue-400/50` sur inputs/boutons
+- Le fond **doit** être coloré et dynamique pour que Liquid Glass soit visible
+- Ne jamais mettre du texte directement sur le fond flou sans couche de contenu dédiée

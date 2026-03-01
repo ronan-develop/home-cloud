@@ -1,0 +1,33 @@
+/* === Liquid Glass Card === */
+.animated-bg { /* ... */ }
+.bg-blob-mid { /* ... */ }
+.lg-card {
+	position: relative;
+	width: 100%;
+	max-width: 430px;
+	border-radius: 2.2rem;
+	overflow: hidden;
+	box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.17);
+	background: rgba(255,255,255,0.10);
+}
+
+.lg-content {
+	position: relative;
+	z-index: 10;
+	padding: 2.8rem 2.2rem 2.2rem 2.2rem;
+	font-family: 'Inter', Arial, sans-serif;
+	text-align: center;
+}
+
+.logo-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 4.2rem; height: 4.2rem;
+	border-radius: 1.2rem;
+	background: rgba(255,255,255,0.18);
+	border: 1px solid rgba(255,255,255,0.28);
+	backdrop-filter: blur(8px);
+	font-size: 2.1rem;
+	margin-bottom: 1.1rem;
+}

@@ -1,0 +1,11 @@
+/* === main.css ===
+   Ce fichier centralise les imports CSS pour HomeCloud.
+   Chaque section de design (liquid glass, layout, forms, etc.) est dans un fichier dédié.
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "liquid-glass.css";
+@import "layout.css";
+@import "form.css";
+@import "button.css";
+@import "animation.css";

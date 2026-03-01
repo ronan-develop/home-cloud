@@ -1,0 +1,4 @@
+/* === Animations === */
+@keyframes blobA { from { transform: translate(0,0) scale(1); } to { transform: translate(60px,-60px) scale(1.12); } }
+@keyframes blobB { from { transform: translate(0,0) scale(1); } to { transform: translate(-50px,40px) scale(1.08); } }
+@keyframes blobC { from { transform: translate(0,0) scale(1); } to { transform: translate(40px,50px) scale(0.92); } }
