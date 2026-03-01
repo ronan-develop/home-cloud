@@ -1,7 +1,8 @@
-<div data-controller="new-menu" class="relative mb-2">
+<div id="new-menu-btn-wrapper" class="relative mb-2">
 
-    <button data-testid="new-btn"
-            data-action="click->new-menu#toggle"
+    <button id="new-menu-btn"
+            data-testid="new-btn"
+            type="button"
             class="w-full flex items-center gap-2 px-4 py-2.5 rounded-2xl
                    bg-white border border-gray-200 shadow-sm hover:shadow-md
                    text-sm font-semibold text-gray-700 transition-all cursor-pointer">
@@ -15,8 +16,9 @@
      data-testid="new-menu"
      class="hidden fixed bg-white rounded-2xl shadow-xl border border-gray-100 py-1 z-[9999] w-52">
 
-    <button data-testid="new-menu-new-folder"
-            id="new-menu-new-folder-btn"
+    <button id="new-menu-new-folder-btn"
+            data-testid="new-menu-new-folder"
+            type="button"
             class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700
                    hover:bg-gray-50 transition-colors text-left cursor-pointer">
         <span>📁</span> Nouveau dossier
@@ -38,3 +40,59 @@
         <input type="file" id="new-menu-folder-input" webkitdirectory multiple class="hidden">
     </label>
 </div>
+
+<script>
+(function () {
+    var btn        = document.getElementById('new-menu-btn');
+    var menu       = document.getElementById('new-menu');
+    var folderBtn  = document.getElementById('new-menu-new-folder-btn');
+    var fileInput  = document.getElementById('new-menu-file-input');
+    var folderInput = document.getElementById('new-menu-folder-input');
+
+    function positionMenu() {
+        var rect = btn.getBoundingClientRect();
+        menu.style.top   = (rect.bottom + 4) + 'px';
+        menu.style.left  = rect.left + 'px';
+        menu.style.width = rect.width + 'px';
+    }
+
+    function openMenu() {
+        positionMenu();
+        menu.classList.remove('hidden');
+    }
+
+    function closeMenu() {
+        menu.classList.add('hidden');
+    }
+
+    btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        menu.classList.contains('hidden') ? openMenu() : closeMenu();
+    });
+
+    folderBtn.addEventListener('click', function () {
+        closeMenu();
+        document.dispatchEvent(new CustomEvent('new-menu:open-folder-modal'));
+    });
+
+    fileInput.addEventListener('change', function () {
+        var file = fileInput.files[0];
+        fileInput.value = '';
+        if (!file) return;
+        closeMenu();
+        document.dispatchEvent(new CustomEvent('new-menu:file-selected', { detail: { file: file } }));
+    });
+
+    folderInput.addEventListener('change', function () {
+        folderInput.value = '';
+        closeMenu();
+        alert('Folder import — coming soon 🚧');
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!btn.contains(e.target) && !menu.contains(e.target)) {
+            closeMenu();
+        }
+    });
+}());
+</script>
