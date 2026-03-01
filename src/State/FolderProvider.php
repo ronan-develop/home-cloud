@@ -58,10 +58,11 @@ final class FolderProvider implements ProviderInterface
     public function toOutput(Folder $folder): FolderOutput
     {
         $output = new FolderOutput();
-        $output->id = (string) $folder->getId();
-        $output->name = $folder->getName();
-        $output->parentId = $folder->getParent() ? (string) $folder->getParent()->getId() : null;
-        $output->ownerId = (string) $folder->getOwner()->getId();
+        $output->id        = (string) $folder->getId();
+        $output->name      = $folder->getName();
+        $output->parentId  = $folder->getParent() ? (string) $folder->getParent()->getId() : null;
+        $output->ownerId   = (string) $folder->getOwner()->getId();
+        $output->mediaType = $folder->getMediaType()->value;
         $output->createdAt = $folder->getCreatedAt()->format(\DateTimeInterface::ATOM);
 
         return $output;

@@ -78,5 +78,6 @@ final class FolderOutput
     public string $name = '';
     public ?string $parentId = null;
     public ?string $ownerId = null;
+    public string $mediaType = 'general';
     public string $createdAt = '';
 }

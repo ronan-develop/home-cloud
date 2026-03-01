@@ -11,6 +11,7 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\FolderOutput;
 use App\Entity\Folder;
+use App\Enum\FolderMediaType;
 use App\Repository\FolderRepository;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -81,7 +82,14 @@ final class FolderProcessor implements ProcessorInterface
                 ?? throw new NotFoundHttpException('Parent folder not found');
         }
 
+        $mediaType = FolderMediaType::General;
+        if ($data->mediaType !== 'general') {
+            $mediaType = FolderMediaType::tryFrom($data->mediaType)
+                ?? throw new BadRequestHttpException('Invalid mediaType: '.$data->mediaType);
+        }
+
         $folder = new Folder($data->name, $owner, $parent);
+        $folder->setMediaType($mediaType);
         $this->em->persist($folder);
         $this->em->flush();
 
@@ -99,6 +107,12 @@ final class FolderProcessor implements ProcessorInterface
 
         if ($data->name !== '') {
             $folder->setName($data->name);
+        }
+
+        if ($data->mediaType !== 'general') {
+            $mediaType = FolderMediaType::tryFrom($data->mediaType)
+                ?? throw new BadRequestHttpException('Invalid mediaType: '.$data->mediaType);
+            $folder->setMediaType($mediaType);
         }
 
         if (array_key_exists('parentId', (array) $data)) {
