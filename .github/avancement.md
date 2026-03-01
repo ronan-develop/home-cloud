@@ -96,9 +96,7 @@
 
 ## 🚧 En cours
 
-- `refactor/storage-neutralize` — Phase 8 terminée, à merger dans `main`
-- **Phase 8** — 34/34 tests ✅, prêt pour merge
-- **Phase 7 — Frontend** en attente (post-merge Phase 8)
+- **Phase 7 — Frontend** — Section A terminée ✅, Section B en cours
 
 ### 🚀 Déploiement o2switch — Infos prod
 
@@ -131,6 +129,18 @@ bash bin/deploy.sh --update  # Mise à jour code (git pull + composer + migratio
 | Auth web | Session Symfony (séparée du JWT API) |
 
 **Principe :** le frontend appelle les services Symfony directement. Le JWT + REST API restent la couche pour les apps mobiles (futures).
+
+### 🎨 Style visuel — Material Design + Liquid Glass
+
+> Simple, épuré, efficace.
+
+| Principe | Détail |
+|----------|--------|
+| **Material Design** | Surfaces élevées, ombres douces, typographie claire, états interactifs explicites |
+| **Liquid Glass** | `bg-white/60 backdrop-blur-md`, bordures subtiles (`border-white/20`), profondeur en couches |
+| **Cohérence** | `rounded-2xl` partout, `transition-colors` sur chaque élément interactif |
+
+**Palette :** fond `bg-white/80 backdrop-blur-xl` · accent `blue-600` · texte `gray-900/500` · danger `red-600`
 
 ---
 
@@ -411,14 +421,16 @@ Phase terminée. Voir section 9 pour les détails techniques.
 
 **Principe :** le frontend appelle les services Symfony directement. Le JWT + REST API restent la couche pour les apps mobiles (futures).
 
-- [ ] **A — Fondation**
-  - [ ] Installer AssetMapper + `symfony/ux-live-component`
-  - [ ] Tailwind CSS v4 standalone CLI (`./tailwindcss --watch`)
-  - [ ] Layout `base.html.twig` (navbar, sidebar, zone contenu)
-- [ ] **B — Auth web**
-  - [ ] Firewall session dans `security.yaml` (séparé du firewall JWT `/api`)
-  - [ ] `LoginController` + `login.html.twig`
-  - [ ] Logout
+- [x] **A — Fondation** ✅
+  - [x] Installer AssetMapper + `symfony/ux-live-component`
+  - [x] Tailwind CSS v4 standalone CLI (`php bin/console tailwind:build --watch`)
+  - [x] Layout `base.html.twig` + `web/layout.html.twig` (navbar, sidebar, zone contenu)
+  - [x] `WebLayoutTest` — 5/5 ✅ (TDD RED→GREEN)
+- [ ] **B — Auth web** ← en cours
+  - [x] Firewall session dans `security.yaml` (séparé du firewall JWT `/api`)
+  - [x] `LoginController` + `login.html.twig`
+  - [x] Logout
+  - [ ] Test connexion réelle (login POST → session → accès `/`) + test logout
 - [ ] **C — Explorateur fichiers**
   - [ ] Live Component `FolderBrowser` (arborescence, navigation)
   - [ ] Live Component `FileList` (liste fichiers, pagination)
