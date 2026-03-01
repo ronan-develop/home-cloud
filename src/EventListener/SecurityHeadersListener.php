@@ -11,18 +11,13 @@ use Symfony\Component\HttpKernel\KernelEvents;
 /**
  * Ajoute les headers de sécurité HTTP sur toutes les réponses de l'API.
  *
- * Headers ajoutés :
+ * Headers ajoutés sur toutes les réponses :
  * - X-Content-Type-Options: nosniff  → empêche le MIME sniffing navigateur
  * - X-Frame-Options: DENY            → empêche l'embedding dans des iframes (clickjacking)
  * - Referrer-Policy: no-referrer     → ne transmet pas l'URL de la page précédente
  *
- * Note : X-Content-Type-Options est également ajouté individuellement sur les
- * réponses de téléchargement (FileDownloadController, MediaThumbnailController)
- * pour être explicite. Ce listener le garantit globalement sur toutes les routes.
- *
- * Pourquoi un EventListener et non public/index.php ?
- * L'EventListener est testé par le kernel Symfony, n'est pas dépendant de la
- * configuration du serveur web, et est portable entre PHP-FPM et CLI.
+ * Header ajouté uniquement sur les routes /api/* (hors /api/docs) :
+ * - Content-Security-Policy: default-src 'none' → l'API ne sert que du JSON
  */
 #[AsEventListener(event: KernelEvents::RESPONSE)]
 final class SecurityHeadersListener
@@ -38,14 +33,12 @@ final class SecurityHeadersListener
         $headers->set('X-Frame-Options', 'DENY');
         $headers->set('Referrer-Policy', 'no-referrer');
 
-        // Pas de CSP strict sur la documentation Swagger UI :
-        // elle charge des scripts, styles et fait des requêtes fetch vers l'API.
         $path = $event->getRequest()->getPathInfo();
-        if (str_starts_with($path, '/api/docs')) {
-            return;
-        }
 
-        // L'API ne sert que du JSON — aucune ressource externe autorisée
-        $headers->set('Content-Security-Policy', "default-src 'none'");
+        // CSP strict uniquement sur l'API (JSON) — pas sur le frontend HTML.
+        // La Swagger UI est exclue car elle charge des scripts et styles externes.
+        if (str_starts_with($path, '/api/') && !str_starts_with($path, '/api/docs')) {
+            $headers->set('Content-Security-Policy', "default-src 'none'");
+        }
     }
 }

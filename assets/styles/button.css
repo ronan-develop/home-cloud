@@ -1,0 +1,25 @@
+/* === Boutons === */
+.lg-btn {
+	display: block;
+	width: 100%;
+	border: none;
+	border-radius: 2rem;
+	background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+	color: #222;
+	font-weight: 700;
+	font-size: 1.18rem;
+	padding: 1.1rem 0;
+	box-shadow: 0 4px 24px 0 var(--clr-shadow);
+	transition: all 0.2s;
+	cursor: pointer;
+	font-family: 'Inter', Arial, sans-serif;
+	outline: none;
+	margin-top: 0.5rem;
+}
+.lg-btn:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
+	filter: brightness(1.05);
+}
+.lg-btn:active { transform: translateY(0); }
+.lg-btn:focus { box-shadow: 0 0 0 3px var(--clr-focus-ring), 0 4px 24px 0 var(--clr-shadow); }
