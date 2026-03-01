@@ -36,11 +36,10 @@
             </button>
 
             <div id="nouveau-menu" data-testid="nouveau-menu"
-                 class="hidden absolute left-0 top-full mt-1 w-52 bg-white rounded-2xl
-                        shadow-xl border border-gray-100 py-1 z-40">
+                 class="hidden fixed bg-white rounded-2xl shadow-xl border border-gray-100 py-1 z-[9999]">
                 <button onclick="openNewFolderModal()"
                         class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700
-                               hover:bg-gray-50 transition-colors text-left">
+                               hover:bg-gray-50 transition-colors text-left cursor-pointer">
                     <span>📁</span> Nouveau dossier
                 </button>
                 <hr class="my-1 border-gray-100">
@@ -194,7 +193,17 @@
     // ── Menu Nouveau ────────────────────────────────────────────────────
     window.toggleNouveauMenu = function (e) {
         if (e) e.stopPropagation();
-        document.getElementById('nouveau-menu').classList.toggle('hidden');
+        var menu = document.getElementById('nouveau-menu');
+        var btn  = document.querySelector('[data-testid="nouveau-btn"]');
+        if (menu.classList.contains('hidden')) {
+            var r = btn.getBoundingClientRect();
+            menu.style.top   = (r.bottom + 4) + 'px';
+            menu.style.left  = r.left + 'px';
+            menu.style.width = r.width + 'px';
+            menu.classList.remove('hidden');
+        } else {
+            menu.classList.add('hidden');
+        }
     };
     // Les clics DANS le menu ne doivent jamais remonter jusqu'au handler document
     document.getElementById('nouveau-menu').addEventListener('click', function (e) {
