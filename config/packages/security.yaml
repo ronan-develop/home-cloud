@@ -49,6 +49,7 @@ security:
         - { path: ^/api/v1/auth/token/refresh$, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: ROLE_USER }
         - { path: ^/login$, roles: PUBLIC_ACCESS }
+        - { path: ^/web/token$, roles: ROLE_USER }
         - { path: ^/, roles: ROLE_USER }
 
 when@test:
