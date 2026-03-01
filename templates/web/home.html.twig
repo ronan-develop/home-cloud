@@ -22,9 +22,9 @@
 <div data-testid="file-explorer" class="flex gap-4">
 
     {# Sidebar dossiers #}
-    <aside class="w-48 shrink-0">
-        <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-2 mb-2">Dossiers</h3>
 
+    <aside class="w-48 shrink-0">
+        <twig:SectionTitle :text="'Dossiers'" :icon="'📁'" />
         <twig:SidebarFolders :folders="folders" :current-folder="currentFolder ?? null" />
     </aside>
 

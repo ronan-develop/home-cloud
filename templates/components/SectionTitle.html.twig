@@ -1,0 +1,6 @@
+{# Composant SectionTitle — Titre de section stylisé #}
+<h2 class="section-title">
+  {% if icon %}<span class="section-title-icon">{{ icon|raw }}</span>{% endif %}
+  {{ text }}
+</h2>
+{# Props attendues : text (obligatoire), icon (optionnel) #}
