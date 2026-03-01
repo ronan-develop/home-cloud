@@ -44,6 +44,9 @@ security:
                 secret: '%kernel.secret%'
 
     access_control:
+        - { path: ^/api/request-reset-password$, roles: PUBLIC_ACCESS }
+        - { path: ^/api/reset-password$, roles: PUBLIC_ACCESS }
+        - { path: ^/reset-password$, roles: PUBLIC_ACCESS }
         - { path: ^/api/docs, roles: PUBLIC_ACCESS }
         - { path: ^/api/v1/auth/login$, roles: PUBLIC_ACCESS }
         - { path: ^/api/v1/auth/token/refresh$, roles: PUBLIC_ACCESS }

@@ -44,6 +44,7 @@ class File
     #[ORM\Column(length: 1024)]
     private string $path;
 
+
     /**
      * Indique si le fichier a été neutralisé au stockage (stocké en .bin)
      * car son extension est potentiellement dangereuse côté navigateur
@@ -84,13 +85,48 @@ class File
         $this->createdAt = new \DateTimeImmutable();
     }
 
-    public function getId(): Uuid { return $this->id; }
-    public function getOriginalName(): string { return $this->originalName; }
-    public function getMimeType(): string { return $this->mimeType; }
-    public function getSize(): int { return $this->size; }
-    public function getPath(): string { return $this->path; }
-    public function getFolder(): Folder { return $this->folder; }
-    public function getOwner(): User { return $this->owner; }
-    public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
-    public function isNeutralized(): bool { return $this->neutralized; }
+    public function getId(): Uuid
+    {
+        return $this->id;
+    }
+    public function getOriginalName(): string
+    {
+        return $this->originalName;
+    }
+    public function getMimeType(): string
+    {
+        return $this->mimeType;
+    }
+    public function getSize(): int
+    {
+        return $this->size;
+    }
+    public function getPath(): string
+    {
+        return $this->path;
+    }
+    public function getFolder(): Folder
+    {
+        return $this->folder;
+    }
+    public function getOwner(): User
+    {
+        return $this->owner;
+    }
+    public function getCreatedAt(): \DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+    public function isNeutralized(): bool
+    {
+        return $this->neutralized;
+    }
+
+    /**
+     * Indique si l'entité est un dossier (toujours false pour File)
+     */
+    public function isFolder(): bool
+    {
+        return false;
+    }
 }
