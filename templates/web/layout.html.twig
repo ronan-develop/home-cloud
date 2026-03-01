@@ -24,6 +24,19 @@
 
     {# Sidebar Liquid Glass #}
     <aside class="w-56 shrink-0 bg-white/70 backdrop-blur-md border-r border-white/40 p-3 flex flex-col gap-0.5">
+
+        {# Bouton upload principal #}
+        <label class="flex items-center justify-center gap-2 px-3 py-2.5 mb-2 rounded-xl
+                       bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold
+                       cursor-pointer transition-colors shadow-sm">
+            <span>⬆️</span> Importer
+            <form id="sidebar-upload-form" method="post" action="{{ path('app_file_upload') }}" enctype="multipart/form-data" class="hidden">
+                <input type="hidden" name="folder_id" value="">
+                <input type="file" name="file" id="sidebar-file-input"
+                       onchange="this.form.submit()">
+            </form>
+        </label>
+
         {% set nav_items = [
             { route: 'app_home', icon: '📁', label: 'Mes fichiers' },
             { route: '#',        icon: '🖼️', label: 'Galerie' },
