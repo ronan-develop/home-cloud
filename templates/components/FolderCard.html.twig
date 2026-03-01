@@ -1,7 +1,38 @@
-{# Composant FolderCard — Carte dossier/fichier #}
+
+{# Composant FolderCard — Carte dossier ou fichier enrichie #}
 <div class="folder-card">
-  <div class="folder-icon">{{ item.isFolder ? '📁' : '📄' }}</div>
-  <div class="folder-name">{{ item.name }}</div>
-  {# Ajout d’actions ou d’infos complémentaires possible ici #}
+  {% if item.isFolder %}
+    <div class="folder-icon">📁</div>
+    <div class="folder-name">{{ item.name }}</div>
+    {# Actions dossier (ex: ouvrir) à ajouter ici si besoin #}
+  {% else %}
+    <div class="file-icon">
+      {% if item.mimeType is defined and item.mimeType starts with 'image/' %}🖼️
+      {% elseif item.mimeType is defined and item.mimeType starts with 'video/' %}🎬
+      {% elseif item.mimeType is defined and item.mimeType starts with 'audio/' %}🎵
+      {% elseif item.mimeType is defined and item.mimeType == 'application/pdf' %}📄
+      {% else %}📎{% endif %}
+    </div>
+    <div class="file-name">{{ item.originalName ?? item.name }}</div>
+    <div class="file-meta">
+      {% if item.size is defined %}{{ item.size | number_format(0, ',', ' ') }} o · {% endif %}
+      {% if item.createdAt is defined %}{{ item.createdAt | date('d/m/Y') }}{% endif %}
+      {% if item.isNeutralized is defined and item.isNeutralized %}<span class="text-amber-500 ml-1" title="Fichier neutralisé">⚠️</span>{% endif %}
+    </div>
+    <div class="file-actions" style="margin-top:0.7rem; display:flex; gap:0.5rem;">
+      {% if item.id is defined %}
+        <a href="{{ path('app_file_download', { id: item.id }) }}"
+           class="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
+           title="Télécharger">⬇️</a>
+        <form method="post" action="{{ path('app_file_delete', { id: item.id }) }}"
+              onsubmit="return confirm('Supprimer « {{ item.originalName|e('js') }} » ?')">
+          <input type="hidden" name="folder_id" value="{{ item.folderId ?? '' }}">
+          <button type="submit"
+                  class="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                  title="Supprimer">🗑️</button>
+        </form>
+      {% endif %}
+    </div>
+  {% endif %}
 </div>
 {# Props attendues : item (objet dossier/fichier) #}
