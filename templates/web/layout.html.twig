@@ -261,7 +261,7 @@
                 'Authorization': 'Bearer ' + token,
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ name: name }),
+            body: JSON.stringify({ name: name, ownerId: '{{ app.user.id }}' }),
         });
         if (res.ok) {
             closeModal('new-folder-modal');
