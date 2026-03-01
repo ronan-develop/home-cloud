@@ -23,7 +23,9 @@
         "symfony/dotenv": "8.0.*",
         "symfony/expression-language": "8.0.*",
         "symfony/flex": "^2",
+        "symfony/form": "8.0.*",
         "symfony/framework-bundle": "8.0.*",
+        "symfony/mailer": "8.0.*",
         "symfony/messenger": "8.0.*",
         "symfony/mime": "8.0.*",
         "symfony/property-access": "8.0.*",
@@ -35,6 +37,7 @@
         "symfony/ux-live-component": "^2.32",
         "symfony/validator": "8.0.*",
         "symfony/yaml": "8.0.*",
+        "symfonycasts/reset-password-bundle": "^1.24",
         "symfonycasts/tailwind-bundle": "^0.12.0"
     },
     "config": {
