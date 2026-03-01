@@ -118,29 +118,7 @@
 </div>
 
 {# === Modal nouveau dossier === #}
-<div id="new-folder-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6">
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="text-base font-semibold text-gray-800 dark:text-gray-100">Nouveau dossier</h2>
-            <button onclick="closeModal('new-folder-modal')" class="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
-        </div>
-        <input type="text" id="new-folder-input" placeholder="Nom du dossier"
-               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-transparent
-                      focus:outline-none focus:ring-2 focus:ring-blue-400/50 dark:border-gray-700
-                      dark:text-white mb-4">
-        <div class="flex gap-2 justify-end">
-            <button onclick="closeModal('new-folder-modal')"
-                    class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 rounded-xl transition-colors">
-                Annuler
-            </button>
-            <button onclick="submitNewFolder()"
-                    class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold
-                           rounded-xl transition-colors">
-                Créer
-            </button>
-        </div>
-    </div>
-</div>
+<twig:NewFolderModal :folders="userFolders" />
 
 <script>
 (function () {
@@ -159,13 +137,7 @@
         }
     };
 
-    // ── Menu Nouveau — géré par new_menu_controller.js (Stimulus) ───────
-    // Écoute les events CustomEvent émis par le controller
-    document.addEventListener('new-menu:open-folder-modal', function () {
-        document.getElementById('new-folder-input').value = '';
-        document.getElementById('new-folder-modal').classList.remove('hidden');
-        document.getElementById('new-folder-input').focus();
-    });
+    // ── new-menu:file-selected → ouvre la modal upload ──────────────────
     document.addEventListener('new-menu:file-selected', function (e) {
         var file = e.detail.file;
         _pendingFile = file;
@@ -243,30 +215,6 @@
             }
         };
         xhr.send(fd);
-    };
-
-    // ── Nouveau dossier ─────────────────────────────────────────────────
-    document.getElementById('new-folder-input').addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') submitNewFolder();
-        if (e.key === 'Escape') closeModal('new-folder-modal');
-    });
-
-    window.submitNewFolder = async function () {
-        var name = document.getElementById('new-folder-input').value.trim();
-        if (!name) return;
-        var token = await HC.getToken();
-        var res = await fetch('{{ path('_api_/v1/folders_post') }}', {
-            method: 'POST',
-            headers: {
-                'Authorization': 'Bearer ' + token,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ name: name, ownerId: '{{ app.user.id }}' }),
-        });
-        if (res.ok) {
-            closeModal('new-folder-modal');
-            window.location.reload();
-        }
     };
 
     // ── Empêche ouverture browser sur drop hors zone ────────────────────
