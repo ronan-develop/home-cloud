@@ -82,7 +82,7 @@ final class WebAuthTest extends WebTestCase
         $this->client->followRedirect();
 
         $this->assertResponseIsSuccessful();
-        $this->assertSelectorTextContains('nav', 'Alice Dupont');
+        $this->assertSelectorTextContains('aside', 'Alice Dupont');
     }
 
     // --- Flash messages ---
