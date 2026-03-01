@@ -1,0 +1,10 @@
+{# Composant MainToolbar — Barre de recherche + actions #}
+<div class="main-toolbar">
+  <input type="search" class="main-search" placeholder="{{ placeholder|default('Rechercher...') }}" />
+  <div class="main-actions">
+    {% for action in actions %}
+      <button type="button" class="main-action-btn" title="{{ action.title }}">{{ action.icon|raw }}</button>
+    {% endfor %}
+  </div>
+</div>
+{# Props attendues : placeholder (texte), actions (tableau d’icônes/boutons) #}

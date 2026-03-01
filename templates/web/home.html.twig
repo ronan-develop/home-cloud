@@ -5,6 +5,10 @@
 {% block content %}
 
 
+
+{# === MainToolbar component === #}
+<twig:MainToolbar :placeholder="'Rechercher...'" :actions="[{icon: '➕', title: 'Nouveau'}, {icon: '⚙️', title: 'Paramètres'}]" />
+
 {# === ImportCard component === #}
 <twig:ImportCard :current-folder="currentFolder ?? null" />
 
@@ -53,17 +57,7 @@
 
                 {# === FoldersGrid component === #}
                 <twig:FoldersGrid :items="files" />
-                                                onsubmit="return confirm('Supprimer « {{ file.originalName|e('js') }} » ?')">
-                                        <input type="hidden" name="folder_id" value="{{ currentFolder ? currentFolder.id : '' }}">
-                                        <button type="submit"
-                                                        class="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
-                                                        title="Supprimer">🗑️</button>
-                                    </form>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                </div>
+                <!-- Suppression du code orphelin après migration vers FoldersGrid -->
     </div>
 
 </div>
