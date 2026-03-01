@@ -25,17 +25,40 @@
     {# Sidebar Liquid Glass #}
     <aside class="w-56 shrink-0 bg-white/70 backdrop-blur-md border-r border-white/40 p-3 flex flex-col gap-0.5">
 
-        {# Bouton upload principal #}
-        <label class="flex items-center justify-center gap-2 px-3 py-2.5 mb-2 rounded-xl
-                       bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold
-                       cursor-pointer transition-colors shadow-sm">
-            <span>⬆️</span> Importer
-            <form id="sidebar-upload-form" method="post" action="{{ path('app_file_upload') }}" enctype="multipart/form-data" class="hidden">
-                <input type="hidden" name="folder_id" value="">
-                <input type="file" name="file" id="sidebar-file-input"
-                       onchange="this.form.submit()">
-            </form>
-        </label>
+        {# Bouton "Nouveau" — style Google Drive #}
+        <div class="relative mb-2">
+            <button data-testid="nouveau-btn"
+                    onclick="toggleNouveauMenu()"
+                    class="w-full flex items-center gap-2 px-4 py-2.5 rounded-2xl
+                           bg-white border border-gray-200 shadow-sm hover:shadow-md
+                           text-sm font-semibold text-gray-700 transition-all">
+                <span class="text-lg font-light">＋</span> Nouveau
+            </button>
+
+            <div id="nouveau-menu" data-testid="nouveau-menu"
+                 class="hidden absolute left-0 top-full mt-1 w-52 bg-white rounded-2xl
+                        shadow-xl border border-gray-100 py-1 z-40">
+                <button onclick="openNewFolderModal()"
+                        class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700
+                               hover:bg-gray-50 transition-colors text-left">
+                    <span>📁</span> Nouveau dossier
+                </button>
+                <hr class="my-1 border-gray-100">
+                <label class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700
+                              hover:bg-gray-50 transition-colors cursor-pointer">
+                    <span>📄</span> Importer un fichier
+                    <input type="file" id="sidebar-file-input" class="hidden"
+                           onchange="onFileSelected(this)">
+                </label>
+                <label class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700
+                              hover:bg-gray-50 transition-colors cursor-pointer">
+                    <span>📂</span> Importer un dossier
+                    <input type="file" id="sidebar-folder-input" class="hidden"
+                           webkitdirectory multiple
+                           onchange="onFolderSelected(this)">
+                </label>
+            </div>
+        </div>
 
         {% set nav_items = [
             { route: 'app_home', icon: '📁', label: 'Mes fichiers' },
@@ -73,16 +96,248 @@
     </main>
 </div>
 
-{# Capture phase : empêche le browser d'ouvrir le fichier sauf sur la zone upload #}
+{# === Modal sélection dossier pour upload === #}
+<div id="upload-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+    <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+        <div class="flex items-center justify-between mb-1">
+            <h2 class="text-base font-semibold text-gray-800 dark:text-gray-100">Importer</h2>
+            <button onclick="closeModal('upload-modal')" class="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+        </div>
+        <p id="upload-filename" class="text-sm text-gray-500 mb-4 truncate"></p>
+
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Destination</p>
+        <div data-testid="upload-folder-list" class="flex flex-col gap-1 max-h-48 overflow-y-auto mb-3">
+            <button type="button" onclick="selectUploadFolder('', this)"
+                    class="folder-opt active-folder flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-left transition-colors">
+                <span>🏠</span> Mes fichiers (racine)
+            </button>
+            {% for folder in userFolders %}
+                <button type="button" onclick="selectUploadFolder('{{ folder.id }}', this)"
+                        class="folder-opt flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-left
+                               text-gray-600 hover:bg-blue-50 transition-colors">
+                    <span>📁</span> {{ folder.name }}
+                </button>
+            {% endfor %}
+        </div>
+
+        <div class="border-t border-gray-100 pt-3 mb-4">
+            <input type="text" id="new-folder-name" placeholder="Ou créer un nouveau dossier…"
+                   oninput="onNewFolderName(this.value)"
+                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-transparent
+                          focus:outline-none focus:ring-2 focus:ring-blue-400/50 dark:border-gray-700
+                          dark:text-white dark:placeholder-gray-500">
+        </div>
+
+        <div id="upload-progress" class="hidden mb-3">
+            <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div id="upload-progress-bar" class="h-full bg-blue-500 transition-all duration-300" style="width:0%"></div>
+            </div>
+            <p id="upload-progress-label" class="text-xs text-gray-400 mt-1"></p>
+        </div>
+
+        <div class="flex gap-2 justify-end">
+            <button onclick="closeModal('upload-modal')"
+                    class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 rounded-xl transition-colors">
+                Annuler
+            </button>
+            <button id="upload-submit-btn" onclick="submitUpload()"
+                    class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold
+                           rounded-xl transition-colors disabled:opacity-50">
+                Uploader ⬆️
+            </button>
+        </div>
+    </div>
+</div>
+
+{# === Modal nouveau dossier === #}
+<div id="new-folder-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+    <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-base font-semibold text-gray-800 dark:text-gray-100">Nouveau dossier</h2>
+            <button onclick="closeModal('new-folder-modal')" class="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+        </div>
+        <input type="text" id="new-folder-input" placeholder="Nom du dossier"
+               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-transparent
+                      focus:outline-none focus:ring-2 focus:ring-blue-400/50 dark:border-gray-700
+                      dark:text-white mb-4">
+        <div class="flex gap-2 justify-end">
+            <button onclick="closeModal('new-folder-modal')"
+                    class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 rounded-xl transition-colors">
+                Annuler
+            </button>
+            <button onclick="submitNewFolder()"
+                    class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold
+                           rounded-xl transition-colors">
+                Créer
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
 (function () {
-    function block(e) {
-        var zone = document.querySelector('[data-controller="file-upload"]');
-        if (zone && zone.contains(e.target)) return; // laisser passer sur la zone
-        e.preventDefault();
-    }
-    window.addEventListener('dragover', block, true);
-    window.addEventListener('drop',     block, true);
+    // ── Token bridge ────────────────────────────────────────────────────
+    var _token = null;
+    var _tokenExp = 0;
+
+    window.HC = {
+        getToken: async function () {
+            if (_token && Date.now() < _tokenExp) return _token;
+            var res = await fetch('{{ path('app_web_token') }}');
+            var data = await res.json();
+            _token = data.token;
+            _tokenExp = Date.now() + 14 * 60 * 1000; // 14 min
+            return _token;
+        }
+    };
+
+    // ── Menu Nouveau ────────────────────────────────────────────────────
+    window.toggleNouveauMenu = function () {
+        document.getElementById('nouveau-menu').classList.toggle('hidden');
+    };
+    document.addEventListener('click', function (e) {
+        var btn = document.querySelector('[data-testid="nouveau-btn"]');
+        var menu = document.getElementById('nouveau-menu');
+        if (btn && !btn.contains(e.target) && menu && !menu.contains(e.target)) {
+            menu.classList.add('hidden');
+        }
+    });
+
+    // ── Utilitaires modal ───────────────────────────────────────────────
+    window.closeModal = function (id) {
+        document.getElementById(id).classList.add('hidden');
+    };
+    document.querySelectorAll('#upload-modal, #new-folder-modal').forEach(function (el) {
+        el.addEventListener('click', function (e) { if (e.target === this) closeModal(this.id); });
+    });
+
+    // ── Upload fichier ──────────────────────────────────────────────────
+    var _pendingFile = null;
+    var _uploadFolderId = '';
+
+    window.onFileSelected = function (input) {
+        var file = input.files && input.files[0];
+        input.value = '';
+        if (!file) return;
+        document.getElementById('nouveau-menu').classList.add('hidden');
+        _pendingFile = file;
+        _uploadFolderId = '';
+        document.getElementById('upload-filename').textContent = '\uD83D\uDCCE ' + file.name;
+        document.getElementById('new-folder-name').value = '';
+        document.querySelectorAll('.folder-opt').forEach(function (el) {
+            el.classList.remove('active-folder', 'bg-blue-50', 'text-blue-700');
+            el.classList.add('text-gray-600');
+        });
+        var first = document.querySelector('.folder-opt');
+        if (first) { first.classList.add('active-folder', 'bg-blue-50', 'text-blue-700'); first.classList.remove('text-gray-600'); }
+        document.getElementById('upload-progress').classList.add('hidden');
+        document.getElementById('upload-modal').classList.remove('hidden');
+    };
+
+    window.selectUploadFolder = function (id, btn) {
+        _uploadFolderId = id;
+        document.getElementById('new-folder-name').value = '';
+        document.querySelectorAll('.folder-opt').forEach(function (el) {
+            el.classList.remove('active-folder', 'bg-blue-50', 'text-blue-700');
+            el.classList.add('text-gray-600');
+        });
+        btn.classList.add('active-folder', 'bg-blue-50', 'text-blue-700');
+        btn.classList.remove('text-gray-600');
+    };
+
+    window.onNewFolderName = function (val) {
+        _uploadFolderId = '';
+        document.querySelectorAll('.folder-opt').forEach(function (el) {
+            el.classList.remove('active-folder', 'bg-blue-50', 'text-blue-700');
+            el.classList.add('text-gray-600');
+        });
+    };
+
+    window.submitUpload = async function () {
+        if (!_pendingFile) return;
+        var btn = document.getElementById('upload-submit-btn');
+        btn.disabled = true;
+
+        var token = await HC.getToken();
+        var fd = new FormData();
+        fd.append('file', _pendingFile);
+        fd.append('ownerId', '{{ app.user.id }}');
+
+        var newFolder = document.getElementById('new-folder-name').value.trim();
+        if (newFolder) {
+            fd.append('newFolderName', newFolder);
+        } else if (_uploadFolderId) {
+            fd.append('folderId', _uploadFolderId);
+        }
+
+        var progress = document.getElementById('upload-progress');
+        var bar = document.getElementById('upload-progress-bar');
+        var label = document.getElementById('upload-progress-label');
+        progress.classList.remove('hidden');
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '{{ path('_api_/v1/files_post') }}');
+        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+        xhr.upload.onprogress = function (e) {
+            if (e.lengthComputable) {
+                var pct = Math.round(e.loaded / e.total * 100);
+                bar.style.width = pct + '%';
+                label.textContent = pct + '%';
+            }
+        };
+        xhr.onload = function () {
+            if (xhr.status === 201) {
+                closeModal('upload-modal');
+                window.location.reload();
+            } else {
+                label.textContent = 'Erreur lors de l\'upload.';
+                btn.disabled = false;
+            }
+        };
+        xhr.send(fd);
+    };
+
+    // ── Nouveau dossier ─────────────────────────────────────────────────
+    window.openNewFolderModal = function () {
+        document.getElementById('nouveau-menu').classList.add('hidden');
+        document.getElementById('new-folder-input').value = '';
+        document.getElementById('new-folder-modal').classList.remove('hidden');
+        document.getElementById('new-folder-input').focus();
+    };
+
+    document.getElementById('new-folder-input').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') submitNewFolder();
+        if (e.key === 'Escape') closeModal('new-folder-modal');
+    });
+
+    window.submitNewFolder = async function () {
+        var name = document.getElementById('new-folder-input').value.trim();
+        if (!name) return;
+        var token = await HC.getToken();
+        var res = await fetch('{{ path('_api_/v1/folders_post') }}', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: name }),
+        });
+        if (res.ok) {
+            closeModal('new-folder-modal');
+            window.location.reload();
+        }
+    };
+
+    // ── Empêche ouverture browser sur drop hors zone ────────────────────
+    function blockBrowser(e) { e.preventDefault(); }
+    window.addEventListener('dragover', blockBrowser, true);
+    window.addEventListener('drop',     blockBrowser, true);
+
+    // ── Import dossier (stub — feature future) ──────────────────────────
+    window.onFolderSelected = function (input) {
+        input.value = '';
+        alert('Import de dossier — bientôt disponible 🚧');
+    };
 })();
 </script>
 
