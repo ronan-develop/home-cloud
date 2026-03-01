@@ -1,0 +1,12 @@
+{# Composant Breadcrumbs — Fil d’Ariane dynamique #}
+<nav class="main-breadcrumbs">
+  {% for segment in segments %}
+    {% if segment.url %}
+      <a href="{{ segment.url }}">{{ segment.label }}</a>
+      {% if not loop.last %}&nbsp;&gt;&nbsp;{% endif %}
+    {% else %}
+      <span>{{ segment.label }}</span>
+    {% endif %}
+  {% endfor %}
+</nav>
+{# Props attendues : segments (tableau label+url) #}
