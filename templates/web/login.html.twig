@@ -2,8 +2,11 @@
 
 {% block title %}Connexion — HomeCloud{% endblock %}
 
-{% block body %}
+{% block stylesheets %}
 <link rel="stylesheet" href="{{ asset('styles/main.css') }}">
+{% endblock %}
+
+{% block body %}
 
 <!-- 1. Fond animé -->
 <div class="animated-bg" aria-hidden="true">
@@ -45,13 +48,13 @@
         <p class="lg-subtitle">Connectez-vous à votre espace</p>
       </div>
 
-      <!-- Erreur d'authentification -->
-      {% if error %}
-        <div class="lg-error">
+      <!-- Flash messages (erreur de connexion) -->
+      {% for message in app.flashes('error') %}
+        <div class="flash-error lg-error">
           <span>⚠️</span>
-          <span>{{ error.messageKey|trans(error.messageData, 'security') }}</span>
+          <span>{{ message }}</span>
         </div>
-      {% endif %}
+      {% endfor %}
 
       <!-- Formulaire -->
       <form method="post" action="{{ path('app_login') }}">
