@@ -9,6 +9,12 @@
         {% block stylesheets %}{% endblock %}
     </head>
     <body class="bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 min-h-screen transition-colors">
+        {# Affichage global des messages flash #}
+        {% for label, messages in app.flashes %}
+            {% for message in messages %}
+                <twig:FlashMessage :type="label" :message="message" />
+            {% endfor %}
+        {% endfor %}
         {% block body %}{% endblock %}
     </body>
 </html>
