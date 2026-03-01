@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Enum\FolderMediaType;
 use App\Repository\FolderRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -31,6 +32,9 @@ class Folder
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(nullable: false)]
     private User $owner;
+
+    #[ORM\Column(type: 'string', enumType: FolderMediaType::class, options: ['default' => 'general'])]
+    private FolderMediaType $mediaType = FolderMediaType::General;
 
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
@@ -73,6 +77,16 @@ class Folder
     public function getChildren(): Collection
     {
         return $this->children;
+    }
+
+    public function getMediaType(): FolderMediaType
+    {
+        return $this->mediaType;
+    }
+
+    public function setMediaType(FolderMediaType $mediaType): void
+    {
+        $this->mediaType = $mediaType;
     }
 
     public function getOwner(): User
