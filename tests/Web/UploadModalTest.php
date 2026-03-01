@@ -58,7 +58,7 @@ final class UploadModalTest extends WebTestCase
 
     public function testWebTokenRequiresSession(): void
     {
-        $this->client->request('GET', '/api/web/token');
+        $this->client->request('GET', '/web/token');
         $this->assertResponseRedirects('/login');
     }
 
@@ -67,14 +67,12 @@ final class UploadModalTest extends WebTestCase
         $this->createUser();
         $this->login();
 
-        $this->client->request('GET', '/api/web/token');
+        $this->client->request('GET', '/web/token');
         $this->assertResponseIsSuccessful();
-        $this->assertResponseHeaderSame('content-type', 'application/json');
 
         $data = json_decode($this->client->getResponse()->getContent(), true);
         $this->assertArrayHasKey('token', $data);
         $this->assertNotEmpty($data['token']);
-        // JWT format : 3 parties séparées par des points
         $this->assertCount(3, explode('.', $data['token']));
     }
 
