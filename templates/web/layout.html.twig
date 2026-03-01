@@ -60,4 +60,17 @@
     </main>
 </div>
 
+{# Capture phase : empêche le browser d'ouvrir le fichier sauf sur la zone upload #}
+<script>
+(function () {
+    function block(e) {
+        var zone = document.querySelector('[data-controller="file-upload"]');
+        if (zone && zone.contains(e.target)) return; // laisser passer sur la zone
+        e.preventDefault();
+    }
+    window.addEventListener('dragover', block, true);
+    window.addEventListener('drop',     block, true);
+})();
+</script>
+
 {% endblock %}
