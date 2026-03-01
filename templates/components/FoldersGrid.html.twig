@@ -1,0 +1,13 @@
+{# Composant FoldersGrid — Grille de dossiers/fichiers #}
+<div class="folders-grid">
+  {% for item in items %}
+    <twig:FolderCard :item="item" />
+  {% else %}
+    <div class="folder-card" style="grid-column: 1/-1; text-align: center; opacity: 0.7;">
+      <div class="folder-icon">📂</div>
+      <div class="folder-name">Aucun fichier ici</div>
+      <div class="folder-empty-text">Glissez un fichier pour commencer</div>
+    </div>
+  {% endfor %}
+</div>
+{# Props attendues : items (liste de fichiers/dossiers) #}
