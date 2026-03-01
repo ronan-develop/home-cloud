@@ -85,6 +85,30 @@ final class WebAuthTest extends WebTestCase
         $this->assertSelectorTextContains('nav', 'Alice Dupont');
     }
 
+    // --- Flash messages ---
+
+    public function testLoginSuccessShowsWelcomeFlash(): void
+    {
+        $this->createUser('web@example.com', 'secret123', 'Alice Dupont');
+        $this->login('web@example.com', 'secret123');
+        $this->client->followRedirect();
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorExists('.flash-success');
+        $this->assertSelectorTextContains('.flash-success', 'Alice');
+    }
+
+    public function testLoginFailureShowsErrorFlash(): void
+    {
+        $this->createUser();
+        $this->login('web@example.com', 'mauvais_mot_de_passe');
+        $this->client->followRedirect();
+
+        $this->assertResponseIsSuccessful();
+        $this->assertRouteSame('app_login');
+        $this->assertSelectorExists('.flash-error');
+    }
+
     // --- Login invalide ---
 
     public function testLoginWithWrongPasswordStaysOnLoginPage(): void
