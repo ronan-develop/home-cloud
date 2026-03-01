@@ -21,3 +21,8 @@
 # Secrets locaux non versionnés
 /.secrets
 id_rsa
+
+###> symfony/asset-mapper ###
+/public/assets/
+/assets/vendor/
+###< symfony/asset-mapper ###
