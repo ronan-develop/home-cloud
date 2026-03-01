@@ -45,8 +45,9 @@ class NewMenuTest extends KernelTestCase
         $this->assertStringContainsString('hidden', $node->attr('class') ?? '');
     }
 
-    public function testHasStimulusController(): void
+    public function testHasInlineScript(): void
     {
-        $this->assertCount(1, $this->crawl()->filter('[data-controller="new-menu"]'));
+        $html = (string) $this->renderTwigComponent('NewMenu');
+        $this->assertStringContainsString('<script>', $html);
     }
 }
