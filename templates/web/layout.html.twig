@@ -1,0 +1,32 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<nav class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
+    <a href="{{ path('app_home') }}" class="text-xl font-bold text-blue-600">☁️ HomeCloud</a>
+    <div class="flex items-center gap-4">
+        <span class="text-sm text-gray-500">{{ app.user.displayName }}</span>
+        <a href="{{ path('app_logout') }}" class="text-sm text-gray-600 hover:text-red-600">Déconnexion</a>
+    </div>
+</nav>
+
+<div class="flex min-h-[calc(100vh-57px)]">
+    <aside class="w-56 bg-white border-r border-gray-200 p-4 flex flex-col gap-1 shrink-0">
+        <a href="{{ path('app_home') }}" class="block px-3 py-2 rounded-lg text-sm hover:bg-gray-100">📁 Mes fichiers</a>
+        <a href="#" class="block px-3 py-2 rounded-lg text-sm hover:bg-gray-100">🖼️ Galerie</a>
+        <a href="#" class="block px-3 py-2 rounded-lg text-sm hover:bg-gray-100">📚 Albums</a>
+        <a href="#" class="block px-3 py-2 rounded-lg text-sm hover:bg-gray-100">🔗 Partages</a>
+    </aside>
+
+    <main class="flex-1 p-6">
+        {% for type, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="mb-4 px-4 py-3 rounded text-sm {% if type == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endfor %}
+
+        {% block content %}{% endblock %}
+    </main>
+</div>
+{% endblock %}
