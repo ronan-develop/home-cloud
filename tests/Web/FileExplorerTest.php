@@ -124,9 +124,8 @@ final class FileExplorerTest extends WebTestCase
     public function testDeleteFileRedirectsToHome(): void
     {
         $user = $this->createUser();
-        $this->login();
 
-        // Créer un dossier + fichier directement en DB
+        // Créer un dossier + fichier AVANT login (user encore attaché)
         $folder = new Folder('Uploads', $user);
         $this->em->persist($folder);
 
@@ -136,6 +135,8 @@ final class FileExplorerTest extends WebTestCase
 
         $fileId = $file->getId()->toRfc4122();
 
+        $this->login();
+
         $this->client->request('POST', "/files/{$fileId}/delete");
         $this->assertResponseRedirects('/');
     }
@@ -143,15 +144,15 @@ final class FileExplorerTest extends WebTestCase
     public function testDeleteFileNotOwnedReturns403(): void
     {
         $owner = $this->createUser('owner@example.com');
-        $this->createUser('attacker@example.com', 'secret123');
 
-        // Fichier appartient à owner
+        // Fichier appartient à owner — créer AVANT login attacker
         $folder = new Folder('Uploads', $owner);
         $this->em->persist($folder);
         $file = new \App\Entity\File('private.txt', 'text/plain', 10, 'test/private.txt', $folder, $owner);
         $this->em->persist($file);
         $this->em->flush();
 
+        $this->createUser('attacker@example.com', 'secret123');
         $this->login('attacker@example.com');
         $this->client->request('POST', "/files/{$file->getId()->toRfc4122()}/delete");
         $this->assertResponseStatusCodeSame(403);
