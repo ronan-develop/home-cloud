@@ -42,7 +42,7 @@ class NewMenuTest extends KernelTestCase
     public function testMenuIsHiddenByDefault(): void
     {
         $node = $this->crawl()->filter('[data-testid="new-menu"]');
-        $this->assertStringContainsString('hidden', $node->attr('class') ?? '');
+        $this->assertStringContainsString('display:none', $node->attr('style') ?? '');
     }
 
     public function testHasInlineScript(): void
