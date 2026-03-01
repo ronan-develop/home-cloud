@@ -11,7 +11,7 @@
      class="mb-6 border-2 border-dashed border-blue-200 rounded-2xl p-6 text-center
             transition-colors hover:border-blue-400 hover:bg-blue-50/40
             dark:border-blue-800 dark:hover:border-blue-600 dark:hover:bg-blue-950/30"
-     data-action="dragover->file-upload#dragOver dragleave->file-upload#dragLeave drop->file-upload#drop">
+     data-action="dragenter->file-upload#dragEnter dragover->file-upload#dragOver dragleave->file-upload#dragLeave drop->file-upload#drop">
 
     <form method="post" action="{{ path('app_file_upload') }}" enctype="multipart/form-data"
           data-file-upload-target="form">
