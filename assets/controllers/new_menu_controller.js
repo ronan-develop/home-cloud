@@ -55,8 +55,10 @@ export default class extends Controller {
     }
 
     _handleDocumentClick(event) {
-        if (!this.element.contains(event.target)) {
-            this.menuTarget.classList.add('hidden');
+        const menu = this.menuTarget;
+        const btn  = this.element.querySelector('[data-testid="new-btn"]');
+        if (!btn.contains(event.target) && !menu.contains(event.target)) {
+            menu.classList.add('hidden');
         }
     }
 }
