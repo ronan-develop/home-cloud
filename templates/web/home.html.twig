@@ -51,33 +51,8 @@
             </div>
         {% endif %}
 
-                <div class="folders-grid">
-                    {% if files is empty %}
-                        <div class="folder-card" style="grid-column: 1/-1; text-align: center; opacity: 0.7;">
-                            <div class="folder-icon">📂</div>
-                            <div class="folder-name">Aucun fichier ici</div>
-                            <div class="folder-meta">Glissez un fichier pour commencer</div>
-                        </div>
-                    {% else %}
-                        {% for file in files %}
-                            <div class="folder-card">
-                                <div class="file-icon">
-                                    {% if file.mimeType starts with 'image/' %}🖼️
-                                    {% elseif file.mimeType starts with 'video/' %}🎬
-                                    {% elseif file.mimeType starts with 'audio/' %}🎵
-                                    {% elseif file.mimeType == 'application/pdf' %}📄
-                                    {% else %}📎{% endif %}
-                                </div>
-                                <div class="file-name">{{ file.originalName }}</div>
-                                <div class="file-meta">
-                                    {{ file.size | number_format(0, ',', ' ') }} o · {{ file.createdAt | date('d/m/Y') }}
-                                    {% if file.isNeutralized %}<span class="text-amber-500 ml-1" title="Fichier neutralisé">⚠️</span>{% endif %}
-                                </div>
-                                <div class="file-actions" style="margin-top:0.7rem; display:flex; gap:0.5rem;">
-                                    <a href="{{ path('app_file_download', { id: file.id }) }}"
-                                         class="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
-                                         title="Télécharger">⬇️</a>
-                                    <form method="post" action="{{ path('app_file_delete', { id: file.id }) }}"
+                {# === FoldersGrid component === #}
+                <twig:FoldersGrid :items="files" />
                                                 onsubmit="return confirm('Supprimer « {{ file.originalName|e('js') }} » ?')">
                                         <input type="hidden" name="folder_id" value="{{ currentFolder ? currentFolder.id : '' }}">
                                         <button type="submit"
