@@ -1,3 +1,67 @@
+/* Sidebar dossiers */
+.sidebar-folders {
+	padding-top: 0.5rem;
+}
+.sidebar-folders-title {
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: #94a3b8;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	padding-left: 0.5rem;
+	margin-bottom: 0.7rem;
+}
+.sidebar-folders-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.6rem;
+}
+.sidebar-folder-link {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.5rem 1rem;
+	border-radius: 1.1rem;
+	font-size: 1rem;
+	color: #6b7280;
+	background: transparent;
+	text-decoration: none;
+	transition: background 0.15s, color 0.15s;
+}
+.sidebar-folder-link:hover {
+	background: #e5e7eb;
+	color: #111827;
+}
+/* Active + hover : couleur thème */
+.sidebar-folder-link--active {
+	background: #e0e7ff;
+	color: #2563eb;
+	font-weight: 600;
+}
+.sidebar-folder-link--active:hover {
+	background: #c7d2fe;
+	color: #1d4ed8;
+}
+@media (prefers-color-scheme: dark) {
+	.sidebar-folder-link--active {
+		background: #1e293b;
+		color: #a5b4fc;
+	}
+	.sidebar-folder-link--active:hover {
+		background: #334155;
+		color: #818cf8;
+	}
+}
+@media (prefers-color-scheme: dark) {
+	.sidebar-folder-link--active {
+		background: #1e293b;
+		color: #a5b4fc;
+	}
+	.sidebar-folder-link:hover {
+		background: #334155;
+		color: #fff;
+	}
+}
 /* === Variables de thème (light / dark automatique via OS) === */
 :root {
 	--clr-bg:            #f7f8fa;
