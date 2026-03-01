@@ -91,3 +91,37 @@ Un fichier d'avancement des travaux est présent dans [`.github/avancement.md`](
 - Un commit RED (test seul) avant le commit GREEN (implémentation)
 - Les tests fonctionnels API couvrent : status HTTP, structure JSON, cas d'erreur (404, 400...)
 - Stack : PHPUnit + `symfony/test-pack` + `ApiTestCase` (API Platform)
+
+---
+
+## 🎨 Design Frontend — Directives
+
+**Style visuel :** Material Design + Liquid Glass — simple, épuré, efficace.
+
+### Principes
+- **Material Design** : surfaces élevées, ombres douces, typographie claire, couleurs intentionnelles, états interactifs (hover, focus, active) explicites
+- **Liquid Glass** : fond semi-transparent avec backdrop-blur, bordures subtiles, effet de profondeur en couches
+- **KISS** : jamais de décoration inutile — chaque élément a un rôle
+
+### Palette recommandée (Tailwind CSS v4)
+| Rôle | Classe |
+|------|--------|
+| Fond principal | `bg-white/80 backdrop-blur-xl` |
+| Surface carte | `bg-white/60 backdrop-blur-md border border-white/30 shadow-sm` |
+| Accent primaire | `bg-blue-600` / `text-blue-600` |
+| Texte principal | `text-gray-900` |
+| Texte secondaire | `text-gray-500` |
+| Danger | `text-red-600` |
+
+### Composants type
+- **Cartes** : `rounded-2xl bg-white/60 backdrop-blur-md border border-white/20 shadow-sm`
+- **Boutons primaires** : `bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-4 py-2 font-medium transition-colors`
+- **Inputs** : `bg-white/50 border border-gray-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500`
+- **Sidebar** : `bg-white/70 backdrop-blur-md border-r border-white/30`
+- **Navbar** : `bg-white/80 backdrop-blur-xl border-b border-white/30`
+
+### Règles strictes
+- Toujours `rounded-2xl` ou `rounded-xl` (jamais `rounded`)
+- `transition-colors` sur tous les éléments interactifs
+- `focus:outline-none focus:ring-2 focus:ring-blue-500` sur tous les inputs/boutons
+- Pas de couleurs vives non intentionnelles
