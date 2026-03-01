@@ -1,74 +1,77 @@
-<div id="new-menu-btn-wrapper" class="relative mb-2">
+<div id="new-menu-btn-wrapper" style="position:relative; margin-bottom:0.5rem;">
 
     <button id="new-menu-btn"
             data-testid="new-btn"
             type="button"
-            class="w-full flex items-center gap-2 px-4 py-2.5 rounded-2xl
-                   bg-white border border-gray-200 shadow-sm hover:shadow-md
-                   text-sm font-semibold text-gray-700 transition-all cursor-pointer">
-        <span class="text-lg font-light">＋</span> Nouveau
+            style="width:100%; display:flex; align-items:center; gap:0.5rem; padding:0.6rem 1rem;
+                   border-radius:2rem; background:#fff; border:1px solid #e5e7eb;
+                   box-shadow:0 1px 4px rgba(0,0,0,0.08); cursor:pointer;
+                   font-size:0.875rem; font-weight:600; color:#374151; transition:box-shadow 0.15s;"
+            onmouseover="this.style.boxShadow='0 3px 10px rgba(0,0,0,0.13)'"
+            onmouseout="this.style.boxShadow='0 1px 4px rgba(0,0,0,0.08)'">
+        <span style="font-size:1.1rem; font-weight:300;">＋</span> Nouveau
     </button>
 
 </div>
 
-{# Menu rendu au niveau du body pour échapper aux stacking contexts #}
+{# Menu — absolute sous le bouton, hors stacking context backdrop-filter #}
 <div id="new-menu"
      data-testid="new-menu"
-     class="hidden fixed rounded-2xl shadow-2xl border border-gray-200 py-1 z-[9999] w-52"
-     style="background-color: #ffffff; color: #111827;">
+     style="display:none; position:fixed; background:#ffffff; color:#111827;
+            border-radius:0.8rem; box-shadow:0 4px 24px 0 rgba(31,38,135,0.15);
+            border:1px solid #e5e7eb; padding:0.25rem 0; z-index:9999; min-width:200px;">
 
     <button id="new-menu-new-folder-btn"
             data-testid="new-menu-new-folder"
             type="button"
-            class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700
-                   hover:bg-gray-50 transition-colors text-left cursor-pointer">
+            style="width:100%; display:flex; align-items:center; gap:0.75rem;
+                   padding:0.65rem 1rem; background:none; border:none;
+                   font-size:0.875rem; color:#111827; text-align:left; cursor:pointer;"
+            onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='none'">
         <span>📁</span> Nouveau dossier
     </button>
 
-    <hr class="my-1 border-gray-100">
+    <hr style="margin:0.25rem 0; border:none; border-top:1px solid #f3f4f6;">
 
     <label data-testid="new-menu-import-file"
-           class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700
-                  hover:bg-gray-50 transition-colors cursor-pointer">
+           style="width:100%; display:flex; align-items:center; gap:0.75rem;
+                  padding:0.65rem 1rem; font-size:0.875rem; color:#111827; cursor:pointer;"
+           onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='none'">
         <span>📄</span> Importer un fichier
-        <input type="file" id="new-menu-file-input" class="hidden">
+        <input type="file" id="new-menu-file-input" style="display:none;">
     </label>
 
     <label data-testid="new-menu-import-folder"
-           class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700
-                  hover:bg-gray-50 transition-colors cursor-pointer">
+           style="width:100%; display:flex; align-items:center; gap:0.75rem;
+                  padding:0.65rem 1rem; font-size:0.875rem; color:#111827; cursor:pointer;"
+           onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='none'">
         <span>📂</span> Importer un dossier
-        <input type="file" id="new-menu-folder-input" webkitdirectory multiple class="hidden">
+        <input type="file" id="new-menu-folder-input" webkitdirectory multiple style="display:none;">
     </label>
 </div>
 
 <script>
 (function () {
-    var btn        = document.getElementById('new-menu-btn');
-    var menu       = document.getElementById('new-menu');
-    var folderBtn  = document.getElementById('new-menu-new-folder-btn');
-    var fileInput  = document.getElementById('new-menu-file-input');
+    var btn         = document.getElementById('new-menu-btn');
+    var menu        = document.getElementById('new-menu');
+    var folderBtn   = document.getElementById('new-menu-new-folder-btn');
+    var fileInput   = document.getElementById('new-menu-file-input');
     var folderInput = document.getElementById('new-menu-folder-input');
 
     function positionMenu() {
         var rect = btn.getBoundingClientRect();
-        menu.style.top   = (rect.bottom + 4) + 'px';
+        menu.style.top   = (rect.bottom + window.scrollY + 4) + 'px';
         menu.style.left  = rect.left + 'px';
         menu.style.width = rect.width + 'px';
     }
 
-    function openMenu() {
-        positionMenu();
-        menu.classList.remove('hidden');
-    }
-
-    function closeMenu() {
-        menu.classList.add('hidden');
-    }
+    function openMenu()  { positionMenu(); menu.style.display = 'block'; }
+    function closeMenu() { menu.style.display = 'none'; }
+    function isOpen()    { return menu.style.display !== 'none'; }
 
     btn.addEventListener('click', function (e) {
         e.stopPropagation();
-        menu.classList.contains('hidden') ? openMenu() : closeMenu();
+        isOpen() ? closeMenu() : openMenu();
     });
 
     folderBtn.addEventListener('click', function () {
@@ -91,9 +94,7 @@
     });
 
     document.addEventListener('click', function (e) {
-        if (!btn.contains(e.target) && !menu.contains(e.target)) {
-            closeMenu();
-        }
+        if (!btn.contains(e.target) && !menu.contains(e.target)) closeMenu();
     });
 }());
 </script>
