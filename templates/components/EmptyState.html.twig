@@ -1,0 +1,15 @@
+{# Composant EmptyState : affiche un état vide stylé avec icône, titre, sous-titre et action optionnelle #}
+<div class="flex flex-col items-center justify-center py-16 px-4 text-center">
+  {% if icon %}
+    <div class="mb-6 text-6xl opacity-40">{{ icon|raw }}</div>
+  {% endif %}
+  <h2 class="text-2xl font-semibold text-white mb-2">{{ title }}</h2>
+  {% if subtitle %}
+    <p class="text-white/60 mb-6">{{ subtitle }}</p>
+  {% endif %}
+  {% if actionLabel and actionUrl %}
+    <a href="{{ actionUrl }}" class="inline-block px-6 py-2 rounded-2xl bg-blue-500 text-white font-medium shadow-lg hover:bg-blue-600 transition-all focus:outline-none focus:ring-2 focus:ring-blue-400/50">
+      {{ actionLabel }}
+    </a>
+  {% endif %}
+</div>
