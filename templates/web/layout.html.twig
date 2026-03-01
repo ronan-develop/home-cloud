@@ -1,26 +1,52 @@
 {% extends 'base.html.twig' %}
 
 {% block body %}
-<nav class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
-    <a href="{{ path('app_home') }}" class="text-xl font-bold text-blue-600">☁️ HomeCloud</a>
-    <div class="flex items-center gap-4">
+
+{# Navbar Liquid Glass #}
+<nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-white/40 shadow-sm px-6 py-3 flex items-center justify-between">
+    <a href="{{ path('app_home') }}" class="flex items-center gap-2 font-bold text-gray-900 hover:text-blue-600 transition-colors">
+        <span class="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-sm shadow shadow-blue-200">☁️</span>
+        HomeCloud
+    </a>
+    <div class="flex items-center gap-3">
         <span class="text-sm text-gray-500">{{ app.user.displayName }}</span>
-        <a href="{{ path('app_logout') }}" class="text-sm text-gray-600 hover:text-red-600">Déconnexion</a>
+        <a href="{{ path('app_logout') }}"
+           class="text-sm px-3 py-1.5 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors">
+            Déconnexion
+        </a>
     </div>
 </nav>
 
-<div class="flex min-h-[calc(100vh-57px)]">
-    <aside class="w-56 bg-white border-r border-gray-200 p-4 flex flex-col gap-1 shrink-0">
-        <a href="{{ path('app_home') }}" class="block px-3 py-2 rounded-lg text-sm hover:bg-gray-100">📁 Mes fichiers</a>
-        <a href="#" class="block px-3 py-2 rounded-lg text-sm hover:bg-gray-100">🖼️ Galerie</a>
-        <a href="#" class="block px-3 py-2 rounded-lg text-sm hover:bg-gray-100">📚 Albums</a>
-        <a href="#" class="block px-3 py-2 rounded-lg text-sm hover:bg-gray-100">🔗 Partages</a>
+<div class="flex min-h-[calc(100vh-53px)]">
+
+    {# Sidebar Liquid Glass #}
+    <aside class="w-56 shrink-0 bg-white/70 backdrop-blur-md border-r border-white/40 p-3 flex flex-col gap-0.5">
+        {% set nav_items = [
+            { route: 'app_home', icon: '📁', label: 'Mes fichiers' },
+            { route: '#',        icon: '🖼️', label: 'Galerie' },
+            { route: '#',        icon: '📚', label: 'Albums' },
+            { route: '#',        icon: '🔗', label: 'Partages' },
+        ] %}
+        {% for item in nav_items %}
+            <a href="{{ item.route starts with '#' ? '#' : path(item.route) }}"
+               class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-gray-600
+                      hover:bg-white/80 hover:text-gray-900 hover:shadow-sm transition-all">
+                <span>{{ item.icon }}</span>
+                {{ item.label }}
+            </a>
+        {% endfor %}
     </aside>
 
-    <main class="flex-1 p-6">
+    {# Zone principale #}
+    <main class="flex-1 p-6 overflow-auto">
+
+        {# Flash messages #}
         {% for type, messages in app.flashes %}
             {% for message in messages %}
-                <div class="mb-4 px-4 py-3 rounded text-sm {% if type == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                <div class="mb-4 px-4 py-3 rounded-2xl text-sm flex items-center gap-2
+                    {% if type == 'error' %}bg-red-50 border border-red-100 text-red-600
+                    {% elseif type == 'success' %}bg-green-50 border border-green-100 text-green-700
+                    {% else %}bg-blue-50 border border-blue-100 text-blue-700{% endif %}">
                     {{ message }}
                 </div>
             {% endfor %}
@@ -29,4 +55,5 @@
         {% block content %}{% endblock %}
     </main>
 </div>
+
 {% endblock %}
