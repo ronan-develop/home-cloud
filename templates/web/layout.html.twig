@@ -5,56 +5,56 @@
 
 {% block body %}
 
-{# Navbar Liquid Glass #}
-<nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-white/40 shadow-sm px-6 py-3 flex items-center justify-between">
-    <a href="{{ path('app_home') }}" class="flex items-center gap-2 font-bold text-gray-900 hover:text-blue-600 transition-colors">
-        <span class="navbar-logo"><span class="navbar-logo-cloud">☁️</span></span>
-        <span class="navbar-logo-title">HomeCloud</span>
-    </a>
-    <div class="flex items-center gap-3">
-        <span class="text-sm text-gray-500">{{ app.user.displayName }}</span>
-        <a href="{{ path('app_logout') }}"
-           class="text-sm px-3 py-1.5 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors">
-            Déconnexion
-        </a>
-    </div>
-</nav>
+<div class="layout-root" style="display:flex; min-height:100vh;">
 
-<div class="flex min-h-[calc(100vh-53px)]">
+    {# ── Sidebar ── #}
+    <aside class="sidebar" style="width:250px; min-width:220px; background:#f3f4f6; border-right:1.5px solid #e5e7eb; display:flex; flex-direction:column; flex-shrink:0;">
 
-    {# Sidebar Liquid Glass #}
-    <aside class="w-56 shrink-0 bg-white/70 backdrop-blur-md border-r border-white/40 p-3 flex flex-col gap-0.5 relative z-20">
-
-        {# New button — Google Drive style #}
-        <twig:NewMenu />
-
-        {% set nav_items = [
-            { route: 'app_home', icon: '📁', label: 'Mes fichiers' },
-            { route: '#',        icon: '🖼️', label: 'Galerie' },
-            { route: '#',        icon: '📚', label: 'Albums' },
-            { route: '#',        icon: '🔗', label: 'Partages' },
-        ] %}
-        {% for item in nav_items %}
-            <a href="{{ item.route starts with '#' ? '#' : path(item.route) }}"
-               class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-gray-600
-                      hover:bg-white/80 hover:text-gray-900 hover:shadow-sm transition-all">
-                <span>{{ item.icon }}</span>
-                {{ item.label }}
+        {# Header : logo + bouton Nouveau #}
+        <div class="sidebar-header" style="display:flex; flex-direction:column; align-items:flex-start; gap:1.2rem; padding:2rem 1.2rem 1rem 1.2rem;">
+            <a href="{{ path('app_home') }}" style="display:flex; align-items:center; gap:0.5rem; text-decoration:none; color:#111827; font-weight:700; font-size:1.1rem;">
+                <span>☁️</span>
+                <span>HomeCloud</span>
             </a>
-        {% endfor %}
+            <twig:NewMenu />
+        </div>
+
+        {# Navigation #}
+        <nav style="display:flex; flex-direction:column; gap:0.3rem; padding:0 0.75rem;">
+            {% set nav_items = [
+                { route: 'app_home', icon: '📁', label: 'Mes fichiers' },
+                { route: '#',        icon: '🖼️', label: 'Galerie' },
+                { route: '#',        icon: '📚', label: 'Albums' },
+                { route: '#',        icon: '🔗', label: 'Partages' },
+            ] %}
+            {% for item in nav_items %}
+                <a href="{{ item.route starts with '#' ? '#' : path(item.route) }}"
+                   style="display:flex; align-items:center; gap:0.65rem; padding:0.55rem 0.85rem; border-radius:0.6rem; font-size:0.875rem; color:#374151; text-decoration:none; transition:background 0.15s;"
+                   onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='transparent'">
+                    <span>{{ item.icon }}</span>
+                    {{ item.label }}
+                </a>
+            {% endfor %}
+        </nav>
+
+        {# Footer : user + logout #}
+        <div style="margin-top:auto; padding:1rem 1.2rem; border-top:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
+            <span style="font-size:0.8rem; color:#6b7280; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ app.user.displayName }}</span>
+            <a href="{{ path('app_logout') }}" style="font-size:0.8rem; color:#ef4444; text-decoration:none; white-space:nowrap; flex-shrink:0;">Déconnexion</a>
+        </div>
     </aside>
 
-    {# Zone principale #}
-    <main class="flex-1 p-6 overflow-auto">
+    {# ── Main ── #}
+    <main style="flex:1; background:#181f2a; padding:2.5rem; min-height:100vh; display:flex; flex-direction:column; gap:2.2rem; overflow:auto; color:#f9fafb;">
 
         {# Flash messages #}
         {% for type, messages in app.flashes %}
             {% for message in messages %}
-                <div class="mb-4 px-4 py-3 rounded-2xl text-sm flex items-center gap-2
-                    flash-{{ type }}
-                    {% if type == 'error' %}bg-red-50 border border-red-100 text-red-600
-                    {% elseif type == 'success' %}bg-green-50 border border-green-100 text-green-700
-                    {% else %}bg-blue-50 border border-blue-100 text-blue-700{% endif %}">
+                <div class="flash-{{ type }}"
+                     style="padding:0.75rem 1rem; border-radius:0.75rem; font-size:0.875rem;
+                            {% if type == 'error' %}background:#fef2f2; color:#dc2626; border:1px solid #fecaca;
+                            {% elseif type == 'success' %}background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0;
+                            {% else %}background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe;{% endif %}">
                     {{ message }}
                 </div>
             {% endfor %}
