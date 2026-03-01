@@ -1,7 +1,7 @@
 
 
 {# Composant ImportCard — Zone d’import drag & drop + bouton #}
-<div class="import-card" id="main-import-card">
+<div class="import-card" id="main-import-card" data-testid="upload-zone">
   <form method="post" action="{{ path('app_file_upload') }}" enctype="multipart/form-data" id="main-upload-form" style="display:flex; flex-direction:column; align-items:center; gap:1.2rem; width:100%;">
     <div class="import-icon" style="font-size:2.5rem; color:#a5b4fc;">☁️</div>
     <div class="import-text" style="color:#e0e7ef; font-size:1.15rem; text-align:center; margin-bottom:0.5rem;">
