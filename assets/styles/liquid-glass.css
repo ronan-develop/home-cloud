@@ -1,6 +1,25 @@
 /* === Liquid Glass Card === */
-.animated-bg { /* ... */ }
-.bg-blob-mid { /* ... */ }
+
+/* Fond animé */
+.animated-bg {
+	position: fixed;
+	inset: 0;
+	z-index: 0;
+	overflow: hidden;
+	background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #312e81 100%);
+}
+.bg-blob-mid {
+	position: absolute;
+	top: 30%; left: 25%;
+	width: 55vw; height: 55vw;
+	max-width: 600px; max-height: 600px;
+	border-radius: 50%;
+	background: radial-gradient(circle, rgba(99,102,241,0.45) 0%, rgba(59,130,246,0.25) 60%, transparent 100%);
+	filter: blur(60px);
+	animation: blobA 9s ease-in-out infinite alternate;
+}
+
+/* Carte */
 .lg-card {
 	position: relative;
 	width: 100%;
@@ -11,23 +30,84 @@
 	background: rgba(255,255,255,0.10);
 }
 
+/* Couche 1 : flou + distorsion */
+.lg-blur {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	backdrop-filter: blur(24px) saturate(200%) brightness(1.1);
+	filter: url(#lg);
+}
+
+/* Couche 2 : teinte */
+.lg-tint {
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	background: rgba(255,255,255,0.10);
+}
+
+/* Couche 3 : reflet spéculaire */
+.lg-shine {
+	position: absolute;
+	inset: 0;
+	z-index: 3;
+	background: linear-gradient(135deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.04) 100%);
+	pointer-events: none;
+}
+
+/* Couche 4 : ligne de reflet haute */
+.lg-topline {
+	position: absolute;
+	top: 0; left: 0; right: 0;
+	height: 1px;
+	z-index: 4;
+	background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55) 40%, rgba(255,255,255,0.55) 60%, transparent);
+}
+
+/* Couche 5 : contenu */
 .lg-content {
 	position: relative;
 	z-index: 10;
-	padding: 2.8rem 2.2rem 2.2rem 2.2rem;
+	padding: 2.2rem 1.5rem 1.8rem;
 	font-family: 'Inter', Arial, sans-serif;
 	text-align: center;
 }
 
+/* Titres */
+.lg-title {
+	font-size: 1.35rem;
+	font-weight: 700;
+	color: #fff;
+	margin: 0 0 0.25rem;
+	letter-spacing: -0.01em;
+}
+.lg-subtitle {
+	font-size: 0.92rem;
+	color: rgba(255,255,255,0.62);
+	margin: 0 0 1.6rem;
+}
+
+/* Logo */
 .logo-icon {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 4.2rem; height: 4.2rem;
-	border-radius: 1.2rem;
+	width: 3.6rem; height: 3.6rem;
+	border-radius: 1.1rem;
 	background: rgba(255,255,255,0.18);
 	border: 1px solid rgba(255,255,255,0.28);
 	backdrop-filter: blur(8px);
-	font-size: 2.1rem;
-	margin-bottom: 1.1rem;
+	font-size: 1.8rem;
+	margin-bottom: 0.9rem;
+}
+
+/* Responsive : très petits écrans (< 400px) */
+@media (max-width: 399px) {
+	.lg-content {
+		padding: 1.8rem 1.1rem 1.4rem;
+	}
+	.lg-card {
+		border-radius: 1.6rem;
+	}
 }

@@ -40,6 +40,36 @@ body {
 	color: var(--clr-text);
 }
 
+/* === Navbar === */
+.navbar-logo {
+	width: 1.85rem;
+	height: 1.85rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 0.7rem;
+	background: linear-gradient(135deg, #e0e7ef 0%, #b6c6e3 100%);
+	border: 1px solid #dde3ee;
+	box-shadow: 0 2px 8px 0 rgba(31, 38, 135, 0.07);
+}
+
+.navbar-logo-cloud {
+	display: inline-block;
+	text-shadow: -2px 4px 3px rgba(60, 70, 110, 0.28);
+}
+
+nav:hover .navbar-logo-cloud {
+	text-shadow: -3px 6px 4px rgba(60, 70, 110, 0.38);
+}
+
+.navbar-logo-title {
+	display: inline-block;
+	font-weight: 700;
+	font-size: 1.18rem;
+	margin-left: 0.15em;
+	text-shadow: -2px 4px 6px rgba(80, 110, 180, 0.10);
+}
+
 .login-wrapper {
 	position: fixed;
 	inset: 0;
