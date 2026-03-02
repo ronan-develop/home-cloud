@@ -41,7 +41,7 @@ final class DefaultFolderService implements DefaultFolderServiceInterface
      */
     public function resolve(?string $folderId, ?string $newFolderName, User $owner): Folder
     {
-        if ($folderId !== null) {
+        if ($folderId !== null && $folderId !== '') {
             $folder = $this->folderRepository->find($folderId);
             if ($folder === null) {
                 throw new \InvalidArgumentException(sprintf('Folder "%s" not found', $folderId));
