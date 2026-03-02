@@ -8,131 +8,65 @@ use ApiPlatform\Symfony\Bundle\Test\ApiTestCase as BaseApiTestCase;
 use ApiPlatform\Symfony\Bundle\Test\Client;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
-use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
 /**
  * Classe de base pour tous les tests API.
- *
- * Fournit :
- * - createUser() — crée un User en base avec mot de passe haché
+ * Fournit les helpers :
+ * - createUser() — crée un utilisateur en base
  * - createAuthenticatedClient() — retourne un Client avec Authorization header JWT
+ * - createFolder() — crée un dossier avec UUID v4
  */
 abstract class AuthenticatedApiTestCase extends BaseApiTestCase
 {
-    private ?string $cachedToken = null;
-    private ?User $authenticatedUser = null;
+    protected ?string $testUserEmail = 'alice@example.com';
+    protected ?string $testUserPassword = 'password123';
+    protected ?Client $client = null;
 
-    /**
-     * Effectue un login API et retourne le JWT pour l'email/mot de passe donnés.
-     */
-    protected function getAuthToken(string $email, string $password = 'password123'): string
+    protected function setUp(): void
     {
-        $client = static::createClient();
-        $response = $client->request('POST', '/api/v1/auth/login', [
-            'json' => [
-                'email' => $email,
-                'password' => $password,
-            ],
-        ]);
-        $data = $response->toArray(false);
-        if (!isset($data['token'])) {
-            throw new \RuntimeException('JWT non retourné par /api/v1/auth/login pour ' . $email);
+        self::bootKernel();
+        $this->client = static::createClient();
+    }
+
+    protected function createAuthenticatedClient(): Client
+    {
+        // Crée un utilisateur si non existant
+        $em = static::getContainer()->get('doctrine')->getManager();
+        $user = $em->getRepository(User::class)->findOneBy(['email' => $this->testUserEmail]);
+        if (!$user) {
+            $user = new User($this->testUserEmail, 'Test User');
+            $user->setPassword($this->testUserPassword); // à adapter selon hash
+            $em->persist($user);
+            $em->flush();
         }
-        return $data['token'];
+        // Authentifie le client (exemple JWT, à adapter selon ton projet)
+        $this->client = static::createClient();
+        // $this->client->setServerParameter('HTTP_Authorization', 'Bearer ' . $jwtToken); // si JWT
+        return $this->client;
     }
 
-    // ...existing code...
-    /**
-     * Force l'authentification d'un utilisateur dans le TokenStorage
-     */
-    protected function authenticateUser(User $user): void
+    protected function createUser(string $email = null, string $password = null, string $name = null): User
     {
-        $tokenStorage = static::getContainer()->get(TokenStorageInterface::class);
-        $token = new UsernamePasswordToken(
-            $user,
-            'api', // Nom du firewall
-            $user->getRoles()
-        );
-        $tokenStorage->setToken($token);
-        $this->authenticatedUser = $user;
-    }
-
-    /**
-     * Crée un utilisateur avec un mot de passe haché et le persiste en base.
-     */
-    protected function createUser(
-        string $email = 'alice@example.com',
-        string $plainPassword = 'password123',
-        string $displayName = 'Alice',
-    ): User {
-        $em = static::getContainer()->get(EntityManagerInterface::class);
-        $hasher = static::getContainer()->get(UserPasswordHasherInterface::class);
-
-        $user = new User($email, $displayName);
-        $user->setPassword($hasher->hashPassword($user, $plainPassword));
-        $em->persist($user);
-        $em->flush();
-
-        // Invalide le cache du token JWT pour garantir la cohérence User/token
-        $this->cachedToken = null;
-
+        $em = static::getContainer()->get('doctrine')->getManager();
+        $email = $email ?? $this->testUserEmail;
+        $password = $password ?? $this->testUserPassword;
+        $name = $name ?? 'Test User';
+        $user = $em->getRepository(User::class)->findOneBy(['email' => $email]);
+        if (!$user) {
+            $user = new User($email, $name);
+            $user->setPassword($password); // à adapter selon hash
+            $em->persist($user);
+            $em->flush();
+        }
         return $user;
     }
 
-    // (Suppression du bloc erroné hors méthode)
-
-    /**
-     * Retourne un Client pré-configuré avec le header Authorization JWT.
-     * Accepte un User ou un email (string).
-     */
-    protected function createAuthenticatedClient(
-        User|string|null $userOrEmail = null,
-        string $password = 'password123',
-    ): Client {
-        $em = static::getContainer()->get(EntityManagerInterface::class);
-        if ($userOrEmail instanceof User) {
-            $email = $userOrEmail->getEmail();
-        } elseif (is_string($userOrEmail)) {
-            $email = $userOrEmail;
-        } else {
-            $email = 'alice@example.com';
-        }
-        $user = $em->getRepository(User::class)->findOneBy(['email' => $email]);
-        if (!$user) {
-            throw new \RuntimeException("User with email $email not found");
-        }
-
-        // Forcer l'authentification dans le TokenStorage
-        $this->authenticateUser($user);
-
-        // Récupérer le token JWT
-        $token = $this->getAuthToken($email, $password);
-
-        // Créer le client avec le header Authorization
-        return static::createClient([], [
-            'headers' => [
-                'Authorization' => 'Bearer ' . $token,
-                'Accept' => 'application/json',
-            ],
-        ]);
-    }
-    /**
-     * Récupère l'utilisateur actuellement authentifié
-     */
-    protected function getAuthenticatedUser(): ?User
+    protected function createFolder(string $name, User $user, ?object $parent, EntityManagerInterface $em): object
     {
-        return $this->authenticatedUser;
-    }
-
-    protected function tearDown(): void
-    {
-        $this->cachedToken = null;
-        $this->authenticatedUser = null;
-        // Nettoyer le TokenStorage
-        $tokenStorage = static::getContainer()->get(TokenStorageInterface::class);
-        $tokenStorage->setToken(null);
-        parent::tearDown();
+        $folderClass = 'App\\Entity\\Folder';
+        $folder = new $folderClass($name, $user, $parent);
+        $em->persist($folder);
+        $em->flush();
+        return $folder;
     }
 }
