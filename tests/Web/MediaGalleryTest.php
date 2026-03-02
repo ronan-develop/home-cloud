@@ -179,4 +179,28 @@ final class MediaGalleryTest extends WebTestCase
         $this->assertStringContainsString('clip.mp4', $content);
         $this->assertStringNotContainsString('photo.jpg', $content);
     }
+
+    // --- Vue unique /gallery/{id} ---
+
+    public function testViewSingleMediaReturns200(): void
+    {
+        $user  = $this->createUser();
+        $media = $this->createMediaFile($user, 'single.jpg', 'photo');
+        $this->login();
+
+        $this->client->request('GET', '/gallery/' . $media->getId()->toRfc4122());
+        $this->assertResponseIsSuccessful();
+        $this->assertStringContainsString('single.jpg', $this->client->getResponse()->getContent());
+    }
+
+    public function testViewSingleMediaForbiddenForOtherUser(): void
+    {
+        $alice = $this->createUser('alice@example.com');
+        $bob   = $this->createUser('bob@example.com');
+        $media = $this->createMediaFile($alice, 'private.jpg', 'photo');
+
+        $this->login('bob@example.com');
+        $this->client->request('GET', '/gallery/' . $media->getId()->toRfc4122());
+        $this->assertResponseStatusCodeSame(404);
+    }
 }
