@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Controller\Web;
 
 use App\Entity\User;
-use App\Repository\MediaRepository;
+use App\Interface\MediaRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -20,7 +20,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 final class MediaGalleryController extends AbstractController
 {
     public function __construct(
-        private readonly MediaRepository $mediaRepository,
+        private readonly MediaRepositoryInterface $mediaRepository,
     ) {}
 
     #[Route('/gallery', name: 'app_gallery')]
@@ -41,7 +41,7 @@ final class MediaGalleryController extends AbstractController
     #[Route('/gallery/{id}', name: 'app_media_view', requirements: ['id' => '[0-9a-f\-]+'])]
     public function view(string $id): Response
     {
-        $media = $this->mediaRepository->find(\Symfony\Component\Uid\Uuid::fromString($id));
+        $media = $this->mediaRepository->findById(\Symfony\Component\Uid\Uuid::fromString($id));
 
         if ($media === null || !$media->getFile()->getOwner()->getId()->equals($this->getUser()->getId())) {
             throw $this->createNotFoundException('Média introuvable.');
