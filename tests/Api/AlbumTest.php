@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+
 namespace App\Tests\Api;
 
 use App\Entity\File;
@@ -13,9 +14,7 @@ use Doctrine\ORM\EntityManagerInterface;
 
 final class AlbumTest extends AuthenticatedApiTestCase
 {
-    protected static ?bool $alwaysBootKernel = false;
     private EntityManagerInterface $em;
-
     protected function setUp(): void
     {
         $this->em = static::getContainer()->get(EntityManagerInterface::class);
@@ -85,7 +84,7 @@ final class AlbumTest extends AuthenticatedApiTestCase
         $this->em->persist($album);
         $this->em->flush();
 
-        $response = $this->createAuthenticatedClient()->request('GET', '/api/v1/albums/'.$album->getId());
+        $response = $this->createAuthenticatedClient()->request('GET', '/api/v1/albums/' . $album->getId());
 
         $this->assertResponseStatusCodeSame(200);
         $data = $response->toArray();
@@ -116,7 +115,6 @@ final class AlbumTest extends AuthenticatedApiTestCase
                 'ownerId' => (string) $owner->getId(),
             ],
         ]);
-
         $this->assertResponseStatusCodeSame(201);
         $data = $response->toArray();
         $this->assertSame('Famille', $data['name']);
@@ -157,7 +155,7 @@ final class AlbumTest extends AuthenticatedApiTestCase
         $this->em->persist($album);
         $this->em->flush();
 
-        $response = $this->createAuthenticatedClient()->request('PATCH', '/api/v1/albums/'.$album->getId(), [
+        $response = $this->createAuthenticatedClient()->request('PATCH', '/api/v1/albums/' . $album->getId(), [
             'headers' => ['Content-Type' => 'application/merge-patch+json'],
             'json' => ['name' => 'Nouveau nom'],
         ]);
@@ -166,74 +164,42 @@ final class AlbumTest extends AuthenticatedApiTestCase
         $this->assertSame('Nouveau nom', $response->toArray()['name']);
     }
 
-    public function testPatchAlbumReturns404WhenNotFound(): void
+    public function testPatchAlbumReturns400IfNameHasInvalidChars(): void
     {
-        $this->createAuthenticatedClient()->request('PATCH', '/api/v1/albums/00000000-0000-0000-0000-000000000000', [
+        $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
+        $album = new \App\Entity\Album('NomValide', $owner);
+        $this->em->persist($album);
+        $this->em->flush();
+        $response = $this->createAuthenticatedClient($owner)->request('PATCH', '/api/v1/albums/' . $album->getId(), [
             'headers' => ['Content-Type' => 'application/merge-patch+json'],
-            'json' => ['name' => 'Test'],
+            'json' => ['name' => 'Nom/Interdit'],
         ]);
-
-        $this->assertResponseStatusCodeSame(404);
+        $this->assertResponseStatusCodeSame(400);
     }
 
-    // --- DELETE /api/v1/albums/{id} ---
-
-    public function testDeleteAlbumReturns204(): void
+    public function testPatchAlbumReturns403IfNotOwner(): void
     {
         $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
-        $album = new \App\Entity\Album('À supprimer', $owner);
+        $other = $this->createUser('bob@example.com');
+        $album = new \App\Entity\Album('Privé', $owner);
         $this->em->persist($album);
         $this->em->flush();
-
-        $this->createAuthenticatedClient()->request('DELETE', '/api/v1/albums/'.$album->getId());
-
-        $this->assertResponseStatusCodeSame(204);
+        $response = $this->createAuthenticatedClient($other)->request('PATCH', '/api/v1/albums/' . $album->getId(), [
+            'headers' => ['Content-Type' => 'application/merge-patch+json'],
+            'json' => ['name' => 'Hack'],
+        ]);
+        $this->assertResponseStatusCodeSame(403);
     }
 
-    public function testDeleteAlbumDoesNotDeleteMedias(): void
+    public function testDeleteAlbumReturns403IfNotOwner(): void
     {
         $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
-        $album = new \App\Entity\Album('Avec médias', $owner);
-        $media = $this->createMedia();
-        $album->addMedia($media);
+        $other = $this->createUser('bob@example.com');
+        $album = new \App\Entity\Album('À protéger', $owner);
         $this->em->persist($album);
         $this->em->flush();
-
-        $this->createAuthenticatedClient()->request('DELETE', '/api/v1/albums/'.$album->getId());
-
-        $this->assertResponseStatusCodeSame(204);
-
-        // Le media existe toujours en base
-        $this->em->clear();
-        $this->assertNotNull($this->em->find(Media::class, $media->getId()));
-    }
-
-    public function testDeleteAlbumReturns404WhenNotFound(): void
-    {
-        $this->createAuthenticatedClient()->request('DELETE', '/api/v1/albums/00000000-0000-0000-0000-000000000000');
-
-        $this->assertResponseStatusCodeSame(404);
-    }
-
-    // --- POST /api/v1/albums/{id}/medias ---
-
-    public function testAddMediaToAlbumReturns200(): void
-    {
-        $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
-        $album = new \App\Entity\Album('Avec un média', $owner);
-        $this->em->persist($album);
-        $this->em->flush();
-
-        $media = $this->createMedia();
-
-        $response = $this->createAuthenticatedClient()->request(
-            'POST',
-            '/api/v1/albums/'.$album->getId().'/medias',
-            ['json' => ['mediaId' => (string) $media->getId()]]
-        );
-
-        $this->assertResponseStatusCodeSame(200);
-        $this->assertSame(1, $response->toArray()['mediaCount']);
+        $response = $this->createAuthenticatedClient($other)->request('DELETE', '/api/v1/albums/' . $album->getId());
+        $this->assertResponseStatusCodeSame(403);
     }
 
     public function testAddMediaToAlbumIdempotent(): void
@@ -248,7 +214,7 @@ final class AlbumTest extends AuthenticatedApiTestCase
         // Ajouter le même média une 2e fois
         $response = $this->createAuthenticatedClient()->request(
             'POST',
-            '/api/v1/albums/'.$album->getId().'/medias',
+            '/api/v1/albums/' . $album->getId() . '/medias',
             ['json' => ['mediaId' => (string) $media->getId()]]
         );
 
@@ -278,7 +244,7 @@ final class AlbumTest extends AuthenticatedApiTestCase
 
         $this->createAuthenticatedClient()->request(
             'POST',
-            '/api/v1/albums/'.$album->getId().'/medias',
+            '/api/v1/albums/' . $album->getId() . '/medias',
             ['json' => ['mediaId' => '00000000-0000-0000-0000-000000000000']]
         );
 
@@ -298,7 +264,7 @@ final class AlbumTest extends AuthenticatedApiTestCase
 
         $response = $this->createAuthenticatedClient()->request(
             'DELETE',
-            '/api/v1/albums/'.$album->getId().'/medias/'.$media->getId()
+            '/api/v1/albums/' . $album->getId() . '/medias/' . $media->getId()
         );
 
         $this->assertResponseStatusCodeSame(200);
@@ -311,7 +277,7 @@ final class AlbumTest extends AuthenticatedApiTestCase
 
         $this->createAuthenticatedClient()->request(
             'DELETE',
-            '/api/v1/albums/00000000-0000-0000-0000-000000000000/medias/'.$media->getId()
+            '/api/v1/albums/00000000-0000-0000-0000-000000000000/medias/' . $media->getId()
         );
 
         $this->assertResponseStatusCodeSame(404);

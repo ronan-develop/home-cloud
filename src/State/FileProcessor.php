@@ -1,6 +1,14 @@
-<?php
+ <?php
+ declare(strict_types=1);
 
 declare(strict_types=1);
+
+<?php
+declare(strict_types=1);
+
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 namespace App\State;
 
@@ -31,12 +39,51 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  */
 final class FileProcessor implements ProcessorInterface
 {
+    /**
+     * Pattern recommandé : injection du TokenStorageInterface et LoggerInterface pour obtenir l'utilisateur courant de façon fiable (test/prod).
+     * Voir FolderProcessor pour l'implémentation complète.
+     */
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly FileRepository $fileRepository,
         private readonly MediaRepository $mediaRepository,
         private readonly StorageServiceInterface $storageService,
+        private readonly TokenStorageInterface $tokenStorage,
+        private readonly LoggerInterface $logger,
     ) {}
+
+    /**
+     * Récupère l'utilisateur authentifié depuis le TokenStorage (pattern commun).
+     */
+    private function getAuthenticatedUser(): ?\App\Entity\User
+    {
+        $token = $this->tokenStorage->getToken();
+        $this->logger->info('🔍 TokenStorage State', [
+            'has_token' => $token !== null,
+            'token_class' => $token ? get_class($token) : 'null',
+        ]);
+        if ($token === null) {
+            $this->logger->warning('⚠️ No token in TokenStorage');
+            return null;
+        }
+        $user = $token->getUser();
+        $this->logger->info('🔍 User from Token', [
+            'user_class' => $user ? get_class($user) : 'null',
+            'is_user_instance' => $user instanceof \App\Entity\User,
+        ]);
+        if ($user instanceof \App\Entity\User) {
+            return $user;
+        }
+        if (is_string($user) && filter_var($user, FILTER_VALIDATE_EMAIL)) {
+            $this->logger->info('🔍 User is string, searching by email', ['email' => $user]);
+            return $this->fileRepository->findOneBy(['email' => $user]); // Adapter selon besoin
+        }
+        $this->logger->warning('⚠️ User type not recognized', [
+            'type' => gettype($user),
+            'value' => $user,
+        ]);
+        return null;
+    }
 
     /**
      * DELETE /api/v1/files/{id} — supprime les métadonnées, le thumbnail ET le fichier physique.
