@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Api;
 
-use ApiPlatform\Symfony\Bundle\Test\ApiTestCase;
+use App\Tests\AuthenticatedApiTestCase;
 use App\Entity\Album;
 use App\Entity\File;
 use App\Entity\Folder;
@@ -13,13 +13,11 @@ use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Assert;
 
-final class AlbumTest extends ApiTestCase
+final class AlbumTest extends AuthenticatedApiTestCase
 {
-    private EntityManagerInterface $em;
-
     protected function setUp(): void
     {
-        $this->em = static::getContainer()->get(EntityManagerInterface::class);
+        parent::setUp();
         $conn = $this->em->getConnection();
         $conn->executeStatement('SET FOREIGN_KEY_CHECKS=0');
         $conn->executeStatement('DELETE FROM album_media');
@@ -41,7 +39,7 @@ final class AlbumTest extends ApiTestCase
         return $user;
     }
 
-    private function createUser(string $email, string $name = 'User'): User
+    private function createLocalUser(string $email, string $name = 'User'): User
     {
         $user = new User($email, $name);
         $this->em->persist($user);
@@ -66,7 +64,12 @@ final class AlbumTest extends ApiTestCase
 
     public function testGetCollectionReturnsEmptyArray(): void
     {
-        $response = static::createClient()->request('GET', '/api/v1/albums', [
+        $client = static::createClient([], [
+            'headers' => [
+                'Authorization' => 'Bearer FAKE_JWT_TOKEN',
+            ],
+        ]);
+        $response = $client->request('GET', '/api/v1/albums', [
             'headers' => ['Accept' => 'application/json'],
         ]);
         Assert::assertSame(200, $response->getStatusCode());
@@ -80,7 +83,12 @@ final class AlbumTest extends ApiTestCase
         $this->em->persist($album);
         $this->em->flush();
 
-        $response = static::createClient()->request('GET', '/api/v1/albums', [
+        $client = static::createClient([], [
+            'headers' => [
+                'Authorization' => 'Bearer FAKE_JWT_TOKEN',
+            ],
+        ]);
+        $response = $client->request('GET', '/api/v1/albums', [
             'headers' => ['Accept' => 'application/json'],
         ]);
 
@@ -97,7 +105,8 @@ final class AlbumTest extends ApiTestCase
         $this->em->persist($album);
         $this->em->flush();
 
-        $response = static::createClient()->request('GET', '/api/v1/albums/' . $album->getId());
+        $client = static::createClient();
+        $response = ApiTestHelper::requestWithJwt($client, 'GET', '/api/v1/albums/' . $album->getId());
 
         Assert::assertSame(200, $response->getStatusCode());
         $data = $response->toArray();
@@ -111,7 +120,8 @@ final class AlbumTest extends ApiTestCase
 
     public function testGetAlbumReturns404WhenNotFound(): void
     {
-        $response = static::createClient()->request('GET', '/api/v1/albums/00000000-0000-0000-0000-000000000000');
+        $client = static::createClient();
+        $response = ApiTestHelper::requestWithJwt($client, 'GET', '/api/v1/albums/00000000-0000-0000-0000-000000000000');
         Assert::assertSame(404, $response->getStatusCode());
     }
 
@@ -119,7 +129,8 @@ final class AlbumTest extends ApiTestCase
     {
         $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
 
-        $response = static::createClient()->request('POST', '/api/v1/albums', [
+        $client = static::createClient();
+        $response = ApiTestHelper::requestWithJwt($client, 'POST', '/api/v1/albums', [
             'json' => [
                 'name' => 'Famille',
                 'ownerId' => (string) $owner->getId(),
@@ -136,7 +147,8 @@ final class AlbumTest extends ApiTestCase
     public function testPostAlbumReturns400WhenNameMissing(): void
     {
         $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
-        $response = static::createClient()->request('POST', '/api/v1/albums', [
+        $client = static::createClient();
+        $response = ApiTestHelper::requestWithJwt($client, 'POST', '/api/v1/albums', [
             'json' => ['ownerId' => (string) $owner->getId()],
         ]);
 
@@ -145,7 +157,8 @@ final class AlbumTest extends ApiTestCase
 
     public function testPostAlbumReturns404WhenOwnerNotFound(): void
     {
-        $response = static::createClient()->request('POST', '/api/v1/albums', [
+        $client = static::createClient();
+        $response = ApiTestHelper::requestWithJwt($client, 'POST', '/api/v1/albums', [
             'json' => [
                 'name' => 'Test',
                 'ownerId' => '00000000-0000-0000-0000-000000000000',
@@ -162,10 +175,11 @@ final class AlbumTest extends ApiTestCase
         $this->em->persist($album);
         $this->em->flush();
 
-        $response = static::createClient()->request('PATCH', '/api/v1/albums/' . $album->getId(), [
+        $client = static::createClient();
+        $response = ApiTestHelper::requestWithJwt($client, 'PATCH', '/api/v1/albums/' . $album->getId(), [
             'headers' => ['Content-Type' => 'application/merge-patch+json'],
             'json' => ['name' => 'Nouveau nom'],
-        ]);
+        ], 'alice@example.com');
 
         Assert::assertSame(200, $response->getStatusCode());
         Assert::assertSame('Nouveau nom', $response->toArray()['name']);
@@ -178,22 +192,24 @@ final class AlbumTest extends ApiTestCase
         $this->em->persist($album);
         $this->em->flush();
 
-        $response = static::createClient()->request('PATCH', '/api/v1/albums/' . $album->getId(), [
+        $client = static::createClient();
+        $response = ApiTestHelper::requestWithJwt($client, 'PATCH', '/api/v1/albums/' . $album->getId(), [
             'headers' => ['Content-Type' => 'application/merge-patch+json'],
             'json' => ['name' => 'Nom/Interdit'],
-        ]);
+        ], 'alice@example.com');
         Assert::assertSame(400, $response->getStatusCode());
     }
 
     public function testPatchAlbumReturns403IfNotOwner(): void
     {
         $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
-        $other = $this->createUser('bob@example.com');
+        $other = $this->createLocalUser('bob@example.com');
         $album = new Album('Privé', $owner);
         $this->em->persist($album);
         $this->em->flush();
 
-        $response = static::createClient()->request('PATCH', '/api/v1/albums/' . $album->getId(), [
+        $client = static::createClient();
+        $response = ApiTestHelper::requestWithJwt($client, 'PATCH', '/api/v1/albums/' . $album->getId(), [
             'headers' => ['Content-Type' => 'application/merge-patch+json'],
             'json' => ['name' => 'Hack'],
         ]);
@@ -203,12 +219,13 @@ final class AlbumTest extends ApiTestCase
     public function testDeleteAlbumReturns403IfNotOwner(): void
     {
         $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
-        $other = $this->createUser('bob@example.com');
+        $other = $this->createLocalUser('bob@example.com');
         $album = new Album('À protéger', $owner);
         $this->em->persist($album);
         $this->em->flush();
 
-        $response = static::createClient()->request('DELETE', '/api/v1/albums/' . $album->getId());
+        $client = static::createClient();
+        $response = ApiTestHelper::requestWithJwt($client, 'DELETE', '/api/v1/albums/' . $album->getId());
         Assert::assertSame(403, $response->getStatusCode());
     }
 
@@ -219,7 +236,8 @@ final class AlbumTest extends ApiTestCase
         $this->em->persist($album);
         $this->em->flush();
 
-        $response = static::createClient()->request('DELETE', '/api/v1/albums/' . $album->getId());
+        $client = static::createClient();
+        $response = ApiTestHelper::requestWithJwt($client, 'DELETE', '/api/v1/albums/' . $album->getId(), [], 'alice@example.com');
         Assert::assertSame(204, $response->getStatusCode());
     }
 
@@ -232,11 +250,10 @@ final class AlbumTest extends ApiTestCase
         $this->em->persist($album);
         $this->em->flush();
 
-        $response = static::createClient()->request(
-            'POST',
-            '/api/v1/albums/' . $album->getId() . '/medias',
-            ['json' => ['mediaId' => (string) $media->getId()]]
-        );
+        $client = static::createClient();
+        $response = ApiTestHelper::requestWithJwt($client, 'POST', '/api/v1/albums/' . $album->getId() . '/medias', [
+            'json' => ['mediaId' => (string) $media->getId()]
+        ]);
 
         Assert::assertSame(200, $response->getStatusCode());
         Assert::assertSame(1, $response->toArray()['mediaCount']);
@@ -246,11 +263,10 @@ final class AlbumTest extends ApiTestCase
     {
         $media = $this->createMedia();
 
-        $response = static::createClient()->request(
-            'POST',
-            '/api/v1/albums/00000000-0000-0000-0000-000000000000/medias',
-            ['json' => ['mediaId' => (string) $media->getId()]]
-        );
+        $client = static::createClient();
+        $response = ApiTestHelper::requestWithJwt($client, 'POST', '/api/v1/albums/00000000-0000-0000-0000-000000000000/medias', [
+            'json' => ['mediaId' => (string) $media->getId()]
+        ]);
 
         Assert::assertSame(404, $response->getStatusCode());
     }
@@ -262,11 +278,10 @@ final class AlbumTest extends ApiTestCase
         $this->em->persist($album);
         $this->em->flush();
 
-        $response = static::createClient()->request(
-            'POST',
-            '/api/v1/albums/' . $album->getId() . '/medias',
-            ['json' => ['mediaId' => '00000000-0000-0000-0000-000000000000']]
-        );
+        $client = static::createClient();
+        $response = ApiTestHelper::requestWithJwt($client, 'POST', '/api/v1/albums/' . $album->getId() . '/medias', [
+            'json' => ['mediaId' => '00000000-0000-0000-0000-000000000000']
+        ]);
 
         Assert::assertSame(404, $response->getStatusCode());
     }
@@ -280,10 +295,8 @@ final class AlbumTest extends ApiTestCase
         $this->em->persist($album);
         $this->em->flush();
 
-        $response = static::createClient()->request(
-            'DELETE',
-            '/api/v1/albums/' . $album->getId() . '/medias/' . $media->getId()
-        );
+        $client = static::createClient();
+        $response = ApiTestHelper::requestWithJwt($client, 'DELETE', '/api/v1/albums/' . $album->getId() . '/medias/' . $media->getId());
 
         Assert::assertSame(200, $response->getStatusCode());
         Assert::assertSame(0, $response->toArray()['mediaCount']);
@@ -293,10 +306,8 @@ final class AlbumTest extends ApiTestCase
     {
         $media = $this->createMedia();
 
-        $response = static::createClient()->request(
-            'DELETE',
-            '/api/v1/albums/00000000-0000-0000-0000-000000000000/medias/' . $media->getId()
-        );
+        $client = static::createClient();
+        $response = ApiTestHelper::requestWithJwt($client, 'DELETE', '/api/v1/albums/00000000-0000-0000-0000-000000000000/medias/' . $media->getId());
 
         Assert::assertSame(404, $response->getStatusCode());
     }

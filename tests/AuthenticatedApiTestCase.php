@@ -22,49 +22,75 @@ abstract class AuthenticatedApiTestCase extends BaseApiTestCase
     protected ?string $testUserPassword = 'password123';
     protected ?Client $client = null;
 
+    protected EntityManagerInterface $em;
+
     protected function setUp(): void
     {
-        self::bootKernel();
-        $this->client = static::createClient();
+        parent::setUp();
+        $this->em = static::getContainer()->get(EntityManagerInterface::class);
+        // DAMA s’occupe du rollback automatique, plus de purge manuelle
     }
 
-    protected function createAuthenticatedClient(): Client
+    protected function createAuthenticatedClient(string|User|null $user = null): Client
     {
-        // Crée un utilisateur si non existant
-        $em = static::getContainer()->get('doctrine')->getManager();
-        $user = $em->getRepository(User::class)->findOneBy(['email' => $this->testUserEmail]);
-        if (!$user) {
-            $user = new User($this->testUserEmail, 'Test User');
-            $user->setPassword($this->testUserPassword); // à adapter selon hash
-            $em->persist($user);
-            $em->flush();
+        if (is_string($user)) {
+            $email = $user;
+            $displayName = 'Test User';
+            $userObj = null;
+        } else {
+            $email = $user ? $user->getEmail() : $this->testUserEmail;
+            $displayName = $user ? $user->getDisplayName() : 'Test User';
+            $userObj = $user;
         }
-        // Authentifie le client (exemple JWT, à adapter selon ton projet)
-        $this->client = static::createClient();
-        // $this->client->setServerParameter('HTTP_Authorization', 'Bearer ' . $jwtToken); // si JWT
-        return $this->client;
+        $userEntity = $this->em->getRepository(User::class)->findOneBy(['email' => $email]);
+        if (!$userEntity) {
+            $userEntity = new User($email, $displayName);
+            // Forcer un UUID v4 unique
+            $ref = new \ReflectionProperty($userEntity, 'id');
+            $ref->setValue($userEntity, \Symfony\Component\Uid\Uuid::v4());
+            $userEntity->setPassword($this->testUserPassword);
+            $this->em->persist($userEntity);
+            $this->em->flush();
+        }
+        $client = static::createClient([], [
+            'headers' => [
+                'Authorization' => 'Bearer FAKE_JWT_TOKEN',
+                'X-User-Email' => $email,
+            ],
+        ]);
+        return $client;
     }
 
     protected function createUser(string $email = null, string $password = null, string $name = null): User
     {
-        $em = static::getContainer()->get('doctrine')->getManager();
         $email = $email ?? $this->testUserEmail;
         $password = $password ?? $this->testUserPassword;
         $name = $name ?? 'Test User';
-        $user = $em->getRepository(User::class)->findOneBy(['email' => $email]);
+        $user = $this->em->getRepository(User::class)->findOneBy(['email' => $email]);
         if (!$user) {
             $user = new User($email, $name);
-            $user->setPassword($password); // à adapter selon hash
-            $em->persist($user);
-            $em->flush();
+            // Forcer un UUID v4 unique
+            $ref = new \ReflectionProperty($user, 'id');
+            $ref->setValue($user, \Symfony\Component\Uid\Uuid::v4());
+            $user->setPassword($password);
+            $this->em->persist($user);
+            $this->em->flush();
         }
         return $user;
     }
 
-    protected function createFolder(string $name, User $user, ?object $parent, EntityManagerInterface $em): object
+    protected function createFolder(string $name, User $user, ?object $parent = null, EntityManagerInterface $em = null): object
     {
         $folderClass = 'App\\Entity\\Folder';
         $folder = new $folderClass($name, $user, $parent);
+        if ($em === null) {
+            // Utilise $this->em si disponible
+            if (property_exists($this, 'em') && $this->em instanceof EntityManagerInterface) {
+                $em = $this->em;
+            } else {
+                throw new \InvalidArgumentException('EntityManagerInterface manquant pour createFolder');
+            }
+        }
         $em->persist($folder);
         $em->flush();
         return $folder;

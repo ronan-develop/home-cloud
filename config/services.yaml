@@ -38,6 +38,12 @@ services:
     App\:
         resource: '../src/'
 
+    App\Service\FolderTreeFactory:
+        arguments:
+            $folderRepository: '@App\Repository\FolderRepository'
+            $userRepository: '@App\Repository\UserRepository'
+            $em: '@doctrine.orm.entity_manager'
+
     # Déclaration explicite du FolderProcessor pour garantir l'injection
     App\State\FolderProcessor:
         arguments:

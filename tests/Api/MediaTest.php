@@ -15,7 +15,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 final class MediaTest extends AuthenticatedApiTestCase
 {
     protected static ?bool $alwaysBootKernel = false;
-    private EntityManagerInterface $em;
+    protected EntityManagerInterface $em;
 
     protected function setUp(): void
     {
@@ -55,7 +55,9 @@ final class MediaTest extends AuthenticatedApiTestCase
     {
         $media = $this->createMedia();
 
-        $response = $this->createAuthenticatedClient()->request('GET', '/api/v1/medias/'.$media->getId());
+        $client = $this->createAuthenticatedClient();
+        \App\Tests\Api\ApiTestHelper::withFakeJwt($client);
+        $response = $client->request('GET', '/api/v1/medias/' . $media->getId());
 
         $this->assertResponseStatusCodeSame(200);
         $data = $response->toArray();
@@ -76,7 +78,9 @@ final class MediaTest extends AuthenticatedApiTestCase
 
     public function testGetMediaReturns404WhenNotFound(): void
     {
-        $this->createAuthenticatedClient()->request('GET', '/api/v1/medias/00000000-0000-0000-0000-000000000000');
+        $client = $this->createAuthenticatedClient();
+        \App\Tests\Api\ApiTestHelper::withFakeJwt($client);
+        $client->request('GET', '/api/v1/medias/00000000-0000-0000-0000-000000000000');
 
         $this->assertResponseStatusCodeSame(404);
     }
@@ -87,7 +91,9 @@ final class MediaTest extends AuthenticatedApiTestCase
     {
         $this->createMedia('photo');
 
-        $response = $this->createAuthenticatedClient()->request('GET', '/api/v1/medias', [
+        $client = $this->createAuthenticatedClient();
+        \App\Tests\Api\ApiTestHelper::withFakeJwt($client);
+        $response = $client->request('GET', '/api/v1/medias', [
             'headers' => ['Accept' => 'application/json'],
         ]);
 
@@ -99,7 +105,9 @@ final class MediaTest extends AuthenticatedApiTestCase
     {
         $this->createMedia('photo');
 
-        $response = $this->createAuthenticatedClient()->request('GET', '/api/v1/medias?type=video', [
+        $client = $this->createAuthenticatedClient();
+        \App\Tests\Api\ApiTestHelper::withFakeJwt($client);
+        $response = $client->request('GET', '/api/v1/medias?type=video', [
             'headers' => ['Accept' => 'application/json'],
         ]);
 
@@ -109,7 +117,9 @@ final class MediaTest extends AuthenticatedApiTestCase
 
     public function testGetMediaCollectionReturns400WhenInvalidType(): void
     {
-        $this->createAuthenticatedClient()->request('GET', '/api/v1/medias?type=invalid_type', [
+        $client = $this->createAuthenticatedClient();
+        \App\Tests\Api\ApiTestHelper::withFakeJwt($client);
+        $client->request('GET', '/api/v1/medias?type=invalid_type', [
             'headers' => ['Accept' => 'application/json'],
         ]);
 
@@ -122,7 +132,7 @@ final class MediaTest extends AuthenticatedApiTestCase
     {
         $media = $this->createMedia(); // thumbnailPath est null
 
-        $this->createAuthenticatedClient()->request('GET', '/api/v1/medias/'.$media->getId().'/thumbnail');
+        $this->createAuthenticatedClient()->request('GET', '/api/v1/medias/' . $media->getId() . '/thumbnail');
 
         $this->assertResponseStatusCodeSame(404);
     }
@@ -189,11 +199,11 @@ final class MediaTest extends AuthenticatedApiTestCase
         $storageDir = static::getContainer()->getParameter('app.storage_dir');
 
         // Créer un faux thumbnail sur disque
-        $thumbDir = $storageDir.'/thumbs';
+        $thumbDir = $storageDir . '/thumbs';
         if (!is_dir($thumbDir)) {
             mkdir($thumbDir, 0777, true);
         }
-        $thumbFile = $thumbDir.'/fake-thumb.jpg';
+        $thumbFile = $thumbDir . '/fake-thumb.jpg';
         file_put_contents($thumbFile, 'fake-jpeg-data');
 
         // Créer File + Media avec thumbnailPath
@@ -210,7 +220,7 @@ final class MediaTest extends AuthenticatedApiTestCase
 
         $this->assertFileExists($thumbFile);
 
-        $this->createAuthenticatedClient()->request('DELETE', '/api/v1/files/'.$file->getId());
+        $this->createAuthenticatedClient()->request('DELETE', '/api/v1/files/' . $file->getId());
 
         $this->assertResponseStatusCodeSame(204);
         $this->assertFileDoesNotExist($thumbFile);

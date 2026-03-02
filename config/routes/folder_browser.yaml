@@ -1,0 +1,4 @@
+web_folders:
+    path: /web/folders
+    controller: App\Controller\FolderBrowserController::index
+    methods: [GET]
