@@ -8,6 +8,23 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 class ResetPasswordSubmitApiTest extends WebTestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        static::bootKernel();
+        $em = static::getContainer()->get(EntityManagerInterface::class);
+        $existing = $em->getRepository(User::class)->findOneBy(['email' => 'reset-test@homecloud.local']);
+        if (!$existing) {
+            $user = new User('reset-test@homecloud.local', 'Reset Test');
+            $ref = new \ReflectionProperty($user, 'id');
+            $ref->setValue($user, \Symfony\Component\Uid\Uuid::v4());
+            $user->setPassword('TestPassword123!');
+            $em->persist($user);
+            $em->flush();
+        }
+        static::ensureKernelShutdown();
+    }
+
     public function testSubmitNewPassword(): void
     {
         $client = static::createClient();

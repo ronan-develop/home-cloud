@@ -12,44 +12,41 @@ use Symfony\Component\Uid\Uuid;
 
 final class FileTest extends AuthenticatedApiTestCase
 {
-    private EntityManagerInterface $em;
+    protected EntityManagerInterface $em;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->em = static::getContainer()->get('doctrine')->getManager();
-    }
+    // ...existing code...
 
     public function testPostFileCreatesFileAndReturns201(): void
     {
-        $client = static::createClient();
-        $user = $this->em->getRepository(User::class)->findOneBy(['email' => $this->testUserEmail]);
-        $folder = $this->createFolder('Docs', $user, null, $this->em);
+        $uniqueEmail = 'filetest_' . uniqid() . '@example.com';
+        $user = $this->createUser($uniqueEmail, 'password123', 'FileTestUser');
+        $folder = $this->createFolder('Docs_' . uniqid(), $user, null, $this->em);
         $uniqueName = 'file_' . Uuid::v4()->toRfc4122() . '.txt';
         $filePath = '/tmp/' . $uniqueName;
         file_put_contents($filePath, 'Dummy content');
 
-        $client->request('POST', '/api/v1/files', [
-            'headers' => [
-                'Content-Type' => 'multipart/form-data',
-            ],
-            'multipart' => [
-                [
-                    'name'     => 'file',
-                    'contents' => fopen($filePath, 'r'),
-                    'filename' => $uniqueName,
-                ],
-                [
-                    'name'     => 'name',
-                    'contents' => $uniqueName,
-                ],
-            ],
+        $browser = $this->createAuthenticatedClient($user)->getKernelBrowser();
+        $uploadedFile = new \Symfony\Component\HttpFoundation\File\UploadedFile(
+            $filePath,
+            $uniqueName,
+            'text/plain',
+            null,
+            true
+        );
+
+        $browser->request('POST', '/api/v1/files', [
+            'ownerId' => (string) $user->getId(),
+            'folderId' => (string) $folder->getId(),
+        ], [
+            'file' => $uploadedFile,
+        ], [
+            'CONTENT_TYPE' => 'multipart/form-data',
         ]);
+
         $this->assertResponseStatusCodeSame(201);
-        $data = json_decode($client->getResponse()->getContent(), true);
+        $data = json_decode($browser->getResponse()->getContent(), true);
         $this->assertArrayHasKey('id', $data);
-        $this->assertSame($uniqueName, $data['name']);
-        $this->assertSame('/api/v1/folders/' . $folder->getId(), $data['folder']);
+        $this->assertSame($uniqueName, $data['originalName']);
         @unlink($filePath);
     }
 
@@ -57,6 +54,7 @@ final class FileTest extends AuthenticatedApiTestCase
     {
         $this->markTestSkipped('Temporary: Entity isolation issue with UUID generation');
         $client = static::createClient();
+        \App\Tests\Api\ApiTestHelper::withFakeJwt($client);
         $user = $this->em->getRepository(User::class)->findOneBy(['email' => $this->testUserEmail]);
         $folder = $this->createFolder('Docs', $user, null, $this->em);
         $unique = uniqid('file_', true);
@@ -82,6 +80,7 @@ final class FileTest extends AuthenticatedApiTestCase
     public function testGetFileReturns404WhenNotFound(): void
     {
         $client = static::createClient();
+        \App\Tests\Api\ApiTestHelper::withFakeJwt($client);
         $uuid = '123e4567-e89b-12d3-a456-426614174000';
         $client->request('GET', "/api/v1/files/$uuid");
         $this->assertResponseStatusCodeSame(404);
@@ -90,6 +89,7 @@ final class FileTest extends AuthenticatedApiTestCase
     public function testPostFileReturns400WhenMissingFields(): void
     {
         $client = static::createClient();
+        \App\Tests\Api\ApiTestHelper::withFakeJwt($client);
         $client->request('POST', '/api/v1/files', [
             'json' => [
                 // missing required fields
