@@ -1,5 +1,20 @@
 # 📋 Instructions HomeCloud - Starter Pack Commun
 
+---
+## 🚦 Consignes de workflow à respecter (ajoutées le 2026-03-02)
+
+**À CONSULTER AVANT CHAQUE INTERVENTION**
+
+- Toujours créer une branche dédiée avant toute modification (jamais de commit direct sur main)
+- Commits atomiques : un commit = une responsabilité logique, message explicite (voir conventions plus bas)
+- Approche TDD obligatoire :
+  1. Écrire le test RED (qui échoue)
+  2. Implémenter le code pour le faire passer (GREEN)
+  3. Refactoriser si besoin (REFACTOR)
+- Mettre à jour régulièrement `.github/avancement.md` pour tracer l’état d’avancement réel (étape, phase, tests, etc.)
+
+---
+
 **🔴 POINT D'ENTRÉE PRINCIPAL POUR LES AGENTS IA - À LIRE EN PREMIER**
 
 **Référence commune pour tous les projets HomeCloud**
