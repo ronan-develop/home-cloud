@@ -218,6 +218,10 @@ mkdir -p "${DEPLOY_PATH}/var/log"
 mkdir -p "${DEPLOY_PATH}/var/storage"
 chmod -R 775 "${DEPLOY_PATH}/var"
 
+# Compilation Tailwind CSS (obligatoire : var/ est gitignored)
+echo "→ Compilation Tailwind CSS…"
+${PHP_BIN} "${DEPLOY_PATH}/bin/console" tailwind:build --minify --env=prod
+
 echo "→ Déploiement côté serveur terminé."
 SSHSCRIPT
 
