@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controller\Web;
 
-use App\Entity\Album;
 use App\Entity\User;
 use App\Interface\AlbumRepositoryInterface;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Security\AlbumVoter;
+use App\Service\AlbumService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -18,13 +18,14 @@ use Symfony\Component\Uid\Uuid;
 
 /**
  * Gestion des albums web — liste, création, détail, suppression.
+ * Délègue la logique métier à AlbumService et les contrôles d'accès à AlbumVoter.
  */
 #[IsGranted('ROLE_USER')]
 final class AlbumWebController extends AbstractController
 {
     public function __construct(
         private readonly AlbumRepositoryInterface $albumRepository,
-        private readonly EntityManagerInterface $em,
+        private readonly AlbumService $albumService,
     ) {}
 
     #[Route('/albums', name: 'app_albums')]
@@ -32,24 +33,24 @@ final class AlbumWebController extends AbstractController
     {
         /** @var User $user */
         $user = $this->getUser();
-        $albums = $this->albumRepository->findByOwner($user);
 
-        return $this->render('web/albums.html.twig', ['albums' => $albums]);
+        return $this->render('web/albums.html.twig', [
+            'albums' => $this->albumRepository->findByOwner($user),
+        ]);
     }
 
     #[Route('/albums/create', name: 'app_album_create', methods: ['POST'])]
     public function create(Request $request): Response
     {
-        $name = trim((string) $request->request->get('name', ''));
-        if ($name === '') {
-            throw new BadRequestHttpException('Le nom de l\'album est obligatoire.');
-        }
+        $name = (string) $request->request->get('name', '');
 
-        /** @var User $user */
-        $user = $this->getUser();
-        $album = new Album($name, $user);
-        $this->em->persist($album);
-        $this->em->flush();
+        try {
+            /** @var User $user */
+            $user = $this->getUser();
+            $album = $this->albumService->create($name, $user);
+        } catch (\InvalidArgumentException $e) {
+            throw new BadRequestHttpException($e->getMessage(), $e);
+        }
 
         return $this->redirectToRoute('app_album_detail', ['id' => $album->getId()->toRfc4122()]);
     }
@@ -57,17 +58,10 @@ final class AlbumWebController extends AbstractController
     #[Route('/albums/{id}', name: 'app_album_detail', requirements: ['id' => '[0-9a-f\-]+'])]
     public function detail(string $id): Response
     {
-        $album = $this->albumRepository->findById(Uuid::fromString($id));
+        $album = $this->albumRepository->findById(Uuid::fromString($id))
+            ?? throw $this->createNotFoundException('Album introuvable.');
 
-        if ($album === null) {
-            throw $this->createNotFoundException('Album introuvable.');
-        }
-
-        /** @var User $user */
-        $user = $this->getUser();
-        if (!$album->getOwner()->getId()->equals($user->getId())) {
-            throw $this->createAccessDeniedException('Cet album ne vous appartient pas.');
-        }
+        $this->denyAccessUnlessGranted(AlbumVoter::VIEW, $album);
 
         return $this->render('web/album_detail.html.twig', ['album' => $album]);
     }
@@ -75,22 +69,14 @@ final class AlbumWebController extends AbstractController
     #[Route('/albums/{id}/delete', name: 'app_album_delete', methods: ['POST'], requirements: ['id' => '[0-9a-f\-]+'])]
     public function delete(string $id): Response
     {
-        $album = $this->albumRepository->findById(Uuid::fromString($id));
+        $album = $this->albumRepository->findById(Uuid::fromString($id))
+            ?? throw $this->createNotFoundException('Album introuvable.');
 
-        if ($album === null) {
-            throw $this->createNotFoundException('Album introuvable.');
-        }
+        $this->denyAccessUnlessGranted(AlbumVoter::DELETE, $album);
 
-        /** @var User $user */
-        $user = $this->getUser();
-        if (!$album->getOwner()->getId()->equals($user->getId())) {
-            throw $this->createAccessDeniedException('Vous ne pouvez pas supprimer cet album.');
-        }
-
-        $this->em->remove($album);
-        $this->em->flush();
-
-        $this->addFlash('success', "Album « {$album->getName()} » supprimé.");
+        $name = $album->getName();
+        $this->albumService->delete($album);
+        $this->addFlash('success', "Album « {$name} » supprimé.");
 
         return $this->redirectToRoute('app_albums');
     }
