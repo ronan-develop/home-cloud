@@ -7,7 +7,6 @@ namespace App\Tests\Api;
 use App\Entity\Album;
 use App\Entity\File;
 use App\Entity\Folder;
-use App\Entity\Media;
 use App\Entity\Share;
 use App\Entity\User;
 use App\Tests\AuthenticatedApiTestCase;
@@ -33,7 +32,7 @@ final class ShareTest extends AuthenticatedApiTestCase
         $conn->executeStatement('DELETE FROM users');
         $conn->executeStatement('SET FOREIGN_KEY_CHECKS=1');
         $this->em->clear();
-        $this->createUser(); // alice@example.com = owner JWT par défaut
+        $this->createUser('alice@example.com', 'password123', 'Alice'); // owner JWT par défaut
     }
 
     private function createGuest(): User
@@ -51,11 +50,12 @@ final class ShareTest extends AuthenticatedApiTestCase
         return $file;
     }
 
-    private function createFolder(User $owner): Folder
+    protected function createFolder(string $name, User $user, $parent = null, EntityManagerInterface $em): object
     {
-        $folder = new Folder('Shared Folder', $owner);
-        $this->em->persist($folder);
-        $this->em->flush();
+        $folder = new Folder($name, $user, $parent);
+        $em = $em ?? $this->em;
+        $em->persist($folder);
+        $em->flush();
         return $folder;
     }
 
@@ -117,7 +117,7 @@ final class ShareTest extends AuthenticatedApiTestCase
     {
         $owner  = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
         $guest  = $this->createGuest();
-        $folder = $this->createFolder($owner);
+        $folder = $this->createFolder('Shared Folder', $owner, null, $this->em);
 
         $this->createAuthenticatedClient()->request('POST', '/api/v1/shares', [
             'json' => [
@@ -252,7 +252,7 @@ final class ShareTest extends AuthenticatedApiTestCase
         $this->em->persist($share);
         $this->em->flush();
 
-        $response = $this->createAuthenticatedClient()->request('GET', '/api/v1/shares/'.$share->getId()->toRfc4122(), [
+        $response = $this->createAuthenticatedClient()->request('GET', '/api/v1/shares/' . $share->getId()->toRfc4122(), [
             'headers' => ['Accept' => 'application/json'],
         ]);
 
@@ -275,7 +275,7 @@ final class ShareTest extends AuthenticatedApiTestCase
         $stranger = $this->createUser('stranger@example.com', 'password123', 'Stranger');
         $this->em->flush();
 
-        $response = $this->createAuthenticatedClient('stranger@example.com')->request('GET', '/api/v1/shares/'.$share->getId()->toRfc4122(), [
+        $response = $this->createAuthenticatedClient('stranger@example.com')->request('GET', '/api/v1/shares/' . $share->getId()->toRfc4122(), [
             'headers' => ['Accept' => 'application/json'],
         ]);
 
@@ -293,7 +293,7 @@ final class ShareTest extends AuthenticatedApiTestCase
         $this->em->persist($share);
         $this->em->flush();
 
-        $response = $this->createAuthenticatedClient()->request('PATCH', '/api/v1/shares/'.$share->getId()->toRfc4122(), [
+        $response = $this->createAuthenticatedClient()->request('PATCH', '/api/v1/shares/' . $share->getId()->toRfc4122(), [
             'json'    => ['permission' => 'write'],
             'headers' => ['Content-Type' => 'application/merge-patch+json'],
         ]);
@@ -311,7 +311,7 @@ final class ShareTest extends AuthenticatedApiTestCase
         $this->em->persist($share);
         $this->em->flush();
 
-        $response = $this->createAuthenticatedClient('bob@example.com')->request('PATCH', '/api/v1/shares/'.$share->getId()->toRfc4122(), [
+        $response = $this->createAuthenticatedClient('bob@example.com')->request('PATCH', '/api/v1/shares/' . $share->getId()->toRfc4122(), [
             'json'    => ['permission' => 'write'],
             'headers' => ['Content-Type' => 'application/merge-patch+json'],
         ]);
@@ -330,7 +330,7 @@ final class ShareTest extends AuthenticatedApiTestCase
         $this->em->persist($share);
         $this->em->flush();
 
-        $this->createAuthenticatedClient()->request('DELETE', '/api/v1/shares/'.$share->getId()->toRfc4122());
+        $this->createAuthenticatedClient()->request('DELETE', '/api/v1/shares/' . $share->getId()->toRfc4122());
 
         $this->assertResponseStatusCodeSame(204);
     }
@@ -344,7 +344,7 @@ final class ShareTest extends AuthenticatedApiTestCase
         $this->em->persist($share);
         $this->em->flush();
 
-        $this->createAuthenticatedClient('bob@example.com')->request('DELETE', '/api/v1/shares/'.$share->getId()->toRfc4122());
+        $this->createAuthenticatedClient('bob@example.com')->request('DELETE', '/api/v1/shares/' . $share->getId()->toRfc4122());
 
         $this->assertResponseStatusCodeSame(403);
     }
@@ -360,7 +360,7 @@ final class ShareTest extends AuthenticatedApiTestCase
         $this->em->persist($share);
         $this->em->flush();
 
-        $response = $this->createAuthenticatedClient('bob@example.com')->request('GET', '/api/v1/files/'.$file->getId()->toRfc4122(), [
+        $response = $this->createAuthenticatedClient('bob@example.com')->request('GET', '/api/v1/files/' . $file->getId()->toRfc4122(), [
             'headers' => ['Accept' => 'application/json'],
         ]);
 
@@ -374,7 +374,7 @@ final class ShareTest extends AuthenticatedApiTestCase
         $file  = $this->createFile($owner);
         $this->em->flush();
 
-        $response = $this->createAuthenticatedClient('bob@example.com')->request('GET', '/api/v1/files/'.$file->getId()->toRfc4122(), [
+        $response = $this->createAuthenticatedClient('bob@example.com')->request('GET', '/api/v1/files/' . $file->getId()->toRfc4122(), [
             'headers' => ['Accept' => 'application/json'],
         ]);
 
@@ -390,7 +390,7 @@ final class ShareTest extends AuthenticatedApiTestCase
         $this->em->persist($share);
         $this->em->flush();
 
-        $response = $this->createAuthenticatedClient('bob@example.com')->request('GET', '/api/v1/files/'.$file->getId()->toRfc4122(), [
+        $response = $this->createAuthenticatedClient('bob@example.com')->request('GET', '/api/v1/files/' . $file->getId()->toRfc4122(), [
             'headers' => ['Accept' => 'application/json'],
         ]);
 
