@@ -17,6 +17,10 @@ use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * Traite les opérations d'écriture sur la ressource Folder (POST, PATCH, DELETE).
@@ -43,6 +47,9 @@ final class FolderProcessor implements ProcessorInterface
         private readonly UserRepository $userRepository,
         /** Injecté pour convertir l'entité en DTO après persist (évite la duplication du mapping) */
         private readonly FolderProvider $provider,
+        private readonly RequestStack $requestStack,
+        private readonly TokenStorageInterface $tokenStorage, // ✅ Ajouté
+        private readonly LoggerInterface $logger, // ✅ Ajouté
     ) {}
 
     /**
@@ -68,31 +75,38 @@ final class FolderProcessor implements ProcessorInterface
         if (empty($data->name)) {
             throw new BadRequestHttpException('name is required');
         }
-
         if (empty($data->ownerId)) {
             throw new BadRequestHttpException('ownerId is required');
         }
-
+        if (!preg_match('/^[^\\\\\/\:\*\?"<>|]+$/u', $data->name)) {
+            throw new BadRequestHttpException('Invalid characters in folder name');
+        }
         $owner = $this->userRepository->find($data->ownerId)
             ?? throw new NotFoundHttpException('User not found');
-
         $parent = null;
         if ($data->parentId !== null) {
             $parent = $this->folderRepository->find($data->parentId)
                 ?? throw new NotFoundHttpException('Parent folder not found');
         }
-
+        // Unicité du nom dans le parent pour ce propriétaire
+        $criteria = ['name' => $data->name, 'owner' => $owner];
+        if ($parent) {
+            $criteria['parent'] = $parent;
+        } else {
+            $criteria['parent'] = null;
+        }
+        if ($this->folderRepository->findOneBy($criteria)) {
+            throw new BadRequestHttpException('A folder with this name already exists in the parent');
+        }
         $mediaType = FolderMediaType::General;
         if ($data->mediaType !== 'general') {
             $mediaType = FolderMediaType::tryFrom($data->mediaType)
-                ?? throw new BadRequestHttpException('Invalid mediaType: '.$data->mediaType);
+                ?? throw new BadRequestHttpException('Invalid mediaType: ' . $data->mediaType);
         }
-
         $folder = new Folder($data->name, $owner, $parent);
         $folder->setMediaType($mediaType);
         $this->em->persist($folder);
         $this->em->flush();
-
         return $this->provider->toOutput($folder);
     }
 
@@ -104,17 +118,43 @@ final class FolderProcessor implements ProcessorInterface
     {
         $folder = $this->folderRepository->find($uriVariables['id'])
             ?? throw new NotFoundHttpException('Folder not found');
-
+        // Ownership : seul le propriétaire peut modifier
+        $user = $this->getAuthenticatedUser();
+        $this->logger->info('🔍 PATCH Ownership Check', [
+            'folder_id' => (string) $folder->getId(),
+            'folder_owner_id' => (string) $folder->getOwner()->getId(),
+            'folder_owner_email' => $folder->getOwner()->getEmail(),
+            'current_user' => $user ? get_class($user) : 'null',
+            'current_user_id' => $user ? (string) $user->getId() : 'null',
+            'current_user_email' => $user?->getEmail(),
+            'ids_match' => $user ? (string) $user->getId() === (string) $folder->getOwner()->getId() : false,
+        ]);
+        if (!$user instanceof \App\Entity\User) {
+            throw new AccessDeniedHttpException('You must be authenticated');
+        }
+        if ((string) $user->getId() !== (string) $folder->getOwner()->getId()) {
+            throw new AccessDeniedHttpException('You are not the owner of this folder');
+        }
         if ($data->name !== '') {
+            // Correction : doublement des antislashs pour l'expression régulière
+            if (!preg_match('/^[^\\\\\/\:\*\?\"\<\>\|]+$/u', $data->name)) {
+                throw new BadRequestHttpException('Invalid characters in folder name');
+            }
+            // Unicité du nom dans le parent pour ce propriétaire
+            $parent = $folder->getParent();
+            $criteria = ['name' => $data->name, 'owner' => $folder->getOwner()];
+            $criteria['parent'] = $parent;
+            $existing = $this->folderRepository->findOneBy($criteria);
+            if ($existing && !$existing->getId()->equals($folder->getId())) {
+                throw new BadRequestHttpException('A folder with this name already exists in the parent');
+            }
             $folder->setName($data->name);
         }
-
         if ($data->mediaType !== 'general') {
             $mediaType = FolderMediaType::tryFrom($data->mediaType)
-                ?? throw new BadRequestHttpException('Invalid mediaType: '.$data->mediaType);
+                ?? throw new BadRequestHttpException('Invalid mediaType: ' . $data->mediaType);
             $folder->setMediaType($mediaType);
         }
-
         if (array_key_exists('parentId', (array) $data)) {
             if ($data->parentId !== null && $data->parentId === $uriVariables['id']) {
                 throw new BadRequestHttpException('A folder cannot be its own parent');
@@ -124,9 +164,7 @@ final class FolderProcessor implements ProcessorInterface
                 : null;
             $folder->setParent($parent);
         }
-
         $this->em->flush();
-
         return $this->provider->toOutput($folder);
     }
 
@@ -138,10 +176,46 @@ final class FolderProcessor implements ProcessorInterface
     {
         $folder = $this->folderRepository->find($uriVariables['id'])
             ?? throw new NotFoundHttpException('Folder not found');
-
+        // Ownership : seul le propriétaire peut supprimer
+        $user = $this->getAuthenticatedUser();
+        if (!$user || !$folder->getOwner()->getId()->equals($user->getId())) {
+            throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('You are not the owner of this folder');
+        }
         $this->em->remove($folder);
         $this->em->flush();
+        return null;
+    }
 
+    /**
+     * Récupère l'utilisateur authentifié depuis le token de sécurité (API Platform context)
+     */
+    private function getAuthenticatedUser(): ?\App\Entity\User
+    {
+        $token = $this->tokenStorage->getToken();
+        $this->logger->info('🔍 TokenStorage State', [
+            'has_token' => $token !== null,
+            'token_class' => $token ? get_class($token) : 'null',
+        ]);
+        if ($token === null) {
+            $this->logger->warning('⚠️ No token in TokenStorage');
+            return null;
+        }
+        $user = $token->getUser();
+        $this->logger->info('🔍 User from Token', [
+            'user_class' => $user ? get_class($user) : 'null',
+            'is_user_instance' => $user instanceof \App\Entity\User,
+        ]);
+        if ($user instanceof \App\Entity\User) {
+            return $user;
+        }
+        if (is_string($user) && filter_var($user, FILTER_VALIDATE_EMAIL)) {
+            $this->logger->info('🔍 User is string, searching by email', ['email' => $user]);
+            return $this->userRepository->findOneBy(['email' => $user]);
+        }
+        $this->logger->warning('⚠️ User type not recognized', [
+            'type' => gettype($user),
+            'value' => $user,
+        ]);
         return null;
     }
 }
