@@ -1,7 +1,16 @@
+---
+name: HomeCloud Instructions
+description: Instructions communes pour tous les agents IA travaillant sur le projet HomeCloud
+applyTo:
+  - "**/*.php"
+  - "**/*.md"
+  - "tests/**/*"
+  - "src/**/*"
+---
+
 # 📋 Instructions HomeCloud - Starter Pack Commun
 
----
-## 🚦 Consignes de workflow à respecter (ajoutées le 2026-03-02)
+## 🚦 Consignes de workflow à respecter
 
 **À CONSULTER AVANT CHAQUE INTERVENTION**
 
@@ -11,7 +20,34 @@
   1. Écrire le test RED (qui échoue)
   2. Implémenter le code pour le faire passer (GREEN)
   3. Refactoriser si besoin (REFACTOR)
-- Mettre à jour régulièrement `.github/avancement.md` pour tracer l’état d’avancement réel (étape, phase, tests, etc.)
+- Mettre à jour régulièrement `.github/avancement.md` pour tracer l'état d'avancement réel (étape, phase, tests, etc.)
+
+---
+
+## ⚠️ CRITIQUE - Structure fichiers d'entité (UUID Doctrine)
+
+**Règle ABSOLUE - Chaque entité avec UUID DOIT initialiser l'ID dans le constructeur:**
+
+```php
+#[ORM\Id]
+#[ORM\Column(type: 'uuid', unique: true)]
+private Uuid $id;
+
+public function __construct(...)
+{
+    $this->id = Uuid::v7();  // ← OBLIGATOIRE !
+    // ... autres champs
+}
+```
+
+**VIOLATIONS CONNUES à éviter :**
+- ❌ `#[ORM\GeneratedValue(strategy: 'CUSTOM')]` → Doctrine ne génère PAS l'ID
+- ❌ `private ?Uuid $id = null;` → Nullable = Doctrine l'attend au persist()
+- ❌ `// Laisser Doctrine générer` → Sans @GeneratedValue(strategy='AUTO'), Doctrine ne génère rien
+
+**Résultat erreur :** `Entity is missing an assigned ID for field 'id'`
+
+**Entités configurées correctement :** User, Folder, File, Media
 
 ---
 
@@ -29,15 +65,15 @@ Tu ne réponds jamais avec des informations inventées ou non vérifiées.
 
 **⚠️ À LIRE AVANT CHAQUE RÉPONSE :**
 1. **Ce fichier** (tu es ici) → Règles globales du projet
-2. **[.github/CONVENTION_DE_COMMIT.md](./.github/CONVENTION_DE_COMMIT.md)** → Convention de commit (emoji OBLIGATOIRE, scope EXPLICITE)
-3. **[.github/dev+.chatmode.md](./.github/dev+.chatmode.md)** → Bonnes pratiques de développement
+2. **[.github/CONVENTION_DE_COMMIT.md](./CONVENTION_DE_COMMIT.md)** → Convention de commit (emoji OBLIGATOIRE, scope EXPLICITE)
+3. **[.github/dev+.chatmode.md](./dev+.chatmode.md)** → Bonnes pratiques de développement
 
 ---
 
 ## 🔗 Références Essentielles
 
 ### 2️⃣ Conventions de Commit — RÈGLES STRICTES
-→ Fichier de référence : **[.github/CONVENTION_DE_COMMIT.md](./.github/CONVENTION_DE_COMMIT.md)**
+→ Fichier de référence : **[.github/CONVENTION_DE_COMMIT.md](./CONVENTION_DE_COMMIT.md)**
 
 **Format OBLIGATOIRE :** `<emoji> <type>(<scope>): <sujet>`
 
@@ -52,19 +88,19 @@ Tu ne réponds jamais avec des informations inventées ou non vérifiées.
 **Correspondance emoji ↔ type :**
 | Emoji | Type |
 |-------|------|
-| ✨ | feat |
-| 🔧 | fix |
-| 📖 | docs |
-| ♻️ | refactor |
-| ⚡ | perf |
-| ✅ | test |
-| 🏗️ | build |
-| 🏭 | ci |
-| 🛠️ | chore |
-| 🎨 | style |
-| 🔒 | security |
-| ⏪ | revert |
-| 🚧 | WIP |
+| ✨    | feat |
+| 🔧    | fix  |
+| 📖    | docs |
+| ♻️    | refactor |
+| ⚡    | perf |
+| ✅    | test |
+| 🏗️    | build |
+| 🏭    | ci   |
+| 🛠️    | chore |
+| 🎨    | style |
+| 🔒    | security |
+| ⏪    | revert |
+| 🚧    | WIP |
 
 ### 3️⃣ Git Workflow
 **RÈGLE ABSOLUE : ne jamais commiter directement sur `main`.**
@@ -89,7 +125,7 @@ git commit -m "✨ feat(NomExplicite): description courte"
 
 ## 📋 Mémoire & Suivi des Travaux
 
-Un fichier d'avancement des travaux est présent dans [`.github/avancement.md`](./.github/avancement.md). Ce fichier doit être mis à jour régulièrement pour refléter l'état actuel des travaux. Tu peux effectuer seul ces mises à jour.
+Un fichier d'avancement des travaux est présent dans [`.github/avancement.md`](./avancement.md). Ce fichier doit être mis à jour régulièrement pour refléter l'état actuel des travaux. Tu peux effectuer seul ces mises à jour.
 
 ---
 

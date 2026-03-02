@@ -85,7 +85,12 @@ final class FolderProcessor implements ProcessorInterface
             ?? throw new NotFoundHttpException('User not found');
         $parent = null;
         if ($data->parentId !== null) {
-            $parent = $this->folderRepository->find($data->parentId)
+            // Extraire l'UUID de l'IRI si nécessaire
+            $parentId = $data->parentId;
+            if (strpos($parentId, '/') !== false) {
+                $parentId = basename($parentId);
+            }
+            $parent = $this->folderRepository->find($parentId)
                 ?? throw new NotFoundHttpException('Parent folder not found');
         }
         // Unicité du nom dans le parent pour ce propriétaire
@@ -155,13 +160,26 @@ final class FolderProcessor implements ProcessorInterface
                 ?? throw new BadRequestHttpException('Invalid mediaType: ' . $data->mediaType);
             $folder->setMediaType($mediaType);
         }
-        if (array_key_exists('parentId', (array) $data)) {
-            if ($data->parentId !== null && $data->parentId === $uriVariables['id']) {
+        if ($data->parentId !== null) {
+            // Extraire l'UUID de l'IRI si nécessaire
+            $parentId = $data->parentId;
+            if (strpos($parentId, '/') !== false) {
+                $parentId = basename($parentId);
+            }
+            // Vérifier que le folder n'est pas son propre parent
+            if ($parentId === (string) $uriVariables['id']) {
                 throw new BadRequestHttpException('A folder cannot be its own parent');
             }
-            $parent = $data->parentId !== null
-                ? ($this->folderRepository->find($data->parentId) ?? throw new NotFoundHttpException('Parent folder not found'))
-                : null;
+            $parent = $this->folderRepository->find($parentId)
+                ?? throw new NotFoundHttpException('Parent folder not found');
+        } else {
+            $parent = null;
+        }
+
+        // Seulement mettre à jour le parent si parentId est présent dans la requête
+        // Pour ce faire, vérifier les object vars mises à jour (non vides/par défaut)
+        $vars = get_object_vars($data);
+        if (isset($vars['parentId'])) {
             $folder->setParent($parent);
         }
         $this->em->flush();

@@ -7,6 +7,7 @@
 ```
 
 **Règles non négociables :**
+
 - L'**emoji** est TOUJOURS présent en début de message
 - Le **scope** doit être **explicite et concret** : nom de la classe, du module ou du composant concerné
   - ✅ `feat(FileUploadController)`, `fix(UserTest)`, `test(FileTest)`
@@ -20,7 +21,7 @@
 
 **On ne commite JAMAIS directement sur `main`.**
 
-```
+```txt
 main  ← branche stable, toujours verte (tests passants)
  └── feat/<nom-explicite>     ← nouvelle fonctionnalité
  └── fix/<nom-explicite>      ← correction de bug
@@ -31,12 +32,12 @@ main  ← branche stable, toujours verte (tests passants)
 
 ### Règles de branche
 
-| Règle | Détail |
-|---|---|
-| Créer une branche | Pour tout changement, même petit |
-| Nom explicite | `feat/file-browser`, `fix/swagger-assets`, pas `feat/truc` |
-| Merge dans main | Uniquement quand les tests passent |
-| Supprimer après merge | Nettoyer les branches mergées |
+| Règle                 | Détail                                                     |
+|-----------------------|------------------------------------------------------------|
+| Créer une branche     | Pour tout changement, même petit                           |
+| Nom explicite         | `feat/file-browser`, `fix/swagger-assets`, pas `feat/truc` |
+| Merge dans main       | Uniquement quand les tests passent                         |
+| Supprimer après merge | Nettoyer les branches mergées                              |
 
 ### Workflow type
 
@@ -61,19 +62,19 @@ git branch -d feat/NomExplicite
 
 ## Types de commits
 
-| Emoji | Type | Quand |
-|-------|------|-------|
-| ✨ | feat | Nouvelle fonctionnalité |
-| 🔧 | fix | Correction de bug |
-| 📖 | docs | Documentation uniquement |
-| ♻️ | refactor | Refactorisation sans nouvelle feature ni fix |
-| ⚡ | perf | Amélioration des performances |
-| ✅ | test | Ajout/correction de tests |
-| 🏗️ | build | Système de build, dépendances |
-| 🏭 | ci | Configuration CI, scripts de déploiement |
-| 🛠️ | chore | Outillage, config, nettoyage |
-| 🎨 | style | Formatage, espaces (pas de logique) |
-| 🔒 | security | Correctifs de sécurité |
-| ⏪ | revert | Annulation d'un commit |
-| 🚧 | WIP | Travail en cours (éviter sur main) |
-| 📋 | chore | Mise à jour avancement, notes |
+| Emoji | Type     | Quand                                        |
+|-------|----------|----------------------------------------------|
+| ✨    | feat     | Nouvelle fonctionnalité                      |
+| 🔧    | fix      | Correction de bug                            |
+| 📖    | docs     | Documentation uniquement                     |
+| ♻️    | refactor | Refactorisation sans nouvelle feature ni fix |
+| ⚡    | perf     | Amélioration des performances                |
+| ✅    | test     | Ajout/correction de tests                    |
+| 🏗️    | build    | Système de build, dépendances                |
+| 🏭    | ci       | Configuration CI, scripts de déploiement     |
+| 🛠️    | chore    | Outillage, config, nettoyage                 |
+| 🎨    | style    | Formatage, espaces (pas de logique)          |
+| 🔒    | security | Correctifs de sécurité                       |
+| ⏪    | revert   | Annulation d'un commit                       |
+| 🚧    | WIP      | Travail en cours (éviter sur main)           |
+| 📋    | chore    | Mise à jour avancement, notes                |

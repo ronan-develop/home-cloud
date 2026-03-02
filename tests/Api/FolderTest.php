@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Api;
 
-use App\Entity\Folder;
-use App\Entity\User;
 use App\Tests\AuthenticatedApiTestCase;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -30,10 +28,9 @@ final class FolderTest extends AuthenticatedApiTestCase
     // --- GET /api/v1/folders/{id} ---
     public function testGetFolderReturns200WithCorrectStructure(): void
     {
+
         $owner = $this->createUser();
-        $folder = new Folder('Documents', $owner);
-        $this->em->persist($folder);
-        $this->em->flush();
+        $folder = $this->createFolder('Documents', $owner);
 
         $response = $this->createAuthenticatedClient()->request('GET', '/api/v1/folders/' . $folder->getId());
 
@@ -57,10 +54,10 @@ final class FolderTest extends AuthenticatedApiTestCase
     // --- GET /api/v1/folders ---
     public function testGetCollectionReturnsFolders(): void
     {
+
         $owner = $this->createUser();
-        $this->em->persist(new Folder('Photos', $owner));
-        $this->em->persist(new Folder('Videos', $owner));
-        $this->em->flush();
+        $this->createFolder('Photos', $owner);
+        $this->createFolder('Videos', $owner);
 
         $response = $this->createAuthenticatedClient()->request('GET', '/api/v1/folders', [
             'headers' => ['Accept' => 'application/json'],
@@ -92,10 +89,9 @@ final class FolderTest extends AuthenticatedApiTestCase
 
     public function testPostFolderWithParentCreates201(): void
     {
+
         $owner = $this->createUser();
-        $parent = new Folder('Root', $owner);
-        $this->em->persist($parent);
-        $this->em->flush();
+        $parent = $this->createFolder('Root', $owner);
 
         $response = $this->createAuthenticatedClient()->request('POST', '/api/v1/folders', [
             'json' => [
@@ -122,65 +118,18 @@ final class FolderTest extends AuthenticatedApiTestCase
     // --- PATCH /api/v1/folders/{id} ---
     public function testPatchFolderUpdatesName(): void
     {
+
         $owner = $this->createUser();
-        $folder = new Folder('OldName', $owner);
-        $this->em->persist($folder);
-        $this->em->flush();
-        // Capturer les IDs AVANT le clear
-        $ownerIdBefore = (string) $owner->getId();
-        $folderIdBefore = (string) $folder->getId();
-        $folderOwnerIdBefore = (string) $folder->getOwner()->getId();
-        $this->em->clear();
-        // Recharger depuis la DB
-        $folderReloaded = $this->em->getRepository(Folder::class)->find($folderIdBefore);
-        $ownerReloaded = $this->em->getRepository(User::class)->find($ownerIdBefore);
-        // 🔍 DEBUG COMPLET
-        dump([
-            '=== AVANT CLEAR ===' => [
-                'owner_id' => $ownerIdBefore,
-                'folder_owner_id' => $folderOwnerIdBefore,
-                'owner_email' => $owner->getEmail(),
-            ],
-            '=== APRÈS RELOAD ===' => [
-                'owner_reloaded_id' => (string) $ownerReloaded->getId(),
-                'folder_reloaded_owner_id' => (string) $folderReloaded->getOwner()->getId(),
-                'owner_reloaded_email' => $ownerReloaded->getEmail(),
-                'folder_reloaded_owner_email' => $folderReloaded->getOwner()->getEmail(),
-            ],
-            '=== COMPARAISON ===' => [
-                'ids_match' => $ownerReloaded->getId()->equals($folderReloaded->getOwner()->getId()),
-                'same_object' => $ownerReloaded === $folderReloaded->getOwner(),
-                'string_ids_match' => (string) $ownerReloaded->getId() === (string) $folderReloaded->getOwner()->getId(),
-            ],
-        ]);
-        // Vérifier l'utilisateur authentifié dans le client
-        $client = $this->createAuthenticatedClient($ownerReloaded);
-        // 🔍 DEBUG: Vérifier l'utilisateur dans le TokenStorage
-        $tokenStorage = static::getContainer()->get(\Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface::class);
-        $token = $tokenStorage->getToken();
-        dump([
-            '=== TOKEN STORAGE ===' => [
-                'has_token' => $token !== null,
-                'user_in_token' => $token?->getUser(),
-                'user_id_in_token' => $token?->getUser() instanceof \App\Entity\User ? (string) $token->getUser()->getId() : null,
-                'user_email_in_token' => $token?->getUser() instanceof \App\Entity\User ? $token->getUser()->getEmail() : null,
-            ],
-        ]);
+        $folder = $this->createFolder('OldName', $owner);
+        $client = $this->createAuthenticatedClient($owner);
         $response = $client->request(
             'PATCH',
-            '/api/v1/folders/' . $folderReloaded->getId(),
+            '/api/v1/folders/' . $folder->getId(),
             [
                 'headers' => ['Content-Type' => 'application/merge-patch+json'],
                 'json' => ['name' => 'NewName'],
             ]
         );
-        // Si ça échoue, afficher la réponse complète
-        if ($response->getStatusCode() !== 200) {
-            dump([
-                'status_code' => $response->getStatusCode(),
-                'response_body' => $response->toArray(false),
-            ]);
-        }
         $this->assertResponseStatusCodeSame(200);
         $this->assertSame('NewName', $response->toArray()['name']);
     }
@@ -188,10 +137,9 @@ final class FolderTest extends AuthenticatedApiTestCase
     // --- DELETE /api/v1/folders/{id} ---
     public function testDeleteFolderReturns204(): void
     {
+
         $owner = $this->createUser();
-        $folder = new Folder('ToDelete', $owner);
-        $this->em->persist($folder);
-        $this->em->flush();
+        $folder = $this->createFolder('ToDelete', $owner);
 
         $this->createAuthenticatedClient()->request('DELETE', '/api/v1/folders/' . $folder->getId());
 
@@ -207,10 +155,9 @@ final class FolderTest extends AuthenticatedApiTestCase
 
     public function testPatchFolderReturns400WhenParentIsSelf(): void
     {
+
         $user = $this->createUser();
-        $folder = new Folder('Mon Dossier', $user);
-        $this->em->persist($folder);
-        $this->em->flush();
+        $folder = $this->createFolder('Mon Dossier', $user);
 
         $this->createAuthenticatedClient()->request('PATCH', '/api/v1/folders/' . $folder->getId(), [
             'headers' => ['Content-Type' => 'application/merge-patch+json'],
@@ -269,10 +216,9 @@ final class FolderTest extends AuthenticatedApiTestCase
 
     public function testPatchFolderUpdatesMediaType(): void
     {
+
         $owner  = $this->createUser();
-        $folder = new Folder('Folder', $owner);
-        $this->em->persist($folder);
-        $this->em->flush();
+        $folder = $this->createFolder('Folder', $owner);
 
         $response = $this->createAuthenticatedClient()->request('PATCH', '/api/v1/folders/' . $folder->getId(), [
             'headers' => ['Content-Type' => 'application/merge-patch+json'],
@@ -286,11 +232,10 @@ final class FolderTest extends AuthenticatedApiTestCase
     // --- DROITS (ownership) ---
     public function testPatchFolderByNonOwnerReturns403(): void
     {
+
         $owner = $this->createUser();
         $other = $this->createUser('other@example.com');
-        $folder = new Folder('Private', $owner);
-        $this->em->persist($folder);
-        $this->em->flush();
+        $folder = $this->createFolder('Private', $owner);
 
         $client = $this->createAuthenticatedClient($other);
         $client->request('PATCH', '/api/v1/folders/' . $folder->getId(), [
@@ -302,11 +247,10 @@ final class FolderTest extends AuthenticatedApiTestCase
 
     public function testDeleteFolderByNonOwnerReturns403(): void
     {
+
         $owner = $this->createUser();
         $other = $this->createUser('other@example.com');
-        $folder = new Folder('Private', $owner);
-        $this->em->persist($folder);
-        $this->em->flush();
+        $folder = $this->createFolder('Private', $owner);
 
         $client = $this->createAuthenticatedClient($other);
         $client->request('DELETE', '/api/v1/folders/' . $folder->getId());
@@ -316,11 +260,10 @@ final class FolderTest extends AuthenticatedApiTestCase
     // --- VALIDATION METIER ---
     public function testCannotCreateFolderWithDuplicateNameInSameParent(): void
     {
+
         $owner = $this->createUser();
-        $parent = new Folder('Parent', $owner);
-        $this->em->persist($parent);
-        $this->em->persist(new Folder('Unique', $owner, $parent));
-        $this->em->flush();
+        $parent = $this->createFolder('Parent', $owner);
+        $this->createFolder('Unique', $owner, $parent);
 
         $client = $this->createAuthenticatedClient($owner);
         $client->request('POST', '/api/v1/folders', [
@@ -335,14 +278,11 @@ final class FolderTest extends AuthenticatedApiTestCase
 
     public function testCannotPatchFolderWithDuplicateNameInSameParent(): void
     {
+
         $owner = $this->createUser();
-        $parent = new Folder('Parent', $owner);
-        $f1 = new Folder('A', $owner, $parent);
-        $f2 = new Folder('B', $owner, $parent);
-        $this->em->persist($parent);
-        $this->em->persist($f1);
-        $this->em->persist($f2);
-        $this->em->flush();
+        $parent = $this->createFolder('Parent', $owner);
+        $f1 = $this->createFolder('A', $owner, $parent);
+        $f2 = $this->createFolder('B', $owner, $parent);
 
         $client = $this->createAuthenticatedClient($owner);
         $client->request('PATCH', '/api/v1/folders/' . $f2->getId(), [
@@ -354,6 +294,7 @@ final class FolderTest extends AuthenticatedApiTestCase
 
     public function testCannotCreateFolderWithInvalidCharacters(): void
     {
+
         $owner = $this->createUser();
         $client = $this->createAuthenticatedClient($owner);
         $client->request('POST', '/api/v1/folders', [
@@ -367,10 +308,9 @@ final class FolderTest extends AuthenticatedApiTestCase
 
     public function testCannotPatchFolderWithInvalidCharacters(): void
     {
+
         $owner = $this->createUser();
-        $folder = new Folder('Valid', $owner);
-        $this->em->persist($folder);
-        $this->em->flush();
+        $folder = $this->createFolder('Valid', $owner);
         $client = $this->createAuthenticatedClient($owner);
         $client->request('PATCH', '/api/v1/folders/' . $folder->getId(), [
             'headers' => ['Content-Type' => 'application/merge-patch+json'],

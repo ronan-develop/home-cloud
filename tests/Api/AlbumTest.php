@@ -2,19 +2,21 @@
 
 declare(strict_types=1);
 
-
 namespace App\Tests\Api;
 
+use ApiPlatform\Symfony\Bundle\Test\ApiTestCase;
+use App\Entity\Album;
 use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\Media;
 use App\Entity\User;
-use App\Tests\AuthenticatedApiTestCase;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\Assert;
 
-final class AlbumTest extends AuthenticatedApiTestCase
+final class AlbumTest extends ApiTestCase
 {
     private EntityManagerInterface $em;
+
     protected function setUp(): void
     {
         $this->em = static::getContainer()->get(EntityManagerInterface::class);
@@ -28,7 +30,23 @@ final class AlbumTest extends AuthenticatedApiTestCase
         $conn->executeStatement('DELETE FROM users');
         $conn->executeStatement('SET FOREIGN_KEY_CHECKS=1');
         $this->em->clear();
-        $this->createUser();
+        $this->createAuthenticatedUser();
+    }
+
+    private function createAuthenticatedUser(): User
+    {
+        $user = new User('alice@example.com', 'Alice');
+        $this->em->persist($user);
+        $this->em->flush();
+        return $user;
+    }
+
+    private function createUser(string $email, string $name = 'User'): User
+    {
+        $user = new User($email, $name);
+        $this->em->persist($user);
+        $this->em->flush();
+        return $user;
     }
 
     private function createMedia(): Media
@@ -46,240 +64,240 @@ final class AlbumTest extends AuthenticatedApiTestCase
         return $media;
     }
 
-    // --- GET /api/v1/albums ---
-
     public function testGetCollectionReturnsEmptyArray(): void
     {
-        $response = $this->createAuthenticatedClient()->request('GET', '/api/v1/albums', [
+        $response = static::createClient()->request('GET', '/api/v1/albums', [
             'headers' => ['Accept' => 'application/json'],
         ]);
-
-        $this->assertResponseStatusCodeSame(200);
-        $this->assertSame([], $response->toArray());
+        Assert::assertSame(200, $response->getStatusCode());
+        Assert::assertSame([], $response->toArray());
     }
 
     public function testGetCollectionReturnsAlbums(): void
     {
         $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
-        $album = new \App\Entity\Album('Vacances', $owner);
+        $album = new Album('Vacances', $owner);
         $this->em->persist($album);
         $this->em->flush();
 
-        $response = $this->createAuthenticatedClient()->request('GET', '/api/v1/albums', [
+        $response = static::createClient()->request('GET', '/api/v1/albums', [
             'headers' => ['Accept' => 'application/json'],
         ]);
 
-        $this->assertResponseStatusCodeSame(200);
+        Assert::assertSame(200, $response->getStatusCode());
         $data = $response->toArray();
-        $this->assertCount(1, $data);
-        $this->assertSame('Vacances', $data[0]['name']);
+        Assert::assertCount(1, $data);
+        Assert::assertSame('Vacances', $data[0]['name']);
     }
-
-    // --- GET /api/v1/albums/{id} ---
 
     public function testGetAlbumReturns200WithCorrectStructure(): void
     {
         $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
-        $album = new \App\Entity\Album('Été 2026', $owner);
+        $album = new Album('Été 2026', $owner);
         $this->em->persist($album);
         $this->em->flush();
 
-        $response = $this->createAuthenticatedClient()->request('GET', '/api/v1/albums/' . $album->getId());
+        $response = static::createClient()->request('GET', '/api/v1/albums/' . $album->getId());
 
-        $this->assertResponseStatusCodeSame(200);
+        Assert::assertSame(200, $response->getStatusCode());
         $data = $response->toArray();
-        $this->assertArrayHasKey('id', $data);
-        $this->assertSame('Été 2026', $data['name']);
-        $this->assertArrayHasKey('ownerId', $data);
-        $this->assertArrayHasKey('mediaCount', $data);
-        $this->assertArrayHasKey('createdAt', $data);
-        $this->assertSame(0, $data['mediaCount']);
+        Assert::assertArrayHasKey('id', $data);
+        Assert::assertSame('Été 2026', $data['name']);
+        Assert::assertArrayHasKey('ownerId', $data);
+        Assert::assertArrayHasKey('mediaCount', $data);
+        Assert::assertArrayHasKey('createdAt', $data);
+        Assert::assertSame(0, $data['mediaCount']);
     }
 
     public function testGetAlbumReturns404WhenNotFound(): void
     {
-        $this->createAuthenticatedClient()->request('GET', '/api/v1/albums/00000000-0000-0000-0000-000000000000');
-
-        $this->assertResponseStatusCodeSame(404);
+        $response = static::createClient()->request('GET', '/api/v1/albums/00000000-0000-0000-0000-000000000000');
+        Assert::assertSame(404, $response->getStatusCode());
     }
-
-    // --- POST /api/v1/albums ---
 
     public function testPostAlbumCreates201(): void
     {
         $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
 
-        $response = $this->createAuthenticatedClient()->request('POST', '/api/v1/albums', [
+        $response = static::createClient()->request('POST', '/api/v1/albums', [
             'json' => [
                 'name' => 'Famille',
                 'ownerId' => (string) $owner->getId(),
             ],
         ]);
-        $this->assertResponseStatusCodeSame(201);
+        Assert::assertSame(201, $response->getStatusCode());
         $data = $response->toArray();
-        $this->assertSame('Famille', $data['name']);
-        $this->assertArrayHasKey('id', $data);
-        $this->assertArrayHasKey('mediaCount', $data);
-        $this->assertSame(0, $data['mediaCount']);
+        Assert::assertSame('Famille', $data['name']);
+        Assert::assertArrayHasKey('id', $data);
+        Assert::assertArrayHasKey('mediaCount', $data);
+        Assert::assertSame(0, $data['mediaCount']);
     }
 
     public function testPostAlbumReturns400WhenNameMissing(): void
     {
         $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
-
-        $this->createAuthenticatedClient()->request('POST', '/api/v1/albums', [
+        $response = static::createClient()->request('POST', '/api/v1/albums', [
             'json' => ['ownerId' => (string) $owner->getId()],
         ]);
 
-        $this->assertResponseStatusCodeSame(400);
+        Assert::assertSame(400, $response->getStatusCode());
     }
 
     public function testPostAlbumReturns404WhenOwnerNotFound(): void
     {
-        $this->createAuthenticatedClient()->request('POST', '/api/v1/albums', [
+        $response = static::createClient()->request('POST', '/api/v1/albums', [
             'json' => [
                 'name' => 'Test',
                 'ownerId' => '00000000-0000-0000-0000-000000000000',
             ],
         ]);
 
-        $this->assertResponseStatusCodeSame(404);
+        Assert::assertSame(404, $response->getStatusCode());
     }
-
-    // --- PATCH /api/v1/albums/{id} ---
 
     public function testPatchAlbumRenamesIt(): void
     {
         $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
-        $album = new \App\Entity\Album('Ancien nom', $owner);
+        $album = new Album('Ancien nom', $owner);
         $this->em->persist($album);
         $this->em->flush();
 
-        $response = $this->createAuthenticatedClient()->request('PATCH', '/api/v1/albums/' . $album->getId(), [
+        $response = static::createClient()->request('PATCH', '/api/v1/albums/' . $album->getId(), [
             'headers' => ['Content-Type' => 'application/merge-patch+json'],
             'json' => ['name' => 'Nouveau nom'],
         ]);
 
-        $this->assertResponseStatusCodeSame(200);
-        $this->assertSame('Nouveau nom', $response->toArray()['name']);
+        Assert::assertSame(200, $response->getStatusCode());
+        Assert::assertSame('Nouveau nom', $response->toArray()['name']);
     }
 
     public function testPatchAlbumReturns400IfNameHasInvalidChars(): void
     {
         $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
-        $album = new \App\Entity\Album('NomValide', $owner);
+        $album = new Album('NomValide', $owner);
         $this->em->persist($album);
         $this->em->flush();
-        $response = $this->createAuthenticatedClient($owner)->request('PATCH', '/api/v1/albums/' . $album->getId(), [
+
+        $response = static::createClient()->request('PATCH', '/api/v1/albums/' . $album->getId(), [
             'headers' => ['Content-Type' => 'application/merge-patch+json'],
             'json' => ['name' => 'Nom/Interdit'],
         ]);
-        $this->assertResponseStatusCodeSame(400);
+        Assert::assertSame(400, $response->getStatusCode());
     }
 
     public function testPatchAlbumReturns403IfNotOwner(): void
     {
         $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
         $other = $this->createUser('bob@example.com');
-        $album = new \App\Entity\Album('Privé', $owner);
+        $album = new Album('Privé', $owner);
         $this->em->persist($album);
         $this->em->flush();
-        $response = $this->createAuthenticatedClient($other)->request('PATCH', '/api/v1/albums/' . $album->getId(), [
+
+        $response = static::createClient()->request('PATCH', '/api/v1/albums/' . $album->getId(), [
             'headers' => ['Content-Type' => 'application/merge-patch+json'],
             'json' => ['name' => 'Hack'],
         ]);
-        $this->assertResponseStatusCodeSame(403);
+        Assert::assertSame(403, $response->getStatusCode());
     }
 
     public function testDeleteAlbumReturns403IfNotOwner(): void
     {
         $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
         $other = $this->createUser('bob@example.com');
-        $album = new \App\Entity\Album('À protéger', $owner);
+        $album = new Album('À protéger', $owner);
         $this->em->persist($album);
         $this->em->flush();
-        $response = $this->createAuthenticatedClient($other)->request('DELETE', '/api/v1/albums/' . $album->getId());
-        $this->assertResponseStatusCodeSame(403);
+
+        $response = static::createClient()->request('DELETE', '/api/v1/albums/' . $album->getId());
+        Assert::assertSame(403, $response->getStatusCode());
+    }
+
+    public function testDeleteAlbumReturns204WhenOwner(): void
+    {
+        $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
+        $album = new Album('À supprimer', $owner);
+        $this->em->persist($album);
+        $this->em->flush();
+
+        $response = static::createClient()->request('DELETE', '/api/v1/albums/' . $album->getId());
+        Assert::assertSame(204, $response->getStatusCode());
     }
 
     public function testAddMediaToAlbumIdempotent(): void
     {
         $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
-        $album = new \App\Entity\Album('Idempotent', $owner);
+        $album = new Album('Idempotent', $owner);
         $media = $this->createMedia();
         $album->addMedia($media);
         $this->em->persist($album);
         $this->em->flush();
 
-        // Ajouter le même média une 2e fois
-        $response = $this->createAuthenticatedClient()->request(
+        $response = static::createClient()->request(
             'POST',
             '/api/v1/albums/' . $album->getId() . '/medias',
             ['json' => ['mediaId' => (string) $media->getId()]]
         );
 
-        $this->assertResponseStatusCodeSame(200);
-        $this->assertSame(1, $response->toArray()['mediaCount']); // toujours 1
+        Assert::assertSame(200, $response->getStatusCode());
+        Assert::assertSame(1, $response->toArray()['mediaCount']);
     }
 
     public function testAddMediaToAlbumReturns404WhenAlbumNotFound(): void
     {
         $media = $this->createMedia();
 
-        $this->createAuthenticatedClient()->request(
+        $response = static::createClient()->request(
             'POST',
             '/api/v1/albums/00000000-0000-0000-0000-000000000000/medias',
             ['json' => ['mediaId' => (string) $media->getId()]]
         );
 
-        $this->assertResponseStatusCodeSame(404);
+        Assert::assertSame(404, $response->getStatusCode());
     }
 
     public function testAddMediaToAlbumReturns404WhenMediaNotFound(): void
     {
         $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
-        $album = new \App\Entity\Album('Test', $owner);
+        $album = new Album('Test', $owner);
         $this->em->persist($album);
         $this->em->flush();
 
-        $this->createAuthenticatedClient()->request(
+        $response = static::createClient()->request(
             'POST',
             '/api/v1/albums/' . $album->getId() . '/medias',
             ['json' => ['mediaId' => '00000000-0000-0000-0000-000000000000']]
         );
 
-        $this->assertResponseStatusCodeSame(404);
+        Assert::assertSame(404, $response->getStatusCode());
     }
-
-    // --- DELETE /api/v1/albums/{id}/medias/{mediaId} ---
 
     public function testRemoveMediaFromAlbumReturns200(): void
     {
         $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
         $media = $this->createMedia();
-        $album = new \App\Entity\Album('À retirer', $owner);
+        $album = new Album('À retirer', $owner);
         $album->addMedia($media);
         $this->em->persist($album);
         $this->em->flush();
 
-        $response = $this->createAuthenticatedClient()->request(
+        $response = static::createClient()->request(
             'DELETE',
             '/api/v1/albums/' . $album->getId() . '/medias/' . $media->getId()
         );
 
-        $this->assertResponseStatusCodeSame(200);
-        $this->assertSame(0, $response->toArray()['mediaCount']);
+        Assert::assertSame(200, $response->getStatusCode());
+        Assert::assertSame(0, $response->toArray()['mediaCount']);
     }
 
     public function testRemoveMediaFromAlbumReturns404WhenAlbumNotFound(): void
     {
         $media = $this->createMedia();
 
-        $this->createAuthenticatedClient()->request(
+        $response = static::createClient()->request(
             'DELETE',
             '/api/v1/albums/00000000-0000-0000-0000-000000000000/medias/' . $media->getId()
         );
 
-        $this->assertResponseStatusCodeSame(404);
+        Assert::assertSame(404, $response->getStatusCode());
     }
 }
