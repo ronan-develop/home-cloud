@@ -307,7 +307,7 @@ fi
 if [[ "$RUN_MIGRATIONS" == "o" || "$RUN_MIGRATIONS" == "O" ]]; then
     info "Lancement des migrations Doctrine…"
     ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
-        "cd ${DEPLOY_PATH} && ${PHP_BIN} bin/console doctrine:migrations:migrate --no-interaction --env=prod"
+        "cd ${DEPLOY_PATH} && ${PHP_BIN} bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration --env=prod"
     success "Migrations appliquées"
 
     # Cache Symfony
