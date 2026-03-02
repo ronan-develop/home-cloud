@@ -12,7 +12,7 @@
             📚 {{ album.name }}
         </h1>
         <p style="font-size:0.875rem; color:#9ca3af;">
-            {{ album.medias|length }} média{{ album.medias|length != 1 ? 's' : '' }}
+            <span data-testid="album-media-count">{{ album.medias|length }}</span> média{{ album.medias|length != 1 ? 's' : '' }}
             · Créé le {{ album.createdAt|date('d/m/Y') }}
         </p>
     </div>
