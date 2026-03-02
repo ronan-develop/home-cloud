@@ -29,9 +29,13 @@ class Folder
     #[ORM\OneToMany(targetEntity: self::class, mappedBy: 'parent')]
     private Collection $children;
 
+
     #[ORM\ManyToOne(targetEntity: User::class, cascade: ['persist'])]
     #[ORM\JoinColumn(nullable: false)]
     private User $owner;
+
+    #[ORM\OneToMany(targetEntity: File::class, mappedBy: 'folder', cascade: ['remove'])]
+    private Collection $files;
 
     #[ORM\Column(type: 'string', enumType: FolderMediaType::class, options: ['default' => 'general'])]
     private FolderMediaType $mediaType = FolderMediaType::General;
@@ -46,7 +50,13 @@ class Folder
         $this->owner = $owner;
         $this->parent = $parent;
         $this->children = new ArrayCollection();
+        $this->files = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
+    }
+
+    public function getFiles(): Collection
+    {
+        return $this->files;
     }
 
     public function getId(): Uuid
