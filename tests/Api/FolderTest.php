@@ -10,11 +10,11 @@ use Doctrine\ORM\EntityManagerInterface;
 final class FolderTest extends AuthenticatedApiTestCase
 {
     protected static ?bool $alwaysBootKernel = false;
-    private EntityManagerInterface $em;
+    protected EntityManagerInterface $em;
 
     protected function setUp(): void
     {
-        $this->em = static::getContainer()->get(EntityManagerInterface::class);
+        parent::setUp();
         $conn = $this->em->getConnection();
         $conn->executeStatement('SET FOREIGN_KEY_CHECKS=0');
         $conn->executeStatement('DELETE FROM medias');
@@ -23,6 +23,12 @@ final class FolderTest extends AuthenticatedApiTestCase
         $conn->executeStatement('DELETE FROM users');
         $conn->executeStatement('SET FOREIGN_KEY_CHECKS=1');
         $this->em->clear();
+
+        // Mock JWT pour tous les tests
+        if (method_exists($this, 'createAuthenticatedClient')) {
+            $client = $this->createAuthenticatedClient();
+            \App\Tests\Api\ApiTestHelper::withFakeJwt($client);
+        }
     }
 
     // --- GET /api/v1/folders/{id} ---
