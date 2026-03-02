@@ -1,0 +1,48 @@
+{% extends 'web/layout.html.twig' %}
+
+{% block title %}Mes albums — HomeCloud{% endblock %}
+
+{% block content %}
+
+<div class="flex items-center justify-between mb-6">
+    <h1 style="font-size:1.5rem; font-weight:700; color:#111827;">📚 Mes albums</h1>
+
+    <form method="post" action="{{ path('app_album_create') }}" style="display:flex; gap:0.5rem; align-items:center;">
+        <input type="text" name="name" placeholder="Nom du nouvel album"
+               style="padding:0.4rem 0.8rem; border:1px solid #d1d5db; border-radius:0.5rem; font-size:0.875rem; outline:none;"
+               required />
+        <button type="submit"
+                style="padding:0.4rem 0.9rem; background:#3b82f6; color:#fff; border:none; border-radius:0.5rem; font-size:0.875rem; cursor:pointer;">
+            + Créer
+        </button>
+    </form>
+</div>
+
+{% if albums is empty %}
+    <div data-testid="albums-empty"
+         style="text-align:center; padding:4rem 2rem; color:#9ca3af;">
+        <p style="font-size:3rem;">📚</p>
+        <p style="font-size:1.1rem; font-weight:600; margin-top:1rem;">Aucun album pour l'instant</p>
+        <p style="font-size:0.875rem; margin-top:0.5rem;">Créez un album pour regrouper vos photos et vidéos.</p>
+    </div>
+{% else %}
+    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:1.25rem;">
+        {% for album in albums %}
+            <a href="{{ path('app_album_detail', {id: album.id}) }}"
+               data-testid="album-card"
+               style="display:block; border:1px solid #e5e7eb; border-radius:0.75rem; padding:1.25rem;
+                      text-decoration:none; color:#111827; background:#fff;
+                      box-shadow:0 1px 3px rgba(0,0,0,0.07); transition:box-shadow 0.15s;"
+               onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.12)'"
+               onmouseout="this.style.boxShadow='0 1px 3px rgba(0,0,0,0.07)'">
+                <div style="font-size:1.5rem; margin-bottom:0.5rem;">📚</div>
+                <div style="font-weight:600; font-size:0.95rem;">{{ album.name }}</div>
+                <div style="font-size:0.78rem; color:#9ca3af; margin-top:0.3rem;">
+                    {{ album.medias|length }} média{{ album.medias|length != 1 ? 's' : '' }}
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+{% endif %}
+
+{% endblock %}

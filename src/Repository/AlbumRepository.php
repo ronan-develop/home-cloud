@@ -22,4 +22,16 @@ class AlbumRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Album::class);
     }
+
+    /** @return Album[] */
+    public function findByOwner(\App\Entity\User $user): array
+    {
+        return $this->createQueryBuilder('a')
+            ->join('a.owner', 'u')
+            ->where('u.id = :userId')
+            ->setParameter('userId', $user->getId(), 'uuid')
+            ->orderBy('a.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
 }

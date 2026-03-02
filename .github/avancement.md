@@ -532,16 +532,17 @@ Phase terminée. Voir section 9 pour les détails techniques.
   - [x] `FileList` (liste fichiers, `[data-testid="file-list"]` — `FileExplorerTest` ✅)
   - [x] `FileUpload` drag & drop → upload (`ImportCard` + `FileWebController`)
   - [x] Téléchargement (`/files/{id}/download`) + suppression avec contrôle ownership (403) ✅
-- [ ] **D — Galerie médias** ← en cours
+- [x] **D — Galerie médias** ✅
   - [x] `MediaGalleryController` (GET /gallery, filtre ?type=photo|video)
-  - [x] `MediaRepository::findByOwner()` (DQL, filtrage par user + type)
+  - [x] `MediaRepository::findByOwner()` (DQL avec join u.id, fix UUID binary)
   - [x] Template `gallery.html.twig` (grille thumbnails, empty state)
   - [x] Lightbox inline (CSS + JS, attribut `data-lightbox`)
   - [x] `MediaGalleryTest` — 9/9 ✅ (TDD RED→GREEN)
-  - [ ] Live Component `MediaGallery` (grille thumbnails)
-  - [ ] Lightbox (Bootstrap modal ou plugin léger)
-- [ ] **E — Albums**
-  - [ ] Liste + création + détail album
+- [x] **E — Albums** ✅
+  - [x] `AlbumWebController` (liste, création, détail, suppression + ownership 403)
+  - [x] `AlbumRepository::findByOwner()` (DQL, même pattern UUID binary)
+  - [x] Templates `albums.html.twig` + `album_detail.html.twig`
+  - [x] `AlbumWebTest` — 12/12 ✅ (TDD RED→GREEN)
 - [ ] **F — Partages**
   - [ ] Modal partage + page "Partagé avec moi"
 
