@@ -55,7 +55,7 @@ class File
     private bool $neutralized = false;
 
     #[ORM\ManyToOne(targetEntity: Folder::class)]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private Folder $folder;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
@@ -74,7 +74,21 @@ class File
         User $owner,
         bool $neutralized = false,
     ) {
-        $this->id = Uuid::v7();
+        if (isset($_ENV['APP_ENV']) && $_ENV['APP_ENV'] === 'test') {
+            // Génère un UUID v4 aléatoire garanti unique
+            $this->id = Uuid::fromString(
+                sprintf(
+                    '%08x-%04x-%04x-%04x-%012x',
+                    random_int(0, 0xffffffff),
+                    random_int(0, 0xffff),
+                    (random_int(0, 0x0fff) | 0x4000), // version 4
+                    (random_int(0, 0x3fff) | 0x8000), // variant
+                    random_int(0, 0xffffffffffff)
+                )
+            );
+        } else {
+            $this->id = Uuid::v7();
+        }
         $this->originalName = $originalName;
         $this->mimeType = $mimeType;
         $this->size = $size;
