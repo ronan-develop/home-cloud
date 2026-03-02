@@ -22,10 +22,10 @@
         {# Navigation #}
         <nav style="display:flex; flex-direction:column; gap:0.3rem; padding:0 0.75rem;">
             {% set nav_items = [
-                { route: 'app_home', icon: '📁', label: 'Mes fichiers' },
-                { route: '#',        icon: '🖼️', label: 'Galerie' },
-                { route: '#',        icon: '📚', label: 'Albums' },
-                { route: '#',        icon: '🔗', label: 'Partages' },
+                { route: 'app_home',    icon: '📁', label: 'Mes fichiers' },
+                { route: 'app_gallery', icon: '🖼️', label: 'Galerie' },
+                { route: 'app_albums',  icon: '📚', label: 'Albums' },
+                { route: '#',           icon: '🔗', label: 'Partages' },
             ] %}
             {% for item in nav_items %}
                 <a href="{{ item.route starts with '#' ? '#' : path(item.route) }}"

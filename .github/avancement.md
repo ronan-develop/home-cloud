@@ -522,21 +522,27 @@ Phase terminée. Voir section 9 pour les détails techniques.
   - [x] Tailwind CSS v4 standalone CLI (`php bin/console tailwind:build --watch`)
   - [x] Layout `base.html.twig` + `web/layout.html.twig` (navbar, sidebar, zone contenu)
   - [x] `WebLayoutTest` — 5/5 ✅ (TDD RED→GREEN)
-- [ ] **B — Auth web** ← en cours
+- [x] **B — Auth web** ✅
   - [x] Firewall session dans `security.yaml` (séparé du firewall JWT `/api`)
   - [x] `LoginController` + `login.html.twig`
   - [x] Logout
-  - [ ] Test connexion réelle (login POST → session → accès `/`) + test logout
-- [ ] **C — Explorateur fichiers**
-  - [ ] Live Component `FolderBrowser` (arborescence, navigation)
-  - [ ] Live Component `FileList` (liste fichiers, pagination)
-  - [ ] Stimulus Controller `FileUpload` (drag & drop → upload)
-  - [ ] Téléchargement + suppression avec confirmation
-- [ ] **D — Galerie médias**
-  - [ ] Live Component `MediaGallery` (grille thumbnails)
-  - [ ] Lightbox (Bootstrap modal ou plugin léger)
-- [ ] **E — Albums**
-  - [ ] Liste + création + détail album
+  - [x] `WebAuthTest` — 8/8 ✅ (login POST → session → accès `/` → logout) (TDD RED→GREEN)
+- [x] **C — Explorateur fichiers** ✅
+  - [x] `FolderBrowser` (arborescence, navigation — `FolderBrowserComponentTest` 6/6 ✅)
+  - [x] `FileList` (liste fichiers, `[data-testid="file-list"]` — `FileExplorerTest` ✅)
+  - [x] `FileUpload` drag & drop → upload (`ImportCard` + `FileWebController`)
+  - [x] Téléchargement (`/files/{id}/download`) + suppression avec contrôle ownership (403) ✅
+- [x] **D — Galerie médias** ✅
+  - [x] `MediaGalleryController` (GET /gallery, filtre ?type=photo|video)
+  - [x] `MediaRepository::findByOwner()` (DQL avec join u.id, fix UUID binary)
+  - [x] Template `gallery.html.twig` (grille thumbnails, empty state)
+  - [x] Lightbox inline (CSS + JS, attribut `data-lightbox`)
+  - [x] `MediaGalleryTest` — 9/9 ✅ (TDD RED→GREEN)
+- [x] **E — Albums** ✅
+  - [x] `AlbumWebController` (liste, création, détail, suppression + ownership 403)
+  - [x] `AlbumRepository::findByOwner()` (DQL, même pattern UUID binary)
+  - [x] Templates `albums.html.twig` + `album_detail.html.twig`
+  - [x] `AlbumWebTest` — 12/12 ✅ (TDD RED→GREEN)
 - [ ] **F — Partages**
   - [ ] Modal partage + page "Partagé avec moi"
 

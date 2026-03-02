@@ -16,7 +16,7 @@ use Symfony\Component\Uid\Uuid;
 final class ShareTest extends AuthenticatedApiTestCase
 {
     protected static ?bool $alwaysBootKernel = false;
-    private EntityManagerInterface $em;
+    protected EntityManagerInterface $em;
 
     protected function setUp(): void
     {
@@ -50,7 +50,7 @@ final class ShareTest extends AuthenticatedApiTestCase
         return $file;
     }
 
-    protected function createFolder(string $name, User $user, $parent = null, EntityManagerInterface $em): object
+    protected function createFolder(string $name, User $user, ?object $parent = null, ?EntityManagerInterface $em = null): object
     {
         $folder = new Folder($name, $user, $parent);
         $em = $em ?? $this->em;

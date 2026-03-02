@@ -36,7 +36,7 @@ class Share
     #[ORM\Column(type: 'uuid', unique: true)]
     private Uuid $id;
 
-    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\ManyToOne(targetEntity: User::class, cascade: ['persist'])]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private User $owner;
 
@@ -79,17 +79,47 @@ class Share
         $this->createdAt = new \DateTimeImmutable();
     }
 
-    public function getId(): Uuid { return $this->id; }
-    public function getOwner(): User { return $this->owner; }
-    public function getGuest(): User { return $this->guest; }
-    public function getResourceType(): string { return $this->resourceType; }
-    public function getResourceId(): Uuid { return $this->resourceId; }
-    public function getPermission(): string { return $this->permission; }
-    public function getExpiresAt(): ?\DateTimeImmutable { return $this->expiresAt; }
-    public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
+    public function getId(): Uuid
+    {
+        return $this->id;
+    }
+    public function getOwner(): User
+    {
+        return $this->owner;
+    }
+    public function getGuest(): User
+    {
+        return $this->guest;
+    }
+    public function getResourceType(): string
+    {
+        return $this->resourceType;
+    }
+    public function getResourceId(): Uuid
+    {
+        return $this->resourceId;
+    }
+    public function getPermission(): string
+    {
+        return $this->permission;
+    }
+    public function getExpiresAt(): ?\DateTimeImmutable
+    {
+        return $this->expiresAt;
+    }
+    public function getCreatedAt(): \DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
 
-    public function setPermission(string $permission): void { $this->permission = $permission; }
-    public function setExpiresAt(?\DateTimeImmutable $expiresAt): void { $this->expiresAt = $expiresAt; }
+    public function setPermission(string $permission): void
+    {
+        $this->permission = $permission;
+    }
+    public function setExpiresAt(?\DateTimeImmutable $expiresAt): void
+    {
+        $this->expiresAt = $expiresAt;
+    }
 
     public function isExpired(): bool
     {
