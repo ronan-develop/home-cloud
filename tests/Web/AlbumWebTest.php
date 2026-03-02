@@ -131,6 +131,7 @@ final class AlbumWebTest extends WebTestCase
         $this->createAlbum($bob, 'Album Bob');
 
         $this->login('alice@example.com');
+        $this->client->request('GET', '/albums');
         $content = $this->client->getResponse()->getContent();
         $this->assertStringContainsString('Album Alice', $content);
         $this->assertStringNotContainsString('Album Bob', $content);
