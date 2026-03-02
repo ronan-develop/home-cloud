@@ -418,6 +418,77 @@ Audit réalisé avant merge de `feat/media`. Deux branches créées : `fix/secur
 
 ---
 
+## TODO
+
+- Mettre en place un cron pour snapshot automatique du stockage serveur toutes les 48h (écrasement du précédent)
+- Basculer l’application vers une PWA pour simplifier la gestion Android/iPhone (upload, accès fichiers, installation, etc.)
+  - Développer un viewer photo intégré dans la PWA (affichage, zoom, navigation)
+  - Finaliser la configuration du service worker et du manifest
+  - Tester l’installation sur mobile/tablette et le fonctionnement offline
+  - Vérifier la sécurité et l’isolation des assets PWA
+
+---
+
+## ✅ Fait (PWA)
+
+| Date       | Tâche PWA réalisée                                                      |
+|------------|-------------------------------------------------------------------------|
+| 2026-03-02 | Création du dossier `public/pwa/` pour les fichiers statiques           |
+| 2026-03-02 | Configuration serveur HTTPS sur l’URL dédiée <https://ronan.lenouvel.me/pwa/> |
+| 2026-03-02 | Ajout de la documentation technique PWA dans avancement.md              |
+| 2026-03-02 | Checklist technique PWA validée (hors interface)                        |
+
+---
+
+## 📖 Déploiement PWA — HomeCloud
+
+**URL dédiée PWA** : <https://ronan.lenouvel.me/pwa/>
+
+### Checklist technique (hors interface)
+
+1. **Hébergement**
+
+- Créer le dossier `public/pwa/` pour les fichiers statiques (manifest, service worker, icônes, JS/CSS)
+- Configurer le serveur pour servir ce dossier en HTTPS
+
+1. **Manifest & Service Worker**
+
+- Créer `manifest.json` (nom, description, couleurs, icônes, start_url)
+- Créer `service-worker.js` (cache assets, gestion offline, update)
+- Placer les icônes PWA (192x192, 512x512, etc.) dans `public/pwa/icons/`
+
+1. **Build & publication**
+
+- Compiler les assets frontend (JS/CSS) en mode production et copier dans `public/pwa/`
+- Déployer via `bin/deploy.sh` ou rsync
+
+1. **Configuration serveur**
+
+- Forcer HTTPS sur l’URL PWA
+- Vérifier les headers HTTP : `Service-Worker-Allowed`, `Content-Type` correct sur manifest/service worker
+
+1. **API & Authentification**
+
+- Les appels API se font en JWT (déjà en place)
+- Tester l’accès API depuis la PWA (mobile/desktop)
+
+1. **Installation & test**
+
+- Vérifier l’installation sur mobile/tablette (Chrome, Safari, Edge)
+- Vérifier le fonctionnement offline (cache assets, fallback)
+- Vérifier la mise à jour du service worker
+
+1. **Sécurité**
+
+- HTTPS obligatoire
+- Vérifier l’isolation des assets PWA (pas d’accès direct au backend)
+
+---
+
+> L’interface (UI/UX) sera traitée en dernier, une fois la base technique PWA validée.
+
+---
+
 ## ⚠️ Points d'attention
 
 - **Versionnement API** : préfixer tous les endpoints `/api/v1/` (Orange API Guidelines)
@@ -435,14 +506,14 @@ Phase terminée. Voir section 9 pour les détails techniques.
 
 **Stack :** Twig + Symfony UX Live Components + Stimulus + Tailwind CSS v4 + AssetMapper
 
-| Composant | Choix |
-|---|---|
-| Templates | Twig (déjà installé) |
-| Interactivité | Symfony UX Live Components |
-| JS progressif | Stimulus |
-| CSS | Tailwind CSS v4 (standalone CLI, sans Node.js) |
-| Assets | Symfony AssetMapper |
-| Auth web | Session Symfony (séparée du JWT API) |
+| Composant     | Choix                                          |
+|---------------|------------------------------------------------|
+| Templates     | Twig (déjà installé)                           |
+| Interactivité | Symfony UX Live Components                     |
+| JS progressif | Stimulus                                       |
+| CSS           | Tailwind CSS v4 (standalone CLI, sans Node.js) |
+| Assets        | Symfony AssetMapper                            |
+| Auth web      | Session Symfony (séparée du JWT API)           |
 
 **Principe :** le frontend appelle les services Symfony directement. Le JWT + REST API restent la couche pour les apps mobiles (futures).
 
