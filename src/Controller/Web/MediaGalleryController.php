@@ -43,7 +43,7 @@ final class MediaGalleryController extends AbstractController
     {
         $media = $this->mediaRepository->findById(\Symfony\Component\Uid\Uuid::fromString($id));
 
-        if ($media === null || !$media->getFile()->getOwner()->getId()->equals($this->getUser()->getId())) {
+        if ($media === null || !$media->isOwnedBy($this->getUser())) {
             throw $this->createNotFoundException('Média introuvable.');
         }
 
