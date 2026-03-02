@@ -1,7 +1,12 @@
 
+
 # Expose services needed in tests via static::getContainer()->get()
 when@test:
     services:
         Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface:
             alias: security.password_hasher
             public: true
+
+        App\Tests\EventListener\TestAuthorizationListener:
+            tags:
+                - { name: kernel.event_subscriber }
