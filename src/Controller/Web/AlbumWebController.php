@@ -6,7 +6,7 @@ namespace App\Controller\Web;
 
 use App\Entity\Album;
 use App\Entity\User;
-use App\Repository\AlbumRepository;
+use App\Interface\AlbumRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -23,7 +23,7 @@ use Symfony\Component\Uid\Uuid;
 final class AlbumWebController extends AbstractController
 {
     public function __construct(
-        private readonly AlbumRepository $albumRepository,
+        private readonly AlbumRepositoryInterface $albumRepository,
         private readonly EntityManagerInterface $em,
     ) {}
 
@@ -57,7 +57,7 @@ final class AlbumWebController extends AbstractController
     #[Route('/albums/{id}', name: 'app_album_detail', requirements: ['id' => '[0-9a-f\-]+'])]
     public function detail(string $id): Response
     {
-        $album = $this->albumRepository->find(Uuid::fromString($id));
+        $album = $this->albumRepository->findById(Uuid::fromString($id));
 
         if ($album === null) {
             throw $this->createNotFoundException('Album introuvable.');
@@ -75,7 +75,7 @@ final class AlbumWebController extends AbstractController
     #[Route('/albums/{id}/delete', name: 'app_album_delete', methods: ['POST'], requirements: ['id' => '[0-9a-f\-]+'])]
     public function delete(string $id): Response
     {
-        $album = $this->albumRepository->find(Uuid::fromString($id));
+        $album = $this->albumRepository->findById(Uuid::fromString($id));
 
         if ($album === null) {
             throw $this->createNotFoundException('Album introuvable.');
