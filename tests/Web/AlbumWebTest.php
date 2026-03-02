@@ -5,13 +5,10 @@ declare(strict_types=1);
 namespace App\Tests\Web;
 
 use App\Entity\Album;
-use App\Entity\File;
-use App\Entity\Folder;
-use App\Entity\Media;
 use App\Entity\User;
+use App\Tests\Web\Fixtures\WebFixturesTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 /**
  * Tests fonctionnels de la gestion des albums web (Phase 7E).
@@ -19,6 +16,8 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
  */
 final class AlbumWebTest extends WebTestCase
 {
+    use WebFixturesTrait;
+
     private EntityManagerInterface $em;
     private \Symfony\Bundle\FrameworkBundle\KernelBrowser $client;
 
@@ -40,24 +39,12 @@ final class AlbumWebTest extends WebTestCase
 
     private function createUser(string $email = 'albums@example.com'): User
     {
-        $hasher = static::getContainer()->get(UserPasswordHasherInterface::class);
-        $user = new User($email, 'Albums User');
-        $user->setPassword($hasher->hashPassword($user, 'secret123'));
-        $this->em->persist($user);
-        $this->em->flush();
-
-        return $user;
+        return $this->createWebUser($email, 'secret123', 'Albums User');
     }
 
     private function login(string $email = 'albums@example.com'): void
     {
-        $crawler = $this->client->request('GET', '/login');
-        $form = $crawler->selectButton('Se connecter')->form([
-            'email'    => $email,
-            'password' => 'secret123',
-        ]);
-        $this->client->submit($form);
-        $this->client->followRedirect();
+        $this->loginAs($email);
     }
 
     private function createAlbum(User $user, string $name = 'Mon Album'): Album
@@ -69,17 +56,9 @@ final class AlbumWebTest extends WebTestCase
         return $album;
     }
 
-    private function createMedia(User $user, string $name = 'photo.jpg'): Media
+    private function createMedia(User $user, string $name = 'photo.jpg'): \App\Entity\Media
     {
-        $folder = new Folder('Photos', $user);
-        $this->em->persist($folder);
-        $file = new File($name, 'image/jpeg', 1024, "test/{$name}", $folder, $user);
-        $this->em->persist($file);
-        $media = new Media($file, 'photo');
-        $this->em->persist($media);
-        $this->em->flush();
-
-        return $media;
+        return $this->createMediaFile($user, $name, 'photo');
     }
 
     // --- Accès ---
@@ -182,8 +161,7 @@ final class AlbumWebTest extends WebTestCase
         $this->login();
 
         $this->client->request('GET', '/albums/' . $album->getId()->toRfc4122());
-        $content = $this->client->getResponse()->getContent();
-        $this->assertStringContainsString('1', $content);
+        $this->assertSelectorTextContains('[data-testid="album-media-count"]', '1');
     }
 
     public function testAlbumDetailForbiddenForOtherUser(): void
