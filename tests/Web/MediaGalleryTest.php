@@ -96,7 +96,8 @@ final class MediaGalleryTest extends WebTestCase
 
     public function testGalleryShowsMediaGrid(): void
     {
-        $this->createUser();
+        $user = $this->createUser();
+        $this->createMediaFile($user, 'photo.jpg', 'photo');
         $this->login();
 
         $this->client->request('GET', '/gallery');
