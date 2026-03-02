@@ -216,17 +216,25 @@ ${PHP_BIN} ${COMPOSER_BIN} install \
 mkdir -p "${DEPLOY_PATH}/var/cache/prod"
 mkdir -p "${DEPLOY_PATH}/var/log"
 mkdir -p "${DEPLOY_PATH}/var/storage"
+mkdir -p "${DEPLOY_PATH}/var/tailwind"
 chmod -R 775 "${DEPLOY_PATH}/var"
-
-# Compilation Tailwind CSS (obligatoire : var/ est gitignored)
-# TMPDIR redirigé car /tmp est monté noexec sur o2switch
-echo "→ Compilation Tailwind CSS…"
-mkdir -p "${DEPLOY_PATH}/var/tmp"
-TMPDIR="${DEPLOY_PATH}/var/tmp" ${PHP_BIN} "${DEPLOY_PATH}/bin/console" tailwind:build --minify --env=prod
-rm -rf "${DEPLOY_PATH}/var/tmp"
 
 echo "→ Déploiement côté serveur terminé."
 SSHSCRIPT
+
+# ── Compilation Tailwind CSS en local + upload ────────────────────────────────
+# o2switch : /tmp est noexec, le binaire Bun/Tailwind ne peut pas s'exécuter.
+# Solution : compiler localement et uploader le CSS compilé via SCP.
+title "── Compilation Tailwind CSS (local) ───"
+info "Compilation Tailwind en local…"
+php bin/console tailwind:build --minify
+success "Tailwind compilé"
+
+info "Upload de app.built.css vers le serveur…"
+scp ${SSH_KEY_OPTS} -P "${SSH_PORT}" \
+    var/tailwind/app.built.css \
+    "${SSH_USER}@${SSH_HOST}:${DEPLOY_PATH}/var/tailwind/app.built.css"
+success "CSS uploadé"
 
 success "Repo déployé sur le serveur"
 
