@@ -22,4 +22,21 @@ class MediaRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Media::class);
     }
+
+    /** @return Media[] */
+    public function findByOwner(\App\Entity\User $user, ?string $type = null): array
+    {
+        $qb = $this->createQueryBuilder('m')
+            ->join('m.file', 'f')
+            ->join('f.owner', 'u')
+            ->where('u.id = :userId')
+            ->setParameter('userId', $user->getId(), 'uuid')
+            ->orderBy('f.createdAt', 'DESC');
+
+        if ($type !== null) {
+            $qb->andWhere('m.mediaType = :type')->setParameter('type', $type);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
 }

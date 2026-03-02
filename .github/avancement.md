@@ -533,6 +533,11 @@ Phase terminée. Voir section 9 pour les détails techniques.
   - [x] `FileUpload` drag & drop → upload (`ImportCard` + `FileWebController`)
   - [x] Téléchargement (`/files/{id}/download`) + suppression avec contrôle ownership (403) ✅
 - [ ] **D — Galerie médias** ← en cours
+  - [x] `MediaGalleryController` (GET /gallery, filtre ?type=photo|video)
+  - [x] `MediaRepository::findByOwner()` (DQL, filtrage par user + type)
+  - [x] Template `gallery.html.twig` (grille thumbnails, empty state)
+  - [x] Lightbox inline (CSS + JS, attribut `data-lightbox`)
+  - [x] `MediaGalleryTest` — 9/9 ✅ (TDD RED→GREEN)
   - [ ] Live Component `MediaGallery` (grille thumbnails)
   - [ ] Lightbox (Bootstrap modal ou plugin léger)
 - [ ] **E — Albums**

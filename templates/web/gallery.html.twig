@@ -1,0 +1,91 @@
+{% extends 'web/layout.html.twig' %}
+
+{% block title %}Galerie — HomeCloud{% endblock %}
+
+{% block content %}
+
+<div class="flex items-center justify-between mb-6">
+    <h1 style="font-size:1.5rem; font-weight:700; color:#111827;">🖼️ Galerie médias</h1>
+
+    {# Filtres photo/vidéo #}
+    <div style="display:flex; gap:0.5rem;">
+        <a href="{{ path('app_gallery') }}"
+           style="padding:0.35rem 0.85rem; border-radius:0.5rem; font-size:0.875rem; text-decoration:none;
+                  background:{{ type is null ? '#3b82f6' : '#e5e7eb' }};
+                  color:{{ type is null ? '#fff' : '#374151' }};">
+            Tous
+        </a>
+        <a href="{{ path('app_gallery', {type: 'photo'}) }}"
+           style="padding:0.35rem 0.85rem; border-radius:0.5rem; font-size:0.875rem; text-decoration:none;
+                  background:{{ type == 'photo' ? '#3b82f6' : '#e5e7eb' }};
+                  color:{{ type == 'photo' ? '#fff' : '#374151' }};">
+            📷 Photos
+        </a>
+        <a href="{{ path('app_gallery', {type: 'video'}) }}"
+           style="padding:0.35rem 0.85rem; border-radius:0.5rem; font-size:0.875rem; text-decoration:none;
+                  background:{{ type == 'video' ? '#3b82f6' : '#e5e7eb' }};
+                  color:{{ type == 'video' ? '#fff' : '#374151' }};">
+            🎬 Vidéos
+        </a>
+    </div>
+</div>
+
+{% if medias is empty %}
+    <div data-testid="gallery-empty"
+         style="text-align:center; padding:4rem 2rem; color:#9ca3af;">
+        <p style="font-size:3rem;">🖼️</p>
+        <p style="font-size:1.1rem; font-weight:600; margin-top:1rem;">Aucun média pour l'instant</p>
+        <p style="font-size:0.875rem; margin-top:0.5rem;">Uploadez des photos ou vidéos depuis l'explorateur de fichiers.</p>
+    </div>
+{% else %}
+    <div data-testid="media-gallery"
+         style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:1rem;">
+        {% for media in medias %}
+            <div data-testid="media-thumbnail"
+                 style="border-radius:0.75rem; overflow:hidden; background:#f3f4f6; position:relative; aspect-ratio:1; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,0.08);">
+                <a href="{{ path('app_media_view', {id: media.id}) }}"
+                   data-lightbox
+                   data-media-type="{{ media.mediaType }}"
+                   style="display:block; width:100%; height:100%;">
+                    {% if media.thumbnailPath %}
+                        <img src="{{ asset('storage/thumbs/' ~ media.thumbnailPath|split('/')|last) }}"
+                             alt="{{ media.file.originalName }}"
+                             loading="lazy"
+                             style="width:100%; height:100%; object-fit:cover;">
+                    {% else %}
+                        <div style="display:flex; align-items:center; justify-content:center; height:100%; font-size:2.5rem;">
+                            {{ media.mediaType == 'video' ? '🎬' : '🖼️' }}
+                        </div>
+                    {% endif %}
+                </a>
+                <div style="position:absolute; bottom:0; left:0; right:0; padding:0.4rem 0.6rem;
+                            background:linear-gradient(transparent, rgba(0,0,0,0.55));
+                            font-size:0.7rem; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                    {{ media.file.originalName }}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    {# Lightbox simple (CSS + JS inline — pas de dépendance externe) #}
+    <div id="lightbox" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9);
+         z-index:1000; align-items:center; justify-content:center; cursor:zoom-out;">
+        <img id="lightbox-img" src="" alt="" style="max-width:90vw; max-height:90vh; border-radius:0.5rem; object-fit:contain;">
+        <button onclick="document.getElementById('lightbox').style.display='none'"
+                style="position:absolute; top:1.5rem; right:2rem; background:none; border:none;
+                       color:#fff; font-size:2rem; cursor:pointer;">✕</button>
+    </div>
+    <script>
+    document.querySelectorAll('[data-lightbox]').forEach(function(el) {
+        el.addEventListener('click', function(e) {
+            var img = el.querySelector('img');
+            if (!img) return;
+            e.preventDefault();
+            document.getElementById('lightbox-img').src = img.src;
+            document.getElementById('lightbox').style.display = 'flex';
+        });
+    });
+    </script>
+{% endif %}
+
+{% endblock %}
