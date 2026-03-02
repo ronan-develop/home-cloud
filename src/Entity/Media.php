@@ -83,6 +83,16 @@ class Media
     {
         return $this->file;
     }
+
+    /**
+     * Vérifie si ce média appartient à l'utilisateur donné.
+     * Encapsule la chaîne getFile()->getOwner()->getId() (Law of Demeter).
+     */
+    public function isOwnedBy(User $user): bool
+    {
+        return $this->file->getOwner()->getId()->equals($user->getId());
+    }
+
     public function getMediaType(): string
     {
         return $this->mediaType;
