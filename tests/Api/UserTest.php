@@ -11,7 +11,7 @@ use Doctrine\ORM\EntityManagerInterface;
 final class UserTest extends AuthenticatedApiTestCase
 {
     protected static ?bool $alwaysBootKernel = false;
-    private EntityManagerInterface $em;
+    protected EntityManagerInterface $em;
 
     protected function setUp(): void
     {
@@ -27,9 +27,9 @@ final class UserTest extends AuthenticatedApiTestCase
 
     public function testGetUserReturns200WithCorrectStructure(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser('alice@example.com', 'password123', 'Alice');
 
-        $response = $this->createAuthenticatedClient()->request('GET', '/api/v1/users/'.$user->getId());
+        $response = $this->createAuthenticatedClient($user)->request('GET', '/api/v1/users/' . $user->getId());
 
         $this->assertResponseIsSuccessful();
         $this->assertResponseStatusCodeSame(200);
@@ -75,7 +75,7 @@ final class UserTest extends AuthenticatedApiTestCase
         $this->em->persist($user);
         $this->em->flush();
 
-        $this->createAuthenticatedClient()->request('GET', '/api/v1/users/'.$user->getId());
+        $this->createAuthenticatedClient()->request('GET', '/api/v1/users/' . $user->getId());
 
         $this->assertResponseHeaderSame('x-content-type-options', 'nosniff');
         $this->assertResponseHeaderSame('x-frame-options', 'DENY');
