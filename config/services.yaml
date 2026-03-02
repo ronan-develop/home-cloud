@@ -11,6 +11,23 @@ parameters:
     app.encryption_key: '%env(base64:APP_ENCRYPTION_KEY)%'
 
 services:
+        App\State\AlbumProcessor:
+            arguments:
+                $em: '@doctrine.orm.entity_manager'
+                $albumRepository: '@App\Repository\AlbumRepository'
+                $userRepository: '@App\Repository\UserRepository'
+                $provider: '@App\State\AlbumProvider'
+                $tokenStorage: '@security.token_storage'
+                $logger: '@logger'
+
+        App\State\FileProcessor:
+            arguments:
+                $em: '@doctrine.orm.entity_manager'
+                $fileRepository: '@App\Repository\FileRepository'
+                $mediaRepository: '@App\Repository\MediaRepository'
+                $storageService: '@App\Service\StorageService'
+                $tokenStorage: '@security.token_storage'
+                $logger: '@logger'
     # default configuration for services in *this* file
     _defaults:
         autowire: true      # Automatically injects dependencies in your services.
@@ -20,6 +37,17 @@ services:
     # this creates a service per class whose id is the fully-qualified class name
     App\:
         resource: '../src/'
+
+    # Déclaration explicite du FolderProcessor pour garantir l'injection
+    App\State\FolderProcessor:
+        arguments:
+            $em: '@doctrine.orm.entity_manager'
+            $folderRepository: '@App\Repository\FolderRepository'
+            $userRepository: '@App\Repository\UserRepository'
+            $provider: '@App\State\FolderProvider'
+            $requestStack: '@request_stack'
+            $tokenStorage: '@security.token_storage'
+            $logger: '@logger'
 
     App\Service\StorageService:
         arguments:
@@ -37,4 +65,8 @@ when@test:
     services:
         Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface:
             alias: security.password_hasher
+            public: true
+        # Rendre le TokenStorage public en test
+        Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface:
+            alias: security.token_storage
             public: true
