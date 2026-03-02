@@ -4,13 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Web;
 
-use App\Entity\File;
-use App\Entity\Folder;
-use App\Entity\Media;
-use App\Entity\User;
+use App\Tests\Web\Fixtures\WebFixturesTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 /**
  * Tests fonctionnels de la galerie médias (Phase 7D).
@@ -18,6 +14,8 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
  */
 final class MediaGalleryTest extends WebTestCase
 {
+    use WebFixturesTrait;
+
     private EntityManagerInterface $em;
     private \Symfony\Bundle\FrameworkBundle\KernelBrowser $client;
 
@@ -35,44 +33,14 @@ final class MediaGalleryTest extends WebTestCase
         $this->em->clear();
     }
 
-    private function createUser(string $email = 'gallery@example.com'): User
+    private function createUser(string $email = 'gallery@example.com'): \App\Entity\User
     {
-        $hasher = static::getContainer()->get(UserPasswordHasherInterface::class);
-        $user = new User($email, 'Gallery User');
-        $user->setPassword($hasher->hashPassword($user, 'secret123'));
-        $this->em->persist($user);
-        $this->em->flush();
-
-        return $user;
+        return $this->createWebUser($email);
     }
 
     private function login(string $email = 'gallery@example.com'): void
     {
-        $crawler = $this->client->request('GET', '/login');
-        $form = $crawler->selectButton('Se connecter')->form([
-            'email'    => $email,
-            'password' => 'secret123',
-        ]);
-        $this->client->submit($form);
-        $this->client->followRedirect();
-    }
-
-    private function createMediaFile(User $user, string $name = 'photo.jpg', string $mediaType = 'photo'): Media
-    {
-        $folder = new Folder('Photos', $user);
-        $this->em->persist($folder);
-
-        $file = new File($name, 'image/jpeg', 1024, "test/{$name}", $folder, $user);
-        $this->em->persist($file);
-
-        $media = new Media($file, $mediaType);
-        $media->setWidth(1920);
-        $media->setHeight(1080);
-        $media->setThumbnailPath("thumbs/{$name}.thumb.jpg");
-        $this->em->persist($media);
-        $this->em->flush();
-
-        return $media;
+        $this->loginAs($email);
     }
 
     // --- Accès ---
