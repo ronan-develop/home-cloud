@@ -75,23 +75,77 @@ class Media
         $this->createdAt = new \DateTimeImmutable();
     }
 
-    public function getId(): Uuid { return $this->id; }
-    public function getFile(): File { return $this->file; }
-    public function getMediaType(): string { return $this->mediaType; }
-    public function getWidth(): ?int { return $this->width; }
-    public function getHeight(): ?int { return $this->height; }
-    public function getTakenAt(): ?\DateTimeImmutable { return $this->takenAt; }
-    public function getGpsLat(): ?string { return $this->gpsLat; }
-    public function getGpsLon(): ?string { return $this->gpsLon; }
-    public function getCameraModel(): ?string { return $this->cameraModel; }
-    public function getThumbnailPath(): ?string { return $this->thumbnailPath; }
-    public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
+    public function getId(): Uuid
+    {
+        return $this->id;
+    }
+    public function getFile(): File
+    {
+        return $this->file;
+    }
+    public function getMediaType(): string
+    {
+        return $this->mediaType;
+    }
+    public function getWidth(): ?int
+    {
+        return $this->width;
+    }
+    public function getHeight(): ?int
+    {
+        return $this->height;
+    }
+    public function getTakenAt(): ?\DateTimeImmutable
+    {
+        return $this->takenAt;
+    }
+    public function getGpsLat(): ?string
+    {
+        return $this->gpsLat;
+    }
+    public function getGpsLon(): ?string
+    {
+        return $this->gpsLon;
+    }
+    public function getCameraModel(): ?string
+    {
+        return $this->cameraModel;
+    }
+    public function getThumbnailPath(): ?string
+    {
+        return $this->thumbnailPath;
+    }
+    public function getCreatedAt(): \DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
 
-    public function setWidth(?int $width): void { $this->width = $width; }
-    public function setHeight(?int $height): void { $this->height = $height; }
-    public function setTakenAt(?\DateTimeImmutable $takenAt): void { $this->takenAt = $takenAt; }
-    public function setGpsLat(?string $gpsLat): void { $this->gpsLat = $gpsLat; }
-    public function setGpsLon(?string $gpsLon): void { $this->gpsLon = $gpsLon; }
-    public function setCameraModel(?string $cameraModel): void { $this->cameraModel = $cameraModel; }
-    public function setThumbnailPath(?string $thumbnailPath): void { $this->thumbnailPath = $thumbnailPath; }
+    public function setWidth(?int $width): void
+    {
+        $this->width = $width;
+    }
+    public function setHeight(?int $height): void
+    {
+        $this->height = $height;
+    }
+    public function setTakenAt(?\DateTimeImmutable $takenAt): void
+    {
+        $this->takenAt = $takenAt;
+    }
+    public function setGpsLat(?string $gpsLat): void
+    {
+        $this->gpsLat = $gpsLat;
+    }
+    public function setGpsLon(?string $gpsLon): void
+    {
+        $this->gpsLon = $gpsLon;
+    }
+    public function setCameraModel(?string $cameraModel): void
+    {
+        $this->cameraModel = $cameraModel;
+    }
+    public function setThumbnailPath(?string $thumbnailPath): void
+    {
+        $this->thumbnailPath = $thumbnailPath;
+    }
 }
