@@ -219,8 +219,11 @@ mkdir -p "${DEPLOY_PATH}/var/storage"
 chmod -R 775 "${DEPLOY_PATH}/var"
 
 # Compilation Tailwind CSS (obligatoire : var/ est gitignored)
+# TMPDIR redirigé car /tmp est monté noexec sur o2switch
 echo "→ Compilation Tailwind CSS…"
-${PHP_BIN} "${DEPLOY_PATH}/bin/console" tailwind:build --minify --env=prod
+mkdir -p "${DEPLOY_PATH}/var/tmp"
+TMPDIR="${DEPLOY_PATH}/var/tmp" ${PHP_BIN} "${DEPLOY_PATH}/bin/console" tailwind:build --minify --env=prod
+rm -rf "${DEPLOY_PATH}/var/tmp"
 
 echo "→ Déploiement côté serveur terminé."
 SSHSCRIPT
