@@ -1,12 +1,12 @@
-use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
-use Psr\Log\LoggerInterface;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 <?php
 
 declare(strict_types=1);
 
 namespace App\State;
 
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\Metadata\Patch;
@@ -107,13 +107,22 @@ final class AlbumProcessor implements ProcessorInterface
     {
         $album = $this->albumRepository->find($uriVariables['id'])
             ?? throw new NotFoundHttpException('Album not found');
-
+        // Ownership : seul le propriétaire peut modifier
+        $user = $this->getAuthenticatedUser();
+        if (!$user instanceof \App\Entity\User) {
+            throw new AccessDeniedHttpException('You must be authenticated');
+        }
+        if ((string) $user->getId() !== (string) $album->getOwner()->getId()) {
+            throw new AccessDeniedHttpException('You are not the owner of this album');
+        }
         if ($data->name !== '') {
+            // Validation caractères interdits (mêmes règles que Folder)
+            if (!preg_match('/^[^\\\\\/\:\*\?\"\<\>\|]+$/u', $data->name)) {
+                throw new BadRequestHttpException('Invalid characters in album name');
+            }
             $album->setName($data->name);
         }
-
         $this->em->flush();
-
         return $this->provider->toOutput($album);
     }
 
@@ -121,10 +130,16 @@ final class AlbumProcessor implements ProcessorInterface
     {
         $album = $this->albumRepository->find($uriVariables['id'])
             ?? throw new NotFoundHttpException('Album not found');
-
+        // Ownership : seul le propriétaire peut supprimer
+        $user = $this->getAuthenticatedUser();
+        if (!$user instanceof \App\Entity\User) {
+            throw new AccessDeniedHttpException('You must be authenticated');
+        }
+        if ((string) $user->getId() !== (string) $album->getOwner()->getId()) {
+            throw new AccessDeniedHttpException('You are not the owner of this album');
+        }
         $this->em->remove($album);
         $this->em->flush();
-
         return null;
     }
 }

@@ -1,9 +1,14 @@
+ <?php
+ declare(strict_types=1);
+
+declare(strict_types=1);
+
+<?php
+declare(strict_types=1);
+
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
-<?php
-
-declare(strict_types=1);
 
 namespace App\State;
 
