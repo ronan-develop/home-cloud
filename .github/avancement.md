@@ -2,6 +2,8 @@
 
 > Dernière mise à jour : 2026-03-01 (Phase 7C Explorateur fichiers ✅)
 
+> 2026-03-02 : Ajout du todo API features (CRUD Folder/File/User à compléter), todo User Settings en cours, analyse des manques CRUD faite.
+
 ---
 
 ## ⚠️ Bugs connus
@@ -44,7 +46,7 @@
 | 2026-02-27 | **MediaProcessMessage** — message Messenger pour traitement async ✅            |
 | 2026-02-27 | **ExifService** — extraction EXIF (exif_read_data + GPS decimal) ✅             |
 | 2026-02-27 | **ThumbnailService** — génération thumbnail GD 320px JPEG (graceful si absent) ✅ |
-| 2026-02-27 | **MediaProcessHandler** — handler async idempotent (image/* + video/*) ✅       |
+| 2026-02-27 | **MediaProcessHandler** — handler async idempotent (image/*+ video/*) ✅       |
 | 2026-02-27 | **MediaOutput + MediaProvider** — GET /api/v1/medias, GET /api/v1/medias/{id}, filtre ?type= ✅ |
 | 2026-02-27 | **MediaThumbnailController** — GET /api/v1/medias/{id}/thumbnail ✅             |
 | 2026-02-27 | Messenger configuré : doctrine transport (prod), in-memory (tests) ✅           |
@@ -106,6 +108,13 @@
 
 - **Phase 7 — Frontend** — Section A terminée ✅, Section B en cours
 
+## 🚧 Tâches API à compléter (2026-03-02)
+
+- Voir `.github/todo-api-features.md` pour la liste détaillée des features CRUD à compléter sur Folder, File, User (PATCH, DELETE, validation, pagination, tests, etc.)
+- Voir `.github/todo-user-settings.md` pour la todo page paramètres utilisateur (modification email, mot de passe, etc.)
+
+Analyse détaillée des manques CRUD réalisée le 2026-03-02 (voir conversation et todo ci-dessus).
+
 ### 🚀 Déploiement o2switch — Infos prod
 
 | Info | Valeur |
@@ -118,6 +127,7 @@
 | SSH | `ssh -p 22 ron2cuba@lenouvel.me` |
 
 **Scripts de déploiement :**
+
 ```bash
 bash bin/deploy.sh           # Premier déploiement (setup complet : secrets, DB, JWT, user)
 bash bin/deploy.sh --update  # Mise à jour code (git pull + composer + migrations + cache)
@@ -183,7 +193,7 @@ bash bin/deploy.sh --update  # Mise à jour code (git pull + composer + migratio
   - `GET /api/v1/medias` (filtrable par `?type=`)
   - `GET /api/v1/medias/{id}`
   - `GET /api/v1/medias/{id}/thumbnail`
-- [x] **MediaProcessMessage** — dispatch async après upload image/* ou video/*
+- [x] **MediaProcessMessage** — dispatch async après upload image/*ou video/*
 - [x] **ExifService** — extraction EXIF (orientation, GPS, date, modèle caméra)
 - [x] **ThumbnailService** — génération 320px JPEG (GD, graceful si absent)
 - [x] **MediaProcessHandler** — création Media idempotente depuis File
@@ -357,12 +367,14 @@ Audit réalisé avant merge de `feat/media`. Deux branches créées : `fix/secur
 | 🟡 Headers HTTP | Aucun header de sécurité global | `SecurityHeadersListener` | EventListener `kernel.response` → `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer` |
 
 **Ce qui était déjà sécurisé :**
+
 - `var/storage/` hors de `public/` → non accessible directement par le webserver
 - IDs UUID v7 → non énumérables
 - Paths en DB issus de UUIDs générés par l'app → pas d'injection possible depuis l'URL
 - Pas d'exposition des entités Doctrine → pas de fuite de champs sensibles
 
 **Ce qui reste hors scope (intentionnel) :**
+
 - Pas d'authentification (Phase future)
 - Pas de rate limiting (mono-utilisateur, o2switch)
 - Taille fichiers illimitée (choix utilisateur explicite)
@@ -383,19 +395,23 @@ Audit réalisé avant merge de `feat/media`. Deux branches créées : `fix/secur
 | **Directs** | `jpg`, `pdf`, `mp4`, `docx`, `txt`… | Aucun traitement | `{uuid}.{ext}` (en clair) |
 
 **Pourquoi le renommage `.bin` suffit :**
+
 - Le webserver (`Apache`/`nginx`) interprète un fichier selon son extension — pas son contenu.
 - `var/storage/` est hors de `public/` : inaccessible directement par le web (défense primaire).
 - `.bin` n'est associé à aucun interpréteur connu.
 
 **Download transparent :**
+
 - `Content-Disposition: attachment; filename="image.svg"` → l'`originalName` DB est restitué.
 - L'utilisateur reçoit son fichier avec le bon nom, le bon MIME.
 
 **`is_neutralized` en DB :**
+
 - Permet au frontend de distinguer les fichiers neutralisés (icône, badge).
 - Migration `Version20260228123005` : `ALTER TABLE files ADD neutralized TINYINT(1) DEFAULT 0`.
 
 **Supprimé en Phase 8 :**
+
 - `EncryptionService` (XChaCha20-Poly1305 secretstream)
 - `EncryptionServiceInterface`
 - Appels à `encrypt()`, `decrypt()`, `decryptToTempFile()` dans tous les services
@@ -403,6 +419,7 @@ Audit réalisé avant merge de `feat/media`. Deux branches créées : `fix/secur
 ---
 
 ## ⚠️ Points d'attention
+
 - **Versionnement API** : préfixer tous les endpoints `/api/v1/` (Orange API Guidelines)
 - **DTOs** : ne jamais exposer les entités directement — toujours passer par des DTOs
 - **Sécurité** : `APP_SECRET` à définir en prod, `APP_ENV=prod`
@@ -453,4 +470,3 @@ Phase terminée. Voir section 9 pour les détails techniques.
   - [ ] Modal partage + page "Partagé avec moi"
 
 > **Apps mobiles futures :** l'API REST `/api/v1/*` + JWT est déjà complète pour les clients mobiles.
-
