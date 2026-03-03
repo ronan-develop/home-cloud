@@ -123,6 +123,15 @@ class File
     {
         return $this->folder;
     }
+
+    /**
+     * Déplace le fichier vers un autre dossier.
+     * Utilisé uniquement par FileProcessor::handlePatch() (PATCH /api/v1/files/{id}).
+     */
+    public function setFolder(Folder $folder): void
+    {
+        $this->folder = $folder;
+    }
     public function getOwner(): User
     {
         return $this->owner;
