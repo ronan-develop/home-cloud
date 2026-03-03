@@ -290,4 +290,87 @@ final class FolderCrudTest extends AuthenticatedApiTestCase
         $client->request('DELETE', '/api/v1/folders/' . $parent->getId());
         static::assertTrue(in_array($client->getResponse()->getStatusCode(), [204, 400, 409]));
     }
+
+    // --- Déplacement Folder : TDD RED ---
+    public function testMoveFolderToAnotherParent(): void
+    {
+        $user   = $this->em->getRepository(\App\Entity\User::class)->findOneBy(['email' => 'alice@example.com']);
+        $root   = $this->createFolder('Root', $user);
+        $sub    = $this->createFolder('Sub', $user, $root);
+        $target = $this->createFolder('Target', $user);
+
+        $client = $this->createAuthenticatedClient($user);
+        $response = $client->request('PATCH', '/api/v1/folders/' . $sub->getId(), [
+            'headers' => ['Content-Type' => 'application/merge-patch+json'],
+            'json'    => ['parentId' => (string) $target->getId()],
+        ]);
+
+        static::assertResponseStatusCodeSame(200);
+        $data = $response->toArray();
+        $this->assertSame((string) $target->getId(), $data['parentId']);
+    }
+
+    public function testMoveFolderToRootBySettingParentIdNull(): void
+    {
+        $user   = $this->em->getRepository(\App\Entity\User::class)->findOneBy(['email' => 'alice@example.com']);
+        $parent = $this->createFolder('Parent', $user);
+        $sub    = $this->createFolder('Sub', $user, $parent);
+
+        $client = $this->createAuthenticatedClient($user);
+        $response = $client->request('PATCH', '/api/v1/folders/' . $sub->getId(), [
+            'headers' => ['Content-Type' => 'application/merge-patch+json'],
+            'json'    => ['parentId' => null],
+        ]);
+
+        static::assertResponseStatusCodeSame(200);
+        $data = $response->toArray();
+        $this->assertNull($data['parentId']);
+    }
+
+    public function testMoveFolderCycleDeepReturns400(): void
+    {
+        $user = $this->em->getRepository(\App\Entity\User::class)->findOneBy(['email' => 'alice@example.com']);
+        $a = $this->createFolder('A', $user);
+        $b = $this->createFolder('B', $user, $a);
+        $c = $this->createFolder('C', $user, $b);
+
+        $client = $this->createAuthenticatedClient($user);
+        $response = $client->request('PATCH', '/api/v1/folders/' . $a->getId(), [
+            'headers' => ['Content-Type' => 'application/merge-patch+json'],
+            'json'    => ['parentId' => (string) $c->getId()],
+        ]);
+
+        static::assertResponseStatusCodeSame(400);
+    }
+
+    public function testMoveFolderToNonExistentParentReturns404(): void
+    {
+        $user   = $this->em->getRepository(\App\Entity\User::class)->findOneBy(['email' => 'alice@example.com']);
+        $folder = $this->createFolder('ToMove', $user);
+
+        $client = $this->createAuthenticatedClient($user);
+        $response = $client->request('PATCH', '/api/v1/folders/' . $folder->getId(), [
+            'headers' => ['Content-Type' => 'application/merge-patch+json'],
+            'json'    => ['parentId' => '123e4567-e89b-12d3-a456-426614174000'],
+        ]);
+
+        static::assertResponseStatusCodeSame(404);
+    }
+
+    public function testMoveFolderToOtherUserFolderReturns403(): void
+    {
+        $alice = $this->em->getRepository(\App\Entity\User::class)->findOneBy(['email' => 'alice@example.com']);
+        $bob   = $this->createUser('bob_move@example.com', 'password123', 'Bob');
+
+        $aliceFolder = $this->createFolder('AliceFolder', $alice);
+        $bobFolder   = $this->createFolder('BobFolder', $bob);
+
+        $client = $this->createAuthenticatedClient($alice);
+        $response = $client->request('PATCH', '/api/v1/folders/' . $aliceFolder->getId(), [
+            'headers' => ['Content-Type' => 'application/merge-patch+json'],
+            'json'    => ['parentId' => (string) $bobFolder->getId()],
+        ]);
+
+        static::assertResponseStatusCodeSame(403);
+    }
 }
