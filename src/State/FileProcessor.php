@@ -74,9 +74,23 @@ final class FileProcessor implements ProcessorInterface
     }
 
     /**
+     * Dispatcher pour DELETE et PATCH sur File.
+     */
+    public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): mixed
+    {
+        if ($operation->getMethod() === 'DELETE') {
+            return $this->handleDelete($uriVariables);
+        }
+        if ($operation->getMethod() === 'PATCH') {
+            return $this->handlePatch($data, $uriVariables);
+        }
+        throw new \LogicException('Unsupported operation for FileProcessor');
+    }
+
+    /**
      * DELETE /api/v1/files/{id} — supprime les métadonnées, le thumbnail ET le fichier physique.
      */
-    public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): null
+    private function handleDelete(array $uriVariables): null
     {
         $file = $this->fileRepository->find($uriVariables['id'])
             ?? throw new NotFoundHttpException('File not found');
@@ -92,5 +106,56 @@ final class FileProcessor implements ProcessorInterface
         $this->em->flush();
 
         return null;
+    }
+
+    /**
+     * PATCH /api/v1/files/{id} — déplace le fichier vers un autre dossier.
+     */
+    private function handlePatch(FileOutput $data, array $uriVariables): FileOutput
+    {
+        $file = $this->fileRepository->find($uriVariables['id'])
+            ?? throw new NotFoundHttpException('File not found');
+
+        $user = $this->getAuthenticatedUser();
+        if ($user === null) {
+            throw new \Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException('', 'Authentication required');
+        }
+
+        // Vérifie ownership du fichier
+        if ((string)$file->getOwner()->getId() !== (string)$user->getId()) {
+            throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('You do not own this file');
+        }
+
+        // Vérifie présence du champ targetFolderId
+        if (empty($data->targetFolderId)) {
+            throw new \Symfony\Component\HttpKernel\Exception\BadRequestHttpException('targetFolderId is required');
+        }
+
+        $targetFolder = $this->em->getRepository(\App\Entity\Folder::class)->find($data->targetFolderId);
+        if ($targetFolder === null) {
+            throw new NotFoundHttpException('Target folder not found');
+        }
+
+        // Vérifie ownership du dossier cible
+        if ((string)$targetFolder->getOwner()->getId() !== (string)$user->getId()) {
+            throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('You do not own the target folder');
+        }
+
+        // Déplacement effectif
+        $file->setFolder($targetFolder);
+        $this->em->flush();
+
+        // Retourne le DTO mis à jour
+        $output = new FileOutput();
+        $output->id = (string)$file->getId();
+        $output->originalName = $file->getOriginalName();
+        $output->mimeType = $file->getMimeType();
+        $output->size = $file->getSize();
+        $output->path = $file->getPath();
+        $output->folderId = (string)$file->getFolder()->getId();
+        $output->folderName = $file->getFolder()->getName();
+        $output->ownerId = (string)$file->getOwner()->getId();
+        $output->createdAt = $file->getCreatedAt()->format('Y-m-d H:i:s');
+        return $output;
     }
 }
