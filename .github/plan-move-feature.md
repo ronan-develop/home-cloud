@@ -1115,27 +1115,44 @@ Remplacer `XX/XX` par le vrai compteur affiché par `php bin/phpunit`.
 
 ## 📋 Checklist Déplacement Folder & File (API + Web)
 
-- [ ] 1. **Branche dédiée** : `git checkout -b feat/folder-file-move`
-- [ ] 2. **Tests RED déplacement Folder**  
-    Ajouter 5 tests dans [tests/Api/FolderCrudTest.php](tests/Api/FolderCrudTest.php) :
-  - [ ] Déplacer vers un autre parent (200)
-  - [ ] Déplacer à la racine (`parentId: null`) (200)
-  - [ ] Cycle profond détecté (400)
-  - [ ] Parent inexistant (404)
-  - [ ] Dossier cible autre user (403)
-- [ ] 3. **Implémenter `findAncestorIds()`**  
-    Ajouter la méthode CTE dans [src/Repository/FolderRepository.php](src/Repository/FolderRepository.php)
-- [ ] 4. **Corriger détection de cycle + ownership + JSON brut**  
+- [x] 1. **Branche dédiée** : `git checkout -b feat/folder-file-move`
+- [x] 2. **Tests RED déplacement Folder**  
+        Ajouter 5 tests dans [tests/Api/FolderCrudTest.php](tests/Api/FolderCrudTest.php) :
+  - [x] Déplacer vers un autre parent (200)
+  - [x] Déplacer à la racine (`parentId: null`) (200)
+  - [x] Cycle profond détecté (400)
+  - [x] Parent inexistant (404)
+  - [x] Dossier cible autre user (403)
+- [x] 3. **Implémenter `findAncestorIds()`**  
+        Ajouter la méthode CTE dans [src/Repository/FolderRepository.php](src/Repository/FolderRepository.php)
+- [x] 4. **Corriger détection de cycle + ownership + JSON brut**  
   - Ajouter `wouldCreateCycle()` dans [src/State/FolderProcessor.php](src/State/FolderProcessor.php)
   - Vérifier ownership du parent
   - Remplacer `isset` par lecture JSON brut
-- [ ] 5. **Tests RED déplacement File**  
-    Créer [tests/Api/FileMoveTest.php](tests/Api/FileMoveTest.php) avec 5 tests :
-  - [ ] Déplacer fichier vers autre dossier (200)
-  - [ ] Dossier cible inexistant (404)
-  - [ ] Dossier cible autre user (403)
-  - [ ] Fichier inexistant (404)
-  - [ ] Sans authentification (401 ou 200)
+- [x] 5. **Tests RED déplacement File**  
+        Créer [tests/Api/FileMoveTest.php](tests/Api/FileMoveTest.php) avec 5 tests :
+  - [x] Déplacer fichier vers autre dossier (200)
+  - [x] Dossier cible inexistant (404)
+  - [x] Dossier cible autre user (403)
+  - [x] Fichier inexistant (404)
+  - [x] Sans authentification (401 ou 200)
+
+---
+
+## 🟢 Micro-tâche en cours
+
+### Micro-tâche 2 : Implémentation de la logique métier déplacement Folder/File
+
+**Objectif :** Implémenter la logique métier pour le déplacement de dossier et de fichier selon les règles TDD validées par les tests RED précédents.
+
+**Étapes détaillées :**
+
+1. Implémenter la logique dans FolderProcessor et FileProcessor (PATCH, ownership, cycle, etc.)
+2. Vérifier que tous les tests passent (GREEN)
+3. Committer avec le message conforme :
+     `✨ feat(FolderProcessor,FileProcessor): implémentation déplacement folder/file (PATCH, ownership, cycle)`
+4. Mettre à jour le plan et avancement.
+
 - [ ] 6. **Ajouter `setFolder()` à File**  
     Méthode setter dans [src/Entity/File.php](src/Entity/File.php)
 - [ ] 7. **Ajouter PATCH dans FileOutput**  

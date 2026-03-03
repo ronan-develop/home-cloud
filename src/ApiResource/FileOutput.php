@@ -60,6 +60,13 @@ use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
                 description: 'Supprime les métadonnées en base ET le fichier physique sur disque (ainsi que son thumbnail si c\'est un média).',
             ),
         ),
+        new \ApiPlatform\Metadata\Patch(
+            uriTemplate: '/v1/files/{id}',
+            openapi: new Model\Operation(
+                summary: 'Déplace un fichier vers un autre dossier.',
+                description: 'Permet de déplacer un fichier existant vers un autre dossier. Envoie PATCH avec `{ "targetFolderId": "<uuid>" }`. Vérifie ownership, existence et cycle.',
+            ),
+        ),
     ],
     provider: FileProvider::class,
     processor: FileProcessor::class,
@@ -81,4 +88,10 @@ final class FileOutput
     // --- Champs d'entrée supplémentaires (POST via JSON ou multipart) ---
     /** UUID d'un folder existant. Prioritaire sur newFolderName. */
     public ?string $newFolderName = null;
+
+    // --- Input PATCH uniquement ---
+    /**
+     * UUID du dossier de destination (déplacement). Input seulement, absent de la sortie GET.
+     */
+    public ?string $targetFolderId = null;
 }
