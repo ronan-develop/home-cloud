@@ -160,30 +160,55 @@ final class FolderProcessor implements ProcessorInterface
                 ?? throw new BadRequestHttpException('Invalid mediaType: ' . $data->mediaType);
             $folder->setMediaType($mediaType);
         }
-        if ($data->parentId !== null) {
-            // Extraire l'UUID de l'IRI si nécessaire
-            $parentId = $data->parentId;
-            if (strpos($parentId, '/') !== false) {
-                $parentId = basename($parentId);
+        // Lecture JSON brute pour distinguer parentId absent/null
+        $body = json_decode(
+            $this->requestStack->getCurrentRequest()?->getContent() ?? '{}',
+            true
+        );
+        if (array_key_exists('parentId', $body ?? [])) {
+            if ($body['parentId'] !== null) {
+                $parentId = $body['parentId'];
+                if (strpos($parentId, '/') !== false) {
+                    $parentId = basename($parentId);
+                }
+                if ($parentId === (string) $uriVariables['id']) {
+                    throw new BadRequestHttpException('A folder cannot be its own parent');
+                }
+                $parent = $this->folderRepository->find($parentId)
+                    ?? throw new NotFoundHttpException('Parent folder not found');
+                // Sécurité : ownership du parent
+                if ((string) $parent->getOwner()->getId() !== (string) $user->getId()) {
+                    throw new AccessDeniedHttpException('You do not own the target parent folder');
+                }
+                // Détection de cycle profond
+                if ($this->wouldCreateCycle($folder, $parent)) {
+                    throw new BadRequestHttpException('Moving this folder would create a cycle');
+                }
+            } else {
+                $parent = null; // Mise à la racine
             }
-            // Vérifier que le folder n'est pas son propre parent
-            if ($parentId === (string) $uriVariables['id']) {
-                throw new BadRequestHttpException('A folder cannot be its own parent');
-            }
-            $parent = $this->folderRepository->find($parentId)
-                ?? throw new NotFoundHttpException('Parent folder not found');
-        } else {
-            $parent = null;
-        }
-
-        // Seulement mettre à jour le parent si parentId est présent dans la requête
-        // Pour ce faire, vérifier les object vars mises à jour (non vides/par défaut)
-        $vars = get_object_vars($data);
-        if (isset($vars['parentId'])) {
             $folder->setParent($parent);
         }
         $this->em->flush();
         return $this->provider->toOutput($folder);
+    }
+
+    /**
+     * Vérifie si définir $newParent comme parent de $folder créerait un cycle.
+     * Utilise FolderRepository::findAncestorIds() (CTE récursif, 1 seule requête SQL)
+     * pour récupérer tous les ancêtres de $newParent.
+     * Si $folder apparaît parmi ces ancêtres → cycle → retourne true.
+     */
+    private function wouldCreateCycle(Folder $folder, Folder $newParent): bool
+    {
+        $ancestorIds = $this->folderRepository->findAncestorIds($newParent);
+        $folderId    = strtolower(str_replace('-', '', (string) $folder->getId()));
+        foreach ($ancestorIds as $ancestorId) {
+            if (strtolower(str_replace('-', '', $ancestorId)) === $folderId) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -197,7 +222,7 @@ final class FolderProcessor implements ProcessorInterface
         // Ownership : seul le propriétaire peut supprimer
         $user = $this->getAuthenticatedUser();
         if (!$user || !$folder->getOwner()->getId()->equals($user->getId())) {
-            throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('You are not the owner of this folder');
+            throw new AccessDeniedHttpException('You are not the owner of this folder');
         }
         $this->em->remove($folder);
         $this->em->flush();
