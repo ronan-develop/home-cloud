@@ -1,13 +1,18 @@
-{# Composant FoldersGrid — Grille de dossiers/fichiers #}
+{# Composant FoldersGrid — Grille de dossiers et fichiers #}
 <div class="folders-grid">
-  {% for item in items %}
-    <twig:FolderCard :item="item" />
-  {% else %}
+  {% if folders is empty and files is empty %}
     <twig:EmptyState
       title="Aucun fichier ni dossier"
       subtitle="Glissez un fichier ou créez un dossier pour commencer."
       icon="<span style='font-size:3rem;opacity:0.5;'>📂</span>"
     />
-  {% endfor %}
+  {% else %}
+    {% for folder in folders %}
+      <twig:FolderCard :item="folder" />
+    {% endfor %}
+    {% for file in files %}
+      <twig:FileCard :item="file" />
+    {% endfor %}
+  {% endif %}
 </div>
-{# Props attendues : items (liste de fichiers/dossiers) #}
+{# Props attendues : folders (liste Folder[]), files (liste File[]) #}
