@@ -10,7 +10,9 @@ use ApiPlatform\State\Pagination\TraversablePaginator;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\FolderOutput;
 use App\Entity\Folder;
+use App\Entity\User;
 use App\Repository\FolderRepository;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
 /**
  * Fournit les données lues pour les opérations GET sur la ressource Folder.
@@ -29,6 +31,7 @@ final class FolderProvider implements ProviderInterface
     public function __construct(
         private readonly FolderRepository $repository,
         private readonly Pagination $pagination,
+        private readonly TokenStorageInterface $tokenStorage,
     ) {}
 
     /**
@@ -45,8 +48,13 @@ final class FolderProvider implements ProviderInterface
         }
 
         [$page, $offset, $limit] = $this->pagination->getPagination($operation, $context);
-        $total = $this->repository->count([]);
-        $items = array_map($this->toOutput(...), $this->repository->findBy([], [], $limit, $offset));
+        $criteria = [];
+        $token = $this->tokenStorage->getToken();
+        if ($token !== null && $token->getUser() instanceof User) {
+            $criteria['owner'] = $token->getUser();
+        }
+        $total = $this->repository->count($criteria);
+        $items = array_map($this->toOutput(...), $this->repository->findBy($criteria, [], $limit, $offset));
 
         return new TraversablePaginator(new \ArrayIterator($items), $page, $limit, $total);
     }

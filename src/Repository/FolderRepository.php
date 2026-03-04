@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\Folder;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\LockMode;
 use Doctrine\Persistence\ManagerRegistry;
@@ -24,6 +25,83 @@ class FolderRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Folder::class);
         $this->registry = $registry;
+    }
+
+    /**
+     * Charge tous les dossiers de l'owner et les organise en arbre imbriqué.
+     * Chaque nœud : ['id', 'name', 'url', 'isOpen' (ancêtre du dossier courant), 'isActive' (dossier courant), 'children'].
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function findAllAsTree(User $owner, ?Folder $currentFolder): array
+    {
+        $all = $this->createQueryBuilder('f')
+            ->where('IDENTITY(f.owner) = :ownerId')
+            ->setParameter('ownerId', $owner->getId()->toBinary())
+            ->orderBy('f.name', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        // Collecte les IDs des ancêtres du dossier courant (pour ouvrir le bon chemin)
+        $openIds = [];
+        if ($currentFolder !== null) {
+            $ancestor = $currentFolder;
+            while ($ancestor !== null) {
+                $openIds[$ancestor->getId()->toRfc4122()] = true;
+                $ancestor = $ancestor->getParent();
+            }
+        }
+
+        return $this->buildTree($all, null, $openIds, $currentFolder);
+    }
+
+    /**
+     * @param Folder[] $all
+     * @param array<string, bool> $openIds
+     * @return array<int, array<string, mixed>>
+     */
+    private function buildTree(array $all, ?Folder $parent, array $openIds, ?Folder $currentFolder): array
+    {
+        $nodes = [];
+        foreach ($all as $folder) {
+            $sameParent = $parent === null
+                ? $folder->getParent() === null
+                : $folder->getParent() !== null && $folder->getParent()->getId()->equals($parent->getId());
+
+            if (!$sameParent) {
+                continue;
+            }
+
+            $id = $folder->getId()->toRfc4122();
+            $nodes[] = [
+                'id'       => $id,
+                'name'     => $folder->getName(),
+                'url'      => '/?folder=' . $id,
+                'isActive' => $currentFolder !== null && $folder->getId()->equals($currentFolder->getId()),
+                'isOpen'   => isset($openIds[$id]),
+                'children' => $this->buildTree($all, $folder, $openIds, $currentFolder),
+            ];
+        }
+
+        return $nodes;
+    }
+
+    /**
+     * Recherche les dossiers dont le nom contient $query (case-insensitive) pour un owner donné.
+     *
+     * @return Folder[]
+     */
+    public function searchByName(string $query, User $owner, int $limit = 20): array
+    {
+        return $this->createQueryBuilder('f')
+            ->where('f.name LIKE :q')
+            ->andWhere('IDENTITY(f.owner) = :ownerId')
+            ->setParameter('q', '%' . $query . '%')
+            ->setParameter('ownerId', $owner->getId()->toBinary())
+            ->orderBy('f.name', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
     }
 
     /**
