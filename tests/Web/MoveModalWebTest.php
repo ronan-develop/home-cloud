@@ -11,102 +11,55 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
  */
 final class MoveModalWebTest extends WebTestCase
 {
-    public function testOpenMoveModalAndMoveFolder(): void
+    // TDD RED : tests structurels HTML, pas de JS
+
+    public function testMoveFolderButtonExistsForEachFolder(): void
     {
         $client = static::createClient();
         $crawler = $client->request('GET', '/');
-
-        // Vérifie que le bouton "Déplacer" est présent pour un dossier
-        $this->assertGreaterThan(0, $crawler->filter('[data-testid^="move-folder-btn-"]')->count());
-
-        // Simule le clic sur le bouton "Déplacer" du premier dossier
-        $button = $crawler->filter('[data-testid^="move-folder-btn-"]')->first();
-        $client->executeScript('openMoveModal("folder", "' . $button->attr('data-testid') . '")');
-
-        // Vérifie que la modale s'affiche
-        $this->assertFalse($crawler->filter('#move-modal')->hasClass('hidden'));
+        $this->assertGreaterThan(0, $crawler->filter('[data-testid^="move-folder-btn-"]')->count(), 'Le bouton déplacer dossier doit exister');
     }
 
-    public function testOpenMoveModalAndMoveFile(): void
+    public function testMoveFileButtonExistsForEachFile(): void
     {
         $client = static::createClient();
         $crawler = $client->request('GET', '/');
-
-        // Vérifie que le bouton "Déplacer" est présent pour un fichier
-        $this->assertGreaterThan(0, $crawler->filter('[data-testid^="move-file-btn-"]')->count());
-
-        // Simule le clic sur le bouton "Déplacer" du premier fichier
-        $button = $crawler->filter('[data-testid^="move-file-btn-"]')->first();
-        $client->executeScript('openMoveModal("file", "' . $button->attr('data-testid') . '")');
-
-        // Vérifie que la modale s'affiche
-        $this->assertFalse($crawler->filter('#move-modal')->hasClass('hidden'));
+        $this->assertGreaterThan(0, $crawler->filter('[data-testid^="move-file-btn-"]')->count(), 'Le bouton déplacer fichier doit exister');
     }
 
-    public function testMoveFolderNominal(): void
+    public function testGlobalMoveModalExistsInDOM(): void
     {
         $client = static::createClient();
         $crawler = $client->request('GET', '/');
-
-        // Sélectionne le premier bouton "Déplacer" dossier
-        $button = $crawler->filter('[data-testid^="move-folder-btn-"]')->first();
-        $folderId = $button->attr('data-testid');
-        $client->executeScript('openMoveModal("folder", "' . $folderId . '")');
-
-        // Sélectionne le dossier cible (autre que le courant)
-        $targetBtn = $crawler->filter('.move-target[data-folder-id]:not([data-folder-id="' . $folderId . '"])')->first();
-        $targetId = $targetBtn->attr('data-folder-id');
-        $client->executeScript('selectMoveTarget("' . $targetId . '", document.querySelector(".move-target[data-folder-id=\"' . $targetId . '\"]"))');
-
-        // Soumet le déplacement
-        $client->executeScript('submitMove()');
-
-        // Vérifie le toast de succès
-        $this->assertSelectorTextContains('.fixed.bottom-4.right-4', 'Déplacement réussi');
-
-        // Vérifie le reload (optionnel)
-        // $this->assertTrue($client->getResponse()->isRedirection());
+        $this->assertGreaterThan(0, $crawler->filter('#move-modal')->count(), 'La modale globale doit exister');
+        $this->assertGreaterThan(0, $crawler->filter('#move-modal.hidden')->count(), 'La modale doit être fermée par défaut');
     }
 
-    public function testMoveFileNominal(): void
+    public function testMoveModalHasFolderListArea(): void
     {
         $client = static::createClient();
         $crawler = $client->request('GET', '/');
-
-        // Sélectionne le premier bouton "Déplacer" fichier
-        $button = $crawler->filter('[data-testid^="move-file-btn-"]')->first();
-        $fileId = $button->attr('data-testid');
-        $client->executeScript('openMoveModal("file", "' . $fileId . '")');
-
-        // Sélectionne le dossier cible
-        $targetBtn = $crawler->filter('.move-target[data-folder-id]')->first();
-        $targetId = $targetBtn->attr('data-folder-id');
-        $client->executeScript('selectMoveTarget("' . $targetId . '", document.querySelector(".move-target[data-folder-id=\"' . $targetId . '\"]"))');
-
-        // Soumet le déplacement
-        $client->executeScript('submitMove()');
-
-        // Vérifie le toast de succès
-        $this->assertSelectorTextContains('.fixed.bottom-4.right-4', 'Déplacement réussi');
+        $this->assertGreaterThan(0, $crawler->filter('#move-target-list')->count(), 'La zone de liste des dossiers doit exister');
     }
 
-    public function testMoveFolderCycleError(): void
+    public function testMoveModalHasSubmitButton(): void
     {
-        // À compléter : simuler un déplacement cyclique et vérifier le message d'erreur
+        $client = static::createClient();
+        $crawler = $client->request('GET', '/');
+        $this->assertGreaterThan(0, $crawler->filter('#move-submit-btn')->count(), 'Le bouton confirmer doit exister');
     }
 
-    public function testMoveFileOwnershipError(): void
+    public function testMoveModalHasTitle(): void
     {
-        // À compléter : simuler un déplacement vers un dossier d'un autre user et vérifier le message d'erreur
+        $client = static::createClient();
+        $crawler = $client->request('GET', '/');
+        $this->assertGreaterThan(0, $crawler->filter('#move-modal-title')->count(), 'Le titre de la modale doit exister');
     }
 
-    public function testMoveFileNotFoundError(): void
+    public function testMoveModalClosedByDefault(): void
     {
-        // À compléter : simuler un déplacement d'un fichier inexistant et vérifier le message d'erreur
-    }
-
-    public function testMoveFileWithoutAuthError(): void
-    {
-        // À compléter : simuler une soumission sans authentification et vérifier le code 401
+        $client = static::createClient();
+        $crawler = $client->request('GET', '/');
+        $this->assertStringContainsString('hidden', $crawler->filter('#move-modal')->attr('class'), 'La modale doit être fermée par défaut');
     }
 }
