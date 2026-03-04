@@ -22,7 +22,7 @@
 
     <aside class="w-48 shrink-0">
         <twig:SectionTitle :text="'Dossiers'" :icon="'📁'" />
-        <twig:SidebarFolders :folders="folders" :current-folder="currentFolder ?? null" />
+        <twig:SidebarFolders :tree="sidebarTree" />
     </aside>
 
     {# Liste fichiers #}

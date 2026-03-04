@@ -76,6 +76,7 @@ final class HomeController extends AbstractController
             'breadcrumbSegments' => $breadcrumbSegments,
             'folders'            => $folders,
             'files'              => $files,
+            'sidebarTree'        => $this->folderRepository->findAllAsTree($user, $currentFolder),
         ]);
     }
 }
