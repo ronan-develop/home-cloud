@@ -76,6 +76,11 @@ final class FileWebController extends AbstractController
             throw new BadRequestHttpException('No file provided.');
         }
 
+        if ($uploadedFile->getError() !== \UPLOAD_ERR_OK) {
+            $this->addFlash('error', 'Erreur d\'upload : ' . $uploadedFile->getErrorMessage());
+            return $this->redirect($folderId ? '/?folder=' . $folderId : '/');
+        }
+
         $ext = strtolower($uploadedFile->getClientOriginalExtension() ?? '');
         if (in_array($ext, self::BLOCKED_EXTENSIONS, true)) {
             throw new BadRequestHttpException(
