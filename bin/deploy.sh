@@ -338,8 +338,17 @@ if [[ "$RUN_MIGRATIONS" == "o" || "$RUN_MIGRATIONS" == "O" ]]; then
 
     # Détecte les migrations "Executed Unavailable" : exécutées en DB mais absentes du code
     # Signe d'une divergence (rollback partiel, migration supprimée, mauvaise branche…)
-    UNAVAILABLE=$(ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
-        "cd ${DEPLOY_PATH} && ${PHP_BIN} bin/console doctrine:migrations:status --env=prod 2>/dev/null | grep 'Executed Unavailable' | awk -F'|' '{print \$3}' | tr -d ' ' || echo 0")
+    UNAVAILABLE=0
+    MIGRATIONS_STATUS=$(ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
+        "cd ${DEPLOY_PATH} && ${PHP_BIN} bin/console doctrine:migrations:status --env=prod 2>/dev/null" || true)
+
+    if echo "$MIGRATIONS_STATUS" | grep -q 'Executed Unavailable'; then
+        UNAVAILABLE=$(echo "$MIGRATIONS_STATUS" \
+            | grep 'Executed Unavailable' \
+            | awk -F'|' '{gsub(/ /,"",$3); print $3}' \
+            | grep -E '^[0-9]+$' || echo 0)
+        UNAVAILABLE="${UNAVAILABLE:-0}"
+    fi
 
     if [[ "${UNAVAILABLE:-0}" -gt 0 ]]; then
         echo ""
