@@ -21,7 +21,7 @@ model: gpt-4.1
 3. **Produire la réponse uniquement dans la section concernée.**  
  - Ne pas remplir les autres parties.  
 
-contexte: Tu interviens dans le Workspace quand demandé
+---
 
 # 📂 Sections Détectées
 
@@ -44,9 +44,9 @@ Exemples possibles :
 - Node.js  
 - .NET Core  
 - Python  
-- PHP Symfony, ApiPlateforme
+- PHP
 
-📌 Appliquer les bonnes pratiques adaptées à Symfony et ApiPlateforme, ainsi que les règles spécifiques à chaque technologie.
+📌 Une fois la techno/framework précisé → appliquer les bonnes pratiques adaptées et les règles spécifiques à chaque technologie.
 
 ---
 
@@ -101,12 +101,23 @@ Exemples possibles :
 📌 **Spécifique Symfony** :  
 - Validation : `@Assert\Valid` / `@Assert\NotBlank`  
 - Réponses : `JsonResponse`  
-- Erreurs : `ExceptionListener` 
+- Erreurs : `ExceptionListener`  
+
+📌 **Spécifique Laravel** :  
+- Validation : `@Validate` / `@RequestBody`  
+- Réponses : `Response::json()`  
+- Erreurs : `Handler`  
 
 📌 **Spécifique PHP natif** : 
 - Validation : `filter_var()` / `filter_input()`  
 - Réponses : `json_encode()`  
 - Erreurs : `try-catch`  
+
+📌 **Spécifique OFT** :  
+- Validation : `@Zend\Validator\NotEmpty` / `@Zend\Validator\EmailAddress`  
+- Réponses : `JsonModel`  
+- Erreurs : `ErrorHandler`  
+
 
 ## 🔹 Service / Business Layer
 🎯 Rôle : porter la **logique métier** (invariants, règles, orchestration de cas d’usage).  
@@ -137,6 +148,13 @@ Exemples possibles :
 - Injection : autowiring ou déclaration dans `services.yaml`
 - Référence : [`Symfony Service Container`](https://symfony.com/doc/current/service_container.html)
 
+📌 **Spécifique Laravel**
+
+- Transactions : `DB::transaction()` ou via `beginTransaction()` / `commit()`
+- Validation métier : règles dans `FormRequest` ou `Validator` dans les services
+- Mapper : `Spatie Data` ou transformation manuelle avec `Eloquent Resources`
+- Injection : via `IoC Container` (app/Services, auto-résolution de dépendances)
+- Référence : [`Laravel Service Container`](https://laravel.com/docs/8.x/container)
 
 📌 **Spécifique PHP natif**
 
@@ -145,6 +163,14 @@ Exemples possibles :
 - Mapper : `php-di/autowire` couplé à un mapper (ex : `Jane\Mapper`)
 - Injection : manuelle ou via conteneur léger comme `php-di`
 - Référence : [`PHP-DI`](https://php-di.org/)
+
+📌 **Spécifique OFT**
+
+- Transactions : via Doctrine (EntityManager::transactional) ou Zend\Db\Adapter\Adapter avec gestion manuelle des transactions (beginTransaction, commit, rollback)
+- Validation métier : contraintes via Zend\Validator (utilisation de validateurs sur les entités ou dans les services)
+- Mapper : Zend\Hydrator pour l’hydratation/déshydratation des objets, ou Zend\Serializer pour la sérialisation
+- Injection : via le ServiceManager (déclaration dans module.config.php ou via des factories)
+- Référence : Zend Service Manager
 
 ---
 
@@ -162,6 +188,11 @@ Exemples possibles :
 - Requêtes non filtrées (`SELECT *`).  
 - Coupler la persistance et le domaine.  
 
+📌 **Spécifique Spring Boot** :  
+- [Spring Data JPA](https://docs.spring.io/spring-data/jpa/docs/current/reference/html/)  
+- Interfaces `JpaRepository`, `CrudRepository`  
+- `@EntityGraph` pour éviter le N+1.  
+
 📌 **Spécifique Symfony**
 
 - Doctrine ORM
@@ -169,12 +200,25 @@ Exemples possibles :
 - fetch="EAGER" ou QueryBuilder avec join fetch pour éviter le N+1
 - [Symfony Doctrine](https://symfony.com/doc/current/doctrine.html)
 
+📌 **Spécifique Laravel**
+
+- Eloquent ORM
+- Repositories optionnels (Repository Pattern) mais souvent accès direct via Models
+- with() / load() pour eager loading et éviter le N+1
+- [Laravel Eloquent Relationships](https://laravel.com/docs/8.x/eloquent-relationships)
+
 📌 **Spécifique PHP natif**
 
 - Doctrine ORM standalone ou usage direct de PDO
 - Repositories implémentés manuellement (DAO pattern)
 - Jointures SQL manuelles ou ORM (Doctrine) pour éviter le N+1
 - [PDO Manual](https://www.php.net/manual/fr/book.pdo.php)
+
+📌 **Spécifique OFT**
+- ORM : Doctrine ORM (intégration possible avec Zend via DoctrineORMModule)
+- Repositories : création de repositories personnalisés en étendant Doctrine\ORM\EntityRepository
+- Éviter le N+1 : utilisation de QueryBuilder avec join et addSelect pour charger les relations nécessaires (équivalent de fetch="EAGER" ou join fetch)
+- Référence : [Doctrine ORM](https://www.doctrine-project.org/projects/doctrine-orm/en/latest/index.html)
 
 ---
 
@@ -190,15 +234,30 @@ Exemples possibles :
 - Réutiliser les entités comme DTO.  
 - Exposer des champs sensibles.  
 
+📌 **Spécifique Spring Boot** :  
+- Validation via [Jakarta Bean Validation](https://jakarta.ee/specifications/bean-validation/)  
+- Implémentation : [Hibernate Validator](https://hibernate.org/validator/)  
+
 📌 **Spécifique Symfony**
 
 - Validation via [Symfony Validator Component](https://symfony.com/doc/current/components/validator.html)
 - Implémentation : contraintes natives (@Assert) ou personnalisées
 
+📌 **Spécifique Laravel**
+
+- Validation via [Laravel Validation](https://laravel.com/docs/8.x/validation)
+- Implémentation : FormRequest, Validator::make(), règles intégrées ou custom Rules
+
 📌 **Spécifique PHP natif**
 
 - Validation via [PHP-FIG](https://www.php-fig.org/) ou - Validation via librairies externes (ex : [Respect/Validation](https://respect-validation.readthedocs.io/en/stable/))
 - Implémentation : classes personnalisées ou intégration manuelle de règles métiers
+
+📌 **Spécifique OFT**
+
+- Validation via Zend\Validator (ou Laminas\Validator) 
+- Implémentation : validation dans le DTO ou via un service dédié, utilisation de validateurs standards ou personnalisés
+- Hydratation/déshydratation avec Zend\Hydrator pour transformer les tableaux/objets en DTO et inversement  [Zend Hydrator](https://docs.laminas.dev/laminas-hydrator/)
 
 ---
 
@@ -215,15 +274,28 @@ Exemples possibles :
 - Mettre de la logique technique dans le domaine.  
 - Lier une entité directement à un service.  
 
+📌 **Spécifique Spring Boot** :  
+- [Jakarta Persistence](https://jakarta.ee/specifications/persistence/)  
+- [Spring Data JPA Entities](https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#jpa.entities)  
+
 📌 **Spécifique Symfony**
 
 - [Doctrine ORM](https://www.doctrine-project.org/projects/doctrine-orm/en/latest/index.html)
 - [Symfony Doctrine Entities](https://symfony.com/doc/current/doctrine.html)
 
+📌 **Spécifique Laravel**
+
+- [Eloquent ORM](https://laravel.com/docs/8.x/eloquent)
+- [Eloquent Models](https://laravel.com/docs/8.x/eloquent#defining-models)
+
 📌 **Spécifique PHP natif**
 
 - [Doctrine ORM standalone](https://www.doctrine-project.org/projects/doctrine-orm/en/latest/index.html)
 - Classes métiers (POPOs) avec mapping manuel ou via PDO
+
+📌 **Spécifique OFT**
+- [Doctrine ORM](https://www.doctrine-project.org/projects/doctrine-orm/en/latest/index.html)
+- [Zend Framework](https://www.doctrine-project.org/projects/doctrine-orm/en/current/reference/zend.html)
 
 ---
 
@@ -233,11 +305,21 @@ Exemples possibles :
 - Exposer des messages clairs, pas de stack trace brute.  
 - Différencier erreurs fonctionnelles (4xx) et techniques (5xx).  
 
+📌 **Spécifique Spring Boot** :  
+- [Error Handling](https://docs.spring.io/spring-boot/docs/current/reference/html/web.html#web.servlet.spring-mvc.erro…)  
+- `@ControllerAdvice` + exceptions custom.  
+
 📌 **Spécifique Symfony**
 
 - [Error Handling](https://symfony.com/doc/current/controller.html#exception-handling)
 - Gestion via `ExceptionListener` ou `EventSubscriber` sur `KernelExceptionEvent`
 - Exceptions métiers custom héritant de `\Exception` ou `HttpException`
+
+📌 **Spécifique Laravel**
+
+- [Error Handling](https://laravel.com/docs/8.x/errors)
+- Gestion centralisée via `App\Exceptions\Handler` (render() et report())
+- Exceptions custom héritant de `\Exception` ou `HttpException`
 
 📌 **Spécifique PHP natif**
 
@@ -245,6 +327,11 @@ Exemples possibles :
 - `set_exception_handler()` ou gestion dans un middleware custom
 - Exceptions métiers custom héritant de `\Exception`
 
+📌 **Spécifique OFT**
+
+- [Error Handling]Laminas Error Handling(https://docs.laminas.dev/laminas-mvc/validation.html#error-handling)
+- Gestion via `ExceptionListener`, `EventSubscriber` sur `KernelExceptionEvent`,  ErrorHandler ou DispatchError
+- Exceptions métiers custom héritant de `\Exception` ou `HttpException`
 ---
 
 ## 🔹 Sécurité
@@ -253,11 +340,20 @@ Exemples possibles :
 - Validation des entrées pour éviter injection.  
 - Chiffrement des secrets.  
 
+📌 **Spécifique Spring Boot** :  
+- [Spring Security](https://docs.spring.io/spring-security/reference/index.html)  
+
 📌 **Spécifique Symfony**
 
 - [Symfony Security](https://symfony.com/doc/current/security.html)
 - Gestion via `security.yaml`, firewall, voters, authentificateurs (`AuthenticatorInterface`)
 - Support natif pour rôles, utilisateurs, JWT [via LexikJWTAuthenticationBundle](https://github.com/lexik/LexikJWTAuthenticationBundle)
+
+📌 **Spécifique Laravel**
+
+- [Laravel Authentication & Security](https://laravel.com/docs/8.x/authentication)
+- Auth via guards, policies, middleware (`auth, can`)
+- Intégration avec [Laravel Sanctum](https://laravel.com/docs/8.x/sanctum) ou [Laravel Passport](https://laravel.com/docs/8.x/passport) pour `JWT / OAuth2`
 
 📌 **Spécifique PHP natif**
 
@@ -265,6 +361,13 @@ Exemples possibles :
 - Gestion manuelle via sessions, cookies, hashing (`password_hash, password_verify`)
 - Possibilité d’intégrer [PHP-Auth](https://github.com/PHP-Auth/PHP-Auth) ou [oauth2-server-php](https://github.com/bshaffer/oauth2-server-php)
 
+📌 **Spécifique OFT**
+
+- [Laminas\Permissions\Acl](https://docs.laminas.dev/laminas-permissions/acl.html)
+- Laminas\Authentication pour l’authentification, configuration dans module.config.php
+- Gestion via `Module.php` ou middleware custom
+- Support natif pour rôles, utilisateurs, JWT [via LexikJWTAuthenticationBundle](https://github.com/lexik/LexikJWTAuthenticationBundle)
+- zfcampus/zf-mvc-auth ou firebase/php-jwt pour JWT
 ---
 
 ## 🔹 Configuration
@@ -273,12 +376,24 @@ Exemples possibles :
 - Séparer les environnements (dev, test, prod).  
 - Valider les propriétés critiques.  
 
+📌 **Spécifique Spring Boot** :  
+- [Externalized Config](https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.external-conf…)  
+- `@ConfigurationProperties`  
+
 📌 **Spécifique Symfony**
 
 - [config/packages/*.yaml)](https://symfony.com/doc/current/configuration.html)
 - Variables d’environnement : .env, .env.local, etc. pour séparer dev/test/prod
 - Accès à la configuration via le service container et l’injection de paramètres (%parameter_name%)
 - ParameterBagInterface pour accéder dynamiquement aux paramètres
+
+📌 **Spécifique Laravel**
+
+- Configuration centralisée dans le dossier config/*.php (fichiers PHP pour chaque domaine de config)
+- Variables d’environnement dans le fichier .env (et .env.example), permettant de séparer dev/test/prod
+- Accès à la configuration via la fonction helper config('nom_fichier.cle') ou via l’injection de dépendances
+- Utilisation de la façade Config pour accéder dynamiquement aux paramètres
+- Possibilité de valider les variables d’environnement critiques dans le fichier AppServiceProvider ou via des packages dédiés
 
 📌 **Spécifique PHP natif**
 
@@ -288,6 +403,16 @@ Exemples possibles :
 - Charger la configuration au démarrage de l’application (ex : via require 'config.php';)
 - Valider les paramètres critiques (ex : vérifier la présence de clés obligatoires)
 - Protéger les fichiers de configuration sensibles (droits d’accès, exclusion du versionnement)
+
+📌 **Spécifique OFT**
+
+- Centraliser la configuration dans des fichiers dédiés (YAML, PHP, ou .env selon le framework)
+- Séparer les environnements (dev, test, prod) via des fichiers ou variables d’environnement
+- Ne jamais hardcoder les valeurs sensibles ou critiques dans le code source
+- Accès à la configuration via des services ou helpers ServiceManager
+- Valider les paramètres critiques au chargement de l’application (ex : vérifier la présence des clés obligatoires)
+- Protéger les fichiers de configuration sensibles (droits d’accès, exclusion du versionnement)
+- Documenter la structure de la configuration
 
 ---
 
@@ -303,14 +428,28 @@ Exemples possibles :
 - Tests trop dépendants de l’environnement.  
 - Tests qui valident plusieurs choses à la fois (SRP aussi pour les tests).  
 
+📌 **Spécifique Spring Boot** :  
+- [Spring Boot Testing](https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.testing)  
+- JUnit 5 + Mockito + Testcontainers.  
+
 📌 **Spécifique Symfony** :  
 - [Symfony Testing](https://symfony.com/doc/current/testing.html)  
 - PHPUnit + Mockery ou Prophecy + [LiipFunctionalTestBundle](https://github.com/liip/LiipFunctionalTestBundle) pour tests fonctionnels et fixtures
+
+📌 **Spécifique Laravel** :  
+- [Laravel Testing](https://laravel.com/docs/8.x/testing)  
+- PHPUnit + Mockery + `RefreshDatabase` pour tests d’intégration  
+- Support des tests HTTP ($this->get(), $this->post()) et tests de fonctionnalités artisan
 
 📌 **Spécifique PHP natif** :  
 - [PHPUnit](https://phpunit.de/) pour tests unitaires  
 - Possibilité d’utiliser [Mockery](https://github.com/mockery/mockery) pour mocks et stubs  
 - Tests fonctionnels via scripts manuels ou frameworks légers de tests
+
+📌 **Spécifique OFT** :  
+- [PHPUnit](https://phpunit.de/) pour tests unitaires  
+- Possibilité d’utiliser [Mockery](https://github.com/mockery/mockery) pour mocks et stubs  
+- [zendframework/zend-test](https://github.com/zendframework/zend-test) pour tests fonctionnels et intégration avec Zend Framework
 
 ---
 - **Toujours générer le test unitaire associé** à chaque snippet de code produit.  
