@@ -334,10 +334,20 @@ fi
 
 # ── Migrations ────────────────────────────────────────────────────────────────
 if [[ "$RUN_MIGRATIONS" == "o" || "$RUN_MIGRATIONS" == "O" ]]; then
-    info "Lancement des migrations Doctrine…"
-    ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
-        "cd ${DEPLOY_PATH} && ${PHP_BIN} bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration --env=prod"
-    success "Migrations appliquées"
+    title "── Migrations Doctrine ─────────────────"
+
+    # Vérifie s'il y a des migrations en attente avant de lancer
+    PENDING=$(ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
+        "cd ${DEPLOY_PATH} && ${PHP_BIN} bin/console doctrine:migrations:list --env=prod 2>/dev/null | grep -c 'not migrated' || true")
+
+    if [[ "${PENDING:-0}" -gt 0 ]]; then
+        info "${PENDING} migration(s) en attente — exécution…"
+        ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
+            "cd ${DEPLOY_PATH} && ${PHP_BIN} bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration --env=prod"
+        success "${PENDING} migration(s) appliquée(s)"
+    else
+        success "Schéma à jour — aucune migration à appliquer"
+    fi
 
     # Cache Symfony
     info "Warm-up du cache Symfony…"
