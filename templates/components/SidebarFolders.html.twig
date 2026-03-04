@@ -3,8 +3,8 @@
   {% import _self as macros %}
   {% set level = level ?? 0 %}
   {% if node.children is not empty %}
-    <details class="sidebar-folder-group"{% if node.isOpen %} open{% endif %}>
-      <summary class="sidebar-folder-summary{% if node.isActive %} active{% endif %}" data-level="{{ level }}">
+    <details class="sidebar-folder-group" data-level="{{ level }}"{% if node.isOpen %} open{% endif %}>
+      <summary class="sidebar-folder-summary{% if node.isActive %} active{% endif %}">
         <span class="sidebar-toggle-icon"></span>
         <span class="sidebar-folder-icon">📁</span>
         <a href="{{ node.url }}" class="sidebar-folder-name" onclick="event.stopPropagation()">{{ node.name }}</a>
