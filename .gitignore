@@ -26,3 +26,7 @@ id_rsa
 /public/assets/
 /assets/vendor/
 ###< symfony/asset-mapper ###
+
+# Env dev local
+.symfony.local.yaml
+php.ini
