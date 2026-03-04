@@ -22,8 +22,8 @@ import './styles/app.css';
 window.closeModal = function(modalId) {
 	const modal = document.getElementById(modalId);
 	if (!modal) return;
-	modal.classList.remove('modal-open');
 	modal.classList.add('hidden');
+	modal.classList.remove('modal-open');
 	// Optionnel : focus sur le body après fermeture
 	document.body.focus();
 }
