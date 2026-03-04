@@ -3,9 +3,10 @@
   {% import _self as macros %}
   {% if node.children is not empty %}
     <details class="sidebar-folder-group"{% if node.isOpen %} open{% endif %}>
-      <summary class="sidebar-folder-link{% if node.isActive %} active{% endif %}">
+      <summary class="sidebar-folder-summary{% if node.isActive %} active{% endif %}">
+        <span class="sidebar-toggle-icon"></span>
         <span class="sidebar-folder-icon">📁</span>
-        <a href="{{ node.url }}" onclick="event.stopPropagation()">{{ node.name }}</a>
+        <a href="{{ node.url }}" class="sidebar-folder-name" onclick="event.stopPropagation()">{{ node.name }}</a>
       </summary>
       <div class="sidebar-folder-children">
         {% for child in node.children %}
@@ -14,9 +15,10 @@
       </div>
     </details>
   {% else %}
-    <a href="{{ node.url }}"
-       class="sidebar-folder-link{% if node.isActive %} active{% endif %}">
-      <span class="sidebar-folder-icon">📁</span> {{ node.name }}
+    <a href="{{ node.url }}" class="sidebar-folder-link{% if node.isActive %} active{% endif %}">
+      <span class="sidebar-no-toggle"></span>
+      <span class="sidebar-folder-icon">📁</span>
+      <span class="sidebar-folder-name">{{ node.name }}</span>
     </a>
   {% endif %}
 {% endmacro %}
