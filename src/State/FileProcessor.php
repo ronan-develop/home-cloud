@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\State;
 
 use ApiPlatform\Metadata\Operation;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Delete;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\FileOutput;
 
@@ -78,13 +80,11 @@ final class FileProcessor implements ProcessorInterface
      */
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): mixed
     {
-        if ($operation->getMethod() === 'DELETE') {
-            return $this->handleDelete($uriVariables);
-        }
-        if ($operation->getMethod() === 'PATCH') {
-            return $this->handlePatch($data, $uriVariables);
-        }
-        throw new \LogicException('Unsupported operation for FileProcessor');
+        return match (true) {
+            $operation instanceof Delete => $this->handleDelete($uriVariables),
+            $operation instanceof Patch  => $this->handlePatch($data, $uriVariables),
+            default => throw new \LogicException('Unsupported operation for FileProcessor'),
+        };
     }
 
     /**
