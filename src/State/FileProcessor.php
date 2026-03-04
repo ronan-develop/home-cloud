@@ -9,7 +9,7 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\FileOutput;
-
+use App\Interface\DefaultFolderServiceInterface;
 use App\Repository\FileRepository;
 use App\Repository\MediaRepository;
 use App\Repository\UserRepository;
@@ -49,6 +49,7 @@ final class FileProcessor implements ProcessorInterface
         private readonly StorageServiceInterface $storageService,
         private readonly TokenStorageInterface $tokenStorage,
         private readonly LoggerInterface $logger,
+        private readonly DefaultFolderServiceInterface $defaultFolderService,
     ) {}
 
     /**
@@ -126,19 +127,17 @@ final class FileProcessor implements ProcessorInterface
             throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('You do not own this file');
         }
 
-        // Vérifie présence du champ targetFolderId
-        if (empty($data->targetFolderId)) {
-            throw new \Symfony\Component\HttpKernel\Exception\BadRequestHttpException('targetFolderId is required');
-        }
-
-        $targetFolder = $this->em->getRepository(\App\Entity\Folder::class)->find($data->targetFolderId);
-        if ($targetFolder === null) {
-            throw new NotFoundHttpException('Target folder not found');
-        }
-
-        // Vérifie ownership du dossier cible
-        if ((string)$targetFolder->getOwner()->getId() !== (string)$user->getId()) {
-            throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('You do not own the target folder');
+        // targetFolderId null/vide → dossier "Uploads" par défaut
+        if ($data->targetFolderId === null || $data->targetFolderId === '') {
+            $targetFolder = $this->defaultFolderService->resolve(null, null, $user);
+        } else {
+            $targetFolder = $this->em->getRepository(\App\Entity\Folder::class)->find($data->targetFolderId);
+            if ($targetFolder === null) {
+                throw new NotFoundHttpException('Target folder not found');
+            }
+            if ((string)$targetFolder->getOwner()->getId() !== (string)$user->getId()) {
+                throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('You do not own the target folder');
+            }
         }
 
         // Déplacement effectif
