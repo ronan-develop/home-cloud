@@ -54,10 +54,29 @@ final class HomeController extends AbstractController
             ['createdAt' => 'DESC']
         );
 
+        // Construit le chemin complet (ancêtres) pour la breadcrumb
+        $breadcrumbFolders = [];
+        $ancestor = $currentFolder;
+        while ($ancestor !== null) {
+            array_unshift($breadcrumbFolders, $ancestor);
+            $ancestor = $ancestor->getParent();
+        }
+
+        // Segments breadcrumb : Accueil + ancêtres cliquables + dossier courant (non cliquable)
+        $breadcrumbSegments = [['label' => 'Tous les fichiers', 'url' => '/']];
+        foreach ($breadcrumbFolders as $i => $f) {
+            $isLast = $i === array_key_last($breadcrumbFolders);
+            $breadcrumbSegments[] = [
+                'label' => $f->getName(),
+                'url'   => $isLast ? null : '/?folder=' . $f->getId()->toRfc4122(),
+            ];
+        }
+
         return $this->render('web/home.html.twig', [
-            'currentFolder' => $currentFolder,
-            'folders'       => $folders,
-            'files'         => $files,
+            'currentFolder'      => $currentFolder,
+            'breadcrumbSegments' => $breadcrumbSegments,
+            'folders'            => $folders,
+            'files'              => $files,
         ]);
     }
 }
