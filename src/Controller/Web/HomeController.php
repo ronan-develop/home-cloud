@@ -49,10 +49,9 @@ final class HomeController extends AbstractController
             ['name' => 'ASC']
         );
 
-        $files = $this->fileRepository->findBy(
-            $currentFolder ? ['folder' => $currentFolder, 'owner' => $user] : ['owner' => $user],
-            ['createdAt' => 'DESC']
-        );
+        $files = $currentFolder
+            ? $this->fileRepository->findBy(['folder' => $currentFolder, 'owner' => $user], ['createdAt' => 'DESC'])
+            : [];
 
         // Construit le chemin complet (ancêtres) pour la breadcrumb
         $breadcrumbFolders = [];
