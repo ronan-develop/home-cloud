@@ -53,13 +53,14 @@ final class SearchController extends AbstractController
 
         foreach ($files as $file) {
             $items[] = [
-                'id'        => $file->getId()->toRfc4122(),
-                'name'      => $file->getOriginalName(),
-                'isFolder'  => false,
-                'mimeType'  => $file->getMimeType(),
-                'size'      => $file->getSize(),
-                'folderId'  => $file->getFolder()->getId()->toRfc4122(),
-                'folderUrl' => '/?folder=' . $file->getFolder()->getId()->toRfc4122(),
+                'id'         => $file->getId()->toRfc4122(),
+                'name'       => $file->getOriginalName(),
+                'isFolder'   => false,
+                'mimeType'   => $file->getMimeType(),
+                'size'       => $file->getSize(),
+                'folderId'   => $file->getFolder()->getId()->toRfc4122(),
+                'folderName' => $file->getFolder()->getName(),
+                'folderUrl'  => '/?folder=' . $file->getFolder()->getId()->toRfc4122(),
             ];
         }
 

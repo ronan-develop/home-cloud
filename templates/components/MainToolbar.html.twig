@@ -11,7 +11,7 @@
 <div id="search-results-overlay" class="hidden" style="
     position:fixed; inset:0; z-index:40;
     background:rgba(0,0,0,0.45); backdrop-filter:blur(4px);
-    display:flex; align-items:flex-start; justify-content:center; padding-top:6rem;">
+    align-items:flex-start; justify-content:center; padding-top:6rem;">
   <div style="background:#1e293b; border:1px solid rgba(255,255,255,0.12); border-radius:1.25rem;
               box-shadow:0 8px 40px rgba(0,0,0,0.5); width:100%; max-width:540px; overflow:hidden;">
     <div style="padding:0.75rem 1.25rem; border-bottom:1px solid rgba(255,255,255,0.08);
@@ -88,7 +88,7 @@
                 + '<span style="font-size:1.25rem; flex-shrink:0;">' + icon + '</span>'
                 + '<div style="min-width:0;">'
                 + '<div style="font-size:0.875rem; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escHtml(item.name) + '</div>'
-                + (item.isFolder ? '' : '<div style="font-size:0.72rem; color:rgba(255,255,255,0.45); margin-top:0.1rem;">Dans ce dossier</div>')
+                + (item.isFolder ? '' : '<div style="font-size:0.72rem; color:rgba(255,255,255,0.45); margin-top:0.1rem;">📁 ' + escHtml(item.folderName) + '</div>')
                 + '</div>'
                 + '</a>';
             list.appendChild(li);
