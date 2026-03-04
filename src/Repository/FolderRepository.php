@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\Folder;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\LockMode;
 use Doctrine\Persistence\ManagerRegistry;
@@ -24,6 +25,24 @@ class FolderRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Folder::class);
         $this->registry = $registry;
+    }
+
+    /**
+     * Recherche les dossiers dont le nom contient $query (case-insensitive) pour un owner donné.
+     *
+     * @return Folder[]
+     */
+    public function searchByName(string $query, User $owner, int $limit = 20): array
+    {
+        return $this->createQueryBuilder('f')
+            ->where('f.name LIKE :q')
+            ->andWhere('IDENTITY(f.owner) = :ownerId')
+            ->setParameter('q', '%' . $query . '%')
+            ->setParameter('ownerId', $owner->getId()->toBinary())
+            ->orderBy('f.name', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
     }
 
     /**
