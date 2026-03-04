@@ -32,34 +32,81 @@
 	background: #e5e7eb;
 	color: #111827;
 }
-/* Active + hover : couleur thème */
-.sidebar-folder-link--active {
+/* Dossier actif */
+.sidebar-folder-link.active {
 	background: #e0e7ff;
 	color: #2563eb;
 	font-weight: 600;
 }
-.sidebar-folder-link--active:hover {
-	background: #c7d2fe;
-	color: #1d4ed8;
+/* Groupe avec sous-dossiers */
+.sidebar-folder-group {
+	display: block;
+}
+.sidebar-folder-group > summary {
+	list-style: none;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.5rem 1rem;
+	border-radius: 1.1rem;
+	font-size: 1rem;
+	color: #6b7280;
+	cursor: pointer;
+	transition: background 0.15s, color 0.15s;
+	user-select: none;
+}
+.sidebar-folder-group > summary::-webkit-details-marker { display: none; }
+.sidebar-folder-group > summary::before {
+	content: '▶';
+	font-size: 0.55rem;
+	opacity: 0.5;
+	transition: transform 0.15s;
+	flex-shrink: 0;
+}
+.sidebar-folder-group[open] > summary::before {
+	transform: rotate(90deg);
+}
+.sidebar-folder-group > summary:hover {
+	background: #e5e7eb;
+	color: #111827;
+}
+.sidebar-folder-group > summary.active {
+	background: #e0e7ff;
+	color: #2563eb;
+	font-weight: 600;
+}
+.sidebar-folder-group > summary a {
+	color: inherit;
+	text-decoration: none;
+	flex: 1;
+}
+.sidebar-folder-children {
+	padding-left: 1.25rem;
+	border-left: 2px solid #e5e7eb;
+	margin-left: 1.2rem;
+	margin-top: 0.2rem;
+	display: flex;
+	flex-direction: column;
 }
 @media (prefers-color-scheme: dark) {
-	.sidebar-folder-link--active {
-		background: #1e293b;
-		color: #a5b4fc;
-	}
-	.sidebar-folder-link--active:hover {
-		background: #334155;
-		color: #818cf8;
-	}
-}
-@media (prefers-color-scheme: dark) {
-	.sidebar-folder-link--active {
+	.sidebar-folder-link.active {
 		background: #1e293b;
 		color: #a5b4fc;
 	}
 	.sidebar-folder-link:hover {
 		background: #334155;
 		color: #fff;
+	}
+	.sidebar-folder-group > summary:hover {
+		background: #334155;
+		color: #fff;
+	}
+	.sidebar-folder-group > summary.active {
+		background: #1e293b;
+		color: #a5b4fc;
+	}
+	.sidebar-folder-children {
+		border-left-color: #334155;
 	}
 }
 /* === Variables de thème (light / dark automatique via OS) === */

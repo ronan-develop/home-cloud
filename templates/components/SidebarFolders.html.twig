@@ -1,12 +1,33 @@
-{# Composant SidebarFolders — Liste des dossiers dans la sidebar #}
-<div class="sidebar-folders">
-  {% for folder in folders %}
-    <a href="{{ path('app_home', { folder: folder.id }) }}"
-       class="sidebar-folder-link{% if currentFolder and currentFolder.id == folder.id %} active{% endif %}">
-      <span>📁</span> {{ folder.name }}
+{# Composant SidebarFolders — Arbre récursif de dossiers #}
+{% macro folder_node(node) %}
+  {% import _self as macros %}
+  {% if node.children is not empty %}
+    <details class="sidebar-folder-group"{% if node.isOpen %} open{% endif %}>
+      <summary class="sidebar-folder-link{% if node.isActive %} active{% endif %}">
+        <span class="sidebar-folder-icon">📁</span>
+        <a href="{{ node.url }}" onclick="event.stopPropagation()">{{ node.name }}</a>
+      </summary>
+      <div class="sidebar-folder-children">
+        {% for child in node.children %}
+          {{ macros.folder_node(child) }}
+        {% endfor %}
+      </div>
+    </details>
+  {% else %}
+    <a href="{{ node.url }}"
+       class="sidebar-folder-link{% if node.isActive %} active{% endif %}">
+      <span class="sidebar-folder-icon">📁</span> {{ node.name }}
     </a>
+  {% endif %}
+{% endmacro %}
+
+{% import _self as macros %}
+<div class="sidebar-folders">
+  {% for node in tree %}
+    {{ macros.folder_node(node) }}
   {% else %}
     <div class="sidebar-folder-empty">Aucun dossier</div>
   {% endfor %}
 </div>
-{# Props attendues : folders (liste), currentFolder #}
+{# Props attendues : tree (arbre retourné par FolderRepository::findAllAsTree) #}
+
