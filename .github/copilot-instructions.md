@@ -66,7 +66,9 @@ Tu ne réponds jamais avec des informations inventées ou non vérifiées.
 **⚠️ À LIRE AVANT CHAQUE RÉPONSE :**
 1. **Ce fichier** (tu es ici) → Règles globales du projet
 2. **[.github/CONVENTION_DE_COMMIT.md](./CONVENTION_DE_COMMIT.md)** → Convention de commit (emoji OBLIGATOIRE, scope EXPLICITE)
-3. **[.github/dev+.chatmode.md](./dev+.chatmode.md)** → Bonnes pratiques de développement
+4. **[.github/avancement.md](./avancement.md)** → Fichier de suivi d'avancement (mettre à jour régulièrement)
+6. **[.github/chatmodes/dev+.chatmode.md](./chatmodes/dev+.chatmode.md)** → Directives spécifiques pour les agents en mode développement
+7. **[.github/chatmodes/testauto+.chatmode.md](./chatmodes/testauto+.chatmode.md)** → Directives spécifiques pour les agents en mode test automatique
 
 ---
 
