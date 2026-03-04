@@ -42,6 +42,14 @@ BLUE='\033[0;34m'
 BOLD='\033[1m'
 NC='\033[0m'
 
+# ── Vérification pré-déploiement ──────────────────────────────────────────────
+echo -e "${YELLOW}⚠️  Avant de lancer ce script, vérifie :${NC}"
+echo -e "  1. La Pull Request est bien mergée sur main sur GitHub."
+echo -e "  2. Tu es bien sur la branche main (git checkout main)."
+echo -e "  3. Le push sur origin/main est fait (git push origin main)."
+echo -e "${BLUE}Astuce : Tu peux vérifier la branche avec 'git branch --show-current'${NC}"
+echo ""
+
 info()    { echo -e "${BLUE}ℹ${NC}  $*"; }
 success() { echo -e "${GREEN}✔${NC}  $*"; }
 warn()    { echo -e "${YELLOW}⚠${NC}  $*"; }
@@ -198,9 +206,15 @@ if [ -d "${DEPLOY_PATH}/.git" ]; then
     echo "→ Mise à jour du repo…"
     git -C "${DEPLOY_PATH}" fetch origin
     git -C "${DEPLOY_PATH}" reset --hard "origin/${GIT_BRANCH}"
+    # Log du commit déployé
+    DEPLOYED_COMMIT=$(git -C "${DEPLOY_PATH}" rev-parse HEAD)
+    echo "→ Version déployée : $DEPLOYED_COMMIT"
 else
     echo "→ Clone du repo…"
     git clone --branch "${GIT_BRANCH}" --depth 1 "${GIT_REPO}" "${DEPLOY_PATH}"
+    # Log du commit déployé
+    DEPLOYED_COMMIT=$(git -C "${DEPLOY_PATH}" rev-parse HEAD)
+    echo "→ Version déployée : $DEPLOYED_COMMIT"
 fi
 
 # Composer install
