@@ -19,6 +19,7 @@ final class MoveModalWebTest extends WebTestCase
 
     private KernelBrowser $client;
     private EntityManagerInterface $em;
+    private string $folderId;
 
     protected function setUp(): void
     {
@@ -33,6 +34,8 @@ final class MoveModalWebTest extends WebTestCase
         $this->em->persist($file);
         $this->em->flush();
 
+        $this->folderId = $folder->getId()->toRfc4122();
+
         $this->loginAs('move-modal@example.com', 'secret123');
     }
 
@@ -44,7 +47,7 @@ final class MoveModalWebTest extends WebTestCase
 
     public function testMoveFileButtonExistsForEachFile(): void
     {
-        $this->client->request('GET', '/');
+        $this->client->request('GET', '/?folder=' . $this->folderId);
         $this->assertSelectorExists('[data-testid^="move-file-btn-"]', 'Le bouton déplacer fichier doit exister');
     }
 
