@@ -18,13 +18,16 @@ window.openGlobalMoveModal = async function(type, id, name) {
 		if (!response.ok) throw new Error('Erreur chargement dossiers');
 		const folders = await response.json();
 		list.innerHTML = '';
-		// Option racine en premier
+		// Option racine en premier (label contextuel selon le type)
 		const rootLabel = document.createElement('label');
 		rootLabel.className = 'move-target flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer hover:bg-white/10 transition-colors border-b border-white/10 mb-1';
+		const rootText = type === 'file'
+			? '📤 Uploads (dossier par défaut)'
+			: '🏠 Racine (niveau principal)';
 		rootLabel.innerHTML = `
 			<input type="radio" name="move-target-folder" value="__root__"
 			       class="w-4 h-4 accent-blue-400 cursor-pointer flex-shrink-0">
-			<span class="text-white flex items-center gap-2">🏠 Racine (déplacer au niveau principal)</span>
+			<span class="text-white flex items-center gap-2">${rootText}</span>
 		`;
 		rootLabel.querySelector('input').addEventListener('change', () => {
 			document.getElementById('move-submit-btn').disabled = false;
