@@ -90,8 +90,9 @@ details[open] > .sidebar-folder-summary .sidebar-toggle-icon::before { content: 
 
 /* Indentation récursive */
 .sidebar-folder-children {
-	padding-left: 1.5rem;
+	padding-left: 0.6rem;
 	margin-left: 0.55rem;
+	margin-right: 0.5rem;
 	border-left: 1.5px solid #d1d5db;
 	display: flex;
 	flex-direction: column;
