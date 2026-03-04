@@ -1,3 +1,4 @@
+
 // ────────────── MoveModal — Déplacement dossier/fichier ──────────────
 window.openGlobalMoveModal = async function(type, id, name) {
 	document.getElementById('move-entity-type').value = type;
