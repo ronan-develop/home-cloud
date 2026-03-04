@@ -25,13 +25,17 @@ window.openGlobalMoveModal = async function(type, id, name) {
 		folders
 			.filter(f => !(type === 'folder' && f.id === id))
 			.forEach(folder => {
-				const btn = document.createElement('button');
-				btn.type = 'button';
-				btn.className = 'move-target w-full text-left px-3 py-2 rounded-xl text-white hover:bg-white/10 transition-colors flex items-center gap-2';
-				btn.dataset.folderId = folder.id;
-				btn.innerHTML = '📁 <span>' + folder.name + '</span>';
-				btn.addEventListener('click', () => selectMoveTarget(folder.id, btn));
-				list.appendChild(btn);
+				const label = document.createElement('label');
+				label.className = 'move-target flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer hover:bg-white/10 transition-colors';
+				label.innerHTML = `
+					<input type="radio" name="move-target-folder" value="${folder.id}"
+					       class="w-4 h-4 accent-blue-400 cursor-pointer flex-shrink-0">
+					<span class="text-white flex items-center gap-2">📁 ${folder.name}</span>
+				`;
+				label.querySelector('input').addEventListener('change', () => {
+					document.getElementById('move-submit-btn').disabled = false;
+				});
+				list.appendChild(label);
 			});
 	} catch (err) {
 		list.innerHTML = '<p class="text-red-400 text-sm text-center py-4">Erreur de chargement</p>';
@@ -39,20 +43,12 @@ window.openGlobalMoveModal = async function(type, id, name) {
 	}
 };
 
-window.selectMoveTarget = function(folderId, btn) {
-	document.querySelectorAll('.move-target').forEach(el => {
-		el.classList.remove('bg-blue-500/30', 'ring-1', 'ring-blue-400');
-	});
-	btn.classList.add('bg-blue-500/30', 'ring-1', 'ring-blue-400');
-	document.getElementById('move-entity-id').dataset.targetFolderId = folderId;
-	document.getElementById('move-submit-btn').disabled = false;
-};
-
 window.submitMove = async function() {
-	const type           = document.getElementById('move-entity-type').value;
-	const entityId       = document.getElementById('move-entity-id').value;
-	const targetFolderId = document.getElementById('move-entity-id').dataset.targetFolderId;
-	if (!targetFolderId) return;
+	const type     = document.getElementById('move-entity-type').value;
+	const entityId = document.getElementById('move-entity-id').value;
+	const selected = document.querySelector('input[name="move-target-folder"]:checked');
+	if (!selected) return;
+	const targetFolderId = selected.value;
 	const submitBtn = document.getElementById('move-submit-btn');
 	submitBtn.disabled = true;
 	try {
