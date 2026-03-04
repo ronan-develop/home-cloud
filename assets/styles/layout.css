@@ -88,6 +88,23 @@ details[open] > .sidebar-folder-summary .sidebar-toggle-icon::before { content: 
 }
 .sidebar-folder-group > summary::-webkit-details-marker { display: none; }
 
+/* Indentation récursive par niveau */
+.sidebar-folder-link,
+.sidebar-folder-group {
+	--sidebar-indent: 10px;
+}
+.sidebar-folder-link[data-level]    { margin-left: calc(attr(data-level) * var(--sidebar-indent)); }
+
+/* Fallback CSS via JS — le CSS attr() ne supporte pas les nombres arbitraires en margin,
+   on utilise donc des niveaux explicites jusqu'à 6 (suffisant pour un NAS personnel) */
+[data-level="0"] { margin-left: 0; }
+[data-level="1"] { margin-left: 10px; }
+[data-level="2"] { margin-left: 20px; }
+[data-level="3"] { margin-left: 30px; }
+[data-level="4"] { margin-left: 40px; }
+[data-level="5"] { margin-left: 50px; }
+[data-level="6"] { margin-left: 60px; }
+
 /* Indentation récursive */
 .sidebar-folder-children {
 	padding-left: 0.6rem;
