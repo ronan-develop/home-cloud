@@ -2,8 +2,10 @@
 <div class="folder-card">
 	{% if item.mimeType is not defined or item.mimeType is null %}
 		{# C'est un dossier (Folder) — n'a pas de mimeType #}
-		<div class="folder-icon">📁</div>
-		<div class="folder-name">{{ item.name }}</div>
+		<a href="{{ path('app_home', { folder: item.id }) }}" class="block">
+			<div class="folder-icon">📁</div>
+			<div class="folder-name">{{ item.name }}</div>
+		</a>
 		<div class="folder-actions flex justify-end items-center mt-2 gap-2">
 			<button type="button" data-testid="move-folder-btn-{{ item.id }}" class="move-btn p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors" title="Déplacer" onclick="openMoveElementModal('move-modal-folder-{{ item.id }}')">↪️</button>
 		</div>
