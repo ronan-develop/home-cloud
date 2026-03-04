@@ -91,24 +91,24 @@ details[open] > .sidebar-folder-summary .sidebar-toggle-icon::before { content: 
 /* Indentation récursive par niveau */
 .sidebar-folder-link,
 .sidebar-folder-group {
-	--sidebar-indent: 10px;
+	--sidebar-indent: 6px;
 }
 .sidebar-folder-link[data-level]    { margin-left: calc(attr(data-level) * var(--sidebar-indent)); }
 
 /* Fallback CSS via JS — le CSS attr() ne supporte pas les nombres arbitraires en margin,
    on utilise donc des niveaux explicites jusqu'à 6 (suffisant pour un NAS personnel) */
 [data-level="0"] { margin-left: 0; }
-[data-level="1"] { margin-left: 10px; }
-[data-level="2"] { margin-left: 20px; }
-[data-level="3"] { margin-left: 30px; }
-[data-level="4"] { margin-left: 40px; }
-[data-level="5"] { margin-left: 50px; }
-[data-level="6"] { margin-left: 60px; }
+[data-level="1"] { margin-left: 6px; }
+[data-level="2"] { margin-left: 12px; }
+[data-level="3"] { margin-left: 18px; }
+[data-level="4"] { margin-left: 24px; }
+[data-level="5"] { margin-left: 30px; }
+[data-level="6"] { margin-left: 36px; }
 
 /* Indentation récursive */
 .sidebar-folder-children {
-	padding-left: 0.6rem;
-	margin-left: 0.55rem;
+	padding-left: 0.4rem;
+	margin-left: 0.35rem;
 	margin-right: 0.5rem;
 	border-left: 1.5px solid #d1d5db;
 	display: flex;
@@ -116,6 +116,7 @@ details[open] > .sidebar-folder-summary .sidebar-toggle-icon::before { content: 
 	margin-top: 0.1rem;
 	margin-bottom: 0.1rem;
 }
+
 
 @media (prefers-color-scheme: dark) {
 	.sidebar-folder-link.active,
