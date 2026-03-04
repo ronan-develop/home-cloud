@@ -1,5 +1,112 @@
-{# Composant MainToolbar — Barre de recherche seule #}
+{# Composant MainToolbar — Barre de recherche XHR #}
 <div class="main-toolbar">
-  <input type="search" class="main-search search-glass" placeholder="{{ placeholder|default('Rechercher...') }}" />
+  <input type="search"
+         id="main-search-input"
+         class="main-search search-glass"
+         placeholder="{{ placeholder|default('Rechercher...') }}"
+         autocomplete="off" />
 </div>
+
+{# Overlay résultats de recherche #}
+<div id="search-results-overlay" class="hidden" style="
+    position:fixed; inset:0; z-index:40;
+    background:rgba(0,0,0,0.45); backdrop-filter:blur(4px);
+    display:flex; align-items:flex-start; justify-content:center; padding-top:6rem;">
+  <div style="background:#1e293b; border:1px solid rgba(255,255,255,0.12); border-radius:1.25rem;
+              box-shadow:0 8px 40px rgba(0,0,0,0.5); width:100%; max-width:540px; overflow:hidden;">
+    <div style="padding:0.75rem 1.25rem; border-bottom:1px solid rgba(255,255,255,0.08);
+                display:flex; align-items:center; justify-content:space-between;">
+      <span id="search-results-count" style="font-size:0.8rem; color:rgba(255,255,255,0.5);">Recherche…</span>
+      <button onclick="closeSearch()" style="background:none; border:none; color:rgba(255,255,255,0.5);
+              font-size:1.2rem; cursor:pointer; line-height:1;">×</button>
+    </div>
+    <ul id="search-results-list" style="list-style:none; margin:0; padding:0.5rem 0; max-height:60vh; overflow-y:auto;">
+    </ul>
+  </div>
+</div>
+
+<script>
+(function () {
+    var input   = document.getElementById('main-search-input');
+    var overlay = document.getElementById('search-results-overlay');
+    var list    = document.getElementById('search-results-list');
+    var count   = document.getElementById('search-results-count');
+    var timer   = null;
+
+    function openSearch()  { overlay.classList.remove('hidden'); overlay.style.display = 'flex'; }
+    function closeSearch() { overlay.classList.add('hidden'); overlay.style.display = 'none'; input.value = ''; }
+    window.closeSearch = closeSearch;
+
+    input.addEventListener('input', function () {
+        clearTimeout(timer);
+        var q = input.value.trim();
+        if (q === '') { closeSearch(); return; }
+        timer = setTimeout(function () { doSearch(q); }, 300);
+    });
+
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeSearch();
+    });
+
+    overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) closeSearch();
+    });
+
+    async function doSearch(q) {
+        count.textContent = 'Recherche…';
+        list.innerHTML    = '';
+        openSearch();
+        try {
+            var res  = await fetch('/search?q=' + encodeURIComponent(q), {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            var data = await res.json();
+            renderResults(data.items || []);
+        } catch (err) {
+            count.textContent = 'Erreur de recherche';
+        }
+    }
+
+    function renderResults(items) {
+        count.textContent = items.length === 0
+            ? 'Aucun résultat'
+            : items.length + ' résultat' + (items.length > 1 ? 's' : '');
+
+        list.innerHTML = '';
+        if (items.length === 0) {
+            list.innerHTML = '<li style="padding:1.5rem; text-align:center; color:rgba(255,255,255,0.4); font-size:0.875rem;">Aucun fichier ni dossier trouvé</li>';
+            return;
+        }
+
+        items.forEach(function (item) {
+            var icon = item.isFolder ? '📁' : iconForMime(item.mimeType);
+            var url  = item.isFolder ? item.url : item.folderUrl;
+            var li   = document.createElement('li');
+            li.innerHTML = '<a href="' + url + '" onclick="closeSearch()" style="display:flex; align-items:center; gap:0.75rem; padding:0.65rem 1.25rem; text-decoration:none; color:#f1f5f9; transition:background 0.12s;"'
+                + ' onmouseover="this.style.background=\'rgba(255,255,255,0.07)\'"'
+                + ' onmouseout="this.style.background=\'transparent\'">'
+                + '<span style="font-size:1.25rem; flex-shrink:0;">' + icon + '</span>'
+                + '<div style="min-width:0;">'
+                + '<div style="font-size:0.875rem; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escHtml(item.name) + '</div>'
+                + (item.isFolder ? '' : '<div style="font-size:0.72rem; color:rgba(255,255,255,0.45); margin-top:0.1rem;">Dans ce dossier</div>')
+                + '</div>'
+                + '</a>';
+            list.appendChild(li);
+        });
+    }
+
+    function iconForMime(mime) {
+        if (!mime) return '📎';
+        if (mime.startsWith('image/'))       return '🖼️';
+        if (mime.startsWith('video/'))       return '🎬';
+        if (mime.startsWith('audio/'))       return '🎵';
+        if (mime === 'application/pdf')      return '📄';
+        return '📎';
+    }
+
+    function escHtml(str) {
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+}());
+</script>
 {# Props attendues : placeholder (texte) #}
