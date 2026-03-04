@@ -70,10 +70,16 @@ final class FileWebController extends AbstractController
     #[Route('/files/upload', name: 'app_file_upload', methods: ['POST'])]
     public function upload(Request $request): Response
     {
+        $folderId = $request->request->get('folder_id');
         $uploadedFile = $request->files->get('file');
 
         if ($uploadedFile === null) {
             throw new BadRequestHttpException('No file provided.');
+        }
+
+        if ($uploadedFile->getError() !== \UPLOAD_ERR_OK) {
+            $this->addFlash('error', 'Erreur d\'upload : ' . $uploadedFile->getErrorMessage());
+            return $this->redirect($folderId ? '/?folder=' . $folderId : '/');
         }
 
         $ext = strtolower($uploadedFile->getClientOriginalExtension() ?? '');
@@ -85,7 +91,6 @@ final class FileWebController extends AbstractController
 
         /** @var \App\Entity\User $user */
         $user = $this->getUser();
-        $folderId = $request->request->get('folder_id');
         $folder = $this->folderService->resolve($folderId, null, $user);
 
         $originalName = preg_replace('/[\x00-\x1F\x7F]/u', '', $uploadedFile->getClientOriginalName());

@@ -13,10 +13,7 @@
 <twig:ImportCard :current-folder="currentFolder ?? null" />
 
 {# === Breadcrumbs component === #}
-<twig:Breadcrumbs :segments="[
-    { label: 'Tous les fichiers', url: path('app_home') },
-    currentFolder ? { label: currentFolder.name, url: null } : null
-] | filter(v => v)" />
+<twig:Breadcrumbs :segments="breadcrumbSegments" />
 
 {# === Explorateur === #}
 <div data-testid="file-explorer" class="flex gap-4">
@@ -25,21 +22,27 @@
 
     <aside class="w-48 shrink-0">
         <twig:SectionTitle :text="'Dossiers'" :icon="'📁'" />
-        <twig:SidebarFolders :folders="folders" :current-folder="currentFolder ?? null" />
+        <twig:SidebarFolders :tree="sidebarTree" />
     </aside>
 
     {# Liste fichiers #}
     <div class="flex-1" data-testid="file-list">
         {% if currentFolder %}
             <div class="flex items-center gap-2 text-sm text-gray-500 mb-3">
-                <a href="{{ path('app_home') }}" class="hover:text-blue-600">Accueil</a>
-                <span>/</span>
-                <span class="font-medium text-gray-700 dark:text-gray-200">{{ currentFolder.name }}</span>
+                {% for segment in breadcrumbSegments %}
+                    {% if not loop.first %}<span>/</span>{% endif %}
+                    {% if segment.url %}
+                        <a href="{{ segment.url }}" class="hover:text-blue-600">{{ segment.label }}</a>
+                    {% else %}
+                        <span class="font-medium text-gray-700 dark:text-gray-200">{{ segment.label }}</span>
+                    {% endif %}
+                {% endfor %}
             </div>
         {% endif %}
 
                 {# === FoldersGrid component === #}
-                <twig:FoldersGrid :items="files" />
+                {# Fusionne dossiers et fichiers pour affichage unifié #}
+                <twig:FoldersGrid :folders="folders" :files="files" />
                 <!-- Suppression du code orphelin après migration vers FoldersGrid -->
     </div>
 

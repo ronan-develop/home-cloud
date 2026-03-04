@@ -1,0 +1,45 @@
+{# Modale unique de déplacement — partagée par tous les boutons ↪️ #}
+<div id="move-modal"
+     class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+     tabindex="-1"
+     aria-modal="true"
+     role="dialog">
+  <div class="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl
+              shadow-2xl p-6 w-full max-w-md mx-4">
+
+    {# Titre dynamique (rempli par JS) #}
+    <h2 id="move-modal-title"
+        class="text-white text-xl font-semibold mb-4">
+      Déplacer...
+    </h2>
+
+    {# Zone de liste des dossiers cibles (remplie en AJAX) #}
+    <div id="move-target-list"
+         class="max-h-64 overflow-y-auto space-y-2 mb-4">
+      {# Chargement initial #}
+      <p class="text-white/50 text-sm text-center py-4">Chargement...</p>
+    </div>
+
+    {# Champs cachés pour transmettre le contexte au JS #}
+    <input type="hidden" id="move-entity-type" value="">
+    <input type="hidden" id="move-entity-id" value="">
+
+    {# Actions #}
+    <div class="flex justify-end gap-3">
+      <button type="button"
+              onclick="closeModal('move-modal')"
+              class="px-4 py-2 rounded-xl text-white/70 hover:text-white hover:bg-white/10 transition-colors">
+        Annuler
+      </button>
+      <button type="button"
+              id="move-submit-btn"
+              disabled
+              onclick="submitMove()"
+              class="px-4 py-2 rounded-xl bg-blue-500 hover:bg-blue-400 text-white
+                     font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+        Confirmer
+      </button>
+    </div>
+
+  </div>
+</div>

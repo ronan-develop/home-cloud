@@ -92,14 +92,21 @@ final class FileExplorerTest extends WebTestCase
 
     public function testUploadedFileAppearsInList(): void
     {
-        $this->createUser();
+        $user = $this->createUser();
+
+        // Crée le dossier Uploads à l'avance pour récupérer son ID AVANT les requêtes web
+        $folder = new Folder('Uploads', $user);
+        $this->em->persist($folder);
+        $this->em->flush();
+        $folderId = $folder->getId()->toRfc4122();
+
         $this->login();
 
         $tmpFile = tempnam(sys_get_temp_dir(), 'hc_test_') . '.txt';
         file_put_contents($tmpFile, 'Hello HomeCloud');
         $uploaded = new UploadedFile($tmpFile, 'test-visible.txt', 'text/plain', null, true);
 
-        $this->client->request('POST', '/files/upload', [], ['file' => $uploaded]);
+        $this->client->request('POST', '/files/upload', ['folder_id' => $folderId], ['file' => $uploaded]);
         $this->client->followRedirect();
 
         $this->assertResponseIsSuccessful();

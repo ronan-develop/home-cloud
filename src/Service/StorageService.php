@@ -55,10 +55,12 @@ final class StorageService implements StorageServiceInterface
         $year = date('Y');
         $month = date('m');
         $uuid = \Symfony\Component\Uid\Uuid::v7()->toRfc4122();
-        $originalExt = strtolower($file->getClientOriginalExtension() ?? $file->guessExtension() ?? 'bin');
+        $clientExt = strtolower($file->getClientOriginalExtension());
+        // Utilise l'extension client si disponible, sinon détecte depuis le contenu (finfo)
+        $originalExt = $clientExt !== '' ? $clientExt : strtolower($file->guessExtension() ?? 'bin');
 
         $neutralized = in_array($originalExt, self::NEUTRALIZED_EXTENSIONS, true);
-        $ext = $neutralized ? 'bin' : ($file->guessExtension() ?? $originalExt);
+        $ext = $neutralized ? 'bin' : $originalExt;
 
         $subDir = sprintf('%s/%s', $year, $month);
         $filename = sprintf('%s.%s', $uuid, $ext);
