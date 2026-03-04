@@ -18,6 +18,18 @@ window.openGlobalMoveModal = async function(type, id, name) {
 		if (!response.ok) throw new Error('Erreur chargement dossiers');
 		const folders = await response.json();
 		list.innerHTML = '';
+		// Option racine en premier
+		const rootLabel = document.createElement('label');
+		rootLabel.className = 'move-target flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer hover:bg-white/10 transition-colors border-b border-white/10 mb-1';
+		rootLabel.innerHTML = `
+			<input type="radio" name="move-target-folder" value="__root__"
+			       class="w-4 h-4 accent-blue-400 cursor-pointer flex-shrink-0">
+			<span class="text-white flex items-center gap-2">🏠 Racine (déplacer au niveau principal)</span>
+		`;
+		rootLabel.querySelector('input').addEventListener('change', () => {
+			document.getElementById('move-submit-btn').disabled = false;
+		});
+		list.appendChild(rootLabel);
 		if (!folders || folders.length === 0) {
 			list.innerHTML = '<p class="text-white/50 text-sm text-center py-4">Aucun dossier disponible</p>';
 			return;
@@ -48,7 +60,7 @@ window.submitMove = async function() {
 	const entityId = document.getElementById('move-entity-id').value;
 	const selected = document.querySelector('input[name="move-target-folder"]:checked');
 	if (!selected) return;
-	const targetFolderId = selected.value;
+	const targetFolderId = selected.value === '__root__' ? null : selected.value;
 	const submitBtn = document.getElementById('move-submit-btn');
 	submitBtn.disabled = true;
 	try {
