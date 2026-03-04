@@ -336,6 +336,41 @@ fi
 if [[ "$RUN_MIGRATIONS" == "o" || "$RUN_MIGRATIONS" == "O" ]]; then
     title "── Migrations Doctrine ─────────────────"
 
+    # Détecte les migrations "Executed Unavailable" : exécutées en DB mais absentes du code
+    # Signe d'une divergence (rollback partiel, migration supprimée, mauvaise branche…)
+    UNAVAILABLE=$(ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
+        "cd ${DEPLOY_PATH} && ${PHP_BIN} bin/console doctrine:migrations:status --env=prod 2>/dev/null | grep 'Executed Unavailable' | awk -F'|' '{print \$3}' | tr -d ' ' || echo 0")
+
+    if [[ "${UNAVAILABLE:-0}" -gt 0 ]]; then
+        echo ""
+        echo -e "${RED}╔══════════════════════════════════════════════════════════╗${NC}"
+        echo -e "${RED}║  ⛔  DIVERGENCE DE MIGRATIONS DÉTECTÉE                   ║${NC}"
+        echo -e "${RED}╚══════════════════════════════════════════════════════════╝${NC}"
+        echo ""
+        echo -e "  ${BOLD}${UNAVAILABLE} migration(s) exécutée(s) en base mais absente(s) du code.${NC}"
+        echo ""
+        echo "  Causes possibles :"
+        echo "    • Une migration a été supprimée du repo après avoir été appliquée en prod"
+        echo "    • Le déploiement est sur une mauvaise branche"
+        echo "    • Un rollback partiel a eu lieu en base sans mise à jour du code"
+        echo ""
+        echo "  Actions à effectuer AVANT de redéployer :"
+        echo ""
+        echo "    1. Vérifier l'état précis :"
+        echo "       ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_HOST}"
+        echo "       cd ${DEPLOY_PATH}"
+        echo "       ${PHP_BIN} bin/console doctrine:migrations:list --env=prod"
+        echo ""
+        echo "    2. Options de résolution :"
+        echo "       a) Restaurer la migration manquante dans le repo puis redéployer"
+        echo "       b) Marquer la migration comme ignorée (si intentionnel) :"
+        echo "          ${PHP_BIN} bin/console doctrine:migrations:version --delete <version> --env=prod"
+        echo ""
+        echo -e "${RED}  ⛔ Déploiement annulé pour protéger la base de données.${NC}"
+        echo ""
+        exit 1
+    fi
+
     # Vérifie s'il y a des migrations en attente avant de lancer
     PENDING=$(ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
         "cd ${DEPLOY_PATH} && ${PHP_BIN} bin/console doctrine:migrations:list --env=prod 2>/dev/null | grep -c 'not migrated' || true")
