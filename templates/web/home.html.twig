@@ -39,7 +39,8 @@
         {% endif %}
 
                 {# === FoldersGrid component === #}
-                <twig:FoldersGrid :items="files" />
+                {# Fusionne dossiers et fichiers pour affichage unifié #}
+                <twig:FoldersGrid :items="folders|merge(files)" />
                 <!-- Suppression du code orphelin après migration vers FoldersGrid -->
     </div>
 
