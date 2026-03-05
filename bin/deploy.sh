@@ -393,6 +393,12 @@ if [[ "$RUN_MIGRATIONS" == "o" || "$RUN_MIGRATIONS" == "O" ]]; then
         success "Schéma à jour — aucune migration à appliquer"
     fi
 
+    # Assets AssetMapper
+    info "Compilation des assets (AssetMapper)…"
+    ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
+        "cd ${DEPLOY_PATH} && ${PHP_BIN} bin/console asset-map:compile" 2>/dev/null || true
+    success "Assets compilés"
+
     # Cache Symfony
     info "Warm-up du cache Symfony…"
     ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
