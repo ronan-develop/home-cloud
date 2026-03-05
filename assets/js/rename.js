@@ -47,7 +47,7 @@ class RenameManager {
 		const trimmed = newName.trim();
 		if (!trimmed) { alert('Le nom ne peut pas être vide'); return; }
 		if (trimmed.length > 255) { alert('Le nom est trop long (255 caractères max)'); return; }
-		if (!/^[^\\\\\/\:\*\?\"\<\>\|]+$/u.test(trimmed)) { alert('Caractères invalides dans le nom'); return; }
+		if (!/^[^\\/:*?"<>|]+$/u.test(trimmed)) { alert('Caractères invalides dans le nom'); return; }
 		try {
 			const res = await apiFetch(`/api/v1/folders/${encodeURIComponent(id)}`, {
 				method: 'PATCH',
