@@ -1,4 +1,5 @@
 import { apiFetch } from './api.js';
+console.debug('[rename.js] module loaded');
 
 class RenameManager {
 	constructor() {
@@ -47,11 +48,11 @@ class RenameManager {
 		const trimmed = newName.trim();
 		if (!trimmed) { alert('Le nom ne peut pas être vide'); return; }
 		if (trimmed.length > 255) { alert('Le nom est trop long (255 caractères max)'); return; }
-		if (!/^[^\\\\\/\:\*\?\"\<\>\|]+$/u.test(trimmed)) { alert('Caractères invalides dans le nom'); return; }
+		if (!/^[^\\\/:*?"<>|]+$/u.test(trimmed)) { alert('Caractères invalides dans le nom'); return; }
 		try {
 			const res = await apiFetch(`/api/v1/folders/${encodeURIComponent(id)}`, {
 				method: 'PATCH',
-				headers: { 'Content-Type': 'application/json' },
+				headers: { 'Content-Type': 'application/merge-patch+json' },
 				body: JSON.stringify({ name: trimmed }),
 			});
 			if (!res.ok) {
@@ -75,7 +76,7 @@ class RenameManager {
 		try {
 			const res = await apiFetch(`/api/v1/files/${encodeURIComponent(id)}`, {
 				method: 'PATCH',
-				headers: { 'Content-Type': 'application/json' },
+				headers: { 'Content-Type': 'application/merge-patch+json' },
 				body: JSON.stringify({ name: trimmed }),
 			});
 			if (!res.ok) {
