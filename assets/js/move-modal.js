@@ -82,3 +82,28 @@ window.submitMove = async function() {
 		console.error(err);
 	}
 };
+
+// Backward-compatible helper: accept calls from older code that pass a modal id like `move-modal-file-<id>`
+window.openMoveElementModal = function(modalId) {
+	try {
+		const m = String(modalId).match(/^move-modal-(file|folder)-(.+)$/);
+		if (m) {
+			const type = m[1];
+			const id = m[2];
+			// try to derive a readable name from the DOM
+			let name = '';
+			const btn = document.querySelector(`[data-testid="move-${type}-btn-${id}"]`) || document.querySelector(`[data-testid="move-${type}-${id}"]`);
+			if (btn) {
+				const card = btn.closest('.folder-card') || btn.closest('.file-card') || btn.parentElement;
+				name = (card && (card.querySelector('.folder-name') || card.querySelector('.file-name')))?.textContent?.trim() || '';
+			}
+			if (typeof window.openGlobalMoveModal === 'function') {
+				return window.openGlobalMoveModal(type, id, name);
+			}
+		}
+		// fallback to simple modal open
+		if (typeof Modal !== 'undefined' && typeof Modal.open === 'function') Modal.open(modalId);
+	} catch (err) {
+		console.error('openMoveElementModal helper error', err);
+	}
+};
