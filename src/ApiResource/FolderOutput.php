@@ -19,35 +19,35 @@ use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
     shortName: 'Folder',
     operations: [
         new Get(
-            uriTemplate: '/api/v1/folders/{id}',
+            uriTemplate: '/v1/folders/{id}',
             openapi: new Model\Operation(
                 summary: 'Récupère un dossier par son UUID.',
                 description: 'Retourne les métadonnées d\'un dossier (id, name, parentId, ownerId, createdAt).',
             ),
         ),
         new GetCollection(
-            uriTemplate: '/api/v1/folders',
+            uriTemplate: '/v1/folders',
             openapi: new Model\Operation(
                 summary: 'Liste tous les dossiers (paginé).',
                 description: 'Retourne la liste paginée des dossiers de l\'utilisateur courant.',
             ),
         ),
         new Post(
-            uriTemplate: '/api/v1/folders',
+            uriTemplate: '/v1/folders',
             openapi: new Model\Operation(
                 summary: 'Crée un nouveau dossier.',
                 description: 'Crée un dossier. `parentId` est optionnel ; si absent, le dossier est à la racine.',
             ),
         ),
         new Patch(
-            uriTemplate: '/api/v1/folders/{id}',
+            uriTemplate: '/v1/folders/{id}',
             openapi: new Model\Operation(
                 summary: 'Met à jour un dossier.',
                 description: 'Permet de renommer le dossier ou de déplacer dans un autre parent (`parentId`).',
             ),
         ),
         new Delete(
-            uriTemplate: '/api/v1/folders/{id}',
+            uriTemplate: '/v1/folders/{id}',
             openapi: new Model\Operation(
                 summary: 'Supprime un dossier.',
                 description: 'Supprime le dossier. Attention : les sous-dossiers et fichiers liés doivent être supprimés préalablement.',
