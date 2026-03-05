@@ -233,4 +233,97 @@
 })();
 </script>
 
+<script>
+// Global rename helper: adds rename buttons next to folder names in lists and sidebar
+(function () {
+    async function renameFolder(id, currentName) {
+        var newName = prompt('Renommer le dossier', currentName);
+        if (newName === null) return; // cancelled
+        newName = newName.trim();
+        if (!newName) { alert('Le nom ne peut pas être vide'); return; }
+        if (newName.length > 255) { alert('Le nom est trop long (255 caractères max)'); return; }
+        if (!/^[^\\\\\/\:\*\?\"\<\>\|]+$/u.test(newName)) { alert('Caractères invalides dans le nom'); return; }
+        try {
+            var token = await HC.getToken();
+            var res = await fetch('/api/v1/folders/' + encodeURIComponent(id), {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name: newName })
+            });
+            if (res.ok) {
+                window.location.reload();
+            } else {
+                var txt = await res.text();
+                alert('Erreur: ' + res.status + '\n' + txt);
+            }
+        } catch (e) { alert('Erreur réseau: ' + e.message); }
+    }
+
+    function attachRenameButtons() {
+        // Folder cards and sidebar links
+        document.querySelectorAll('.folder-name, .sidebar-folder-name').forEach(function (el) {
+            if (el.dataset.renameAttached) return;
+            el.dataset.renameAttached = '1';
+            var id = null;
+            // attempt to find folder id from nearby elements
+            var link = el.closest('[data-testid]') || el.closest('a') || el;
+            // search for attributes containing id
+            if (link) {
+                var attrs = link.dataset;
+                if (attrs && attrs.testid) {
+                    var m = attrs.testid.match(/folder-(.+)/);
+                    if (m) id = m[1];
+                }
+            }
+            // fallback: try href query param folder
+            if (!id && el.closest('a') && el.closest('a').href) {
+                var href = el.closest('a').href;
+                var match = href.match(/[?&]folder=([0-9a-fA-F\-]+)/);
+                if (match) id = match[1];
+            }
+            // if still no id try data-id attribute
+            if (!id) id = el.getAttribute('data-id') || el.dataset.id || null;
+
+            if (id) {
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.title = 'Renommer';
+                btn.className = 'inline-rename-btn ml-2 text-sm text-gray-400 hover:text-green-600';
+                btn.textContent = '✏️';
+                btn.style.border = 'none'; btn.style.background = 'none'; btn.style.cursor = 'pointer';
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault(); e.stopPropagation();
+                    renameFolder(id, el.textContent.trim());
+                });
+                el.parentNode.insertBefore(btn, el.nextSibling);
+            }
+        });
+
+        // For upload modal folder list buttons (.folder-opt)
+        document.querySelectorAll('.folder-opt').forEach(function (btn) {
+            if (btn.dataset.renameAttached) return;
+            btn.dataset.renameAttached = '1';
+            // find id in onclick attribute or dataset
+            var id = btn.getAttribute('onclick')?.match(/selectUploadFolder\('\s*([^']+)\s*'/)?.[1] || btn.dataset.id || null;
+            if (id) {
+                var rbtn = document.createElement('button');
+                rbtn.type = 'button'; rbtn.title = 'Renommer'; rbtn.className = 'ml-2 text-sm'; rbtn.textContent = '✏️';
+                rbtn.style.border = 'none'; rbtn.style.background = 'none'; rbtn.style.cursor = 'pointer';
+                rbtn.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); renameFolder(id, btn.textContent.trim()); });
+                btn.appendChild(rbtn);
+            }
+        });
+    }
+
+    // initial attach
+    document.addEventListener('DOMContentLoaded', attachRenameButtons);
+    // re-attach on mutations (for dynamic content)
+    var obs = new MutationObserver(function () { attachRenameButtons(); });
+    obs.observe(document.body, { childList: true, subtree: true });
+})();
+</script>
+
 {% endblock %}
