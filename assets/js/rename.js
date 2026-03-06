@@ -10,22 +10,30 @@ class RenameManager {
 	}
 
 	async handleClick(e) {
-		const el = e.target;
-		// folder rename buttons
+		// debug log
+		try { console.debug('RenameManager.handleClick event target:', e.target); } catch (err) {}
+		// normalize target so clicks on inner icons/buttons bubble to actionable element
+		const clicked = e.target;
+		const el = (clicked && clicked.closest) ? (clicked.closest('.rename-btn') || clicked.closest('[data-rename-action]') || clicked) : clicked;
+		try { console.debug('RenameManager resolved el:', el); } catch (err) {}
+
+		// folder rename buttons (class-based)
 		if (el && el.classList && el.classList.contains('rename-btn')) {
 			e.preventDefault(); e.stopPropagation();
 			const id = el.dataset.folderId || el.getAttribute('data-folder-id');
+			try { console.debug('RenameManager folder id:', id); } catch (err) {}
 			if (!id) return;
 			const current = this._findNameForElement(el) || '';
 			this.renameFolderPrompt(id, current);
 			return;
 		}
 
-		// inline rename buttons (future proof)
+		// inline rename buttons (data-rename-action)
 		if (el && el.dataset && el.dataset.renameAction) {
 			e.preventDefault(); e.stopPropagation();
 			const type = el.dataset.renameAction; // 'folder' or 'file'
 			const id = el.dataset.id;
+			try { console.debug('RenameManager inline action:', type, id); } catch (err) {}
 			const current = this._findNameForElement(el) || '';
 			if (type === 'folder') this.renameFolderPrompt(id, current);
 			if (type === 'file') this.renameFilePrompt(id, current);
