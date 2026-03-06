@@ -100,7 +100,7 @@
 | 2026-02-28 | ♻️ **refactor(MediaThumbnailController)** — suppression décryptage, streaming direct ✅ |
 | 2026-02-28 | ♻️ **refactor(ThumbnailService,ExifService)** — suppression dépendance `EncryptionServiceInterface` ✅ |
 | 2026-02-28 | 🛠️ **chore(EncryptionService)** — suppression de `EncryptionService` + `EncryptionServiceInterface` (plus aucun consommateur) ✅ |
-| 2026-02-28 | 34/34 tests passing ✅ (FileTest — Phase 8 GREEN complet) |
+| 2026-03-06 | ✨ **feat/delete-folder-with-options** — Suppression dossier avec options : API (FolderProcessor + FolderRepository CTE récursive), Web (FolderWebController), modale frontend (DeleteFolderModal, delete-folder-modal.js, bouton 🗑️ FolderCard). 222/222 tests ✅ |
 
 ---
 
@@ -109,7 +109,7 @@
 - **Phase 7 — Frontend** — Section A terminée ✅, Section B en cours
 - 🔧 fix/rename-preserve-move — Restauré showToast et corrigé FileProcessor pour éviter de déplacer un fichier lors d'un PATCH qui ne renomme que; commit sur branche `fix/rename-preserve-move` (2026-03-06).
 - ✨ feat/remove-sidebar-rename-buttons — Suppression des boutons "Renommer" dans la sidebar; modifications engagées sur la branche `feat/remove-sidebar-rename-buttons` (2026-03-06).
-- ✨ feat/delete-folder-with-options — GREEN ✅ : `FolderRepository::findDescendantIds()` (CTE récursive), `FolderProcessor::handleDelete()` lit le body JSON, `deleteContents=false` déplace tous les fichiers (dossier + descendants) vers Uploads puis supprime les dossiers. 214/214 tests. (2026-03-06).
+- ✨ feat/delete-folder-with-options — **TERMINÉ ✅** : API (FolderProcessor + FolderRepository CTE), Web (FolderWebController POST /folders/{id}/delete), modale frontend (DeleteFolderModal + delete-folder-modal.js), bouton 🗑️ dans FolderCard. 222/222 tests. (2026-03-06).
 
 ## 🚧 Tâches API à compléter (2026-03-02)
 
