@@ -10,8 +10,10 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\FolderOutput;
+use App\Dto\DeleteFolderInput;
 use App\Entity\Folder;
 use App\Enum\FolderMediaType;
+use App\Interface\DefaultFolderServiceInterface;
 use App\Repository\FolderRepository;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -50,6 +52,7 @@ final class FolderProcessor implements ProcessorInterface
         private readonly RequestStack $requestStack,
         private readonly TokenStorageInterface $tokenStorage, // ✅ Ajouté
         private readonly LoggerInterface $logger, // ✅ Ajouté
+        private readonly DefaultFolderServiceInterface $defaultFolderService,
     ) {}
 
     /**
@@ -213,17 +216,62 @@ final class FolderProcessor implements ProcessorInterface
 
     /**
      * DELETE /api/v1/folders/{id} — supprime le dossier.
+     * Lit le body JSON pour l'option deleteContents (défaut: true).
+     * Si deleteContents=false : déplace tous les fichiers vers le dossier Uploads avant suppression.
      * Retourne null → API Platform génère une réponse 204 No Content.
      */
     private function handleDelete(array $uriVariables): null
     {
         $folder = $this->folderRepository->find($uriVariables['id'])
             ?? throw new NotFoundHttpException('Folder not found');
-        // Ownership : seul le propriétaire peut supprimer
         $user = $this->getAuthenticatedUser();
         if (!$user || !$folder->getOwner()->getId()->equals($user->getId())) {
             throw new AccessDeniedHttpException('You are not the owner of this folder');
         }
+
+        $input = new DeleteFolderInput();
+        $content = $this->requestStack->getCurrentRequest()?->getContent() ?? '{}';
+        $body = json_decode($content, true);
+        if (is_array($body) && array_key_exists('deleteContents', $body)) {
+            $input->deleteContents = (bool) $body['deleteContents'];
+        }
+
+        if (!$input->deleteContents) {
+            $uploadsFolder = $this->defaultFolderService->resolve(null, null, $user);
+
+            $descendantIds = $this->folderRepository->findDescendantIds($folder);
+            $allFolderIds = array_merge([$folder->getId()->toRfc4122()], $descendantIds);
+
+            foreach ($allFolderIds as $folderId) {
+                $f = $this->folderRepository->find($folderId);
+                if ($f === null) {
+                    continue;
+                }
+                foreach ($f->getFiles() as $file) {
+                    $file->setFolder($uploadsFolder);
+                }
+            }
+
+            // Persiste le dossier Uploads (création lazy) et les déplacements de fichiers
+            $this->em->flush();
+
+            // Supprime les sous-dossiers puis le dossier lui-même.
+            // refresh() force le rechargement depuis la DB : la collection files est vide
+            // (fichiers déplacés), donc cascade: remove ne supprimera pas les fichiers déplacés.
+            foreach ($descendantIds as $descId) {
+                $desc = $this->folderRepository->find($descId);
+                if ($desc !== null) {
+                    $this->em->refresh($desc);
+                    $this->em->remove($desc);
+                }
+            }
+            $this->em->refresh($folder);
+            $this->em->remove($folder);
+            $this->em->flush();
+
+            return null;
+        }
+
         $this->em->remove($folder);
         $this->em->flush();
         return null;
