@@ -217,3 +217,13 @@ nav:hover .navbar-logo-cloud {
 	padding: 1.5rem;
 	background: none;
 }
+
+/* File / Folder card actions: align buttons vertically and normalize inline icons */
+.folder-card .file-actions a,
+.folder-card .file-actions button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	line-height: 1;
+	cursor: pointer;
+}

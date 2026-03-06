@@ -19,14 +19,20 @@ class RenameManager {
 		const el = (clicked && clicked.closest) ? (clicked.closest('.rename-btn') || clicked.closest('[data-rename-action]') || clicked) : clicked;
 		try { console.debug('RenameManager resolved el:', el); } catch (err) {}
 
-		// folder rename buttons (class-based)
-		if (el && el.classList && el.classList.contains('rename-btn')) {
+		// folder / file rename buttons (class-based or inline)
+		if (el && el.classList && (el.classList.contains('rename-btn') || el.classList.contains('inline-rename-btn'))) {
 			e.preventDefault(); e.stopPropagation();
-			const id = el.dataset.folderId || el.getAttribute('data-folder-id');
-			try { console.debug('RenameManager folder id:', id); } catch (err) {}
-			if (!id) { try { if (typeof showToast === 'function') showToast('No folder id', 'error'); } catch (err) {} return; }
+			// try folderId, fileId, data-id (dataset or attribute)
+			const id = el.dataset.folderId || el.dataset.fileId || el.dataset.id || el.getAttribute('data-folder-id') || el.getAttribute('data-file-id') || el.getAttribute('data-id');
+			try { console.debug('RenameManager resolved id (class-based):', id); } catch (err) {}
+			if (!id) { try { if (typeof showToast === 'function') showToast('No id for rename', 'error'); } catch (err) {} return; }
 			const current = this._findNameForElement(el) || '';
-			this.renameFolderPrompt(id, current);
+			// decide which prompt to call: if fileId or data-file-id present then file, else folder
+			if (el.dataset.fileId || el.getAttribute('data-file-id')) {
+				this.renameFilePrompt(id, current);
+			} else {
+				this.renameFolderPrompt(id, current);
+			}
 			return;
 		}
 

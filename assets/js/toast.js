@@ -1,4 +1,4 @@
-window.showToast = function(message, type = 'success') {
+/* window.showToast = function(message, type = 'success') {
 	let toast = document.getElementById('hc-toast');
 	if (!toast) {
 		toast = document.createElement('div');
@@ -11,5 +11,5 @@ window.showToast = function(message, type = 'success') {
 	toast.classList.add(type === 'success' ? 'bg-green-500' : 'bg-red-500');
 	toast.classList.remove('opacity-0', 'translate-y-4');
 	toast.classList.add('opacity-100', 'translate-y-0');
-	setTimeout(() => toast.classList.add('opacity-0', 'translate-y-4'), 3000);
-};
+	setTimeout(() => toast.classList.add('opacity-0', 'translate-y-4'), 8000);
+}; */
