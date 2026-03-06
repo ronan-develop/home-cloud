@@ -110,7 +110,7 @@ final class FileProcessor implements ProcessorInterface
     }
 
     /**
-     * PATCH /api/v1/files/{id} — déplace le fichier vers un autre dossier.
+     * PATCH /api/v1/files/{id} — renomme ou déplace le fichier.
      */
     private function handlePatch(FileOutput $data, array $uriVariables): FileOutput
     {
@@ -125,6 +125,17 @@ final class FileProcessor implements ProcessorInterface
         // Vérifie ownership du fichier
         if ((string)$file->getOwner()->getId() !== (string)$user->getId()) {
             throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('You do not own this file');
+        }
+
+        // Renommage : originalName fourni et non vide
+        if ($data->originalName !== '') {
+            if (strlen($data->originalName) > 255) {
+                throw new \Symfony\Component\HttpKernel\Exception\BadRequestHttpException('File name too long (255 chars max)');
+            }
+            if (!preg_match('/^[^\\\\\/\:\*\?"<>|]+$/u', $data->originalName)) {
+                throw new \Symfony\Component\HttpKernel\Exception\BadRequestHttpException('Invalid characters in file name');
+            }
+            $file->setOriginalName($data->originalName);
         }
 
         // targetFolderId null/vide → dossier "Uploads" par défaut

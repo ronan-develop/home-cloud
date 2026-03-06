@@ -107,6 +107,11 @@ class File
     {
         return $this->originalName;
     }
+
+    public function setOriginalName(string $originalName): void
+    {
+        $this->originalName = $originalName;
+    }
     public function getMimeType(): string
     {
         return $this->mimeType;
