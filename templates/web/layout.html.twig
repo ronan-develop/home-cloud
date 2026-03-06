@@ -264,7 +264,10 @@
 
     function attachRenameButtons() {
         // Folder cards and sidebar links
-        document.querySelectorAll('.folder-name, .sidebar-folder-name').forEach(function (el) {
+        document.querySelectorAll('.folder-name').forEach(function (el) {
+            // do not attach rename buttons inside the main sidebar or folder cards (already have their own rename button)
+            if (el.closest('.sidebar')) return;
+            if (el.closest('.folder-card')) return;
             if (el.dataset.renameAttached) return;
             el.dataset.renameAttached = '1';
             var id = null;
