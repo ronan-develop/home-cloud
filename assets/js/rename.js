@@ -10,6 +10,8 @@ class RenameManager {
 	}
 
 	async handleClick(e) {
+		// visible debug for users: show toast so they can see clicks without opening console
+		try { if (typeof showToast === 'function') showToast('Rename clicked', 'success'); } catch (err) {}
 		// debug log
 		try { console.debug('RenameManager.handleClick event target:', e.target); } catch (err) {}
 		// normalize target so clicks on inner icons/buttons bubble to actionable element
@@ -22,7 +24,7 @@ class RenameManager {
 			e.preventDefault(); e.stopPropagation();
 			const id = el.dataset.folderId || el.getAttribute('data-folder-id');
 			try { console.debug('RenameManager folder id:', id); } catch (err) {}
-			if (!id) return;
+			if (!id) { try { if (typeof showToast === 'function') showToast('No folder id', 'error'); } catch (err) {} return; }
 			const current = this._findNameForElement(el) || '';
 			this.renameFolderPrompt(id, current);
 			return;
@@ -34,6 +36,7 @@ class RenameManager {
 			const type = el.dataset.renameAction; // 'folder' or 'file'
 			const id = el.dataset.id;
 			try { console.debug('RenameManager inline action:', type, id); } catch (err) {}
+			try { if (typeof showToast === 'function') showToast('Rename action: ' + type + ' ' + id, 'success'); } catch (err) {}
 			const current = this._findNameForElement(el) || '';
 			if (type === 'folder') this.renameFolderPrompt(id, current);
 			if (type === 'file') this.renameFilePrompt(id, current);
