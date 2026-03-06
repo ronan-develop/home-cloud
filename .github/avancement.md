@@ -107,6 +107,9 @@
 ## 🚧 En cours
 
 - **Phase 7 — Frontend** — Section A terminée ✅, Section B en cours
+- 🔧 fix/rename-preserve-move — Restauré showToast et corrigé FileProcessor pour éviter de déplacer un fichier lors d'un PATCH qui ne renomme que; commit sur branche `fix/rename-preserve-move` (2026-03-06).
+- ✨ feat/remove-sidebar-rename-buttons — Suppression des boutons "Renommer" dans la sidebar; modifications engagées sur la branche `feat/remove-sidebar-rename-buttons` (2026-03-06).
+- 📝 Plan delete-folder-with-options — Plan d'implémentation créé et sauvegardé dans la session (`.copilot/session-state/.../plan.md`); todos créés (`delete-folder-*`). Branche `feat/delete-folder-with-options` prête à être créée pour l'implémentation (2026-03-06).
 
 ## 🚧 Tâches API à compléter (2026-03-02)
 
