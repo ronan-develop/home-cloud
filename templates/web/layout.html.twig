@@ -242,7 +242,7 @@
         newName = newName.trim();
         if (!newName) { alert('Le nom ne peut pas être vide'); return; }
         if (newName.length > 255) { alert('Le nom est trop long (255 caractères max)'); return; }
-        if (!/^[^\\\\\/\:\*\?\"\<\>\|]+$/u.test(newName)) { alert('Caractères invalides dans le nom'); return; }
+        if (!/^[^\\/:*?"<>|]+$/u.test(newName)) { alert('Caractères invalides dans le nom'); return; }
         try {
             var token = await HC.getToken();
             var res = await fetch('/api/v1/folders/' + encodeURIComponent(id), {
