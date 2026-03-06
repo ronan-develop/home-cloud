@@ -51,7 +51,7 @@ class RenameManager {
 
 	_findNameForElement(el) {
 		// try to find nearby element with class folder-name or file-name
-		const nameEl = el.closest('.folder-card')?.querySelector('.folder-name')
+		const nameEl = el.closest('.folder-card')?.querySelector('.folder-name, .file-name')
 			|| el.closest('.file-card')?.querySelector('.file-name')
 			|| el.closest('a')?.querySelector('.folder-name')
 			|| null;
@@ -68,7 +68,7 @@ class RenameManager {
 		try {
 			const res = await apiFetch(`/api/v1/folders/${encodeURIComponent(id)}`, {
 				method: 'PATCH',
-				headers: { 'Content-Type': 'application/json' },
+				headers: { 'Content-Type': 'application/merge-patch+json' },
 				body: JSON.stringify({ name: trimmed }),
 			});
 			if (!res.ok) {
@@ -92,8 +92,8 @@ class RenameManager {
 		try {
 			const res = await apiFetch(`/api/v1/files/${encodeURIComponent(id)}`, {
 				method: 'PATCH',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ name: trimmed }),
+				headers: { 'Content-Type': 'application/merge-patch+json' },
+				body: JSON.stringify({ originalName: trimmed }),
 			});
 			if (!res.ok) {
 				const txt = await res.text();
