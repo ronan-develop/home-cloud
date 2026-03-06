@@ -22,21 +22,31 @@
 	</div>
 	<div class="file-actions" style="margin-top:0.7rem; display:flex; gap:0.5rem;">
 		{% if item.id is defined %}
+			
+			<a href="#"
+			   role="button"
+			   data-testid="rename-file-btn-{{ item.id }}"
+			   class="rename-btn p-2 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-950/40 transition-colors"
+			   title="Renommer {{ item.originalName ?? item.name|e('html') }}"
+			   data-file-id="{{ item.id }}">✏️</a>
 			<a href="{{ path('app_file_download', { id: item.id }) }}"
 			   class="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
-			   title="Télécharger">⬇️</a>
+			   title="Télécharger {{ item.originalName ?? item.name|e('html') }}">⬇️</a>
+			<a href="#"
+			   role="button"
+			   data-testid="move-file-btn-{{ item.id }}"
+			   class="move-btn group relative p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-all duration-200 flex items-center gap-1.5"
+			   title="Déplacer {{ (item.originalName ?? item.name)|e('html') }}"
+			   onclick="openGlobalMoveModal('file', '{{ item.id }}', '{{ (item.originalName ?? item.name)|e('js') }}'); return false;">↗️
+				<span class="hidden group-hover:inline text-xs font-medium whitespace-nowrap">Déplacer {{ (item.originalName ?? item.name)|e('html') }}</span>
+			</a>
 			<form method="post" action="{{ path('app_file_delete', { id: item.id }) }}"
 			      onsubmit="return confirm('Supprimer « {{ item.originalName|e('js') }} » ?')">
 				<input type="hidden" name="folder_id" value="{{ item.folderId ?? '' }}">
-				<button type="submit"
-				        class="delete-btn p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
-				        title="Supprimer">🗑️</button>
+				<button type="submit" style="cursor:pointer;" 
+					class="delete-btn p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+					title="Supprimer {{ (item.originalName ?? item.name)|e('html') }}">🗑️</button>
 			</form>
-			<button type="button"
-			        data-testid="move-file-btn-{{ item.id }}"
-			        class="move-btn p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
-			        title="Déplacer"
-			        onclick="openGlobalMoveModal('file', '{{ item.id }}', '{{ (item.originalName ?? item.name)|e('js') }}')">↪️</button>
 		{% endif %}
 	</div>
 </div>

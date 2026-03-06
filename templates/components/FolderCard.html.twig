@@ -8,13 +8,16 @@
 		<button type="button"
 		        data-testid="rename-folder-btn-{{ item.id }}"
 		        class="rename-btn p-2 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-950/40 transition-colors"
-		        title="Renommer"
+		        title="Renommer {{ item.name|e('html') }}"
 		        data-folder-id="{{ item.id }}">✏️</button>
 		<button type="button"
 		        data-testid="move-folder-btn-{{ item.id }}"
-		        class="move-btn p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
-		        title="Déplacer"
-		        onclick="openGlobalMoveModal('folder', '{{ item.id }}', '{{ item.name|e('js') }}')">↪️</button>
+		        class="move-btn group relative p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-all duration-200 flex items-center gap-1.5"
+		        title="Déplacer {{ item.name|e('html') }}"
+		        onclick="openGlobalMoveModal('folder', '{{ item.id }}', '{{ item.name|e('js') }}')">
+			↗️
+			<span class="hidden group-hover:inline text-xs font-medium whitespace-nowrap">Déplacer {{ item.name|e('html') }}</span>
+		</button>
 	</div>
 </div>
 {# Props attendues : item (entité Folder) #}
