@@ -42,6 +42,7 @@ window.openGlobalMoveModal = async function(type, id, name) {
 		}
 		folders
 			.filter(f => !(type === 'folder' && f.id === id))
+			.sort((a, b) => a.name.localeCompare(b.name))
 			.forEach(f => list.appendChild(makeFolderRadio({ value: f.id, label: '📁 ' + f.name })));
 	} catch (err) {
 		list.innerHTML = '<p class="text-red-400 text-sm text-center py-4">Erreur de chargement</p>';
