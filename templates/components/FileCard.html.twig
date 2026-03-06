@@ -24,19 +24,22 @@
 		{% if item.id is defined %}
 			<a href="{{ path('app_file_download', { id: item.id }) }}"
 			   class="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
-			   title="Télécharger">⬇️</a>
+			   title="Télécharger {{ item.originalName ?? item.name|e('html') }}">⬇️</a>
 			<form method="post" action="{{ path('app_file_delete', { id: item.id }) }}"
 			      onsubmit="return confirm('Supprimer « {{ item.originalName|e('js') }} » ?')">
 				<input type="hidden" name="folder_id" value="{{ item.folderId ?? '' }}">
 				<button type="submit"
 				        class="delete-btn p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
-				        title="Supprimer">🗑️</button>
+				        title="Supprimer {{ item.originalName ?? item.name }}">🗑️</button>
 			</form>
-			<button type="button"
-			        data-testid="move-file-btn-{{ item.id }}"
-			        class="move-btn p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
-			        title="Déplacer"
-			        onclick="openGlobalMoveModal('file', '{{ item.id }}', '{{ (item.originalName ?? item.name)|e('js') }}')">↪️</button>
+<button type="button"
+        data-testid="move-file-btn-{{ item.id }}"
+        class="move-btn group relative p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-all duration-200 flex items-center gap-1.5"
+			class="move-btn group relative p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-all duration-200 flex items-center gap-1.5"
+			title="Déplacer {{ (item.originalName ?? item.name)|e('html') }}"
+			<span class="text-base">↗️</span>
+			<span class="hidden group-hover:inline text-xs font-medium whitespace-nowrap">Déplacer {{ (item.originalName ?? item.name)|e('html') }}</span>
+</button>
 		{% endif %}
 	</div>
 </div>
