@@ -10,24 +10,15 @@ class RenameManager {
 	}
 
 	async handleClick(e) {
-		// visible debug for users: show toast so they can see clicks without opening console
-		try { if (typeof showToast === 'function') showToast('Rename clicked', 'success'); } catch (err) {}
-		// debug log
-		try { console.debug('RenameManager.handleClick event target:', e.target); } catch (err) {}
-		// normalize target so clicks on inner icons/buttons bubble to actionable element
 		const clicked = e.target;
 		const el = (clicked && clicked.closest) ? (clicked.closest('.rename-btn') || clicked.closest('[data-rename-action]') || clicked) : clicked;
-		try { console.debug('RenameManager resolved el:', el); } catch (err) {}
 
 		// folder / file rename buttons (class-based or inline)
 		if (el && el.classList && (el.classList.contains('rename-btn') || el.classList.contains('inline-rename-btn'))) {
 			e.preventDefault(); e.stopPropagation();
-			// try folderId, fileId, data-id (dataset or attribute)
 			const id = el.dataset.folderId || el.dataset.fileId || el.dataset.id || el.getAttribute('data-folder-id') || el.getAttribute('data-file-id') || el.getAttribute('data-id');
-			try { console.debug('RenameManager resolved id (class-based):', id); } catch (err) {}
-			if (!id) { try { if (typeof showToast === 'function') showToast('No id for rename', 'error'); } catch (err) {} return; }
+			if (!id) return;
 			const current = this._findNameForElement(el) || '';
-			// decide which prompt to call: if fileId or data-file-id present then file, else folder
 			if (el.dataset.fileId || el.getAttribute('data-file-id')) {
 				this.renameFilePrompt(id, current);
 			} else {
@@ -41,8 +32,6 @@ class RenameManager {
 			e.preventDefault(); e.stopPropagation();
 			const type = el.dataset.renameAction; // 'folder' or 'file'
 			const id = el.dataset.id;
-			try { console.debug('RenameManager inline action:', type, id); } catch (err) {}
-			try { if (typeof showToast === 'function') showToast('Rename action: ' + type + ' ' + id, 'success'); } catch (err) {}
 			const current = this._findNameForElement(el) || '';
 			if (type === 'folder') this.renameFolderPrompt(id, current);
 			if (type === 'file') this.renameFilePrompt(id, current);
