@@ -6,4 +6,5 @@ import './js/toast.js';
 import './js/move-modal.js';
 import './js/folder-children.js';
 import './js/rename.js';
+import './js/delete-folder-modal.js';
 

@@ -1,7 +1,8 @@
 {% block stylesheets %}
 <link rel="stylesheet" href="{{ asset('styles/main.css') }}">
-{# Modal de déplacement — globale, partagée #}
+{# Modales globales #}
 <twig:MoveModal />
+<twig:DeleteFolderModal />
 
 {% endblock %}
 {% extends 'base.html.twig' %}

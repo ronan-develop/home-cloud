@@ -105,6 +105,48 @@ class FolderRepository extends ServiceEntityRepository
     }
 
     /**
+     * Récupère les UUIDs de tous les descendants d'un dossier (CTE récursive MySQL 10.3+).
+     * Descend enfant → enfant → … jusqu'aux feuilles.
+     *
+     * @return string[] Liste d'UUIDs au format RFC4122
+     */
+    public function findDescendantIds(Folder $folder): array
+    {
+        $conn = $this->getEntityManager()->getConnection();
+
+        $sql = <<<SQL
+            WITH RECURSIVE descendants AS (
+                SELECT f.id, f.parent_id
+                FROM folders f
+                WHERE f.parent_id = UNHEX(:folderId)
+
+                UNION ALL
+
+                SELECT c.id, c.parent_id
+                FROM folders c
+                INNER JOIN descendants d ON c.parent_id = d.id
+            )
+            SELECT LOWER(HEX(id)) AS id
+            FROM descendants
+        SQL;
+
+        $hexId = str_replace('-', '', (string) $folder->getId());
+        $rows = $conn->executeQuery($sql, ['folderId' => $hexId])->fetchAllAssociative();
+
+        return array_map(static function (array $row): string {
+            $hex = $row['id'];
+            return sprintf(
+                '%s-%s-%s-%s-%s',
+                substr($hex, 0, 8),
+                substr($hex, 8, 4),
+                substr($hex, 12, 4),
+                substr($hex, 16, 4),
+                substr($hex, 20)
+            );
+        }, $rows);
+    }
+
+    /**
      * Récupère les UUIDs de tous les ancêtres d'un dossier en une seule requête SQL.
      * Utilise une CTE récursive (WITH RECURSIVE) supportée par MariaDB 10.3+.
      * Remonte la chaîne parent → parent → … jusqu'à la racine.

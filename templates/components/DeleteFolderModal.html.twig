@@ -1,0 +1,58 @@
+{# Modale de suppression de dossier avec options #}
+<div id="delete-folder-modal"
+     class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+     tabindex="-1"
+     aria-modal="true"
+     role="dialog">
+  <div class="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl
+              shadow-2xl p-6 w-full max-w-md mx-4">
+
+    <h2 class="text-white text-xl font-semibold mb-2">
+      Supprimer le dossier
+    </h2>
+    <p class="text-white/70 text-sm mb-5">
+      Que souhaitez-vous faire avec le contenu de
+      <strong id="delete-folder-name" class="text-white">ce dossier</strong> ?
+    </p>
+
+    <form id="delete-folder-form" method="POST" action="">
+      <input type="hidden" name="delete_contents" id="delete-folder-contents-input" value="1">
+      <input type="hidden" name="redirect_folder_id" id="delete-folder-redirect-input" value="">
+
+      <div class="flex flex-col gap-3 mb-5">
+        <button type="button"
+                data-testid="delete-folder-recursive-btn"
+                onclick="submitDeleteFolder(1)"
+                class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-red-500/20 border border-red-500/30
+                       hover:bg-red-500/30 text-red-200 hover:text-white transition-all text-left">
+          <span class="text-2xl">🗑️</span>
+          <div>
+            <div class="font-semibold text-sm">Supprimer tout le contenu</div>
+            <div class="text-xs text-white/50 mt-0.5">Le dossier et tous ses fichiers seront supprimés définitivement.</div>
+          </div>
+        </button>
+
+        <button type="button"
+                data-testid="delete-folder-keep-files-btn"
+                onclick="submitDeleteFolder(0)"
+                class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-yellow-500/20 border border-yellow-500/30
+                       hover:bg-yellow-500/30 text-yellow-200 hover:text-white transition-all text-left">
+          <span class="text-2xl">📦</span>
+          <div>
+            <div class="font-semibold text-sm">Conserver les fichiers</div>
+            <div class="text-xs text-white/50 mt-0.5">Les fichiers seront déplacés vers le dossier <em>Uploads</em>.</div>
+          </div>
+        </button>
+      </div>
+
+      <div class="flex justify-end">
+        <button type="button"
+                onclick="closeModal('delete-folder-modal')"
+                class="px-4 py-2 rounded-xl text-white/70 hover:text-white hover:bg-white/10 transition-colors">
+          Annuler
+        </button>
+      </div>
+    </form>
+
+  </div>
+</div>
