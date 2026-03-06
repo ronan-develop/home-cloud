@@ -18,6 +18,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * Traite l'opération DELETE sur la ressource File.
@@ -50,6 +51,7 @@ final class FileProcessor implements ProcessorInterface
         private readonly TokenStorageInterface $tokenStorage,
         private readonly LoggerInterface $logger,
         private readonly DefaultFolderServiceInterface $defaultFolderService,
+        private readonly RequestStack $requestStack,
     ) {}
 
     /**
@@ -138,21 +140,28 @@ final class FileProcessor implements ProcessorInterface
             $file->setOriginalName($data->originalName);
         }
 
-        // targetFolderId null/vide → dossier "Uploads" par défaut
-        if ($data->targetFolderId === null || $data->targetFolderId === '') {
-            $targetFolder = $this->defaultFolderService->resolve(null, null, $user);
-        } else {
-            $targetFolder = $this->em->getRepository(\App\Entity\Folder::class)->find($data->targetFolderId);
-            if ($targetFolder === null) {
-                throw new NotFoundHttpException('Target folder not found');
+        // Déplacement : ne modifier le dossier que si le client a explicitement fourni targetFolderId dans le JSON.
+        $body = json_decode($this->requestStack->getCurrentRequest()?->getContent() ?? '{}', true);
+        if (is_array($body) && array_key_exists('targetFolderId', $body)) {
+            if ($body['targetFolderId'] === null || $body['targetFolderId'] === '') {
+                $targetFolder = $this->defaultFolderService->resolve(null, null, $user);
+            } else {
+                $targetFolderId = $body['targetFolderId'];
+                if (strpos($targetFolderId, '/') !== false) {
+                    $targetFolderId = basename($targetFolderId);
+                }
+                $targetFolder = $this->em->getRepository(\App\Entity\Folder::class)->find($targetFolderId);
+                if ($targetFolder === null) {
+                    throw new NotFoundHttpException('Target folder not found');
+                }
+                if ((string)$targetFolder->getOwner()->getId() !== (string)$user->getId()) {
+                    throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('You do not own the target folder');
+                }
             }
-            if ((string)$targetFolder->getOwner()->getId() !== (string)$user->getId()) {
-                throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('You do not own the target folder');
-            }
+            // Déplacement effectif
+            $file->setFolder($targetFolder);
         }
 
-        // Déplacement effectif
-        $file->setFolder($targetFolder);
         $this->em->flush();
 
         // Retourne le DTO mis à jour
