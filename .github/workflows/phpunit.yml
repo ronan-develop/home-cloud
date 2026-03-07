@@ -10,7 +10,7 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     services:
-      mariadb:
+      mysql:
         image: mariadb:10.11
         env:
           MYSQL_ROOT_PASSWORD: root
@@ -23,42 +23,29 @@ jobs:
           --health-timeout=5s
           --health-retries=3
 
-    strategy:
-      matrix:
-        php: [ '8.4' ]
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v4
+        uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ matrix.php }}
-          extensions: mbstring, intl, gd, pdo_mysql, pdo_sqlite, sodium
+          php-version: '8.4'
+          extensions: mbstring, intl, gd, pdo_mysql, sodium
           ini-values: post_max_size=512M, upload_max_filesize=512M
-          coverage: xdebug
 
-      - name: Cache Composer
-        uses: actions/cache@v4
-        with:
-          path: ~/.composer/cache
-          key: composer-${{ matrix.php }}-${{ hashFiles('**/composer.lock') }}
-          restore-keys: composer-${{ matrix.php }}-
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Install dependencies
-        run: composer install --prefer-dist --no-progress --no-suggest --no-interaction
-
-      - name: Wait for MariaDB
+      - name: Wait for MySQL
         run: |
           until mysqladmin ping -h 127.0.0.1 -P 3306 --silent; do
-            echo 'Waiting for MariaDB...'
+            echo 'Waiting for MySQL...'
             sleep 2
           done
 
       - name: Create test database
         run: |
-          mysql -h 127.0.0.1 -P 3306 -u root -proot -e "CREATE DATABASE IF NOT EXISTS homecloud_test;"
+          mysql -h 127.0.0.1 -P 3306 -u root -proot -e "CREATE DATABASE IF NOT EXISTS homecloud_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
       - name: Run Doctrine migrations
         env:
@@ -72,20 +59,7 @@ jobs:
         env:
           APP_SECRET: ${{ secrets.APP_SECRET }}
           DATABASE_URL: mysql://root:root@127.0.0.1:3306/homecloud_test?serverVersion=mariadb-10.11.0&charset=utf8mb4
-        run: |
-          vendor/bin/phpunit --configuration phpunit.dist.xml --log-junit junit.xml --coverage-clover=coverage.clover || true
-
-      - name: Upload JUnit results
-        uses: actions/upload-artifact@v4
-        with:
-          name: junit
-          path: junit.xml
-
-      - name: Upload coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage
-          path: coverage.clover
+        run: ./vendor/bin/phpunit --configuration phpunit.dist.xml --colors=always
 
   js:
     runs-on: ubuntu-latest
