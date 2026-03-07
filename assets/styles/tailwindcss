@@ -1,0 +1,4 @@
+/* Placeholder file to satisfy Symfony AssetMapper in CI/tests.
+   Created to avoid "Unable to find asset \"tailwindcss\"" runtime errors.
+   Replace with actual Tailwind CSS or proper asset pipeline if needed.
+*/

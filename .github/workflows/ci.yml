@@ -1,3 +1,4 @@
+# base64:1i5w1p9tHoKriGsNji/iwxWhcBFX85smSYwYapcCuzs=
 name: CI
 
 on:
@@ -16,16 +17,28 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
+          extensions: mbstring, intl, gd, pdo_sqlite
+          ini-values: post_max_size=512M, upload_max_filesize=512M
 
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
+      - name: Prepare test env
+        run: |
+          mkdir -p var
+          touch var/test.sqlite
+
       - name: Clear & warm cache (test env)
+        env:
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          DATABASE_URL: sqlite:///${{ github.workspace }}/var/test.sqlite
         run: php bin/console cache:clear --env=test --no-warmup || true
 
       - name: Run PHPUnit
+        env:
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          DATABASE_URL: sqlite:///${{ github.workspace }}/var/test.sqlite
         run: ./vendor/bin/phpunit --configuration phpunit.dist.xml --colors=always
-
   js:
     runs-on: ubuntu-latest
     needs: php

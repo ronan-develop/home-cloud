@@ -110,8 +110,7 @@ final class DefaultFolderServiceTest extends TestCase
         $parent = new Folder('Parent', $owner);
 
         // repo will never find existing child (simulate missing path)
-        $this->repo->expects($this->any())
-            ->method('findOneBy')
+        $this->repo->method('findOneBy')
             ->willReturn(null);
 
         // Expect two persists for A and B
