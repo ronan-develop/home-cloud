@@ -20,10 +20,10 @@
 		</button>
 		<button type="button"
 		        data-testid="delete-folder-btn-{{ item.id }}"
-		        data-empty="{{ (item.children is empty and item.files is empty) ? '1' : '0' }}"
+		        data-empty="{{ ((item.children|length) == 0 and (item.files|length) == 0) ? '1' : '0' }}"
 		        class="delete-folder-btn p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
 		        title="Supprimer {{ item.name|e('html') }}"
-		        onclick="openDeleteFolderModal('{{ item.id }}', '{{ item.name|e('js') }}', '{{ item.parentId ?? '' }}', '{{ (item.children is empty and item.files is empty) ? '1' : '0' }}')">🗑️</button>
+		        onclick="openDeleteFolderModal('{{ item.id }}', '{{ item.name|e('js') }}', '{{ item.parentId ?? '' }}', '{{ ((item.children|length) == 0 and (item.files|length) == 0) ? '1' : '0' }}')">🗑️</button>
 	</div>
 </div>
 {# Props attendues : item (entité Folder) #}
