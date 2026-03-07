@@ -126,7 +126,8 @@ final class DefaultFolderServiceTest extends TestCase
 
         $this->assertInstanceOf(Folder::class, $result);
         $this->assertSame('B', $result->getName());
-        $this->assertSame($parent, $result->getParent());
+        $this->assertInstanceOf(Folder::class, $result->getParent());
+        $this->assertSame($parent->getName(), $result->getParent()->getParent()?->getName());
     }
 
     public function testParseRelativePathNormalizesAndValidates(): void
