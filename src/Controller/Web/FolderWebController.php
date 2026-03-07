@@ -6,6 +6,7 @@ namespace App\Controller\Web;
 
 use App\Entity\Folder;
 use App\Interface\DefaultFolderServiceInterface;
+use App\Service\FolderMoverInterface;
 use App\Repository\FolderRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -29,7 +30,7 @@ final class FolderWebController extends AbstractController
         private readonly FolderRepository $folderRepository,
         private readonly DefaultFolderServiceInterface $defaultFolderService,
         private readonly EntityManagerInterface $em,
-        private readonly \App\Service\FolderMover $folderMover,
+        private readonly \App\Service\FolderMoverInterface $folderMover,
     ) {}
 
     #[Route('/folders/{id}/delete', name: 'app_folder_delete', methods: ['POST'])]

@@ -10,7 +10,7 @@ use App\Interface\DefaultFolderServiceInterface;
 use App\Repository\FolderRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
-final class FolderMover
+final class FolderMover implements \App\Service\FolderMoverInterface
 {
     public function __construct(
         private readonly FolderRepository $folderRepository,
