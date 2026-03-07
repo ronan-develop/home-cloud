@@ -38,8 +38,21 @@ jobs:
       - name: Prepare environment
         run: |
           if [ -f .env.test ]; then cp .env.test .env.local; fi
+          mkdir -p var
+          touch var/test.sqlite
+
+      - name: Run Doctrine migrations (test env)
+        env:
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          DATABASE_URL: sqlite:///${{ github.workspace }}/var/test.sqlite
+        run: |
+          php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration --env=test || true
+          php bin/console doctrine:schema:create --env=test --no-interaction || true
 
       - name: Run PHPUnit
+        env:
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          DATABASE_URL: sqlite:///${{ github.workspace }}/var/test.sqlite
         run: |
           vendor/bin/phpunit --colors=never --log-junit junit.xml --coverage-clover=coverage.clover || true
 
