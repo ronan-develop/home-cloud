@@ -29,6 +29,7 @@ final class FolderWebController extends AbstractController
         private readonly FolderRepository $folderRepository,
         private readonly DefaultFolderServiceInterface $defaultFolderService,
         private readonly EntityManagerInterface $em,
+        private readonly \App\Service\FolderMover $folderMover,
     ) {}
 
     #[Route('/folders/{id}/delete', name: 'app_folder_delete', methods: ['POST'])]
@@ -48,14 +49,19 @@ final class FolderWebController extends AbstractController
 
         $deleteContents = (bool) $request->request->get('delete_contents', '1');
 
+        $movedTo = null;
         if (!$deleteContents) {
-            $this->moveContentsToUploads($folder, $user);
+            $movedTo = $this->folderMover->moveContentsToUploads($folder, $user);
         }
 
         $this->deleteRecursive($folder);
         $this->em->flush();
 
-        $this->addFlash('success', "Dossier « {$folder->getName()} » supprimé.");
+        $message = "Dossier « {$folder->getName()} » supprimé.";
+        if ($movedTo !== null) {
+            $message .= " Tous les fichiers ont été déplacés vers \"" . $movedTo->getName() . "\".";
+        }
+        $this->addFlash('success', $message);
 
         $redirectFolderId = $request->request->get('redirect_folder_id');
 
@@ -65,34 +71,7 @@ final class FolderWebController extends AbstractController
     /**
      * Déplace tous les fichiers du dossier (et de ses descendants) vers le dossier Uploads.
      */
-    private function moveContentsToUploads(Folder $folder, \App\Entity\User $user): void
-    {
-        $uploadsFolder = $this->defaultFolderService->resolve(null, null, $user);
 
-        $descendantIds = $this->folderRepository->findDescendantIds($folder);
-        $allFolderIds  = array_merge([$folder->getId()->toRfc4122()], $descendantIds);
-
-        foreach ($allFolderIds as $folderId) {
-            $f = $this->folderRepository->find($folderId);
-            if ($f === null) {
-                continue;
-            }
-            foreach ($f->getFiles() as $file) {
-                $file->setFolder($uploadsFolder);
-            }
-        }
-
-        // Persiste Uploads (création lazy) + déplacements de fichiers
-        $this->em->flush();
-
-        // Recharge les dossiers depuis la DB pour vider leurs collections en mémoire
-        foreach ($allFolderIds as $folderId) {
-            $f = $this->folderRepository->find($folderId);
-            if ($f !== null) {
-                $this->em->refresh($f);
-            }
-        }
-    }
 
     /**
      * Supprime récursivement un dossier et tous ses descendants.

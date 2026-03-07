@@ -76,7 +76,7 @@ final class DefaultFolderService implements DefaultFolderServiceInterface
      */
     private function getOrCreateUploadsFolder(User $owner): Folder
     {
-        $folder = $this->folderRepository->findOneBy(['name' => self::DEFAULT_FOLDER_NAME]);
+        $folder = $this->folderRepository->findOneBy(['name' => self::DEFAULT_FOLDER_NAME, 'owner' => $owner]);
 
         if ($folder === null) {
             $folder = new Folder(self::DEFAULT_FOLDER_NAME, $owner);
@@ -84,5 +84,83 @@ final class DefaultFolderService implements DefaultFolderServiceInterface
         }
 
         return $folder;
+    }
+
+    /**
+     * Ensure a nested subfolder path exists under the given parent.
+     *
+     * - Accepts relative paths using "/" or "\\" as separator
+     * - Collapses multiple separators and trims segments
+     * - Persists newly created folders and performs a single flush at the end
+     */
+    public function ensureSubfolderPath(Folder $parent, string $relativePath, User $owner): Folder
+    {
+        $segments = $this->parseRelativePath($relativePath);
+
+        if (count($segments) === 0) {
+            return $parent;
+        }
+
+        $current = $parent;
+        foreach ($segments as $segment) {
+            // Try to find existing child with this name, parent and owner
+            $existing = $this->folderRepository->findOneBy([
+                'name' => $segment,
+                'parent' => $current,
+                'owner' => $owner,
+            ]);
+
+            if ($existing instanceof Folder) {
+                $current = $existing;
+                continue;
+            }
+
+            $new = new Folder($segment, $owner, $current);
+            $this->em->persist($new);
+            $current = $new;
+        }
+
+        // Single flush as recommended by plan
+        $this->em->flush();
+
+        return $current;
+    }
+
+    /**
+     * Parse a relative path into segments.
+     * Normalizes separators, trims segments and filters out empties.
+     * Validates each segment length (<=255) and that it is not empty after trim.
+     *
+     * @return string[]
+     */
+    private function parseRelativePath(string $path): array
+    {
+        $normalized = str_replace('\\', '/', $path);
+        // collapse multiple slashes
+        $normalized = preg_replace('#/+#', '/', $normalized);
+        $normalized = trim($normalized, " \/");
+
+        if ($normalized === '') {
+            return [];
+        }
+
+        $parts = explode('/', $normalized);
+        $segments = [];
+        foreach ($parts as $part) {
+            $seg = trim($part);
+            if ($seg === '') {
+                continue;
+            }
+            if (mb_strlen($seg) > 255) {
+                throw new \InvalidArgumentException('Folder name segment too long');
+            }
+            // Basic sanitization: disallow NUL bytes
+            if (strpos($seg, "\0") !== false) {
+                throw new \InvalidArgumentException('Invalid characters in folder name');
+            }
+            $segments[] = $seg;
+        }
+
+        return $segments;
     }
 }
