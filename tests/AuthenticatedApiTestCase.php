@@ -82,7 +82,7 @@ abstract class AuthenticatedApiTestCase extends BaseApiTestCase
         return $user;
     }
 
-    protected function createFolder(string $name, User $user, ?object $parent = null, EntityManagerInterface $em = null): object
+    protected function createFolder(string $name, User $user, ?object $parent = null, ?EntityManagerInterface $em = null): object
     {
         $folderClass = 'App\\Entity\\Folder';
         $folder = new $folderClass($name, $user, $parent);
