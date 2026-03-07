@@ -76,7 +76,7 @@ final class DefaultFolderService implements DefaultFolderServiceInterface
      */
     private function getOrCreateUploadsFolder(User $owner): Folder
     {
-        $folder = $this->folderRepository->findOneBy(['name' => self::DEFAULT_FOLDER_NAME]);
+        $folder = $this->folderRepository->findOneBy(['name' => self::DEFAULT_FOLDER_NAME, 'owner' => $owner]);
 
         if ($folder === null) {
             $folder = new Folder(self::DEFAULT_FOLDER_NAME, $owner);
