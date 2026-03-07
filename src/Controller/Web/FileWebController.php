@@ -7,7 +7,7 @@ namespace App\Controller\Web;
 use App\Entity\File;
 use App\Interface\StorageServiceInterface;
 use App\Repository\FileRepository;
-use App\Service\DefaultFolderService;
+use App\Interface\DefaultFolderServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -37,7 +37,7 @@ final class FileWebController extends AbstractController
 
     public function __construct(
         private readonly StorageServiceInterface $storage,
-        private readonly DefaultFolderService $folderService,
+        private readonly DefaultFolderServiceInterface $folderService,
         private readonly FileRepository $fileRepository,
         private readonly EntityManagerInterface $em,
     ) {}

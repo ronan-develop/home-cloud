@@ -9,7 +9,7 @@ use App\Entity\Folder;
 use App\Entity\User;
 use App\Interface\DefaultFolderServiceInterface;
 use App\Repository\FolderRepository;
-use App\Service\FolderMover;
+use App\Service\FolderMoverInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 
@@ -18,7 +18,7 @@ final class FolderMoverTest extends TestCase
     private FolderRepository $repo;
     private DefaultFolderServiceInterface $defaultFolderService;
     private EntityManagerInterface $em;
-    private FolderMover $mover;
+    private FolderMoverInterface $mover;
 
     protected function setUp(): void
     {
@@ -26,7 +26,7 @@ final class FolderMoverTest extends TestCase
         $this->defaultFolderService = $this->createMock(DefaultFolderServiceInterface::class);
         $this->em = $this->createMock(EntityManagerInterface::class);
 
-        $this->mover = new FolderMover($this->repo, $this->defaultFolderService, $this->em);
+        $this->mover = new \App\Service\FolderMover($this->repo, $this->defaultFolderService, $this->em);
     }
 
     public function testMoveContentsToUploadsMovesFilesAndReturnsUploads(): void
