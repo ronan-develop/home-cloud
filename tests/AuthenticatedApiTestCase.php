@@ -18,6 +18,9 @@ use Doctrine\ORM\EntityManagerInterface;
  */
 abstract class AuthenticatedApiTestCase extends BaseApiTestCase
 {
+    // Ensure kernel is always booted for API Platform tests (silences deprecation)
+    protected static bool $alwaysBootKernel = true;
+
     protected ?string $testUserEmail = 'alice@example.com';
     protected ?string $testUserPassword = 'password123';
     protected ?Client $client = null;
@@ -61,7 +64,7 @@ abstract class AuthenticatedApiTestCase extends BaseApiTestCase
         return $client;
     }
 
-    protected function createUser(string $email = null, string $password = null, string $name = null): User
+    protected function createUser(?string $email = null, ?string $password = null, ?string $name = null): User
     {
         $email = $email ?? $this->testUserEmail;
         $password = $password ?? $this->testUserPassword;
