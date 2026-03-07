@@ -67,7 +67,7 @@ final class FolderMoverTest extends TestCase
         });
 
         $this->em->expects($this->once())->method('flush');
-        $this->em->expects($this->any())->method('refresh');
+        $this->em->method('refresh');
 
         $result = $this->mover->moveContentsToUploads($root, $owner);
 
