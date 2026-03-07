@@ -83,6 +83,9 @@ final class DeleteFolderEmptyFlagTest extends WebTestCase
         $this->login();
         $crawler = $this->client->request('GET', '/');
 
+        // DEBUG: dump homepage HTML for inspection
+        file_put_contents('/tmp/homepage_debug.html', $this->client->getResponse()->getContent());
+
         $this->assertSelectorExists('[data-testid="delete-folder-btn-' . $emptyId . '"]');
         $btnEmpty = $crawler->filter('[data-testid="delete-folder-btn-' . $emptyId . '"]');
         $this->assertSame('1', $btnEmpty->attr('data-empty'));
