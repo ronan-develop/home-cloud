@@ -48,14 +48,19 @@ final class FolderWebController extends AbstractController
 
         $deleteContents = (bool) $request->request->get('delete_contents', '1');
 
+        $movedTo = null;
         if (!$deleteContents) {
-            $this->moveContentsToUploads($folder, $user);
+            $movedTo = $this->moveContentsToUploads($folder, $user);
         }
 
         $this->deleteRecursive($folder);
         $this->em->flush();
 
-        $this->addFlash('success', "Dossier « {$folder->getName()} » supprimé.");
+        $message = "Dossier « {$folder->getName()} » supprimé.";
+        if ($movedTo !== null) {
+            $message .= " Tous les fichiers ont été déplacés vers \"" . $movedTo->getName() . "\".";
+        }
+        $this->addFlash('success', $message);
 
         $redirectFolderId = $request->request->get('redirect_folder_id');
 
@@ -65,7 +70,7 @@ final class FolderWebController extends AbstractController
     /**
      * Déplace tous les fichiers du dossier (et de ses descendants) vers le dossier Uploads.
      */
-    private function moveContentsToUploads(Folder $folder, \App\Entity\User $user): void
+    private function moveContentsToUploads(Folder $folder, \App\Entity\User $user): Folder
     {
         $uploadsFolder = $this->defaultFolderService->resolve(null, null, $user);
 
@@ -92,6 +97,8 @@ final class FolderWebController extends AbstractController
                 $this->em->refresh($f);
             }
         }
+
+        return $uploadsFolder;
     }
 
     /**
