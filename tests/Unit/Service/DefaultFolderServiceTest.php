@@ -104,13 +104,43 @@ final class DefaultFolderServiceTest extends TestCase
         $this->service->resolve('some-id', null, $owner);
     }
 
-    public function testEnsureSubfolderPathMarkedIncomplete(): void
+    public function testEnsureSubfolderPathCreatesNestedFolders(): void
     {
-        $this->markTestIncomplete('Tests for ensureSubfolderPath to be implemented when method exists.');
+        $owner = new User('owner@example.com', 'Owner');
+        $parent = new Folder('Parent', $owner);
+
+        // repo will never find existing child (simulate missing path)
+        $this->repo->expects($this->any())
+            ->method('findOneBy')
+            ->willReturn(null);
+
+        // Expect two persists for A and B
+        $this->em->expects($this->exactly(2))
+            ->method('persist')
+            ->with($this->callback(fn($f) => $f instanceof Folder));
+
+        $this->em->expects($this->once())
+            ->method('flush');
+
+        $result = $this->service->ensureSubfolderPath($parent, 'A/B', $owner);
+
+        $this->assertInstanceOf(Folder::class, $result);
+        $this->assertSame('B', $result->getName());
+        $this->assertSame($parent, $result->getParent());
     }
 
-    public function testParseRelativePathMarkedIncomplete(): void
+    public function testParseRelativePathNormalizesAndValidates(): void
     {
-        $this->markTestIncomplete('Tests for parseRelativePath to be implemented when method exists.');
+        $ref = new \ReflectionMethod(DefaultFolderService::class, 'parseRelativePath');
+        $ref->setAccessible(true);
+
+        $input = '2024\\\\Janvier//  March/';
+        $segments = $ref->invoke($this->service, $input);
+
+        $this->assertIsArray($segments);
+        $this->assertSame(['2024', 'Janvier', 'March'], $segments);
+
+        // Empty path returns empty array
+        $this->assertSame([], $ref->invoke($this->service, ''));
     }
 }
