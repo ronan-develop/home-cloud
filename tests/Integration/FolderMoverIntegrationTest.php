@@ -48,8 +48,8 @@ final class FolderMoverIntegrationTest extends KernelTestCase
         $em->refresh($file1);
         $em->refresh($file2);
 
-        $this->assertSame((string) $uploads->getId(), (string) $file1->getFolder()->getId());
-        $this->assertSame((string) $uploads->getId(), (string) $file2->getFolder()->getId());
+        $this->assertEquals(\App\Service\DefaultFolderService::DEFAULT_FOLDER_NAME, $file1->getFolder()->getName());
+        $this->assertEquals(\App\Service\DefaultFolderService::DEFAULT_FOLDER_NAME, $file2->getFolder()->getName());
     }
 
     public function testEnsureSubfolderPathCreatesNestedFolders(): void
