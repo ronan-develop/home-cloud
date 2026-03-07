@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mariadb:10.11
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: homecloud_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, intl, gd, pdo_mysql, sodium
+          ini-values: post_max_size=512M, upload_max_filesize=512M
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Wait for MySQL
+        run: |
+          until mysqladmin ping -h 127.0.0.1 -P 3306 --silent; do
+            echo 'Waiting for MySQL...'
+            sleep 2
+          done
+
+      - name: Create test database
+        run: |
+          mysql -h 127.0.0.1 -P 3306 -u root -proot -e "CREATE DATABASE IF NOT EXISTS homecloud_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+      - name: Run Doctrine migrations
+        env:
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          DATABASE_URL: mysql://root:root@127.0.0.1:3306/homecloud_test?serverVersion=mariadb-10.11.0&charset=utf8mb4
+        run: |
+          php bin/console doctrine:database:create --if-not-exists --env=test
+          php bin/console doctrine:migrations:migrate --no-interaction --env=test
+
+      - name: Run PHPUnit
+        env:
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          DATABASE_URL: mysql://root:root@127.0.0.1:3306/homecloud_test?serverVersion=mariadb-10.11.0&charset=utf8mb4
+        run: ./vendor/bin/phpunit --configuration phpunit.dist.xml --colors=always
+
+  js:
+    runs-on: ubuntu-latest
+    needs: tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Run JS tests
+        run: npm test --silent
