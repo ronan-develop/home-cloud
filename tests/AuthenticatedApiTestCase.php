@@ -19,7 +19,7 @@ use Doctrine\ORM\EntityManagerInterface;
 abstract class AuthenticatedApiTestCase extends BaseApiTestCase
 {
     // Ensure kernel is always booted for API Platform tests (silences deprecation)
-    protected static bool $alwaysBootKernel = true;
+    protected static ?bool $alwaysBootKernel = true;
 
     protected ?string $testUserEmail = 'alice@example.com';
     protected ?string $testUserPassword = 'password123';
