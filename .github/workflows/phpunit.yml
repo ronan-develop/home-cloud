@@ -12,6 +12,21 @@ jobs:
     strategy:
       matrix:
         php: [ '8.4' ]
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: test_db
+          MYSQL_USER: symfony
+          MYSQL_PASSWORD: password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,6 +36,7 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           coverage: xdebug
+          extensions: mbstring, pdo_mysql, pdo_sqlite, intl
 
       - name: Validate composer.json
         run: composer validate --no-check-all --no-interaction || true
@@ -39,20 +55,34 @@ jobs:
         run: |
           if [ -f .env.test ]; then cp .env.test .env.local; fi
           mkdir -p var
-          touch var/test.sqlite
+          echo "Preparing MySQL service and client"
+          sudo apt-get update -y
+          sudo apt-get install -y default-mysql-client
+          # wait for mysql service to be healthy
+          for i in {1..60}; do
+            if mysqladmin ping -h 127.0.0.1 -uroot -ppassword --silent; then
+              echo "MySQL is up" && break
+            fi
+            echo "Waiting for MySQL... ($i)"; sleep 1
+          done
 
       - name: Run Doctrine migrations (test env)
         env:
           APP_SECRET: ${{ secrets.APP_SECRET }}
-          DATABASE_URL: sqlite:///${{ github.workspace }}/var/test.sqlite
+          DATABASE_URL: mysql://symfony:password@127.0.0.1:3306/test_db?serverVersion=8.0&charset=utf8mb4
         run: |
           php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration --env=test || true
           php bin/console doctrine:schema:create --env=test --no-interaction || true
 
+      - name: Debug DB after migrations
+        run: |
+          echo "DATABASE_URL=$DATABASE_URL"
+          mysql -h127.0.0.1 -usymfony -ppassword -e "SHOW TABLES IN test_db;"
+
       - name: Run PHPUnit
         env:
           APP_SECRET: ${{ secrets.APP_SECRET }}
-          DATABASE_URL: sqlite:///${{ github.workspace }}/var/test.sqlite
+          DATABASE_URL: mysql://symfony:password@127.0.0.1:3306/test_db?serverVersion=8.0&charset=utf8mb4
         run: |
           vendor/bin/phpunit --colors=never --log-junit junit.xml --coverage-clover=coverage.clover || true
 
