@@ -36,6 +36,13 @@ services:
             $logger: '@logger'
     
     App\Service\AuthorizationChecker: ~
+    
+    App\Service\FileActionService:
+        arguments:
+            $fileRepository: '@App\Repository\FileRepository'
+            $storageService: '@App\Service\StorageService'
+            $authChecker: '@App\Service\AuthorizationChecker'
+            $em: '@doctrine.orm.entity_manager'
     # default configuration for services in *this* file
     _defaults:
         autowire: true      # Automatically injects dependencies in your services.

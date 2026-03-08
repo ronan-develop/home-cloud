@@ -6,6 +6,7 @@ namespace App\Service;
 use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\User;
+use App\Interface\AuthorizationCheckerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 /**
@@ -14,7 +15,7 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
  *
  * Responsibility: Access control only.
  */
-final class AuthorizationChecker
+final class AuthorizationChecker implements AuthorizationCheckerInterface
 {
     /**
      * Check if user owns the entity.
