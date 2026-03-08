@@ -1,5 +1,5 @@
 module.exports = {
-  testEnvironment: 'jsdom',
+  testEnvironment: './jest.environment.cjs',
   testTimeout: 10000,
   transform: {},
 };
