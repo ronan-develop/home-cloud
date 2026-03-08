@@ -30,3 +30,6 @@ id_rsa
 # Env dev local
 .symfony.local.yaml
 php.ini
+
+# JS dependencies
+/node_modules/
