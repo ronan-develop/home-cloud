@@ -26,8 +26,33 @@ services:
             $fileRepository: '@App\Repository\FileRepository'
             $mediaRepository: '@App\Repository\MediaRepository'
             $storageService: '@App\Service\StorageService'
+            $authResolver: '@App\Service\AuthenticationResolver'
+            $defaultFolderService: '@App\Service\DefaultFolderService'
+            $fileActionService: '@App\Service\FileActionService'
+            $requestStack: '@request_stack'
+    
+    App\Service\AuthenticationResolver:
+        arguments:
             $tokenStorage: '@security.token_storage'
+            $userRepository: '@App\Repository\UserRepository'
             $logger: '@logger'
+    
+    App\Service\AuthorizationChecker: ~
+    
+    App\Service\FileActionService:
+        arguments:
+            $fileRepository: '@App\Repository\FileRepository'
+            $storageService: '@App\Service\StorageService'
+            $authChecker: '@App\Service\AuthorizationChecker'
+            $em: '@doctrine.orm.entity_manager'
+
+    App\Service\CreateFileService:
+        arguments:
+            $storageService: '@App\Service\StorageService'
+            $defaultFolderService: '@App\Service\DefaultFolderService'
+            $em: '@doctrine.orm.entity_manager'
+            $userRepository: '@App\Repository\UserRepository'
+
     # default configuration for services in *this* file
     _defaults:
         autowire: true      # Automatically injects dependencies in your services.

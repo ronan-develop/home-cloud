@@ -1,8 +1,10 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-03-01 (Phase 7C Explorateur fichiers ✅)
+> Dernière mise à jour : 2026-03-08 (Phase 9A Multi-upload + refactoring SOLID EN COURS)
 
-> 2026-03-02 : Ajout du todo API features (CRUD Folder/File/User à compléter), todo User Settings en cours, analyse des manques CRUD faite.
+> **Status git :** `feat/upload-refactoring` branche créée, Phase 1 ✅ terminée (AuthenticationResolver + AuthorizationChecker)
+
+> **À faire :** Phase 2-6 (FileActionService, CreateFileService, refactor FileProcessor/FileUploadController, JS multi-upload, tests)
 
 ---
 
@@ -13,6 +15,107 @@
 | 🟡 Moyen | **Drag & drop upload non fonctionnel** | Quand on glisse un fichier sur la zone, le navigateur l'ouvre au lieu de déclencher l'upload. L'upload via le bouton "parcourir" fonctionne. À investiguer. |
 
 ---
+
+## 🚧 EN COURS — Phase 9A Multi-Upload + Refactoring SOLID (2026-03-08)
+
+**Branche :** `feat/upload-refactoring` (depuis `main`)
+
+**Objectif :** 
+1. Implémenter multi-upload (plusieurs fichiers simultanément, queue avec limite de concurrence)
+2. Refactoriser le code pour SOLID/SRP (7 services dépendances → 3)
+3. Extraire JS du Twig dans modules standalone (Stimulus + event-driven)
+
+**Plan détaillé :** `.github/PLAN_MULTI_UPLOAD_SOLID.md` (6 phases, 34K)
+
+### Phase 1 ✅ DONE (2026-03-08)
+
+| Composant | Fichier | Status | Tests |
+|-----------|---------|--------|-------|
+| **AuthenticationResolver** | `src/Service/AuthenticationResolver.php` | ✅ | 4/4 |
+| **AuthenticationResolverTest** | `tests/Service/AuthenticationResolverTest.php` | ✅ | — |
+| **AuthorizationChecker** | `src/Service/AuthorizationChecker.php` | ✅ | 6/6 |
+| **AuthorizationCheckerTest** | `tests/Service/AuthorizationCheckerTest.php` | ✅ | — |
+| **Service registration** | `config/services.yaml` | ✅ | — |
+
+**Résumé Phase 1 :**
+- ✅ `AuthenticationResolver::getAuthenticatedUser()` — extrait User depuis token
+- ✅ `AuthenticationResolver::requireUser()` — lance `UnauthorizedHttpException` si non authentifié
+- ✅ `AuthorizationChecker::assertOwns()` — vérifie propriété entity (throw `AccessDeniedHttpException`)
+- ✅ `AuthorizationChecker::wouldCreateCycle()` — prévient cycles dossiers (A > B > C, move B sous C)
+- ✅ **10 tests verts** (4 + 6)
+- ✅ Commit poussé : `✨ feat(AuthenticationResolver+AuthorizationChecker): centralize auth + authz logic`
+
+**Principes SOLID appliqués :**
+- **SRP** : chaque service une seule responsabilité
+- **DIP** : dépend des abstractions (TokenStorageInterface, UserRepository abstraite)
+- **DRY** : centralise la logique auth/authz dupliquée en FileProcessor + FolderProcessor
+
+### Phase 2 🔄 NEXT (FileActionService)
+
+| Todo | Status | Description |
+|------|--------|-------------|
+| `phase2-action-service` | ⏳ pending | Créer FileActionService (rename, move, delete) |
+| `phase2-tests` | ⏳ pending | TDD tests pour FileActionService |
+
+**À faire :**
+- `src/Service/FileActionService.php` — orchestrate File operations (rename, move, delete)
+- `tests/Service/FileActionServiceTest.php` — TDD (RED → GREEN)
+- Dépendances : AuthenticationResolver, AuthorizationChecker, StorageService, MediaRepository
+
+### Phase 3 ⏳ PENDING (CreateFileService)
+
+| Todo | Status | Description |
+|------|--------|-------------|
+| `phase3-create-service` | ⏳ pending | Créer CreateFileService (orchestrate upload) |
+| `phase3-tests` | ⏳ pending | TDD tests pour CreateFileService |
+
+**À faire :**
+- `src/Service/CreateFileService.php` — handle upload workflow (validate → store → persist → dispatch)
+- `tests/Service/CreateFileServiceTest.php` — TDD
+- Dépendances : StorageService, DefaultFolderServiceInterface, MediaDispatcher
+
+### Phase 4 ⏳ PENDING (Refactoring)
+
+| Todo | Status | Description |
+|------|--------|-------------|
+| `phase4-refactor-processor` | ⏳ pending | Simplify FileProcessor (180 → 80 lignes) |
+| `phase4-refactor-controller` | ⏳ pending | Simplify FileUploadController (153 → 40 lignes) |
+
+**À faire :**
+- `src/State/FileProcessor.php` — HTTP binding only, delegate to FileActionService
+- `src/Controller/FileUploadController.php` — HTTP binding only, delegate to CreateFileService
+
+### Phase 5 ⏳ PENDING (Frontend JavaScript)
+
+| Todo | Status | Description |
+|------|--------|-------------|
+| `phase5-upload-queue` | ⏳ pending | Create UploadQueue JS module (concurrent queue) |
+| `phase5-upload-modal` | ⏳ pending | Create UploadModal JS module (folder selection) |
+| `phase5-upload-controller` | ⏳ pending | Update FileUploadController stimulus (integrate queue) |
+| `phase5-layout-update` | ⏳ pending | Update layout.html.twig (remove inline JS, add modal) |
+
+**À faire :**
+- `assets/js/upload-queue.js` — manage multiple uploads, max 3 concurrent
+- `assets/js/upload-modal.js` — folder selection + submission UI
+- `assets/controllers/file_upload_controller.js` — integrate queue + modal, handle drag&drop
+- `templates/web/layout.html.twig` — add modal HTML, remove inline JS
+
+### Phase 6 ⏳ PENDING (Tests & Validation)
+
+| Todo | Status | Description |
+|------|--------|-------------|
+| `phase6-api-tests` | ⏳ pending | Run API tests (FileTest) |
+| `phase6-web-tests` | ⏳ pending | Run web tests (FileUploadWebTest) |
+| `phase6-manual-qa` | ⏳ pending | Manual QA : single + multi-upload |
+
+**À faire :**
+- Execute `./vendor/bin/phpunit tests/Api/FileTest.php`
+- Execute `./vendor/bin/phpunit tests/Web/FileUploadWebTest.php`
+- Manual: single file, 3 files at once, drag&drop, folder selection, queue processing
+
+---
+
+## ⚠️ Bugs connus
 
 ## ✅ Fait
 
@@ -101,6 +204,7 @@
 | 2026-02-28 | ♻️ **refactor(ThumbnailService,ExifService)** — suppression dépendance `EncryptionServiceInterface` ✅ |
 | 2026-02-28 | 🛠️ **chore(EncryptionService)** — suppression de `EncryptionService` + `EncryptionServiceInterface` (plus aucun consommateur) ✅ |
 | 2026-03-06 | ✨ **feat/delete-folder-with-options** — Suppression dossier avec options : API (FolderProcessor + FolderRepository CTE récursive), Web (FolderWebController), modale frontend (DeleteFolderModal, delete-folder-modal.js, bouton 🗑️ FolderCard). 222/222 tests ✅ |
+| 2026-03-08 | ✨ **Phase 9A Phase 1 DONE** — AuthenticationResolver (getAuthenticatedUser + requireUser) + AuthorizationChecker (assertOwns + wouldCreateCycle). 10/10 tests ✅. Commit poussé sur branche `feat/upload-refactoring`. |
 
 ---
 
