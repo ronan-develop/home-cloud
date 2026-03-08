@@ -1,0 +1,94 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐘 Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, intl
+
+      - name: 🔍 Check if deployment target exists
+        id: check-target
+        env:
+          SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+          SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          
+          # Test SSH connection
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=10 \
+            "${SSH_USER}@${SSH_HOST}" "echo OK" && echo "target_exists=true" >> $GITHUB_OUTPUT || echo "target_exists=false" >> $GITHUB_OUTPUT
+
+      - name: 🚀 Deploy (Update mode)
+        if: steps.check-target.outputs.target_exists == 'true'
+        env:
+          SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+          SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          PRENOM: ${{ secrets.DEPLOY_PRENOM }}
+          PREREQ_PRESET: 'o'
+          CONFIRM_PRESET: 'o'
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          
+          export SSH_KEY_PATH=~/.ssh/deploy_key
+          export PRENOM_PRESET="$PRENOM"
+          export PREREQ_PRESET="o"
+          export CONFIRM_PRESET="o"
+          
+          bash bin/deploy.sh --update
+
+      - name: 🚀 Deploy (Initial setup)
+        if: steps.check-target.outputs.target_exists == 'false'
+        env:
+          SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+          SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          PRENOM: ${{ secrets.DEPLOY_PRENOM }}
+          DB_PASSWORD: ${{ secrets.DEPLOY_DB_PASSWORD }}
+          PREREQ_PRESET: 'o'
+          CONFIRM_PRESET: 'o'
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          
+          export SSH_KEY_PATH=~/.ssh/deploy_key
+          export PRENOM_PRESET="$PRENOM"
+          export DB_PASSWORD_PRESET="$DB_PASSWORD"
+          export PREREQ_PRESET="o"
+          export CONFIRM_PRESET="o"
+          
+          bash bin/deploy.sh
+
+      - name: ✅ Deployment complete
+        if: success()
+        run: echo "Deployment successful. Check the logs for details."
