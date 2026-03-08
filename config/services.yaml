@@ -28,6 +28,14 @@ services:
             $storageService: '@App\Service\StorageService'
             $tokenStorage: '@security.token_storage'
             $logger: '@logger'
+    
+    App\Service\AuthenticationResolver:
+        arguments:
+            $tokenStorage: '@security.token_storage'
+            $userRepository: '@App\Repository\UserRepository'
+            $logger: '@logger'
+    
+    App\Service\AuthorizationChecker: ~
     # default configuration for services in *this* file
     _defaults:
         autowire: true      # Automatically injects dependencies in your services.
