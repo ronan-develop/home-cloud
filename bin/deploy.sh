@@ -166,4 +166,20 @@ REMOTE_HOME=$(ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" 'ec
 DEPLOY_PATH="${REMOTE_HOME}/${SUBDOMAIN}"
 info "Chemin de déploiement : ${DEPLOY_PATH}"
 
-# ──
+# ── Déploiement ──────────────────────────────────────────────────────────────
+title "── Déploiement en cours ────────────────────"
+
+if [[ "$UPDATE_MODE" == true ]]; then
+    info "Mode mise à jour : git pull + composer install"
+    ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" "cd ${DEPLOY_PATH} && git pull origin main && composer install --no-interaction --prefer-dist --no-progress" && \
+    success "✅ Déploiement réussi !" || \
+    { error "❌ Erreur lors du déploiement."; exit 1; }
+else
+    info "Mode primo déploiement : clonage repo + setup"
+    ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" "mkdir -p ${DEPLOY_PATH} && cd ${DEPLOY_PATH} && git clone ${GIT_REPO} . && composer install --no-interaction --prefer-dist --no-progress" && \
+    success "✅ Déploiement réussi !" || \
+    { error "❌ Erreur lors du déploiement."; exit 1; }
+fi
+
+echo ""
+success "Application disponible à : https://${SUBDOMAIN}"
