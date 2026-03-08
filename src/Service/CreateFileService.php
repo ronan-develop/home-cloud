@@ -140,7 +140,7 @@ final class CreateFileService
 
         return [
             'name' => $sanitized,
-            'mimeType' => $file->getMimeType() ?? $file->getClientMimeType() ?? 'application/octet-stream',
+            'mimeType' => $file->getClientMimeType() ?? $file->getMimeType() ?? 'application/octet-stream',
             'size' => $file->getSize() ?: 0,
         ];
     }
