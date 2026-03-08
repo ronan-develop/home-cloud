@@ -1,4 +1,3 @@
-# base64:1i5w1p9tHoKriGsNji/iwxWhcBFX85smSYwYapcCuzs=
 name: CI
 
 on:
@@ -10,56 +9,72 @@ on:
 jobs:
   php:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Setup PHP
+    services:
+      mysql:
+        image: mariadb:10.11
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: homecloud
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mariadb-admin ping -h localhost --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐘 Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
-          extensions: mbstring, intl, gd, pdo_sqlite
+          extensions: mbstring, intl, gd, pdo_mysql, sodium
           ini-values: post_max_size=512M, upload_max_filesize=512M
 
-      - name: Install Composer dependencies
+      - name: 📦 Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Prepare test env
+      - name: ⏳ Wait for MariaDB
         run: |
-          mkdir -p var
-          touch var/test.sqlite
+          until mysqladmin ping -h 127.0.0.1 -P 3306 -u root -proot --silent; do
+            echo 'Waiting for MariaDB...'
+            sleep 2
+          done
+          echo '✅ MariaDB ready'
 
-      - name: Clear & warm cache (test env)
-        env:
-          APP_SECRET: ${{ secrets.APP_SECRET }}
-          DATABASE_URL: sqlite:///${{ github.workspace }}/var/test.sqlite
-        run: php bin/console cache:clear --env=test --no-warmup || true
-
-      - name: Run Doctrine migrations (test env)
-        env:
-          APP_SECRET: ${{ secrets.APP_SECRET }}
-          DATABASE_URL: sqlite:///${{ github.workspace }}/var/test.sqlite
+      - name: 🔧 Create CI test env
         run: |
-          php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration --env=test || true
-          php bin/console doctrine:schema:create --env=test --no-interaction || true
+          echo "DATABASE_URL=mysql://root:root@127.0.0.1:3306/homecloud?serverVersion=mariadb-10.11.0&charset=utf8mb4" > .env.test.local
 
-      - name: Run PHPUnit
+      - name: 🗄️ Run Doctrine migrations
         env:
           APP_SECRET: ${{ secrets.APP_SECRET }}
-          DATABASE_URL: sqlite:///${{ github.workspace }}/var/test.sqlite
+        run: |
+          php bin/console doctrine:database:create --if-not-exists --env=test
+          php bin/console doctrine:migrations:migrate --no-interaction --env=test
+
+      - name: 🧪 Run PHPUnit
+        env:
+          APP_SECRET: ${{ secrets.APP_SECRET }}
         run: ./vendor/bin/phpunit --configuration phpunit.dist.xml --colors=always
+
   js:
     runs-on: ubuntu-latest
-    needs: php
     steps:
-      - uses: actions/checkout@v4
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install JS dependencies
+      - name: 📦 Install JS dependencies
         run: npm ci
 
-      - name: Run JS tests
+      - name: 🧪 Run JS tests
         run: npm test --silent
