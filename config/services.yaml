@@ -26,8 +26,10 @@ services:
             $fileRepository: '@App\Repository\FileRepository'
             $mediaRepository: '@App\Repository\MediaRepository'
             $storageService: '@App\Service\StorageService'
-            $tokenStorage: '@security.token_storage'
-            $logger: '@logger'
+            $authResolver: '@App\Service\AuthenticationResolver'
+            $defaultFolderService: '@App\Service\DefaultFolderService'
+            $fileActionService: '@App\Service\FileActionService'
+            $requestStack: '@request_stack'
     
     App\Service\AuthenticationResolver:
         arguments:

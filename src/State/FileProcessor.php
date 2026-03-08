@@ -12,71 +12,38 @@ use App\ApiResource\FileOutput;
 use App\Interface\DefaultFolderServiceInterface;
 use App\Repository\FileRepository;
 use App\Repository\MediaRepository;
-use App\Repository\UserRepository;
+use App\Service\AuthenticationResolver;
+use App\Service\FileActionService;
 use App\Interface\StorageServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
- * Traite l'opération DELETE sur la ressource File.
+ * Traite l'opération DELETE et PATCH sur la ressource File.
  *
- * Rôle : supprime les métadonnées du fichier en base ET le fichier physique sur disque.
+ * Rôle : dispatcher vers FileActionService (rename, move, delete).
+ * DeleteHandler : supprime les métadonnées du fichier en base ET le fichier physique sur disque.
  * Si un Media est lié au File, son thumbnail est également supprimé du disque avant
  * que le CASCADE DB ne supprime la ligne Media.
  *
  * L'upload (POST) est géré par FileUploadController (multipart/form-data).
  *
- * Choix :
- * - Séparation POST/DELETE : API Platform ne supportant pas nativement
- *   multipart, le POST est délégué à un controller dédié (FileUploadController).
- *   Ce Processor ne gère donc que DELETE.
- *
  * @implements ProcessorInterface<FileOutput, null>
  */
 final class FileProcessor implements ProcessorInterface
 {
-    /**
-     * Pattern recommandé : injection du TokenStorageInterface et LoggerInterface pour obtenir l'utilisateur courant de façon fiable (test/prod).
-     * Voir FolderProcessor pour l'implémentation complète.
-     */
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly FileRepository $fileRepository,
         private readonly MediaRepository $mediaRepository,
-        private readonly UserRepository $userRepository,
         private readonly StorageServiceInterface $storageService,
-        private readonly TokenStorageInterface $tokenStorage,
-        private readonly LoggerInterface $logger,
+        private readonly AuthenticationResolver $authResolver,
         private readonly DefaultFolderServiceInterface $defaultFolderService,
+        private readonly FileActionService $fileActionService,
         private readonly RequestStack $requestStack,
     ) {}
-
-    /**
-     * Récupère l'utilisateur authentifié depuis le TokenStorage (pattern commun).
-     */
-    private function getAuthenticatedUser(): ?\App\Entity\User
-    {
-        $token = $this->tokenStorage->getToken();
-        if ($token === null) {
-            $this->logger->warning('⚠️ No token in TokenStorage');
-            return null;
-        }
-        $user = $token->getUser();
-        if ($user instanceof \App\Entity\User) {
-            return $user;
-        }
-        if (is_string($user) && filter_var($user, FILTER_VALIDATE_EMAIL)) {
-            return $this->userRepository->findOneBy(['email' => $user]);
-        }
-        $this->logger->warning('⚠️ User type not recognized', [
-            'type' => gettype($user),
-            'value' => $user,
-        ]);
-        return null;
-    }
 
     /**
      * Dispatcher pour DELETE et PATCH sur File.
@@ -112,54 +79,39 @@ final class FileProcessor implements ProcessorInterface
     }
 
     /**
-     * PATCH /api/v1/files/{id} — renomme ou déplace le fichier.
+     * PATCH /api/v1/files/{id} — renomme ou déplace le fichier via FileActionService.
      */
     private function handlePatch(FileOutput $data, array $uriVariables): FileOutput
     {
         $file = $this->fileRepository->find($uriVariables['id'])
             ?? throw new NotFoundHttpException('File not found');
 
-        $user = $this->getAuthenticatedUser();
-        if ($user === null) {
-            throw new \Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException('', 'Authentication required');
-        }
+        $user = $this->authResolver->requireUser();
 
-        // Vérifie ownership du fichier
-        if ((string)$file->getOwner()->getId() !== (string)$user->getId()) {
-            throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('You do not own this file');
-        }
-
-        // Renommage : originalName fourni et non vide
+        // Déléguez le renommage à FileActionService (validation)
         if ($data->originalName !== '') {
-            if (strlen($data->originalName) > 255) {
-                throw new \Symfony\Component\HttpKernel\Exception\BadRequestHttpException('File name too long (255 chars max)');
-            }
-            if (!preg_match('/^[^\\\\\/\:\*\?"<>|]+$/u', $data->originalName)) {
-                throw new \Symfony\Component\HttpKernel\Exception\BadRequestHttpException('Invalid characters in file name');
-            }
-            $file->setOriginalName($data->originalName);
+            $this->fileActionService->rename($file, $data->originalName);
         }
 
-        // Déplacement : ne modifier le dossier que si le client a explicitement fourni targetFolderId dans le JSON.
+        // Déléguez le déplacement à FileActionService (validation, ownership check)
         $body = json_decode($this->requestStack->getCurrentRequest()?->getContent() ?? '{}', true);
         if (is_array($body) && array_key_exists('targetFolderId', $body)) {
-            if ($body['targetFolderId'] === null || $body['targetFolderId'] === '') {
+            $targetFolderId = $body['targetFolderId'];
+            
+            // Résoudre le dossier cible
+            if ($targetFolderId === null || $targetFolderId === '') {
+                // Aucun dossier fourni : résoudre au dossier par défaut (Uploads)
                 $targetFolder = $this->defaultFolderService->resolve(null, null, $user);
             } else {
-                $targetFolderId = $body['targetFolderId'];
+                // Nettoyer les chemins (bas… juste au cas où)
                 if (strpos($targetFolderId, '/') !== false) {
                     $targetFolderId = basename($targetFolderId);
                 }
-                $targetFolder = $this->em->getRepository(\App\Entity\Folder::class)->find($targetFolderId);
-                if ($targetFolder === null) {
-                    throw new NotFoundHttpException('Target folder not found');
-                }
-                if ((string)$targetFolder->getOwner()->getId() !== (string)$user->getId()) {
-                    throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('You do not own the target folder');
-                }
+                $targetFolder = $this->em->getRepository(\App\Entity\Folder::class)->find($targetFolderId)
+                    ?? throw new NotFoundHttpException('Target folder not found');
             }
-            // Déplacement effectif
-            $file->setFolder($targetFolder);
+
+            $this->fileActionService->move($file, $targetFolder, $user);
         }
 
         $this->em->flush();
@@ -178,3 +130,4 @@ final class FileProcessor implements ProcessorInterface
         return $output;
     }
 }
+
