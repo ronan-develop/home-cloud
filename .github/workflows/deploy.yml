@@ -89,44 +89,6 @@ jobs:
           
           bash bin/deploy.sh
 
-      - name: 📧 Send success email
+      - name: ✅ Deployment complete
         if: success()
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: ${{ secrets.MAIL_SERVER }}
-          server_port: ${{ secrets.MAIL_PORT }}
-          username: ${{ secrets.MAIL_USERNAME }}
-          password: ${{ secrets.MAIL_PASSWORD }}
-          subject: '✅ HomeCloud deployment successful'
-          to: ronan-develop@gmail.com
-          from: 'HomeCloud CI <${{ secrets.MAIL_FROM }}>'
-          body: |
-            Deployment successful!
-            
-            Repository: ${{ github.repository }}
-            Branch: ${{ github.ref_name }}
-            Commit: ${{ github.sha }}
-            Author: ${{ github.actor }}
-            
-            Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
-      - name: 📧 Send failure email
-        if: failure()
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: ${{ secrets.MAIL_SERVER }}
-          server_port: ${{ secrets.MAIL_PORT }}
-          username: ${{ secrets.MAIL_USERNAME }}
-          password: ${{ secrets.MAIL_PASSWORD }}
-          subject: '❌ HomeCloud deployment FAILED'
-          to: ronan-develop@gmail.com
-          from: 'HomeCloud CI <${{ secrets.MAIL_FROM }}>'
-          body: |
-            Deployment FAILED!
-            
-            Repository: ${{ github.repository }}
-            Branch: ${{ github.ref_name }}
-            Commit: ${{ github.sha }}
-            Author: ${{ github.actor }}
-            
-            Check the logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: echo "Deployment successful. Check the logs for details."

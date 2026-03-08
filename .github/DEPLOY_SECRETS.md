@@ -3,27 +3,20 @@
 ## Secrets requis (Settings → Secrets and variables → Actions)
 
 ### SSH
-- **DEPLOY_SSH_USER** : nom d'utilisateur SSH (ex: `ron2cuba`)
-- **DEPLOY_SSH_HOST** : hostname (ex: `lenouvel.me`)
-- **DEPLOY_SSH_KEY** : clé privée SSH (contenu de `~/.ssh/id_rsa` ou dédiée)
+- **DEPLOY_SSH_USER** : `ron2cuba` ✅ créé
+- **DEPLOY_SSH_HOST** : `lenouvel.me` ✅ créé
+- **DEPLOY_SSH_KEY** : clé privée SSH ✅ créé
 
 ### Déploiement
-- **DEPLOY_PRENOM** : prénom pour le sous-domaine (ex: `Ronan`)
-- **DEPLOY_DB_PASSWORD** : mot de passe MySQL (utilisé UNIQUEMENT au primo déploiement)
-
-### Mail
-- **MAIL_SERVER** : serveur SMTP (ex: `smtp.gmail.com`)
-- **MAIL_PORT** : port SMTP (ex: `587` pour TLS, `25` pour plain)
-- **MAIL_USERNAME** : utilisateur SMTP
-- **MAIL_PASSWORD** : mot de passe SMTP
-- **MAIL_FROM** : adresse email "from" (ex: `noreply@homecloud.example.com`)
+- **DEPLOY_PRENOM** : `ronan` ✅ créé
+- **DEPLOY_DB_PASSWORD** : mot de passe MySQL ✅ créé
 
 ## ⚠️ Sécurité
 
 **JAMAIS** commiter ces valeurs dans Git. Utiliser GitHub Secrets :
 
 1. Va dans Settings → Secrets and variables → Actions
-2. Crée chaque secret (Copy-paste les valeurs)
+2. Les secrets sont déjà créés via GitHub CLI
 3. Le workflow les charge via `${{ secrets.XXX }}`
 4. Les valeurs sont masquées dans les logs
 
