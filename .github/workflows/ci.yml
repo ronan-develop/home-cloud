@@ -49,6 +49,14 @@ jobs:
       - name: 🔧 Create CI test env
         run: |
           echo "DATABASE_URL=mysql://root:root@127.0.0.1:3306/homecloud?serverVersion=mariadb-10.11.0&charset=utf8mb4" > .env.test.local
+          echo "JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem" >> .env.test.local
+          echo "JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem" >> .env.test.local
+          echo "JWT_PASSPHRASE=" >> .env.test.local
+
+      - name: 🔑 Generate JWT keypair
+        env:
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+        run: php bin/console lexik:jwt:generate-keypair --skip-if-exists --env=test
 
       - name: 🗄️ Run Doctrine migrations
         env:
