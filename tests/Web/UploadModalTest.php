@@ -93,7 +93,7 @@ final class UploadModalTest extends WebTestCase
 
         $this->assertSelectorExists('[data-testid="new-menu"]');
         $this->assertSelectorTextContains('[data-testid="new-menu"]', 'Nouveau dossier');
-        $this->assertSelectorTextContains('[data-testid="new-menu"]', 'Importer un fichier');
+        $this->assertSelectorTextContains('[data-testid="new-menu"]', 'Importer des fichiers');
     }
 
     // --- Dossiers disponibles dans le modal ---
