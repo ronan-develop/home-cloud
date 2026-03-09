@@ -1,0 +1,398 @@
+/* ========================================
+   HomeCloud Upload Module — Liquid Glass Design
+   ======================================== */
+
+/* === Modal overlay (backdrop) === */
+.upload-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* === Liquid Glass Card === */
+.upload-modal-card {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    margin: 1rem;
+    border-radius: 1.6rem;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.22);
+}
+
+/* LG Layer 1: Blurred backdrop */
+.upload-modal-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(24px) saturate(200%);
+    filter: url(#lg); /* SVG turbulence displacement (defined in layout.html.twig) */
+    pointer-events: none;
+    border-radius: 1.6rem;
+}
+
+/* LG Layer 2: Tint overlay */
+.upload-modal-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.06);
+    pointer-events: none;
+    border-radius: 1.6rem;
+}
+
+/* === Modal content (positioned above layers) === */
+.upload-modal-content {
+    position: relative;
+    z-index: 10;
+    padding: 1.5rem;
+}
+
+/* === Title === */
+.upload-modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.upload-modal-title::before {
+    content: '📤';
+    font-size: 1.5rem;
+}
+
+/* === Destination section === */
+.upload-destination {
+    margin-bottom: 1.25rem;
+}
+
+.upload-destination-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.upload-folder-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: 0.5rem;
+}
+
+.upload-folder-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.upload-folder-option:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.upload-folder-option.active {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.3);
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.upload-folder-option::before {
+    content: attr(data-icon);
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+/* === New folder input === */
+.upload-new-folder-container {
+    position: relative;
+}
+
+.upload-new-folder-input {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.upload-new-folder-input::placeholder {
+    color: rgba(255, 255, 255, 0.35);
+}
+
+.upload-new-folder-input:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(59, 130, 246, 0.4);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+/* === File list === */
+.upload-file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+    margin-bottom: 1.25rem;
+}
+
+/* Scrollbar styling */
+.upload-file-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.upload-file-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 4px;
+}
+
+.upload-file-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+}
+
+.upload-file-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+/* === Upload item === */
+.upload-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: 0.85rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.2s ease;
+}
+
+.upload-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Item header (name + size + status) */
+.upload-item__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.upload-item__icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.upload-item__name {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+
+.upload-item__size {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.45);
+    flex-shrink: 0;
+}
+
+.upload-item__status {
+    font-size: 0.72rem;
+    font-weight: 600;
+    flex-shrink: 0;
+    min-width: 3rem;
+    text-align: right;
+}
+
+.upload-item__status--pending {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.upload-item__status--uploading {
+    color: #60a5fa;
+}
+
+.upload-item__status--done {
+    color: #34d399;
+}
+
+.upload-item__status--error {
+    color: #f87171;
+}
+
+/* === Progress bar === */
+.upload-item__progress {
+    height: 3px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.upload-item__bar {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 6px rgba(59, 130, 246, 0.4);
+}
+
+.upload-item--done .upload-item__bar {
+    background: linear-gradient(90deg, #10b981, #34d399);
+    box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
+}
+
+.upload-item--error .upload-item__bar {
+    background: linear-gradient(90deg, #ef4444, #f87171);
+    box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
+}
+
+/* === Buttons row === */
+.upload-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+.upload-btn {
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.upload-btn--cancel {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.upload-btn--cancel:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.upload-btn--cancel:active {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.upload-btn--submit {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(99, 102, 241, 0.2));
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    font-weight: 600;
+}
+
+.upload-btn--submit:hover {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(99, 102, 241, 0.3));
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.25);
+}
+
+.upload-btn--submit:active {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.4), rgba(99, 102, 241, 0.4));
+}
+
+.upload-btn--submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* === Item cancel button === */
+.upload-item__cancel {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 0.15rem 0.35rem;
+    border-radius: 0.4rem;
+    transition: all 0.15s ease;
+}
+
+.upload-item__cancel:hover {
+    color: #f87171;
+    background: rgba(248, 113, 113, 0.12);
+}
+
+/* === Empty state === */
+.upload-empty {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.85rem;
+}
+
+.upload-empty::before {
+    content: '📂';
+    display: block;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.3;
+}
+
+/* === Responsive === */
+@media (max-width: 640px) {
+    .upload-modal-card {
+        max-width: 95%;
+        margin: 0.5rem;
+    }
+
+    .upload-modal-content {
+        padding: 1rem;
+    }
+
+    .upload-file-list {
+        max-height: 200px;
+    }
+
+    .upload-actions {
+        flex-direction: column;
+    }
+
+    .upload-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
