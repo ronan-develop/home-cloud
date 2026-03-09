@@ -84,6 +84,7 @@
         fileInput.value = '';
         if (files.length === 0) return;
         closeMenu();
+        console.log('[NewMenu] Dispatching', files.length, 'file(s) via hc:files-selected');
         // Dispatch multi-upload event for Phase 5
         document.dispatchEvent(new CustomEvent('hc:files-selected', { detail: { files: files } }));
     });

@@ -10,4 +10,10 @@ import './js/delete-folder-modal.js';
 import { initUploadModal } from './js/upload-modal.js';
 
 // Initialize upload modal listener
-initUploadModal();
+console.log('[app.js] Initializing upload modal');
+try {
+    initUploadModal();
+    console.log('[app.js] ✅ Upload modal initialized');
+} catch (err) {
+    console.error('[app.js] ❌ Failed to initialize upload modal:', err);
+}
