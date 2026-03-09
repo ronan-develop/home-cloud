@@ -1,20 +1,21 @@
 import { Controller } from '@hotwired/stimulus';
 
 /**
- * Gère la zone de drag & drop pour l'upload de fichiers.
- * Les listeners drag sont branchés directement (plus fiable que data-action).
+ * Manages drag & drop + file input for multi-file uploads.
+ * Dispatches 'hc:files-selected' event with selected files.
+ * Triggers upload modal via custom event detail.
  */
 export default class extends Controller {
     static targets = ['input', 'idle', 'ready', 'filename'];
     static values  = { folderId: String };
 
     connect() {
-        // 1. Bloquer le comportement natif du navigateur sur toute la page
+        // 1. Block native browser drag/drop behavior globally
         this._blockBrowser = (e) => e.preventDefault();
         document.addEventListener('dragover', this._blockBrowser);
         document.addEventListener('drop', this._blockBrowser);
 
-        // 2. Brancher les handlers directement sur la zone
+        // 2. Attach zone-specific handlers
         this._onDragEnter = this._handleDragEnter.bind(this);
         this._onDragOver  = this._handleDragOver.bind(this);
         this._onDragLeave = this._handleDragLeave.bind(this);
@@ -35,14 +36,15 @@ export default class extends Controller {
         this.element.removeEventListener('drop',      this._onDrop);
     }
 
-    // Action Stimulus pour le bouton "parcourir"
+    // Action: Browse button click
     browse() {
         this.inputTarget.click();
     }
 
     fileSelected() {
-        const file = this.inputTarget.files[0];
-        if (file) this._showReady(file.name);
+        const files = Array.from(this.inputTarget.files);
+        if (files.length === 0) return;
+        this._dispatchFiles(files);
     }
 
     reset() {
@@ -52,7 +54,7 @@ export default class extends Controller {
         this.element.classList.remove('drop-active');
     }
 
-    // --- Handlers internes ---
+    // --- Internal handlers ---
 
     _handleDragEnter(e) {
         e.preventDefault();
@@ -79,17 +81,22 @@ export default class extends Controller {
         e.stopPropagation();
         this.element.classList.remove('drop-active');
 
-        const file = e.dataTransfer && e.dataTransfer.files[0];
-        if (!file) return;
+        const files = Array.from(e.dataTransfer?.files || []);
+        if (files.length === 0) return;
 
-        const dt = new DataTransfer();
-        dt.items.add(file);
-        this.inputTarget.files = dt.files;
-        this._showReady(file.name);
+        this._dispatchFiles(files);
     }
 
-    _showReady(name) {
-        this.filenameTarget.textContent = '\uD83D\uDCCE ' + name;
+    _dispatchFiles(files) {
+        // Dispatch custom event to trigger upload modal
+        document.dispatchEvent(new CustomEvent('hc:files-selected', {
+            detail: { files }
+        }));
+
+        // Update UI to show files selected
+        const count = files.length;
+        const plural = count > 1 ? 's' : '';
+        this.filenameTarget.textContent = `📎 ${count} fichier${plural} sélectionné${plural}`;
         this.idleTarget.classList.add('hidden');
         this.readyTarget.classList.remove('hidden');
     }
