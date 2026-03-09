@@ -268,4 +268,37 @@ describe('UploadQueue', () => {
       expect(callOrder).toEqual(['a.txt', 'b.txt', 'c.txt']);
     });
   });
+
+  describe('setUploadFn & process', () => {
+    it('should allow setting uploadFn after creation', async () => {
+      queue = createUploadQueue({ maxConcurrent: 1, ...callbacks }); // No uploadFn
+      const files = [createFile('test.txt')];
+      
+      queue.enqueue(files, {});
+
+      // Set uploadFn and process
+      mockUploadFn.mockImplementation(() => Promise.resolve({ id: 'file-123' }));
+      queue.setUploadFn(mockUploadFn);
+      
+      await queue.process();
+
+      expect(callbacks.onComplete).toHaveBeenCalledWith(files[0], { id: 'file-123' });
+      expect(callbacks.onQueueDone).toHaveBeenCalled();
+    });
+
+    it('should allow passing uploadFn to process()', async () => {
+      queue = createUploadQueue({ maxConcurrent: 1, ...callbacks }); // No uploadFn
+      const files = [createFile('test.txt')];
+      
+      queue.enqueue(files, {});
+
+      // Pass uploadFn to process()
+      mockUploadFn.mockImplementation(() => Promise.resolve({ id: 'file-456' }));
+      
+      await queue.process(mockUploadFn);
+
+      expect(callbacks.onComplete).toHaveBeenCalledWith(files[0], { id: 'file-456' });
+    });
+  });
 });
+

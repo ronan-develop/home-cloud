@@ -23,7 +23,7 @@ const STATES = {
  * Crée une queue d'upload.
  *
  * @param {Object} options
- * @param {Function} options.uploadFn - (file, metadata, onProgress?) => Promise<response>
+ * @param {Function} [options.uploadFn] - (file, metadata, onProgress?) => Promise<response>
  * @param {number} [options.maxConcurrent=3] - Uploads simultanés max
  * @param {Function} [options.onProgress] - (file, {loaded, total, percent}) => void
  * @param {Function} [options.onComplete] - (file, response) => void
@@ -33,7 +33,7 @@ const STATES = {
  */
 export function createUploadQueue(options) {
   const {
-    uploadFn,
+    uploadFn = null,
     maxConcurrent = 3,
     onProgress = () => {},
     onComplete = () => {},
@@ -41,8 +41,8 @@ export function createUploadQueue(options) {
     onQueueDone = () => {},
   } = options;
 
-  if (typeof uploadFn !== 'function') {
-    throw new Error('uploadFn is required');
+  if (uploadFn !== null && typeof uploadFn !== 'function') {
+    throw new Error('uploadFn must be a function or null');
   }
 
   if (maxConcurrent < 1) {
@@ -52,6 +52,7 @@ export function createUploadQueue(options) {
   // État interne
   const items = new Map(); // file → {file, state, progress, error?, response?, abortController}
   let runningCount = 0;
+  let _uploadFn = uploadFn;
 
   /**
    * Lance le traitement de la queue
@@ -78,7 +79,7 @@ export function createUploadQueue(options) {
         onProgress(pendingItem.file, data);
       };
 
-      uploadFn(pendingItem.file, pendingItem.metadata, progressHandler)
+      _uploadFn(pendingItem.file, pendingItem.metadata, progressHandler)
         .then(response => {
           pendingItem.state = STATES.DONE;
           pendingItem.response = response;
@@ -126,7 +127,10 @@ export function createUploadQueue(options) {
         });
       });
 
-      processQueue();
+      // Only process if uploadFn is available
+      if (_uploadFn) {
+        processQueue();
+      }
     },
 
     /**
@@ -224,6 +228,52 @@ export function createUploadQueue(options) {
       });
       items.clear();
       runningCount = 0;
+    },
+
+    /**
+     * Définit l'uploadFn (utile si créé sans uploadFn initial)
+     * @param {Function} fn - (file, metadata, onProgress?) => Promise<response>
+     */
+    setUploadFn(fn) {
+      if (typeof fn !== 'function') {
+        throw new Error('uploadFn must be a function');
+      }
+      _uploadFn = fn;
+    },
+
+    /**
+     * Démarre le traitement de la queue
+     * @param {Function} [overrideUploadFn] - Optionnel, remplace temporairement uploadFn
+     * @returns {Promise<void>} Résolue quand toute la queue est traitée
+     */
+    async process(overrideUploadFn) {
+      if (overrideUploadFn) {
+        if (typeof overrideUploadFn !== 'function') {
+          throw new Error('overrideUploadFn must be a function');
+        }
+        _uploadFn = overrideUploadFn;
+      }
+      if (!_uploadFn) {
+        throw new Error('No uploadFn set. Call setUploadFn() or pass it to process()');
+      }
+      
+      // Lancer le traitement
+      processQueue();
+      
+      // Attendre que tous les items soient traités
+      return new Promise((resolve) => {
+        const checkDone = () => {
+          const allDone = Array.from(items.values()).every(i => 
+            [STATES.DONE, STATES.ERROR, STATES.CANCELLED].includes(i.state)
+          );
+          if (allDone && runningCount === 0) {
+            resolve();
+          } else {
+            setTimeout(checkDone, 50);
+          }
+        };
+        checkDone();
+      });
     },
   };
 }
