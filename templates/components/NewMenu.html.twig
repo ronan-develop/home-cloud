@@ -37,8 +37,8 @@
            style="width:100%; display:flex; align-items:center; gap:0.75rem;
                   padding:0.65rem 1rem; font-size:0.875rem; color:#111827; cursor:pointer;"
            onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='none'">
-        <span>📄</span> Importer un fichier
-        <input type="file" id="new-menu-file-input" style="display:none;">
+        <span>📄</span> Importer des fichiers
+        <input type="file" id="new-menu-file-input" multiple style="display:none;">
     </label>
 
     <label data-testid="new-menu-import-folder"
@@ -80,11 +80,12 @@
     });
 
     fileInput.addEventListener('change', function () {
-        var file = fileInput.files[0];
+        var files = Array.from(fileInput.files);
         fileInput.value = '';
-        if (!file) return;
+        if (files.length === 0) return;
         closeMenu();
-        document.dispatchEvent(new CustomEvent('new-menu:file-selected', { detail: { file: file } }));
+        // Dispatch multi-upload event for Phase 5
+        document.dispatchEvent(new CustomEvent('hc:files-selected', { detail: { files: files } }));
     });
 
     folderInput.addEventListener('change', function () {
