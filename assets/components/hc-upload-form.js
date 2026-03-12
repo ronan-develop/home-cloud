@@ -465,6 +465,27 @@ class HCUploadForm extends HTMLElement {
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return Math.round(bytes / Math.pow(k, i) * 10) / 10 + ' ' + sizes[i];
     }
+
+    /**
+     * Set data via modal.setData or directly
+     */
+    setData(data = {}) {
+        const files = data.files || [];
+        const folders = data.folders || [];
+        const folderId = data.currentFolderId || null;
+        this.initialize(files, folders, { folderId });
+    }
+
+    /**
+     * Trigger a submit event with current selection
+     */
+    submit(detail = null) {
+        const payload = detail || { destination: this.getDestinationFolder(), files: this.files };
+        // Standard submit event
+        this.dispatchEvent(new CustomEvent('submit', { detail: payload }));
+        // Legacy event name
+        this.dispatchEvent(new CustomEvent('upload-form:submit', { detail: payload }));
+    }
 }
 
 customElements.define('hc-upload-form', HCUploadForm);
