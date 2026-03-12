@@ -344,9 +344,9 @@ async function openUploadModal(files, options = {}) {
     // Import createUploadQueue
     const createUploadQueueFn = await getCreateUploadQueue();
 
-    // Create & open modal
+    // Create & open modal — insert as first child of body (before script tags)
     const overlay = createModalOverlay(files, folderId, folders || []);
-    document.body.appendChild(overlay);
+    document.body.insertBefore(overlay, document.body.firstChild);
 
     // Get folder selection on submit
     const getDestFolder = () => {
