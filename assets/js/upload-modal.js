@@ -475,14 +475,20 @@ export function initUploadModal() {
         let folders = [];
         try {
             const res = await apiFetch('/api/v1/folders', {
-                headers: { 'Accept': 'application/ld+json' },
+                credentials: 'same-origin',
             });
             if (res.ok) {
                 const json = await res.json();
-                if (Array.isArray(json)) folders = json;
-                else if (Array.isArray(json['hydra:member'])) folders = json['hydra:member'];
-                else if (Array.isArray(json.items)) folders = json.items;
-                else if (Array.isArray(json.data)) folders = json.data;
+                // API Platform retourne un tableau simple avec Accept: application/json
+                // Supporte tous les formats de réponse possibles
+                if (Array.isArray(json)) {
+                    folders = json;
+                } else {
+                    const candidates = ['hydra:member', 'member', 'items', 'data'];
+                    for (const key of candidates) {
+                        if (Array.isArray(json[key])) { folders = json[key]; break; }
+                    }
+                }
             }
         } catch (err) {
             console.warn('[UploadModal] Could not fetch folders:', err);
