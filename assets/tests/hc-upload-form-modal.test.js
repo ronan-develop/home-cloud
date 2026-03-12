@@ -3,7 +3,8 @@ import { jest, describe, test, expect, beforeEach } from '@jest/globals';
 // Import components and factory under test
 const { openModal } = await import('../services/ModalFactory.js');
 await import('../components/hc-upload-form.js');
-await import('../components/hc-modal.js');
+// hc-modal already imported by ModalFactory; avoid re-import to prevent duplicate customElements definitions
+
 
 describe('HCUploadForm within HCModal integration', () => {
   beforeEach(() => {
