@@ -109,6 +109,8 @@ function createModalOverlay(files, currentFolderId, folders) {
     const overlay = document.createElement('div');
     overlay.className = 'upload-modal-overlay';
     overlay.id = 'hc-upload-modal-overlay';
+    // Force critical layout styles inline — CSS class may load after injection
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px)';
 
     const card = document.createElement('div');
     card.className = 'upload-modal-card';
@@ -344,9 +346,9 @@ async function openUploadModal(files, options = {}) {
     // Import createUploadQueue
     const createUploadQueueFn = await getCreateUploadQueue();
 
-    // Create & open modal — insert as first child of body (before script tags)
+    // Create & open modal
     const overlay = createModalOverlay(files, folderId, folders || []);
-    document.body.insertBefore(overlay, document.body.firstChild);
+    document.body.appendChild(overlay);
 
     // Get folder selection on submit
     const getDestFolder = () => {
