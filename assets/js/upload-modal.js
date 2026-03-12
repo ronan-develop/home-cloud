@@ -10,6 +10,8 @@
  * 6. Shows completion toast and reloads page
  */
 
+import '../components/hc-folder-list.js';
+
 const UPLOAD_API_ROUTE = '/_api_/v1/files_post';
 const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5 GB
 
@@ -147,50 +149,11 @@ function createModalOverlay(files, currentFolderId, folders) {
     destLabel.style.cssText = 'font-size:0.75rem;font-weight:600;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;display:block';
     destLabel.textContent = 'Destination';
 
-    const folderList = document.createElement('div');
-    folderList.className = 'upload-folder-list';
-
-    // Render folder options
-    const folderOptions = [];
-    if (folders && folders.length > 0) {
-        folders.forEach(folder => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'upload-folder-option';
-            if (folder.id === currentFolderId) btn.classList.add('active');
-            btn.setAttribute('data-icon', folder.icon || '📁');
-            btn.setAttribute('data-folder-id', folder.id);
-            btn.textContent = folder.name;
-            btn.style.cssText = 'display:flex;align-items:center;gap:0.5rem;padding:0.6rem 0.75rem;border-radius:0.75rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.8);font-size:0.85rem;cursor:pointer;width:100%;text-align:left;transition:background 0.2s';
-            if (folder.id === currentFolderId) btn.style.background = 'rgba(59,130,246,0.2)';
-
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                folderOptions.forEach(opt => opt.classList.remove('active'));
-                btn.classList.add('active');
-            });
-
-            folderList.appendChild(btn);
-            folderOptions.push(btn);
-        });
-    }
-
-    // New folder input
-    const newFolderContainer = document.createElement('div');
-    newFolderContainer.className = 'upload-new-folder-container';
-
-    const newFolderInput = document.createElement('input');
-    newFolderInput.type = 'text';
-    newFolderInput.className = 'upload-new-folder-input';
-    newFolderInput.placeholder = 'Ou créer un dossier…';
-    newFolderInput.id = 'hc-upload-new-folder-input';
-    newFolderInput.style.cssText = 'width:100%;padding:0.6rem 0.75rem;border-radius:0.75rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.8);font-size:0.85rem;outline:none;box-sizing:border-box';
-
-    newFolderContainer.appendChild(newFolderInput);
+    const folderListEl = document.createElement('hc-folder-list');
+    folderListEl.id = 'hc-upload-folder-list';
 
     destSection.appendChild(destLabel);
-    destSection.appendChild(folderList);
-    destSection.appendChild(newFolderContainer);
+    destSection.appendChild(folderListEl);
 
     // File list
     const fileListEl = document.createElement('div');
@@ -378,24 +341,13 @@ async function openUploadModal(files, options = {}) {
     const overlay = createModalOverlay(files, folderId, folders || []);
     document.body.appendChild(overlay);
 
-    // Get folder selection on submit
-    const getDestFolder = () => {
-        const selected = overlay.querySelector('.upload-folder-option.active');
-        if (selected) {
-            return {
-                id: selected.getAttribute('data-folder-id'),
-                isNew: false,
-            };
-        }
-        const newFolderInput = overlay.querySelector('#hc-upload-new-folder-input');
-        if (newFolderInput.value) {
-            return {
-                name: newFolderInput.value,
-                isNew: true,
-            };
-        }
-        return null;
-    };
+    // Initialize hc-folder-list component with available folders
+    const folderListEl = overlay.querySelector('#hc-upload-folder-list');
+    folderListEl.setFolders(folders || []);
+    if (folderId) folderListEl.setSelected(folderId);
+
+    // Get folder selection on submit — delegate to hc-folder-list
+    const getDestFolder = () => folderListEl.getSelected();
 
     const fileListEl = overlay.querySelector('#hc-upload-file-list');
     const itemElements = new Map();
