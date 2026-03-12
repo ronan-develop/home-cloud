@@ -13,7 +13,7 @@
 import '../components/hc-folder-list.js';
 import { apiFetch } from './api.js';
 
-const UPLOAD_API_ROUTE = '/_api_/v1/files_post';
+const UPLOAD_API_ROUTE = '/api/v1/files';
 const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5 GB
 
 let currentUploadQueue = null;
