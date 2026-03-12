@@ -88,7 +88,6 @@ export default class extends Controller {
     }
 
     _dispatchFiles(files) {
-        console.log('[FileUploadController] Dispatching', files.length, 'file(s) via hc:files-selected');
         // Dispatch custom event to trigger upload modal
         document.dispatchEvent(new CustomEvent('hc:files-selected', {
             detail: { files }
