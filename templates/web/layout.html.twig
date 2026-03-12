@@ -131,6 +131,7 @@
     var _tokenExp = 0;
 
     window.HC = {
+        userId: '{{ app.user ? app.user.id : '' }}',
         getToken: async function () {
             if (_token && Date.now() < _tokenExp) return _token;
             var res = await fetch('{{ path('app_web_token') }}');
