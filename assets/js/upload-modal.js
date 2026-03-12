@@ -46,6 +46,7 @@ function createUploadFn(token, folderId, newFolderName) {
             const formData = new FormData();
             
             formData.append('file', file);
+            formData.append('ownerId', window.HC?.userId || '');
             if (folderId) formData.append('folderId', folderId);
             if (newFolderName) formData.append('newFolderName', newFolderName);
 
