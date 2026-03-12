@@ -11,6 +11,7 @@
  */
 
 import '../components/hc-folder-list.js';
+import { apiFetch } from './api.js';
 
 const UPLOAD_API_ROUTE = '/_api_/v1/files_post';
 const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5 GB
@@ -470,13 +471,11 @@ export function initUploadModal() {
             return;
         }
 
-        // Fetch available folders from API
+        // Fetch available folders from API via apiFetch (gère le token automatiquement)
         let folders = [];
         try {
-            const token = await (window.HC?.getToken?.() || Promise.resolve(''));
-            const res = await fetch('/api/v1/folders', {
-                credentials: 'same-origin',
-                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            const res = await apiFetch('/api/v1/folders', {
+                headers: { 'Accept': 'application/ld+json' },
             });
             if (res.ok) {
                 const json = await res.json();
