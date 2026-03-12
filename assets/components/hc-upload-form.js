@@ -269,13 +269,21 @@ class HCUploadForm extends HTMLElement {
             <div class="upload-form">
                 <div class="destination-section">
                     <label class="section-label">Destination</label>
-                    <div class="folder-list" id="folder-list"></div>
-                    <input 
-                        type="text" 
-                        class="new-folder-input" 
-                        id="new-folder-input"
-                        placeholder="Ou créer un dossier…"
-                    >
+                    <div style="display:flex; gap:0.5rem; align-items:center;">
+                        <div style="flex:1">
+                            <div class="folder-list" id="folder-list" role="listbox" aria-label="Folder list"></div>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:0.35rem; width:220px;">
+                            <input 
+                                type="text" 
+                                class="new-folder-input" 
+                                id="new-folder-input"
+                                placeholder="Ou créer un dossier…"
+                                aria-label="Créer un dossier"
+                            >
+                            <button id="create-folder-btn" type="button" style="padding:0.45rem 0.6rem; border-radius:0.6rem; background:rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.25); color:inherit; cursor:pointer; font-size:0.85rem;">Créer</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="file-list" id="file-list"></div>
@@ -325,9 +333,16 @@ class HCUploadForm extends HTMLElement {
             }
 
             btn.addEventListener('click', () => {
-                this.folderOptions.forEach(opt => opt.classList.remove('active'));
-                btn.classList.add('active');
-                this.shadowRoot.getElementById('new-folder-input').value = '';
+                this._selectFolderBtn(btn);
+            });
+
+            // keyboard support
+            btn.setAttribute('tabindex', '0');
+            btn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this._selectFolderBtn(btn);
+                }
             });
 
             folderList.appendChild(btn);
@@ -398,12 +413,29 @@ class HCUploadForm extends HTMLElement {
      */
     _attachEventListeners() {
         const newFolderInput = this.shadowRoot.getElementById('new-folder-input');
+        const createBtn = this.shadowRoot.getElementById('create-folder-btn');
 
         newFolderInput.addEventListener('input', (e) => {
             if (e.target.value.trim()) {
                 this.folderOptions.forEach(opt => opt.classList.remove('active'));
             }
         });
+
+        // Enter creates folder
+        newFolderInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const name = newFolderInput.value.trim();
+                if (name) this._createFolder(name);
+            }
+        });
+
+        if (createBtn) {
+            createBtn.addEventListener('click', () => {
+                const name = newFolderInput.value.trim();
+                if (name) this._createFolder(name);
+            });
+        }
     }
 
     /**
@@ -419,7 +451,7 @@ class HCUploadForm extends HTMLElement {
         }
 
         const newFolderInput = this.shadowRoot.getElementById('new-folder-input');
-        if (newFolderInput.value.trim()) {
+        if (newFolderInput && newFolderInput.value.trim()) {
             return {
                 name: newFolderInput.value.trim(),
                 isNew: true,
@@ -477,6 +509,52 @@ class HCUploadForm extends HTMLElement {
     }
 
     /**
+     * Create a folder via API and select it
+     */
+    async _createFolder(name) {
+        try {
+            // optimistic UI: create a temporary folder id
+            const tempId = 'tmp-' + Math.random().toString(36).slice(2,7);
+            const newFolder = { id: tempId, name };
+            this.folders.unshift(newFolder);
+            this._renderFolders();
+
+            // POST to API
+            const res = await fetch('/api/v1/folders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name }) ,
+                credentials: 'same-origin'
+            });
+
+            if (!res.ok) throw new Error('create folder failed');
+            const created = await res.json();
+
+            // Replace temporary with real data
+            const idx = this.folders.findIndex(f => f.id === tempId);
+            if (idx !== -1) this.folders[idx] = created;
+            this._renderFolders();
+
+            // Select created
+            const btn = Array.from(this.folderOptions).find(b => b.getAttribute('data-folder-id') === (created.id || created.uuid || created.id));
+            if (btn) this._selectFolderBtn(btn);
+
+            // clear input
+            const input = this.shadowRoot.getElementById('new-folder-input');
+            if (input) input.value = '';
+
+            this.dispatchEvent(new CustomEvent('upload-form:folder-created', { detail: created }));
+            return created;
+        } catch (e) {
+            // rollback optimistic
+            this.folders = this.folders.filter(f => !f.id.startsWith('tmp-'));
+            this._renderFolders();
+            this.dispatchEvent(new CustomEvent('upload-form:folder-create-error', { detail: { message: e.message } }));
+            return null;
+        }
+    }
+
+    /**
      * Trigger a submit event with current selection
      */
     submit(detail = null) {
@@ -486,7 +564,19 @@ class HCUploadForm extends HTMLElement {
         // Legacy event name
         this.dispatchEvent(new CustomEvent('upload-form:submit', { detail: payload }));
     }
+
+    _selectFolderBtn(btn) {
+        this.folderOptions.forEach(opt => opt.classList.remove('active'));
+        btn.classList.add('active');
+        const id = btn.getAttribute('data-folder-id');
+        this.currentFolderId = id;
+        const input = this.shadowRoot.getElementById('new-folder-input');
+        if (input) input.value = '';
+    }
 }
+
+customElements.define('hc-upload-form', HCUploadForm);
+export { HCUploadForm };
 
 customElements.define('hc-upload-form', HCUploadForm);
 export { HCUploadForm };
