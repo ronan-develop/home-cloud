@@ -577,6 +577,3 @@ class HCUploadForm extends HTMLElement {
 
 customElements.define('hc-upload-form', HCUploadForm);
 export { HCUploadForm };
-
-customElements.define('hc-upload-form', HCUploadForm);
-export { HCUploadForm };
