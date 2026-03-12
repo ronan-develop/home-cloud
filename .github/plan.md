@@ -6745,3 +6745,315 @@ Refs: #TICKET-NUMBER"
 - Webhooks
 
 ---
+
+---
+
+# Plan : Refactorisation Modal Réutilisable (WebComponent)
+
+## 📋 Problème & Approche
+
+**État actuel :**
+- Modal `hc-modal.js` : composant générique mais basique (3 slots : content, actions, title)
+- `hc-upload-form.js` : composant séparé, construction DOM manuelle compliquée
+- Assemblage en JS classique : création d'instances, injection directe dans le DOM
+- **Limitation** : Difficile de réutiliser la modal avec d'autres composants
+
+**Objectif :**
+Créer un **système modal polymorphe** où :
+- Le modal gère la présentation (overlay, animations, fermeture)
+- On peut y injecter **n'importe quel composant** (upload-form, confirmation, feedback, formulaires custom, etc.)
+- Simplifie l'orchestration : `const modal = openModal(ComponentClass, options)`
+- API propre, réutilisable, testable
+
+---
+
+## 🎯 Architecture Cible
+
+```javascript
+// Avant (compliqué)
+const modal = document.createElement('hc-modal');
+const form = document.createElement('hc-upload-form');
+form.setAttribute('slot', 'content');
+modal.appendChild(form);
+document.body.appendChild(modal);
+modal.open();
+
+// Après (simple, réutilisable)
+const modal = await openModal(HCUploadForm, {
+  title: "Upload Files",
+  size: "large",
+  data: { folders, files }
+});
+
+modal.onSubmit((data) => console.log("Submitted:", data));
+modal.onClose(() => console.log("Closed"));
+```
+
+---
+
+## 📊 Phases & Livrables
+
+### Phase 4.1 : Refactoriser hc-modal.js
+**Objectifs :**
+- Améliorer architecture slots (plus flexibles)
+- Ajouter API `setContent()` pour injecter composants dynamiquement
+- Support des **props/data** vers le contenu
+- Améliorations UX (animations, accessibility)
+
+**Livrables :**
+- `assets/components/hc-modal.js` (v2) ✨
+  - Slots polymorphes : `[slot="content"]`, `[slot="header"]`, `[slot="footer"]`
+  - Méthodes : `open()`, `close()`, `setContent(component)`, `setData(data)`
+  - Events : `modal:open`, `modal:close`, `content:submit`, `content:cancel`
+  - CSS amélioré (focus, keyboard nav)
+
+**Tests :**
+- Ouverture/fermeture
+- Injection dynamique de contenu
+- Propagation d'événements
+
+---
+
+### Phase 4.2 : Créer ModalFactory (Orchestrator)
+**Objectifs :**
+- Helper centralisé pour ouvrir modals
+- Gestion du lifecycle (création → injection → destruction)
+- API Promise-based (await, async/await)
+- Support de configurations par composant
+
+**Livrables :**
+- `assets/services/ModalFactory.js` (nouveau) 🏭
+  ```javascript
+  // Signature
+  export async function openModal(ComponentClass, options = {})
+    
+  // Retourne une Promise<ModalInstance>
+  // ModalInstance a: onSubmit(), onClose(), then(), catch()
+  ```
+
+**Patterns supportés :**
+```javascript
+// Promise chain
+openModal(HCUploadForm, { title: "Upload" })
+  .then(modal => {
+    modal.onSubmit(data => handleSubmit(data));
+    modal.onClose(() => cleanup());
+  });
+
+// Async/await
+const modal = await openModal(HCUploadForm, options);
+const result = await modal; // attend submit/cancel
+
+// Nested modals
+const confirmModal = await openModal(HCConfirm, { message: "Sure?" });
+if (await confirmModal) {
+  const resultModal = await openModal(HCUploadForm);
+}
+```
+
+---
+
+### Phase 4.3 : Adapter hc-upload-form.js
+**Objectifs :**
+- Accepter des **props/data** depuis la modal parent
+- Dispatcher **événements custom** au lieu de callbacks
+- Compatible avec le cycle de vie modal
+- Reste fonctionnel en standalone
+
+**Livrables :**
+- `assets/components/hc-upload-form.js` (adapté) 🔄
+  - Propriétés : `data`, `config` (reçues par modal)
+  - Événements : `upload-form:submit`, `upload-form:cancel`, `upload-form:error`
+  - Méthode : `setData(data)` pour réinitialiser
+  - Backward-compatible
+
+**Exemple :**
+```javascript
+// Via modal
+await openModal(HCUploadForm, {
+  title: "Upload Files",
+  data: { folders, files, currentFolderId }
+});
+
+// Via slot (ancien style)
+<hc-modal>
+  <hc-upload-form slot="content"></hc-upload-form>
+</hc-modal>
+```
+
+---
+
+### Phase 4.4 : Créer Composants Utilitaires
+**Objectifs :**
+- Composants simples et réutilisables (confirmation, alert, feedback)
+- Base pour d'autres modals
+- Cohérence design
+
+**Livrables :**
+- `assets/components/hc-confirm.js` (nouveau) 🆕
+  ```javascript
+  // Confirmation dialog simple
+  const result = await openModal(HCConfirm, {
+    title: "Delete?",
+    message: "Are you sure?",
+    okText: "Delete",
+    cancelText: "Cancel"
+  });
+  // result = true (OK) or false (Cancel)
+  ```
+
+- `assets/components/hc-alert.js` (nouveau) 🆕
+  ```javascript
+  // Alert/message simple
+  await openModal(HCAlert, {
+    type: 'success', // success|error|warning|info
+    message: "File uploaded!",
+    autoDismiss: 3000 // ms
+  });
+  ```
+
+- `assets/components/hc-form-base.js` (nouveau) 🆕
+  - Classe abstraite pour formes réutilisables
+  - Validation, soumission, gestion d'erreurs
+  - Héritage : `class CustomForm extends HCFormBase`
+
+---
+
+### Phase 4.5 : Intégration & Tests
+**Objectifs :**
+- Tester intégration complète
+- Documenter patterns de réutilisation
+- Valider architecture
+
+**Livrables :**
+- Tests d'intégration : upload-form dans modal
+- Documentation : Guide réutilisation (voir Phase 4.6)
+- Exemples : 3-4 cas d'usage
+
+---
+
+### Phase 4.6 : Documentation
+**Objectifs :**
+- Guide complet pour créer/réutiliser modals
+- API reference
+- Patterns & best practices
+
+**Livrables :**
+- `docs/webcomponents/modal-guide.md`
+  - Architecture polymorphe
+  - Créer une modal custom
+  - Intégrer avec API backend
+  - Gestion d'erreurs
+  - Accessibility checklist
+
+- `docs/webcomponents/patterns.md`
+  - Upload files
+  - Confirm deletion
+  - Multi-step wizard
+  - Dynamic forms
+
+---
+
+## 🔑 Décisions de Design
+
+### 1️⃣ Communication Modal ↔ Contenu
+**Choix : Event-driven + Props**
+```javascript
+// Props (données en entrée)
+<hc-modal :data="{ folders, files }">
+  <hc-upload-form></hc-upload-form>
+</hc-modal>
+
+// Events (données en sortie)
+form.addEventListener('upload-form:submit', (e) => {
+  console.log('Submitted:', e.detail);
+});
+```
+
+### 2️⃣ Lifecycle de Modal
+```
+1. Create (createElement + configure)
+2. Inject (appendChild to DOM)
+3. Render (shadowDOM)
+4. Open (classList.add('open'))
+5. Content interacts
+6. Submit/Cancel event fired
+7. Close (classList.remove('open'))
+8. Cleanup (removeEventListener, removeChild)
+9. Destroy (garbage collect)
+```
+
+### 3️⃣ Size/Theme/Customization
+```javascript
+// Standard sizes
+openModal(Component, {
+  size: 'small' | 'medium' | 'large' | 'fullscreen',
+  theme: 'light' | 'dark',
+  closeable: true, // afficher bouton close
+  backdrop: 'close' | 'static', // ESC + click ferme?
+});
+```
+
+### 4️⃣ Nesting (Modals Imbriquées)
+```javascript
+// Supporter modals "empilées"
+// zIndex automatique : 9999, 9998, 9997...
+const modal1 = await openModal(Component1);
+const modal2 = await openModal(Component2); // appear on top
+```
+
+---
+
+## 📈 Statut de Progression
+
+| Phase | Titre | Statut | Détails |
+|-------|-------|--------|---------|
+| 4.1 | Refactor hc-modal.js | ⏳ **TODO** | Améliorations slots + API |
+| 4.2 | ModalFactory | ⏳ **TODO** | Factory + orchestration |
+| 4.3 | Adapter hc-upload-form | ⏳ **TODO** | Props + events |
+| 4.4 | Composants utilitaires | ⏳ **TODO** | Confirm, Alert, FormBase |
+| 4.5 | Intégration & Tests | ⏳ **TODO** | Validation architecture |
+| 4.6 | Documentation | ⏳ **TODO** | Guides + API reference |
+
+---
+
+## 🚀 Roadmap d'Exécution
+
+```
+↓ Phase 4.1 (refactor modal)
+  ├─ Tester améliorations
+  └─ Valider rétrocompatibilité
+  
+↓ Phase 4.2 (factory)
+  ├─ Tester orchestration
+  └─ Valider promises/async
+
+↓ Phase 4.3 (adapter upload-form)
+  ├─ Tester intégration
+  └─ Valider props/events
+
+↓ Phase 4.4 (composants utilitaires)
+  ├─ Confirm, Alert, FormBase
+  └─ Tests minimaux
+
+↓ Phase 4.5 (intégration complète)
+  ├─ Scénarios multi-modals
+  └─ Performance checks
+
+↓ Phase 4.6 (documentation)
+  ├─ Guides + examples
+  └─ Best practices
+```
+
+---
+
+## 📝 Notes Importantes
+
+- ✅ **Backward compatibility** : Ancien code avec slots doit rester fonctionnel
+- ✅ **Performance** : Lazy load components si possible
+- ✅ **Accessibility** : ARIA labels, keyboard nav (Tab, ESC)
+- ✅ **Mobile-friendly** : Responsive designs, touch events
+- ✅ **Error handling** : Graceful degradation si composant crash
+- ✅ **Testing** : Unit tests (hc-modal, factory), integration tests (upload-form)
+
+---

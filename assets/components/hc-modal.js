@@ -1,20 +1,245 @@
 /**
- * HCModal — Webcomponent générique pour toutes les modales
- * 
- * Encapsule le design Liquid Glass + gestion open/close/ESC
- * Accepte des enfants via slot 'content'
- * 
- * Utilisation:
- *   <hc-modal title="Mon titre" size="medium">
- *     <div slot="content">Contenu personnalisé</div>
- *     <div slot="actions"><button>OK</button></div>
- *   </hc-modal>
- * 
- * API:
- *   modal.open()     — afficher
- *   modal.close()    — masquer
- *   modal.setTitle(text) — changer titre
+ * HCModal v2 — WebComponent modal générique et polymorphe
+ *
+ * Buts:
+ * - Conteneur d'interface (overlay, animations, accessibility)
+ * - Support d'injection dynamique de composants (setContent)
+ * - Transmission de données via setData / props
+ * - API évènementielle et lifecycle utilisable par ModalFactory
+ *
+ * Utilisation (slot / light DOM compatible):
+ *  <hc-modal title="Mon titre" size="medium">
+ *    <hc-upload-form slot="content"></hc-upload-form>
+ *  </hc-modal>
+ *
+ * Utilisation (factory async):
+ *  const modal = await openModal(HCUploadForm, { title: 'Upload' });
+ *  modal.on('submit', data => ...);
  */
+
+let _modalZ = 9999; // base z-index for stacking
+
+class HCModal extends HTMLElement {
+    constructor() {
+        super();
+        this.attachShadow({ mode: 'open' });
+        this._isOpen = false;
+        this._previousActive = null;
+        this._escapeHandler = null;
+        this._focusHandler = null;
+        this._resolve = null; // for promise-based flows
+        this._reject = null;
+        this._contentRef = null;
+    }
+
+    connectedCallback() {
+        this.render();
+        this._setupEventListeners();
+    }
+
+    render() {
+        const title = this.getAttribute('title') || '';
+        const size = this.getAttribute('size') || 'medium';
+        const closeable = this.getAttribute('closeable') !== 'false';
+
+        const sizeMap = { small: '320px', medium: '480px', large: '720px', fullscreen: '100%' };
+        const maxWidth = sizeMap[size] || sizeMap.medium;
+
+        // Unique ids for aria
+        const titleId = `hc-modal-title-${Math.random().toString(36).slice(2,8)}`;
+
+        this.shadowRoot.innerHTML = `
+            <style>
+                :host { position: fixed; inset: 0; z-index: ${_modalZ}; display: block; }
+                .hc-modal-overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.45); }
+                .hc-modal-overlay.open { display: flex; }
+                .hc-modal-card { position: relative; width: 100%; max-width: ${maxWidth}; margin: 1rem; border-radius: 1.6rem; overflow: hidden; box-shadow: 0 8px 32px rgba(31,38,135,0.22); background: transparent; }
+                .hc-modal-card::before { content: ''; position: absolute; inset: 0; background: rgba(255,255,255,0.06); backdrop-filter: blur(18px) saturate(180%); pointer-events: none; border-radius: 1.6rem; }
+                .hc-modal-header { position: relative; z-index: 10; padding: 1rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:space-between; }
+                .hc-modal-title { margin:0; font-size:1.1rem; font-weight:600; color:inherit; }
+                .hc-modal-close-btn { background:none; border:none; cursor:pointer; font-size:1.25rem; padding:0.25rem; }
+                .hc-modal-content { position: relative; z-index:10; padding: 1rem 1.25rem; }
+                .hc-modal-footer { position:relative; z-index:10; padding:0.75rem 1.25rem; border-top: 1px solid rgba(255,255,255,0.06); display:flex; gap:0.5rem; justify-content:flex-end; }
+                @media (max-width:640px) { .hc-modal-card { max-width:95%; margin:0.5rem; } .hc-modal-content{padding:0.8rem} }
+            </style>
+            <div class="hc-modal-overlay" tabindex="-1" part="overlay">
+                <div class="hc-modal-card" role="dialog" aria-modal="true" aria-labelledby="${title ? titleId : ''}" part="card">
+                    ${title ? `
+                        <div class="hc-modal-header" part="header">
+                            <h2 id="${titleId}" class="hc-modal-title">${this._escapeHtml(title)}</h2>
+                            ${closeable ? '<button class="hc-modal-close-btn" aria-label="Fermer">✕</button>' : ''}
+                        </div>
+                    ` : ''}
+
+                    <div class="hc-modal-content" part="content">
+                        <slot name="content"></slot>
+                    </div>
+
+                    <div class="hc-modal-footer" part="footer">
+                        <slot name="actions"></slot>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Update actions visibility on slot change
+        const actionsSlot = this.shadowRoot.querySelector('slot[name="actions"]');
+        if (actionsSlot) {
+            actionsSlot.addEventListener('slotchange', () => this._updateActionsVisibility());
+            this._updateActionsVisibility();
+        }
+    }
+
+    _setupEventListeners() {
+        const overlay = this.shadowRoot.querySelector('.hc-modal-overlay');
+        const closeBtn = this.shadowRoot.querySelector('.hc-modal-close-btn');
+
+        if (closeBtn) closeBtn.addEventListener('click', () => this._handleCancel());
+
+        if (overlay) {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay && this.getAttribute('backdrop') !== 'static') this._handleCancel();
+            });
+        }
+
+        // ESC key
+        this._escapeHandler = (e) => {
+            if (e.key === 'Escape' && this._isOpen && this.getAttribute('backdrop') !== 'static') this._handleCancel();
+        };
+        document.addEventListener('keydown', this._escapeHandler);
+
+        // Focus trap
+        this._focusHandler = (e) => this._trapFocus(e);
+    }
+
+    _updateActionsVisibility() {
+        const actionsSlot = this.shadowRoot.querySelector('slot[name="actions"]');
+        const footer = this.shadowRoot.querySelector('.hc-modal-footer');
+        if (!actionsSlot || !footer) return;
+        const nodes = actionsSlot.assignedNodes({ flatten: true }).filter(n => !(n.nodeType === Node.TEXT_NODE && n.textContent.trim() === ''));
+        footer.style.display = nodes.length > 0 ? 'flex' : 'none';
+    }
+
+    _handleCancel() {
+        this.dispatchEvent(new CustomEvent('modal:cancel'));
+        this.close();
+        if (this._reject) this._reject(new Error('cancel'));
+    }
+
+    _handleSubmit(detail) {
+        this.dispatchEvent(new CustomEvent('modal:submit', { detail }));
+        this.close();
+        if (this._resolve) this._resolve(detail);
+    }
+
+    open() {
+        if (this._isOpen) return this;
+        this._isOpen = true;
+        const overlay = this.shadowRoot.querySelector('.hc-modal-overlay');
+        overlay.classList.add('open');
+
+        // z-index stacking
+        this.style.zIndex = ++_modalZ;
+
+        // prevent body scroll
+        document.body.style.overflow = 'hidden';
+
+        // focus management
+        this._previousActive = document.activeElement;
+        this._focusFirstDescendant();
+        document.addEventListener('focus', this._focusHandler, true);
+
+        this.dispatchEvent(new CustomEvent('modal:open'));
+        return this;
+    }
+
+    close() {
+        if (!this._isOpen) return this;
+        this._isOpen = false;
+        const overlay = this.shadowRoot.querySelector('.hc-modal-overlay');
+        overlay.classList.remove('open');
+        document.body.style.overflow = '';
+        document.removeEventListener('focus', this._focusHandler, true);
+        if (this._previousActive && typeof this._previousActive.focus === 'function') this._previousActive.focus();
+        this.dispatchEvent(new CustomEvent('modal:close'));
+    }
+
+    // Promise-based convenience: resolves on submit, rejects on cancel
+    asPromise() {
+        return new Promise((resolve, reject) => { this._resolve = resolve; this._reject = reject; });
+    }
+
+    // Set a light-dom component as content; it must be an Element
+    setContent(component) {
+        if (!(component instanceof Element)) throw new TypeError('component must be a DOM Element');
+        component.setAttribute('slot', 'content');
+        this.appendChild(component);
+        this._contentRef = component;
+        return this;
+    }
+
+    // Convenience: setData will try to set property or dispatch event
+    setData(data) {
+        if (this._contentRef) {
+            try {
+                if (typeof this._contentRef.setData === 'function') {
+                    this._contentRef.setData(data);
+                } else {
+                    this._contentRef.data = data;
+                }
+            } catch (e) {
+                // fallback: dispatch event
+                this._contentRef.dispatchEvent(new CustomEvent('modal:set-data', { detail: data }));
+            }
+        }
+        return this;
+    }
+
+    // Utility: escape html
+    _escapeHtml(text) {
+        const map = { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' };
+        return String(text).replace(/[&<>"']/g, m => map[m]);
+    }
+
+    // Focus helpers
+    _focusFirstDescendant() {
+        const focusable = this._getFocusableElements();
+        if (focusable.length) {
+            focusable[0].focus();
+        } else {
+            const overlay = this.shadowRoot.querySelector('.hc-modal-overlay');
+            overlay.focus();
+        }
+    }
+
+    _getFocusableElements() {
+        const el = this.shadowRoot.querySelector('.hc-modal-card');
+        if (!el) return [];
+        const selectors = 'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex], [contenteditable]';
+        return Array.from(el.querySelectorAll(selectors)).filter(e => e.tabIndex !== -1 && !e.hasAttribute('disabled'));
+    }
+
+    _trapFocus(e) {
+        if (!this._isOpen) return;
+        const focusable = this._getFocusableElements();
+        if (!focusable.length) { e.preventDefault(); return; }
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.target === last && e.shiftKey === false && e.relatedTarget === null) return; // normal
+        // ensure focus stays in modal
+        if (!this.contains(document.activeElement)) {
+            first.focus();
+        }
+    }
+
+    disconnectedCallback() {
+        document.removeEventListener('keydown', this._escapeHandler);
+        document.removeEventListener('focus', this._focusHandler, true);
+    }
+}
+
+customElements.define('hc-modal', HCModal);
+export { HCModal };
 class HCModal extends HTMLElement {
     constructor() {
         super();
