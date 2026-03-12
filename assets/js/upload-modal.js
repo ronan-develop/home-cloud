@@ -114,21 +114,37 @@ function createModalOverlay(files, currentFolderId, folders) {
 
     const card = document.createElement('div');
     card.className = 'upload-modal-card';
+    card.style.cssText = [
+        'position:relative',
+        'width:100%',
+        'max-width:480px',
+        'margin:1rem',
+        'border-radius:1.6rem',
+        'overflow:hidden',
+        'background:rgba(255,255,255,0.08)',
+        'backdrop-filter:blur(24px) saturate(180%)',
+        'border:1px solid rgba(255,255,255,0.15)',
+        'box-shadow:0 8px 32px rgba(0,0,0,0.4)',
+    ].join(';');
 
     const content = document.createElement('div');
     content.className = 'upload-modal-content';
+    content.style.cssText = 'position:relative;z-index:10;padding:1.5rem;color:rgba(255,255,255,0.9);font-family:inherit';
 
     // Title
     const title = document.createElement('div');
     title.className = 'upload-modal-title';
+    title.style.cssText = 'font-size:1.25rem;font-weight:600;color:rgba(255,255,255,0.95);margin-bottom:1.25rem';
     title.textContent = `Importer ${files.length} fichier${files.length > 1 ? 's' : ''}`;
 
     // Destination section
     const destSection = document.createElement('div');
     destSection.className = 'upload-destination';
+    destSection.style.marginBottom = '1.25rem';
 
     const destLabel = document.createElement('label');
     destLabel.className = 'upload-destination-label';
+    destLabel.style.cssText = 'font-size:0.75rem;font-weight:600;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;display:block';
     destLabel.textContent = 'Destination';
 
     const folderList = document.createElement('div');
@@ -145,6 +161,8 @@ function createModalOverlay(files, currentFolderId, folders) {
             btn.setAttribute('data-icon', folder.icon || '📁');
             btn.setAttribute('data-folder-id', folder.id);
             btn.textContent = folder.name;
+            btn.style.cssText = 'display:flex;align-items:center;gap:0.5rem;padding:0.6rem 0.75rem;border-radius:0.75rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.8);font-size:0.85rem;cursor:pointer;width:100%;text-align:left;transition:background 0.2s';
+            if (folder.id === currentFolderId) btn.style.background = 'rgba(59,130,246,0.2)';
 
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -166,6 +184,7 @@ function createModalOverlay(files, currentFolderId, folders) {
     newFolderInput.className = 'upload-new-folder-input';
     newFolderInput.placeholder = 'Ou créer un dossier…';
     newFolderInput.id = 'hc-upload-new-folder-input';
+    newFolderInput.style.cssText = 'width:100%;padding:0.6rem 0.75rem;border-radius:0.75rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.8);font-size:0.85rem;outline:none;box-sizing:border-box';
 
     newFolderContainer.appendChild(newFolderInput);
 
@@ -186,16 +205,19 @@ function createModalOverlay(files, currentFolderId, folders) {
     // Actions
     const actions = document.createElement('div');
     actions.className = 'upload-actions';
+    actions.style.cssText = 'display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1.25rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.08)';
 
     const cancelBtn = document.createElement('button');
     cancelBtn.type = 'button';
     cancelBtn.className = 'upload-btn upload-btn--cancel';
+    cancelBtn.style.cssText = 'padding:0.6rem 1.25rem;border-radius:0.75rem;border:none;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);font-size:0.9rem;cursor:pointer';
     cancelBtn.textContent = 'Annuler';
     cancelBtn.id = 'hc-upload-cancel-btn';
 
     const submitBtn = document.createElement('button');
     submitBtn.type = 'button';
     submitBtn.className = 'upload-btn upload-btn--submit';
+    submitBtn.style.cssText = 'padding:0.6rem 1.25rem;border-radius:0.75rem;border:none;background:rgba(59,130,246,0.8);color:#fff;font-size:0.9rem;font-weight:600;cursor:pointer';
     submitBtn.textContent = '⬆️ Uploader';
     submitBtn.id = 'hc-upload-submit-btn';
 
@@ -223,9 +245,11 @@ function createUploadItem(file) {
     const item = document.createElement('div');
     item.className = 'upload-item upload-item--pending';
     item.setAttribute('data-file-name', file.name);
+    item.style.cssText = 'padding:0.6rem 0;border-bottom:1px solid rgba(255,255,255,0.06)';
 
     const header = document.createElement('div');
     header.className = 'upload-item__header';
+    header.style.cssText = 'display:flex;align-items:center;gap:0.5rem;font-size:0.82rem';
 
     const icon = document.createElement('span');
     icon.className = 'upload-item__icon';
@@ -233,14 +257,17 @@ function createUploadItem(file) {
 
     const name = document.createElement('span');
     name.className = 'upload-item__name';
+    name.style.cssText = 'flex:1;color:rgba(255,255,255,0.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
     name.textContent = file.name;
 
     const size = document.createElement('span');
     size.className = 'upload-item__size';
+    size.style.cssText = 'color:rgba(255,255,255,0.4);font-size:0.75rem;white-space:nowrap';
     size.textContent = formatFileSize(file.size);
 
     const status = document.createElement('span');
     status.className = 'upload-item__status upload-item__status--pending';
+    status.style.cssText = 'color:rgba(255,255,255,0.4);font-size:0.75rem;white-space:nowrap';
     status.textContent = 'En attente';
 
     header.appendChild(icon);
@@ -250,10 +277,11 @@ function createUploadItem(file) {
 
     const progress = document.createElement('div');
     progress.className = 'upload-item__progress';
+    progress.style.cssText = 'height:2px;background:rgba(255,255,255,0.08);border-radius:1px;margin-top:0.35rem;overflow:hidden';
 
     const bar = document.createElement('div');
     bar.className = 'upload-item__bar';
-    bar.style.width = '0%';
+    bar.style.cssText = 'height:100%;background:rgba(59,130,246,0.7);border-radius:1px;transition:width 0.3s ease;width:0%';
 
     progress.appendChild(bar);
 
