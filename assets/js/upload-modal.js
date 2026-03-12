@@ -463,16 +463,33 @@ function closeUploadModal() {
  * Initialize module: listen for 'hc:files-selected' event.
  */
 export function initUploadModal() {
-    document.addEventListener('hc:files-selected', (event) => {
+    document.addEventListener('hc:files-selected', async (event) => {
         const { files } = event.detail;
         if (!files || !Array.isArray(files)) {
             console.warn('[UploadModal] Invalid files:', files);
             return;
         }
 
-        openUploadModal(files, {
-            folderId: 'root',
-        }).catch(err => {
+        // Fetch available folders from API
+        let folders = [];
+        try {
+            const token = await (window.HC?.getToken?.() || Promise.resolve(''));
+            const res = await fetch('/api/v1/folders', {
+                credentials: 'same-origin',
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
+            if (res.ok) {
+                const json = await res.json();
+                if (Array.isArray(json)) folders = json;
+                else if (Array.isArray(json['hydra:member'])) folders = json['hydra:member'];
+                else if (Array.isArray(json.items)) folders = json.items;
+                else if (Array.isArray(json.data)) folders = json.data;
+            }
+        } catch (err) {
+            console.warn('[UploadModal] Could not fetch folders:', err);
+        }
+
+        openUploadModal(files, { folders }).catch(err => {
             console.error('[UploadModal] Error opening modal:', err);
         });
     });
