@@ -29,13 +29,6 @@ export async function openModal(ComponentClass, options = {}) {
     throw new TypeError('ComponentClass must be constructor, tagName or Element');
   }
 
-  // Attach data/config
-  if (options.data && typeof content.setData === 'function') {
-    content.setData(options.data);
-  } else if (options.data) {
-    content.data = options.data;
-  }
-
   modal.setContent(content);
 
   // If actions provided (HTML element), attach
@@ -47,6 +40,13 @@ export async function openModal(ComponentClass, options = {}) {
   // Append to body and open
   document.body.appendChild(modal);
   modal.open();
+
+  // Attach data/config after appended so connectedCallback has run
+  if (options.data && typeof content.setData === 'function') {
+    content.setData(options.data);
+  } else if (options.data) {
+    content.data = options.data;
+  }
 
   // Return a small API surface
   const instance = {
