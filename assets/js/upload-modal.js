@@ -481,27 +481,15 @@ function closeUploadModal() {
  * Initialize module: listen for 'hc:files-selected' event.
  */
 export function initUploadModal() {
-    console.log('[UploadModal] Initializing listener for hc:files-selected');
-    
     document.addEventListener('hc:files-selected', (event) => {
-        console.log('[UploadModal] Event received:', event.detail);
-        
         const { files } = event.detail;
         if (!files || !Array.isArray(files)) {
             console.warn('[UploadModal] Invalid files:', files);
             return;
         }
 
-        console.log('[UploadModal] Opening modal with', files.length, 'file(s)');
-
-        // TODO: Fetch current folder & available folders from API/context
-        // For now, use root folder as default
         openUploadModal(files, {
-            folderId: 'root', // Placeholder
-            folders: [
-                { id: 'root', name: '🏠 Mes fichiers (racine)', icon: '🏠' },
-                // Fetch from API in real implementation
-            ],
+            folderId: 'root',
         }).catch(err => {
             console.error('[UploadModal] Error opening modal:', err);
         });
