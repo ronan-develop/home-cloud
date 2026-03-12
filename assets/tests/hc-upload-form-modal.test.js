@@ -18,7 +18,9 @@ describe('HCUploadForm within HCModal integration', () => {
 
     const instance = await openModal('hc-upload-form', { title: 'Upload', data });
 
-    // instance.asPromise() should be pending; simulate submit from content
+    // instance.asPromise() should be pending; register promise BEFORE dispatching submit
+    const promise = instance.asPromise();
+
     const contentEl = document.querySelector('hc-upload-form');
     expect(contentEl).toBeTruthy();
 
@@ -27,8 +29,8 @@ describe('HCUploadForm within HCModal integration', () => {
     const submitEvent = new CustomEvent('submit', { detail: payload });
     contentEl.dispatchEvent(submitEvent);
 
-    // Wait next tick to allow modal to resolve
-    const result = await instance.asPromise();
+    // Wait for modal to resolve
+    const result = await promise;
     expect(result).toEqual(payload);
 
     // Modal should be removed or closed
