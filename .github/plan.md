@@ -7009,8 +7009,8 @@ const modal2 = await openModal(Component2); // appear on top
 | Phase | Titre | Statut | Détails |
 |-------|-------|--------|---------|
 | 4.1 | Refactor hc-modal.js | ⏳ **TODO** | Améliorations slots + API |
-| 4.2 | ModalFactory | ⏳ **TODO** | Factory + orchestration |
-| 4.3 | Adapter hc-upload-form | ⏳ **TODO** | Props + events |
+| 4.2 | ModalFactory | ✅ done | Factory + orchestration |
+| 4.3 | Adapter hc-upload-form | ✅ done | Props + events |
 | 4.4 | Composants utilitaires | ⏳ **TODO** | Confirm, Alert, FormBase |
 | 4.5 | Intégration & Tests | ⏳ **TODO** | Validation architecture |
 | 4.6 | Documentation | ⏳ **TODO** | Guides + API reference |
