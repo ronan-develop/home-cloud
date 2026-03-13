@@ -9,6 +9,7 @@ use App\Entity\User;
 use App\Interface\AuthorizationCheckerInterface;
 use App\Interface\FileRepositoryInterface;
 use App\Interface\StorageServiceInterface;
+use App\Service\FilenameValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
@@ -31,6 +32,7 @@ final class FileActionService
         private readonly StorageServiceInterface $storageService,
         private readonly AuthorizationCheckerInterface $authChecker,
         private readonly EntityManagerInterface $em,
+        private readonly FilenameValidator $filenameValidator,
     ) {}
 
     /**
@@ -40,17 +42,7 @@ final class FileActionService
      */
     public function rename(File $file, string $newName): void
     {
-        // 1. Validate: length
-        if (mb_strlen($newName) > 255) {
-            throw new BadRequestHttpException('File name too long (255 max)');
-        }
-
-        // 2. Validate: characters (no slashes, colons, wildcards, quotes, etc.)
-        if (!preg_match('/^[^\\\\\/:*?"<>|]+$/u', $newName)) {
-            throw new BadRequestHttpException('Invalid characters in file name');
-        }
-
-        // 3. Persist
+        $this->filenameValidator->validate($newName);
         $file->setOriginalName($newName);
         $this->em->flush();
     }

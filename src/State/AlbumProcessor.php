@@ -16,6 +16,7 @@ use App\ApiResource\AlbumOutput;
 use App\Entity\Album;
 use App\Repository\AlbumRepository;
 use App\Repository\UserRepository;
+use App\Service\FilenameValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -38,6 +39,7 @@ final class AlbumProcessor implements ProcessorInterface
         private readonly AlbumProvider $provider,
         private readonly TokenStorageInterface $tokenStorage,
         private readonly LoggerInterface $logger,
+        private readonly FilenameValidator $filenameValidator,
     ) {}
 
     /**
@@ -116,10 +118,7 @@ final class AlbumProcessor implements ProcessorInterface
             throw new AccessDeniedHttpException('You are not the owner of this album');
         }
         if ($data->name !== '') {
-            // Validation caractères interdits (mêmes règles que Folder)
-            if (!preg_match('/^[^\\\\\/\:\*\?\"\<\>\|]+$/u', $data->name)) {
-                throw new BadRequestHttpException('Invalid characters in album name');
-            }
+            $this->filenameValidator->validate($data->name);
             $album->setName($data->name);
         }
         $this->em->flush();

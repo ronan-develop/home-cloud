@@ -10,6 +10,7 @@ use App\Interface\AuthorizationCheckerInterface;
 use App\Interface\FileRepositoryInterface;
 use App\Interface\StorageServiceInterface;
 use App\Service\FileActionService;
+use App\Service\FilenameValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -30,10 +31,11 @@ class FileActionServiceTest extends TestCase
         $this->em = $this->createMock(EntityManagerInterface::class);
 
         $this->service = new FileActionService(
-            $this->createMock(FileRepositoryInterface::class), // Not used in unit tests
+            $this->createMock(FileRepositoryInterface::class),
             $this->storageService,
             $this->authChecker,
             $this->em,
+            new FilenameValidator(),
         );
     }
 

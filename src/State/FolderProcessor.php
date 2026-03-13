@@ -16,6 +16,7 @@ use App\Enum\FolderMediaType;
 use App\Interface\DefaultFolderServiceInterface;
 use App\Repository\FolderRepository;
 use App\Repository\UserRepository;
+use App\Service\FilenameValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -53,6 +54,7 @@ final class FolderProcessor implements ProcessorInterface
         private readonly TokenStorageInterface $tokenStorage, // ✅ Ajouté
         private readonly LoggerInterface $logger, // ✅ Ajouté
         private readonly DefaultFolderServiceInterface $defaultFolderService,
+        private readonly FilenameValidator $filenameValidator,
     ) {}
 
     /**
@@ -81,9 +83,7 @@ final class FolderProcessor implements ProcessorInterface
         if (empty($data->ownerId)) {
             throw new BadRequestHttpException('ownerId is required');
         }
-        if (!preg_match('/^[^\\\\\/\:\*\?"<>|]+$/u', $data->name)) {
-            throw new BadRequestHttpException('Invalid characters in folder name');
-        }
+        $this->filenameValidator->validate($data->name);
         $owner = $this->userRepository->find($data->ownerId)
             ?? throw new NotFoundHttpException('User not found');
         $parent = null;
@@ -144,10 +144,7 @@ final class FolderProcessor implements ProcessorInterface
             throw new AccessDeniedHttpException('You are not the owner of this folder');
         }
         if ($data->name !== '') {
-            // Correction : doublement des antislashs pour l'expression régulière
-            if (!preg_match('/^[^\\\\\/\:\*\?\"\<\>\|]+$/u', $data->name)) {
-                throw new BadRequestHttpException('Invalid characters in folder name');
-            }
+            $this->filenameValidator->validate($data->name);
             // Unicité du nom dans le parent pour ce propriétaire
             $parent = $folder->getParent();
             $criteria = ['name' => $data->name, 'owner' => $folder->getOwner()];
