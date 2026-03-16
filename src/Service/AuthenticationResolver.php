@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\User;
+use App\Interface\AuthenticationResolverInterface;
 use App\Repository\UserRepository;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
@@ -15,7 +16,7 @@ use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInt
  *
  * Responsibility: Token → User mapping only.
  */
-final class AuthenticationResolver
+final class AuthenticationResolver implements AuthenticationResolverInterface
 {
     public function __construct(
         private readonly TokenStorageInterface $tokenStorage,

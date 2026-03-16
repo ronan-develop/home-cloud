@@ -7,7 +7,8 @@ namespace App\Security;
 use App\Entity\Album;
 use App\Entity\Folder;
 use App\Entity\Share;
-use App\Service\AuthenticationResolver;
+use App\Interface\AuthenticationResolverInterface;
+use App\Interface\OwnershipCheckerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
@@ -18,10 +19,10 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
  * Responsabilité : access control ownership uniquement.
  * Utilise AuthenticationResolver pour résoudre l'utilisateur courant.
  */
-final readonly class OwnershipChecker
+final readonly class OwnershipChecker implements OwnershipCheckerInterface
 {
     public function __construct(
-        private AuthenticationResolver $authResolver,
+        private AuthenticationResolverInterface $authResolver,
         private LoggerInterface $logger,
     ) {}
 
