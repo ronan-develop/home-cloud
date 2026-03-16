@@ -14,8 +14,8 @@ use App\Dto\DeleteFolderInput;
 use App\Entity\Folder;
 use App\Enum\FolderMediaType;
 use App\Interface\DefaultFolderServiceInterface;
-use App\Repository\FolderRepository;
-use App\Repository\UserRepository;
+use App\Interface\FolderRepositoryInterface;
+use App\Interface\UserRepositoryInterface;
 use App\Service\AuthenticationResolver;
 use App\Service\FilenameValidator;
 use App\Service\IriExtractor;
@@ -47,8 +47,8 @@ final class FolderProcessor implements ProcessorInterface
 {
     public function __construct(
         private readonly EntityManagerInterface $em,
-        private readonly FolderRepository $folderRepository,
-        private readonly UserRepository $userRepository,
+        private readonly FolderRepositoryInterface $folderRepository,
+        private readonly UserRepositoryInterface $userRepository,
         /** Injecté pour convertir l'entité en DTO après persist (évite la duplication du mapping) */
         private readonly FolderProvider $provider,
         private readonly RequestStack $requestStack,
