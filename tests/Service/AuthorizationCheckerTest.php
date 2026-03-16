@@ -6,7 +6,7 @@ namespace App\Tests\Service;
 use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\User;
-use App\Service\AuthorizationChecker;
+use App\Security\AuthorizationChecker;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 

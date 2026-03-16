@@ -5,7 +5,7 @@ namespace App\Tests\Service;
 
 use App\Entity\User;
 use App\Repository\UserRepository;
-use App\Service\AuthenticationResolver;
+use App\Security\AuthenticationResolver;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;

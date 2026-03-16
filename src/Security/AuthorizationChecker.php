@@ -1,7 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Security;
 
 use App\Entity\File;
 use App\Entity\Folder;
@@ -24,7 +25,7 @@ final class AuthorizationChecker implements AuthorizationCheckerInterface
      */
     public function assertOwns(File|Folder $entity, User $requester): void
     {
-        if ((string)$entity->getOwner()->getId() !== (string)$requester->getId()) {
+        if ((string) $entity->getOwner()->getId() !== (string) $requester->getId()) {
             $className = (new \ReflectionClass($entity))->getShortName();
             throw new AccessDeniedHttpException(
                 sprintf('You do not own this %s', $className)
@@ -40,11 +41,10 @@ final class AuthorizationChecker implements AuthorizationCheckerInterface
      */
     public function wouldCreateCycle(Folder $sourceFolder, Folder $targetFolder): bool
     {
-        // Traverse targetFolder ancestors, check if any is sourceFolder
         $current = $targetFolder;
         while ($current !== null) {
             if ($current->getId()->equals($sourceFolder->getId())) {
-                return true; // Found sourceFolder in targetFolder ancestry
+                return true;
             }
             $current = $current->getParent();
         }

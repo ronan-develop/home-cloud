@@ -12,7 +12,7 @@ use App\ApiResource\FileOutput;
 use App\Interface\DefaultFolderServiceInterface;
 use App\Repository\FileRepository;
 use App\Repository\MediaRepository;
-use App\Service\AuthenticationResolver;
+use App\Security\AuthenticationResolver;
 use App\Service\FileActionService;
 use App\Service\IriExtractor;
 use App\Interface\StorageServiceInterface;

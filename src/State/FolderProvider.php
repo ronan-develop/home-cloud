@@ -11,7 +11,7 @@ use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\FolderOutput;
 use App\Entity\Folder;
 use App\Repository\FolderRepository;
-use App\Service\AuthenticationResolver;
+use App\Security\AuthenticationResolver;
 
 /**
  * Fournit les données lues pour les opérations GET sur la ressource Folder.
