@@ -21,8 +21,8 @@ class FolderTreeFactory
     ) {}
 
     /**
-     * Crée la racine et les enfants par défaut si besoin.
-     * Retourne le dossier racine.
+     * Crée le dossier racine "Dossiers" s'il n'existe pas encore pour le premier utilisateur.
+     * Utilisé uniquement au premier affichage du navigateur de dossiers.
      */
     public function ensureDefaultTree(): ?Folder
     {
@@ -32,21 +32,6 @@ class FolderTreeFactory
             if ($user) {
                 $root = new Folder('Dossiers', $user, null);
                 $this->em->persist($root);
-                $this->em->flush();
-            }
-        }
-
-        if ($root && $root->getChildren()->count() === 0) {
-            $toto = $this->folderRepository->findOneBy(['name' => 'toto', 'parent' => $root]);
-            if (!$toto) {
-                $toto = new Folder('toto', $root->getOwner(), $root);
-                $this->em->persist($toto);
-                $this->em->flush();
-            }
-            $tata = $this->folderRepository->findOneBy(['name' => 'tata', 'parent' => $toto]);
-            if (!$tata) {
-                $tata = new Folder('tata', $toto->getOwner(), $toto);
-                $this->em->persist($tata);
                 $this->em->flush();
             }
         }
