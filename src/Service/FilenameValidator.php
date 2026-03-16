@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Interface\FilenameValidatorInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 /**
@@ -11,7 +12,7 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
  *
  * Forbidden characters: \ / : * ? " < > |  (Windows + Unix filesystem)
  */
-final class FilenameValidator
+final class FilenameValidator implements FilenameValidatorInterface
 {
     private const MAX_LENGTH = 255;
     private const FORBIDDEN_CHARS_PATTERN = '/[\\\\\/\:\*\?\"\<\>\|]/u';

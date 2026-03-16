@@ -12,10 +12,13 @@ parameters:
 
 services:
     # Bindings interfaces → implémentations (Dependency Inversion Principle)
-    App\Interface\AlbumRepositoryInterface:  '@App\Repository\AlbumRepository'
-    App\Interface\FolderRepositoryInterface: '@App\Repository\FolderRepository'
-    App\Interface\UserRepositoryInterface:   '@App\Repository\UserRepository'
-    App\Interface\ShareRepositoryInterface:  '@App\Repository\ShareRepository'
+    App\Interface\AlbumRepositoryInterface:       '@App\Repository\AlbumRepository'
+    App\Interface\FolderRepositoryInterface:      '@App\Repository\FolderRepository'
+    App\Interface\UserRepositoryInterface:        '@App\Repository\UserRepository'
+    App\Interface\ShareRepositoryInterface:       '@App\Repository\ShareRepository'
+    App\Interface\FilenameValidatorInterface:     '@App\Service\FilenameValidator'
+    App\Interface\OwnershipCheckerInterface:      '@App\Security\OwnershipChecker'
+    App\Interface\AuthenticationResolverInterface: '@App\Service\AuthenticationResolver'
 
     App\State\AlbumProcessor:
         arguments:
