@@ -31,8 +31,8 @@ class FolderBrowserController extends AbstractController
     #[Route('/web/folders', name: 'web_folders')]
     public function index(FolderRepository $folderRepository, UserRepository $userRepository, FolderTreeService $treeService, \App\Factory\FolderTreeFactory $treeFactory): Response
     {
-        // Utilisation du service factory pour garantir la racine et les enfants par défaut
-        $root = $treeFactory->ensureDefaultTree();
+        // Crée le dossier racine si absent (premier accès)
+        $treeFactory->ensureDefaultTree();
 
         // On récupère uniquement les dossiers racines (parent null)
         $rootFolders = $folderRepository->findBy(['parent' => null]);
