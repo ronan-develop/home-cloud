@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Service;
+declare(strict_types=1);
+
+namespace App\Interface;
 
 interface PasswordResetServiceInterface
 {

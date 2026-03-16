@@ -9,7 +9,7 @@ use App\Entity\Folder;
 use App\Entity\User;
 use App\Interface\DefaultFolderServiceInterface;
 use App\Repository\FolderRepository;
-use App\Service\FolderMoverInterface;
+use App\Interface\FolderMoverInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 

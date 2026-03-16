@@ -7,6 +7,8 @@ use Doctrine\ORM\EntityManagerInterface;
 use SymfonyCasts\Bundle\ResetPassword\Exception\ResetPasswordExceptionInterface;
 use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
 
+use App\Interface\PasswordResetServiceInterface;
+
 class PasswordResetService implements PasswordResetServiceInterface
 {
     public function __construct(
