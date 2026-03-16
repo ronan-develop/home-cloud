@@ -9,6 +9,7 @@ use App\Entity\User;
 use App\Interface\DefaultFolderServiceInterface;
 use App\Repository\FolderRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 /**
  * Résout le dossier de destination d'un fichier uploadé.
@@ -37,18 +38,18 @@ final class DefaultFolderService implements DefaultFolderServiceInterface
      *   newFolderName fourni → crée un nouveau Folder
      *   aucun → retourne (ou crée) le folder "Uploads"
      *
-     * @throws \InvalidArgumentException si folderId est fourni mais introuvable
+     * @throws BadRequestHttpException si folderId est fourni mais introuvable
      */
     public function resolve(?string $folderId, ?string $newFolderName, User $owner): Folder
     {
         if ($folderId !== null && $folderId !== '') {
             $folder = $this->folderRepository->find($folderId);
             if ($folder === null) {
-                throw new \InvalidArgumentException(sprintf('Folder "%s" not found', $folderId));
+                throw new BadRequestHttpException(sprintf('Folder "%s" not found', $folderId));
             }
             // Vérifier que le folder appartient bien à l'owner — empêche l'accès cross-user
             if ((string) $folder->getOwner()->getId() !== (string) $owner->getId()) {
-                throw new \InvalidArgumentException(sprintf('Folder "%s" not found', $folderId));
+                throw new BadRequestHttpException(sprintf('Folder "%s" not found', $folderId));
             }
 
             return $folder;
@@ -57,10 +58,10 @@ final class DefaultFolderService implements DefaultFolderServiceInterface
         if ($newFolderName !== null && $newFolderName !== '') {
             $trimmed = trim($newFolderName);
             if ($trimmed === '') {
-                throw new \InvalidArgumentException('newFolderName cannot be blank');
+                throw new BadRequestHttpException('newFolderName cannot be blank');
             }
             if (mb_strlen($trimmed) > 255) {
-                throw new \InvalidArgumentException('newFolderName must not exceed 255 characters');
+                throw new BadRequestHttpException('newFolderName must not exceed 255 characters');
             }
             $folder = new Folder($trimmed, $owner);
             $this->em->persist($folder);
@@ -152,11 +153,11 @@ final class DefaultFolderService implements DefaultFolderServiceInterface
                 continue;
             }
             if (mb_strlen($seg) > 255) {
-                throw new \InvalidArgumentException('Folder name segment too long');
+                throw new BadRequestHttpException('Folder name segment too long');
             }
             // Basic sanitization: disallow NUL bytes
             if (strpos($seg, "\0") !== false) {
-                throw new \InvalidArgumentException('Invalid characters in folder name');
+                throw new BadRequestHttpException('Invalid characters in folder name');
             }
             $segments[] = $seg;
         }
