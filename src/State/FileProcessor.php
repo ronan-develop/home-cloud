@@ -14,6 +14,7 @@ use App\Repository\FileRepository;
 use App\Repository\MediaRepository;
 use App\Service\AuthenticationResolver;
 use App\Service\FileActionService;
+use App\Service\IriExtractor;
 use App\Interface\StorageServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -43,6 +44,7 @@ final class FileProcessor implements ProcessorInterface
         private readonly DefaultFolderServiceInterface $defaultFolderService,
         private readonly FileActionService $fileActionService,
         private readonly RequestStack $requestStack,
+        private readonly IriExtractor $iriExtractor,
     ) {}
 
     /**
@@ -103,10 +105,8 @@ final class FileProcessor implements ProcessorInterface
                 // Aucun dossier fourni : résoudre au dossier par défaut (Uploads)
                 $targetFolder = $this->defaultFolderService->resolve(null, null, $user);
             } else {
-                // Nettoyer les chemins (bas… juste au cas où)
-                if (strpos($targetFolderId, '/') !== false) {
-                    $targetFolderId = basename($targetFolderId);
-                }
+                // Extraire l'UUID depuis l'IRI si nécessaire
+                $targetFolderId = $this->iriExtractor->extractUuid($targetFolderId);
                 $targetFolder = $this->em->getRepository(\App\Entity\Folder::class)->find($targetFolderId)
                     ?? throw new NotFoundHttpException('Target folder not found');
             }

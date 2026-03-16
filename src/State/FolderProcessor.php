@@ -18,6 +18,7 @@ use App\Repository\FolderRepository;
 use App\Repository\UserRepository;
 use App\Service\AuthenticationResolver;
 use App\Service\FilenameValidator;
+use App\Service\IriExtractor;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -55,6 +56,7 @@ final class FolderProcessor implements ProcessorInterface
         private readonly LoggerInterface $logger,
         private readonly DefaultFolderServiceInterface $defaultFolderService,
         private readonly FilenameValidator $filenameValidator,
+        private readonly IriExtractor $iriExtractor,
     ) {}
 
     /**
@@ -88,11 +90,8 @@ final class FolderProcessor implements ProcessorInterface
             ?? throw new NotFoundHttpException('User not found');
         $parent = null;
         if ($data->parentId !== null) {
-            // Extraire l'UUID de l'IRI si nécessaire
-            $parentId = $data->parentId;
-            if (strpos($parentId, '/') !== false) {
-                $parentId = basename($parentId);
-            }
+            // Extraire l'UUID depuis l'IRI si nécessaire
+            $parentId = $this->iriExtractor->extractUuid($data->parentId);
             $parent = $this->folderRepository->find($parentId)
                 ?? throw new NotFoundHttpException('Parent folder not found');
         }
@@ -162,10 +161,7 @@ final class FolderProcessor implements ProcessorInterface
         );
         if (array_key_exists('parentId', $body ?? [])) {
             if ($body['parentId'] !== null) {
-                $parentId = $body['parentId'];
-                if (strpos($parentId, '/') !== false) {
-                    $parentId = basename($parentId);
-                }
+                $parentId = $this->iriExtractor->extractUuid($body['parentId']);
                 if ($parentId === (string) $uriVariables['id']) {
                     throw new BadRequestHttpException('A folder cannot be its own parent');
                 }

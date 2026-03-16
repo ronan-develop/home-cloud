@@ -30,6 +30,7 @@ services:
             $defaultFolderService: '@App\Service\DefaultFolderService'
             $fileActionService: '@App\Service\FileActionService'
             $requestStack: '@request_stack'
+            $iriExtractor: '@App\Service\IriExtractor'
     
     App\Service\AuthenticationResolver:
         arguments:
@@ -79,6 +80,7 @@ services:
             $requestStack: '@request_stack'
             $authResolver: '@App\Service\AuthenticationResolver'
             $logger: '@logger'
+            $iriExtractor: '@App\Service\IriExtractor'
 
     App\Service\StorageService:
         arguments:
