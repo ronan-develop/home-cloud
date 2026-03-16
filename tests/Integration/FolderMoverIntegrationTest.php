@@ -8,7 +8,7 @@ use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\User;
 use App\Interface\DefaultFolderServiceInterface;
-use App\Service\FolderMoverInterface;
+use App\Interface\FolderMoverInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class FolderMoverIntegrationTest extends KernelTestCase

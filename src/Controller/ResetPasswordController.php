@@ -24,7 +24,7 @@ class ResetPasswordController extends AbstractController
     public function __construct(
         private ResetPasswordHelperInterface $resetPasswordHelper,
         private EntityManagerInterface $entityManager,
-        private \App\Service\PasswordResetServiceInterface $passwordResetService,
+        private \App\Interface\PasswordResetServiceInterface $passwordResetService,
     ) {}
 
     #[Route('/reset-password', name: 'web_reset_password', methods: ['GET'])]
