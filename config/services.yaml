@@ -17,7 +17,7 @@ services:
             $albumRepository: '@App\Repository\AlbumRepository'
             $userRepository: '@App\Repository\UserRepository'
             $provider: '@App\State\AlbumProvider'
-            $tokenStorage: '@security.token_storage'
+            $authResolver: '@App\Service\AuthenticationResolver'
             $logger: '@logger'
 
     App\State\FileProcessor:
@@ -77,7 +77,7 @@ services:
             $userRepository: '@App\Repository\UserRepository'
             $provider: '@App\State\FolderProvider'
             $requestStack: '@request_stack'
-            $tokenStorage: '@security.token_storage'
+            $authResolver: '@App\Service\AuthenticationResolver'
             $logger: '@logger'
 
     App\Service\StorageService:

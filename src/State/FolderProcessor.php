@@ -16,14 +16,14 @@ use App\Enum\FolderMediaType;
 use App\Interface\DefaultFolderServiceInterface;
 use App\Repository\FolderRepository;
 use App\Repository\UserRepository;
+use App\Service\AuthenticationResolver;
 use App\Service\FilenameValidator;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
-use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Traite les opérations d'écriture sur la ressource Folder (POST, PATCH, DELETE).
@@ -51,8 +51,8 @@ final class FolderProcessor implements ProcessorInterface
         /** Injecté pour convertir l'entité en DTO après persist (évite la duplication du mapping) */
         private readonly FolderProvider $provider,
         private readonly RequestStack $requestStack,
-        private readonly TokenStorageInterface $tokenStorage, // ✅ Ajouté
-        private readonly LoggerInterface $logger, // ✅ Ajouté
+        private readonly AuthenticationResolver $authResolver,
+        private readonly LoggerInterface $logger,
         private readonly DefaultFolderServiceInterface $defaultFolderService,
         private readonly FilenameValidator $filenameValidator,
     ) {}
@@ -127,15 +127,10 @@ final class FolderProcessor implements ProcessorInterface
         $folder = $this->folderRepository->find($uriVariables['id'])
             ?? throw new NotFoundHttpException('Folder not found');
         // Ownership : seul le propriétaire peut modifier
-        $user = $this->getAuthenticatedUser();
-        $this->logger->info('🔍 PATCH Ownership Check', [
+        $user = $this->authResolver->getAuthenticatedUser();
+        $this->logger->info('Folder PATCH operation initiated', [
             'folder_id' => (string) $folder->getId(),
-            'folder_owner_id' => (string) $folder->getOwner()->getId(),
-            'folder_owner_email' => $folder->getOwner()->getEmail(),
-            'current_user' => $user ? get_class($user) : 'null',
-            'current_user_id' => $user ? (string) $user->getId() : 'null',
-            'current_user_email' => $user?->getEmail(),
-            'ids_match' => $user ? (string) $user->getId() === (string) $folder->getOwner()->getId() : false,
+            'user_id'   => $user ? (string) $user->getId() : null,
         ]);
         if (!$user instanceof \App\Entity\User) {
             throw new AccessDeniedHttpException('You must be authenticated');
@@ -221,7 +216,7 @@ final class FolderProcessor implements ProcessorInterface
     {
         $folder = $this->folderRepository->find($uriVariables['id'])
             ?? throw new NotFoundHttpException('Folder not found');
-        $user = $this->getAuthenticatedUser();
+        $user = $this->authResolver->getAuthenticatedUser();
         if (!$user || !$folder->getOwner()->getId()->equals($user->getId())) {
             throw new AccessDeniedHttpException('You are not the owner of this folder');
         }
@@ -271,39 +266,6 @@ final class FolderProcessor implements ProcessorInterface
 
         $this->em->remove($folder);
         $this->em->flush();
-        return null;
-    }
-
-    /**
-     * Récupère l'utilisateur authentifié depuis le token de sécurité (API Platform context)
-     */
-    private function getAuthenticatedUser(): ?\App\Entity\User
-    {
-        $token = $this->tokenStorage->getToken();
-        $this->logger->info('🔍 TokenStorage State', [
-            'has_token' => $token !== null,
-            'token_class' => $token ? get_class($token) : 'null',
-        ]);
-        if ($token === null) {
-            $this->logger->warning('⚠️ No token in TokenStorage');
-            return null;
-        }
-        $user = $token->getUser();
-        $this->logger->info('🔍 User from Token', [
-            'user_class' => $user ? get_class($user) : 'null',
-            'is_user_instance' => $user instanceof \App\Entity\User,
-        ]);
-        if ($user instanceof \App\Entity\User) {
-            return $user;
-        }
-        if (is_string($user) && filter_var($user, FILTER_VALIDATE_EMAIL)) {
-            $this->logger->info('🔍 User is string, searching by email', ['email' => $user]);
-            return $this->userRepository->findOneBy(['email' => $user]);
-        }
-        $this->logger->warning('⚠️ User type not recognized', [
-            'type' => gettype($user),
-            'value' => $user,
-        ]);
         return null;
     }
 }
