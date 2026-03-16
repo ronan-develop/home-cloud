@@ -22,8 +22,8 @@ services:
             $albumRepository: '@App\Repository\AlbumRepository'
             $userRepository: '@App\Interface\UserRepositoryInterface'
             $provider: '@App\State\AlbumProvider'
-            $authResolver: '@App\Service\AuthenticationResolver'
-            $logger: '@logger'
+            $filenameValidator: '@App\Service\FilenameValidator'
+            $ownershipChecker: '@App\Security\OwnershipChecker'
 
     App\State\FileProcessor:
         arguments:
@@ -86,6 +86,7 @@ services:
             $authResolver: '@App\Service\AuthenticationResolver'
             $logger: '@logger'
             $iriExtractor: '@App\Service\IriExtractor'
+            $ownershipChecker: '@App\Security\OwnershipChecker'
 
     App\Service\StorageService:
         arguments:

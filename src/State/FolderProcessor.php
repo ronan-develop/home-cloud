@@ -16,6 +16,7 @@ use App\Enum\FolderMediaType;
 use App\Interface\DefaultFolderServiceInterface;
 use App\Interface\FolderRepositoryInterface;
 use App\Interface\UserRepositoryInterface;
+use App\Security\OwnershipChecker;
 use App\Service\AuthenticationResolver;
 use App\Service\FilenameValidator;
 use App\Service\IriExtractor;
@@ -57,6 +58,7 @@ final class FolderProcessor implements ProcessorInterface
         private readonly DefaultFolderServiceInterface $defaultFolderService,
         private readonly FilenameValidator $filenameValidator,
         private readonly IriExtractor $iriExtractor,
+        private readonly OwnershipChecker $ownershipChecker,
     ) {}
 
     /**
@@ -131,12 +133,7 @@ final class FolderProcessor implements ProcessorInterface
             'folder_id' => (string) $folder->getId(),
             'user_id'   => $user ? (string) $user->getId() : null,
         ]);
-        if (!$user instanceof \App\Entity\User) {
-            throw new AccessDeniedHttpException('You must be authenticated');
-        }
-        if ((string) $user->getId() !== (string) $folder->getOwner()->getId()) {
-            throw new AccessDeniedHttpException('You are not the owner of this folder');
-        }
+        $this->ownershipChecker->denyUnlessOwner($folder);
         if ($data->name !== '') {
             $this->filenameValidator->validate($data->name);
             // Unicité du nom dans le parent pour ce propriétaire
@@ -168,7 +165,7 @@ final class FolderProcessor implements ProcessorInterface
                 $parent = $this->folderRepository->find($parentId)
                     ?? throw new NotFoundHttpException('Parent folder not found');
                 // Sécurité : ownership du parent
-                if ((string) $parent->getOwner()->getId() !== (string) $user->getId()) {
+                if (!$this->ownershipChecker->isOwner($parent)) {
                     throw new AccessDeniedHttpException('You do not own the target parent folder');
                 }
                 // Détection de cycle profond
@@ -212,10 +209,8 @@ final class FolderProcessor implements ProcessorInterface
     {
         $folder = $this->folderRepository->find($uriVariables['id'])
             ?? throw new NotFoundHttpException('Folder not found');
+        $this->ownershipChecker->denyUnlessOwner($folder);
         $user = $this->authResolver->getAuthenticatedUser();
-        if (!$user || !$folder->getOwner()->getId()->equals($user->getId())) {
-            throw new AccessDeniedHttpException('You are not the owner of this folder');
-        }
 
         $input = new DeleteFolderInput();
         $content = $this->requestStack->getCurrentRequest()?->getContent() ?? '{}';
