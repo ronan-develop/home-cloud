@@ -7,6 +7,7 @@ namespace App\Service;
 use App\Entity\Album;
 use App\Entity\User;
 use App\Interface\AlbumRepositoryInterface;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 /**
  * Service métier pour la gestion des albums (SRP).
@@ -24,13 +25,13 @@ final class AlbumService
     /**
      * Crée un nouvel album pour l'utilisateur donné.
      *
-     * @throws \InvalidArgumentException si le nom est vide ou uniquement des espaces
+     * @throws BadRequestHttpException si le nom est vide ou uniquement des espaces
      */
     public function create(string $name, User $owner): Album
     {
         $name = trim($name);
         if ($name === '') {
-            throw new \InvalidArgumentException('Le nom de l\'album est obligatoire.');
+            throw new BadRequestHttpException('Le nom de l\'album est obligatoire.');
         }
 
         $album = new Album($name, $owner);

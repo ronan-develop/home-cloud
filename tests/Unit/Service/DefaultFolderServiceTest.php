@@ -10,6 +10,7 @@ use App\Repository\FolderRepository;
 use App\Service\DefaultFolderService;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 final class DefaultFolderServiceTest extends TestCase
 {
@@ -90,7 +91,7 @@ final class DefaultFolderServiceTest extends TestCase
 
     public function testResolveWithFolderIdBelongingToAnotherOwnerThrows(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(BadRequestHttpException::class);
 
         $owner = new User('owner-a@example.com', 'A');
         $other = new User('owner-b@example.com', 'B');
