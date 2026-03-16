@@ -11,11 +11,16 @@ parameters:
     app.encryption_key: '%env(base64:APP_ENCRYPTION_KEY)%'
 
 services:
+    # Bindings interfaces → implémentations (Dependency Inversion Principle)
+    App\Interface\FolderRepositoryInterface: '@App\Repository\FolderRepository'
+    App\Interface\UserRepositoryInterface:   '@App\Repository\UserRepository'
+    App\Interface\ShareRepositoryInterface:  '@App\Repository\ShareRepository'
+
     App\State\AlbumProcessor:
         arguments:
             $em: '@doctrine.orm.entity_manager'
             $albumRepository: '@App\Repository\AlbumRepository'
-            $userRepository: '@App\Repository\UserRepository'
+            $userRepository: '@App\Interface\UserRepositoryInterface'
             $provider: '@App\State\AlbumProvider'
             $authResolver: '@App\Service\AuthenticationResolver'
             $logger: '@logger'
@@ -74,8 +79,8 @@ services:
     App\State\FolderProcessor:
         arguments:
             $em: '@doctrine.orm.entity_manager'
-            $folderRepository: '@App\Repository\FolderRepository'
-            $userRepository: '@App\Repository\UserRepository'
+            $folderRepository: '@App\Interface\FolderRepositoryInterface'
+            $userRepository: '@App\Interface\UserRepositoryInterface'
             $provider: '@App\State\FolderProvider'
             $requestStack: '@request_stack'
             $authResolver: '@App\Service\AuthenticationResolver'

@@ -6,8 +6,9 @@ namespace App\Repository;
 
 use App\Entity\Folder;
 use App\Entity\User;
+use App\Interface\FolderRepositoryInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\ORM\LockMode;
+use Doctrine\DBAL\LockMode;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -17,7 +18,7 @@ use Doctrine\Persistence\ManagerRegistry;
  * @method Folder|null findOneBy(array $criteria, array $orderBy = null)
  * @method Folder[] findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
-class FolderRepository extends ServiceEntityRepository
+class FolderRepository extends ServiceEntityRepository implements FolderRepositoryInterface
 {
     private readonly ManagerRegistry $registry;
 
@@ -25,6 +26,32 @@ class FolderRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Folder::class);
         $this->registry = $registry;
+    }
+
+    public function find(mixed $id, LockMode|int|null $lockMode = null, ?int $lockVersion = null): ?Folder
+    {
+        return parent::find($id, $lockMode, $lockVersion);
+    }
+
+    /** @param array<string, mixed> $criteria */
+    public function findOneBy(array $criteria, ?array $orderBy = null): ?Folder
+    {
+        return parent::findOneBy($criteria, $orderBy);
+    }
+
+    /** @param array<string, mixed> $criteria */
+    public function count(array $criteria = []): int
+    {
+        return parent::count($criteria);
+    }
+
+    /**
+     * @param array<string, mixed> $criteria
+     * @return Folder[]
+     */
+    public function findBy(array $criteria, ?array $orderBy = null, ?int $limit = null, ?int $offset = null): array
+    {
+        return parent::findBy($criteria, $orderBy, $limit, $offset);
     }
 
     /**

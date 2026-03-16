@@ -12,8 +12,8 @@ use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\ShareOutput;
 use App\Entity\Share;
 use App\Entity\User;
-use App\Repository\ShareRepository;
-use App\Repository\UserRepository;
+use App\Interface\ShareRepositoryInterface;
+use App\Interface\UserRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -37,8 +37,8 @@ final class ShareProcessor implements ProcessorInterface
 
     public function __construct(
         private readonly EntityManagerInterface $em,
-        private readonly ShareRepository $shareRepository,
-        private readonly UserRepository $userRepository,
+        private readonly ShareRepositoryInterface $shareRepository,
+        private readonly UserRepositoryInterface $userRepository,
         private readonly ShareProvider $provider,
         private readonly Security $security,
     ) {}

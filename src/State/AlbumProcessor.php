@@ -12,7 +12,7 @@ use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\AlbumOutput;
 use App\Entity\Album;
 use App\Repository\AlbumRepository;
-use App\Repository\UserRepository;
+use App\Interface\UserRepositoryInterface;
 use App\Service\AuthenticationResolver;
 use App\Service\FilenameValidator;
 use Doctrine\ORM\EntityManagerInterface;
@@ -31,7 +31,7 @@ final class AlbumProcessor implements ProcessorInterface
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly AlbumRepository $albumRepository,
-        private readonly UserRepository $userRepository,
+        private readonly UserRepositoryInterface $userRepository,
         private readonly AlbumProvider $provider,
         private readonly AuthenticationResolver $authResolver,
         private readonly LoggerInterface $logger,
