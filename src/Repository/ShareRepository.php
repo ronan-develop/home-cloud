@@ -6,7 +6,9 @@ namespace App\Repository;
 
 use App\Entity\Share;
 use App\Entity\User;
+use App\Interface\ShareRepositoryInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\LockMode;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Uid\Uuid;
 
@@ -18,11 +20,16 @@ use Symfony\Component\Uid\Uuid;
  * @method Share[]    findAll()
  * @method Share[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
-class ShareRepository extends ServiceEntityRepository
+class ShareRepository extends ServiceEntityRepository implements ShareRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Share::class);
+    }
+
+    public function find(mixed $id, LockMode|int|null $lockMode = null, ?int $lockVersion = null): ?Share
+    {
+        return parent::find($id, $lockMode, $lockVersion);
     }
 
     /** Partages où l'utilisateur est owner OU guest. */
