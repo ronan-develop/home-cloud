@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Repository\AlbumRepository;
+use App\Interface\AlbumRepositoryInterface;
 use App\Repository\MediaRepository;
 use App\State\AlbumProvider;
 use Doctrine\ORM\EntityManagerInterface;
@@ -16,6 +16,7 @@ use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * Ajoute un média à un album.
@@ -30,7 +31,7 @@ use Symfony\Component\Routing\Attribute\Route;
 final class AlbumAddMediaController extends AbstractController
 {
     public function __construct(
-        private readonly AlbumRepository $albumRepository,
+        private readonly AlbumRepositoryInterface $albumRepository,
         private readonly MediaRepository $mediaRepository,
         private readonly EntityManagerInterface $em,
         private readonly AlbumProvider $provider,
@@ -38,7 +39,7 @@ final class AlbumAddMediaController extends AbstractController
 
     public function __invoke(string $id, Request $request): JsonResponse
     {
-        $album = $this->albumRepository->find($id)
+        $album = $this->albumRepository->findById(Uuid::fromString($id))
             ?? throw new NotFoundHttpException('Album not found');
 
         $body = json_decode((string) $request->getContent(), true);

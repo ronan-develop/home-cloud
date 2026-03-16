@@ -11,13 +11,14 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\AlbumOutput;
 use App\Entity\Album;
-use App\Repository\AlbumRepository;
+use App\Interface\AlbumRepositoryInterface;
 use App\Interface\UserRepositoryInterface;
 use App\Security\OwnershipChecker;
 use App\Service\FilenameValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * Traite les opérations d'écriture sur la ressource Album (POST, PATCH, DELETE).
@@ -28,7 +29,7 @@ final class AlbumProcessor implements ProcessorInterface
 {
     public function __construct(
         private readonly EntityManagerInterface $em,
-        private readonly AlbumRepository $albumRepository,
+        private readonly AlbumRepositoryInterface $albumRepository,
         private readonly UserRepositoryInterface $userRepository,
         private readonly AlbumProvider $provider,
         private readonly FilenameValidator $filenameValidator,
@@ -67,7 +68,7 @@ final class AlbumProcessor implements ProcessorInterface
 
     private function handlePatch(AlbumOutput $data, array $uriVariables): AlbumOutput
     {
-        $album = $this->albumRepository->find($uriVariables['id'])
+        $album = $this->albumRepository->findById(Uuid::fromString((string) $uriVariables['id']))
             ?? throw new NotFoundHttpException('Album not found');
         $this->ownershipChecker->denyUnlessOwner($album);
         if ($data->name !== '') {
@@ -80,7 +81,7 @@ final class AlbumProcessor implements ProcessorInterface
 
     private function handleDelete(array $uriVariables): null
     {
-        $album = $this->albumRepository->find($uriVariables['id'])
+        $album = $this->albumRepository->findById(Uuid::fromString((string) $uriVariables['id']))
             ?? throw new NotFoundHttpException('Album not found');
         $this->ownershipChecker->denyUnlessOwner($album);
         $this->em->remove($album);
