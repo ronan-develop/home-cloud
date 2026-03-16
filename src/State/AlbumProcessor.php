@@ -13,11 +13,9 @@ use App\ApiResource\AlbumOutput;
 use App\Entity\Album;
 use App\Repository\AlbumRepository;
 use App\Interface\UserRepositoryInterface;
-use App\Service\AuthenticationResolver;
+use App\Security\OwnershipChecker;
 use App\Service\FilenameValidator;
 use Doctrine\ORM\EntityManagerInterface;
-use Psr\Log\LoggerInterface;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -33,9 +31,8 @@ final class AlbumProcessor implements ProcessorInterface
         private readonly AlbumRepository $albumRepository,
         private readonly UserRepositoryInterface $userRepository,
         private readonly AlbumProvider $provider,
-        private readonly AuthenticationResolver $authResolver,
-        private readonly LoggerInterface $logger,
         private readonly FilenameValidator $filenameValidator,
+        private readonly OwnershipChecker $ownershipChecker,
     ) {}
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): mixed
@@ -72,14 +69,7 @@ final class AlbumProcessor implements ProcessorInterface
     {
         $album = $this->albumRepository->find($uriVariables['id'])
             ?? throw new NotFoundHttpException('Album not found');
-        // Ownership : seul le propriétaire peut modifier
-        $user = $this->authResolver->getAuthenticatedUser();
-        if (!$user instanceof \App\Entity\User) {
-            throw new AccessDeniedHttpException('You must be authenticated');
-        }
-        if ((string) $user->getId() !== (string) $album->getOwner()->getId()) {
-            throw new AccessDeniedHttpException('You are not the owner of this album');
-        }
+        $this->ownershipChecker->denyUnlessOwner($album);
         if ($data->name !== '') {
             $this->filenameValidator->validate($data->name);
             $album->setName($data->name);
@@ -92,14 +82,7 @@ final class AlbumProcessor implements ProcessorInterface
     {
         $album = $this->albumRepository->find($uriVariables['id'])
             ?? throw new NotFoundHttpException('Album not found');
-        // Ownership : seul le propriétaire peut supprimer
-        $user = $this->authResolver->getAuthenticatedUser();
-        if (!$user instanceof \App\Entity\User) {
-            throw new AccessDeniedHttpException('You must be authenticated');
-        }
-        if ((string) $user->getId() !== (string) $album->getOwner()->getId()) {
-            throw new AccessDeniedHttpException('You are not the owner of this album');
-        }
+        $this->ownershipChecker->denyUnlessOwner($album);
         $this->em->remove($album);
         $this->em->flush();
         return null;

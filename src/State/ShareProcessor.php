@@ -11,12 +11,11 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\ShareOutput;
 use App\Entity\Share;
-use App\Entity\User;
 use App\Interface\ShareRepositoryInterface;
 use App\Interface\UserRepositoryInterface;
+use App\Security\OwnershipChecker;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Uid\Uuid;
@@ -41,6 +40,7 @@ final class ShareProcessor implements ProcessorInterface
         private readonly UserRepositoryInterface $userRepository,
         private readonly ShareProvider $provider,
         private readonly Security $security,
+        private readonly OwnershipChecker $ownershipChecker,
     ) {}
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): mixed
@@ -138,11 +138,7 @@ final class ShareProcessor implements ProcessorInterface
             throw new NotFoundHttpException('Partage introuvable.');
         }
 
-        /** @var User $currentUser */
-        $currentUser = $this->security->getUser();
-        if (!$share->getOwner()->getId()->equals($currentUser->getId())) {
-            throw new AccessDeniedHttpException('Seul le propriétaire peut modifier ou supprimer ce partage.');
-        }
+        $this->ownershipChecker->denyUnlessOwner($share);
 
         return $share;
     }
