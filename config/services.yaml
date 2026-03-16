@@ -12,6 +12,7 @@ parameters:
 
 services:
     # Bindings interfaces → implémentations (Dependency Inversion Principle)
+    App\Interface\AlbumRepositoryInterface:  '@App\Repository\AlbumRepository'
     App\Interface\FolderRepositoryInterface: '@App\Repository\FolderRepository'
     App\Interface\UserRepositoryInterface:   '@App\Repository\UserRepository'
     App\Interface\ShareRepositoryInterface:  '@App\Repository\ShareRepository'
@@ -19,7 +20,7 @@ services:
     App\State\AlbumProcessor:
         arguments:
             $em: '@doctrine.orm.entity_manager'
-            $albumRepository: '@App\Repository\AlbumRepository'
+            $albumRepository: '@App\Interface\AlbumRepositoryInterface'
             $userRepository: '@App\Interface\UserRepositoryInterface'
             $provider: '@App\State\AlbumProvider'
             $filenameValidator: '@App\Service\FilenameValidator'
