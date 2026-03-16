@@ -82,15 +82,23 @@ services:
     # Déclaration explicite du FolderProcessor pour garantir l'injection
     App\State\FolderProcessor:
         arguments:
-            $em: '@doctrine.orm.entity_manager'
+            $folderService:    '@App\Service\FolderService'
             $folderRepository: '@App\Interface\FolderRepositoryInterface'
-            $userRepository: '@App\Interface\UserRepositoryInterface'
-            $provider: '@App\State\FolderProvider'
-            $requestStack: '@request_stack'
-            $authResolver: '@App\Service\AuthenticationResolver'
-            $logger: '@logger'
-            $iriExtractor: '@App\Service\IriExtractor'
-            $ownershipChecker: '@App\Security\OwnershipChecker'
+            $userRepository:   '@App\Interface\UserRepositoryInterface'
+            $provider:         '@App\State\FolderProvider'
+            $requestStack:     '@request_stack'
+            $iriExtractor:     '@App\Service\IriExtractor'
+
+    App\Service\FolderService:
+        arguments:
+            $folderRepository:     '@App\Interface\FolderRepositoryInterface'
+            $filenameValidator:    '@App\Interface\FilenameValidatorInterface'
+            $ownershipChecker:     '@App\Interface\OwnershipCheckerInterface'
+            $authResolver:         '@App\Interface\AuthenticationResolverInterface'
+            $defaultFolderService: '@App\Service\DefaultFolderService'
+            $em:                   '@doctrine.orm.entity_manager'
+            $logger:               '@logger'
+            $stopwatch:            '@debug.stopwatch'
 
     App\Service\StorageService:
         arguments:
