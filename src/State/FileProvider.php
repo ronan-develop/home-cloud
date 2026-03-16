@@ -14,7 +14,7 @@ use App\Entity\File;
 use App\Entity\User;
 use App\Repository\FileRepository;
 use App\Repository\FolderRepository;
-use App\Service\ShareAccessChecker;
+use App\Security\ShareAccessChecker;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;

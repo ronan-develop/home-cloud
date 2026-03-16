@@ -18,7 +18,7 @@ services:
     App\Interface\ShareRepositoryInterface:       '@App\Repository\ShareRepository'
     App\Interface\FilenameValidatorInterface:     '@App\Service\FilenameValidator'
     App\Interface\OwnershipCheckerInterface:      '@App\Security\OwnershipChecker'
-    App\Interface\AuthenticationResolverInterface: '@App\Service\AuthenticationResolver'
+    App\Interface\AuthenticationResolverInterface: '@App\Security\AuthenticationResolver'
 
     App\State\AlbumProcessor:
         arguments:
@@ -35,25 +35,25 @@ services:
             $fileRepository: '@App\Repository\FileRepository'
             $mediaRepository: '@App\Repository\MediaRepository'
             $storageService: '@App\Service\StorageService'
-            $authResolver: '@App\Service\AuthenticationResolver'
+            $authResolver: '@App\Security\AuthenticationResolver'
             $defaultFolderService: '@App\Service\DefaultFolderService'
             $fileActionService: '@App\Service\FileActionService'
             $requestStack: '@request_stack'
             $iriExtractor: '@App\Service\IriExtractor'
     
-    App\Service\AuthenticationResolver:
+    App\Security\AuthenticationResolver:
         arguments:
             $tokenStorage: '@security.token_storage'
             $userRepository: '@App\Repository\UserRepository'
             $logger: '@logger'
-    
-    App\Service\AuthorizationChecker: ~
+
+    App\Security\AuthorizationChecker: ~
     
     App\Service\FileActionService:
         arguments:
             $fileRepository: '@App\Repository\FileRepository'
             $storageService: '@App\Service\StorageService'
-            $authChecker: '@App\Service\AuthorizationChecker'
+            $authChecker: '@App\Security\AuthorizationChecker'
             $em: '@doctrine.orm.entity_manager'
 
     App\Service\CreateFileService:
@@ -73,7 +73,7 @@ services:
     App\:
         resource: '../src/'
 
-    App\Service\FolderTreeFactory:
+    App\Factory\FolderTreeFactory:
         arguments:
             $folderRepository: '@App\Repository\FolderRepository'
             $userRepository: '@App\Repository\UserRepository'

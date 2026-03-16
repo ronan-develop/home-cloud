@@ -1,7 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Security;
 
 use App\Entity\User;
 use App\Interface\AuthenticationResolverInterface;
@@ -38,12 +39,10 @@ final class AuthenticationResolver implements AuthenticationResolverInterface
 
         $user = $token->getUser();
 
-        // Case 1: Already a User instance (JWT, Session)
         if ($user instanceof User) {
             return $user;
         }
 
-        // Case 2: User is a string (email)
         if (is_string($user) && filter_var($user, FILTER_VALIDATE_EMAIL)) {
             return $this->userRepository->findOneBy(['email' => $user]);
         }

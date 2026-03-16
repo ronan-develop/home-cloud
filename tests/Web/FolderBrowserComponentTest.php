@@ -34,7 +34,7 @@ class FolderBrowserComponentTest extends WebTestCase
         $em = $container->get('doctrine')->getManager();
 
         // Mock du service FolderTreeFactory pour créer la racine et les enfants personnalisés
-        $mockFactory = $this->createMock(\App\Service\FolderTreeFactory::class);
+        $mockFactory = $this->createMock(\App\Factory\FolderTreeFactory::class);
         $mockFactory->method('ensureDefaultTree')->willReturnCallback(function () use ($em) {
             $user = $em->getRepository(\App\Entity\User::class)->findOneBy([]);
             // Purge dossiers
@@ -62,7 +62,7 @@ class FolderBrowserComponentTest extends WebTestCase
             // Recharge la racine depuis la base pour garantir la structure
             return $em->getRepository(\App\Entity\Folder::class)->findOneBy(['name' => 'Dossiers', 'parent' => null]);
         });
-        $container->set(\App\Service\FolderTreeFactory::class, $mockFactory);
+        $container->set(\App\Factory\FolderTreeFactory::class, $mockFactory);
 
         // Suppression de tous les dossiers pour garantir une base propre
         $folders = $em->getRepository(\App\Entity\Folder::class)->findAll();
@@ -126,7 +126,7 @@ class FolderBrowserComponentTest extends WebTestCase
         $em = $container->get('doctrine')->getManager();
 
         // Mock du factory pour arborescence par défaut (toto/tata)
-        $mockFactory = $this->createMock(\App\Service\FolderTreeFactory::class);
+        $mockFactory = $this->createMock(\App\Factory\FolderTreeFactory::class);
         $mockFactory->method('ensureDefaultTree')->willReturnCallback(function () use ($em) {
             $user = $em->getRepository(\App\Entity\User::class)->findOneBy([]);
             $root = $em->getRepository(\App\Entity\Folder::class)->findOneBy(['name' => 'Dossiers', 'parent' => null]);
@@ -150,7 +150,7 @@ class FolderBrowserComponentTest extends WebTestCase
             }
             return $root;
         });
-        $container->set(\App\Service\FolderTreeFactory::class, $mockFactory);
+        $container->set(\App\Factory\FolderTreeFactory::class, $mockFactory);
 
         $crawler = $client->request('GET', '/web/folders');
 
@@ -167,7 +167,7 @@ class FolderBrowserComponentTest extends WebTestCase
         $em = $container->get('doctrine')->getManager();
 
         // Mock du factory pour arborescence par défaut (toto/tata)
-        $mockFactory = $this->createMock(\App\Service\FolderTreeFactory::class);
+        $mockFactory = $this->createMock(\App\Factory\FolderTreeFactory::class);
         $mockFactory->method('ensureDefaultTree')->willReturnCallback(function () use ($em) {
             $user = $em->getRepository(\App\Entity\User::class)->findOneBy([]);
             $root = $em->getRepository(\App\Entity\Folder::class)->findOneBy(['name' => 'Dossiers', 'parent' => null]);
@@ -192,7 +192,7 @@ class FolderBrowserComponentTest extends WebTestCase
             $em->clear();
             return $em->getRepository(\App\Entity\Folder::class)->findOneBy(['name' => 'Dossiers', 'parent' => null]);
         });
-        $container->set(\App\Service\FolderTreeFactory::class, $mockFactory);
+        $container->set(\App\Factory\FolderTreeFactory::class, $mockFactory);
 
         $crawler = $client->request('GET', '/web/folders');
 
@@ -215,7 +215,7 @@ class FolderBrowserComponentTest extends WebTestCase
         $em = $container->get('doctrine')->getManager();
 
         // Mock du factory pour arborescence par défaut (toto/tata)
-        $mockFactory = $this->createMock(\App\Service\FolderTreeFactory::class);
+        $mockFactory = $this->createMock(\App\Factory\FolderTreeFactory::class);
         $mockFactory->method('ensureDefaultTree')->willReturnCallback(function () use ($em) {
             $user = $em->getRepository(\App\Entity\User::class)->findOneBy([]);
             $root = $em->getRepository(\App\Entity\Folder::class)->findOneBy(['name' => 'Dossiers', 'parent' => null]);
@@ -240,7 +240,7 @@ class FolderBrowserComponentTest extends WebTestCase
             $em->clear();
             return $em->getRepository(\App\Entity\Folder::class)->findOneBy(['name' => 'Dossiers', 'parent' => null]);
         });
-        $container->set(\App\Service\FolderTreeFactory::class, $mockFactory);
+        $container->set(\App\Factory\FolderTreeFactory::class, $mockFactory);
 
         $crawler = $client->request('GET', '/web/folders');
 
