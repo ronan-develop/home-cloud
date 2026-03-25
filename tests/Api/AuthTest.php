@@ -42,6 +42,11 @@ final class AuthTest extends AuthenticatedApiTestCase
         $conn->executeStatement('DELETE FROM users');
         $conn->executeStatement('SET FOREIGN_KEY_CHECKS=1');
         $this->em->clear();
+
+        // Réinitialise les compteurs de rate limiting entre chaque test
+        if (static::getContainer()->has('cache.rate_limiter')) {
+            static::getContainer()->get('cache.rate_limiter')->clear();
+        }
     }
 
     private function createUserWithPassword(string $email, string $plainPassword): User
@@ -178,5 +183,27 @@ final class AuthTest extends AuthenticatedApiTestCase
         ]);
 
         $this->assertResponseStatusCodeSame(401);
+    }
+
+    public function testLoginIsThrottledAfterFiveFailures(): void
+    {
+        $this->createUserWithPassword('throttle@example.com', 'password123');
+
+        $client = static::createClient();
+
+        // 5 tentatives échouées
+        for ($i = 0; $i < 5; $i++) {
+            $client->request('POST', '/api/v1/auth/login', [
+                'json' => ['email' => 'throttle@example.com', 'password' => 'wrongpassword'],
+            ]);
+            $this->assertResponseStatusCodeSame(401);
+        }
+
+        // La 6ème tentative doit être bloquée par le rate limiter
+        $client->request('POST', '/api/v1/auth/login', [
+            'json' => ['email' => 'throttle@example.com', 'password' => 'wrongpassword'],
+        ]);
+
+        $this->assertResponseStatusCodeSame(429);
     }
 }
