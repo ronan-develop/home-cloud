@@ -87,6 +87,20 @@ Score global : **9/10** — 4/5 axes de remédiation implémentés.
 
 ---
 
+## ✅ CI/CD — Pipeline complet (2026-03-26)
+
+| Étape | Workflow | Déclencheur |
+|-------|----------|-------------|
+| Tests PHP (PHPUnit + MariaDB) | `CI/php` | push / PR sur `main` |
+| Tests JS (Jest) | `CI/js` | push / PR sur `main` |
+| Audit dépendances | `CI` → `composer audit` | push / PR sur `main` |
+| Déploiement auto | `Deploy` | CI ✅ sur `main` |
+| Déploiement manuel | `Deploy` | `workflow_dispatch` |
+
+→ Tout merge dans `main` avec CI verte déclenche automatiquement le déploiement sur `ronan.lenouvel.me`.
+
+---
+
 ## 🗺️ Prochaines pistes
 
 Voir `.github/todo-api-features.md` et `.github/todo-user-settings.md` pour les fonctionnalités restantes.

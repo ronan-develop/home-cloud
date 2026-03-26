@@ -1,6 +1,10 @@
 name: Deploy
 
 on:
+  workflow_run:
+    workflows: ["CI"]
+    branches: [main]
+    types: [completed]
   workflow_dispatch:
     inputs:
       environment:
@@ -19,7 +23,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: production
-
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
