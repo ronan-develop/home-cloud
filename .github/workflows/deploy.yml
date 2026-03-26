@@ -6,17 +6,9 @@ on:
     branches: [main]
     types: [completed]
   workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Environment to deploy to'
-        required: true
-        default: 'production'
-        type: choice
-        options:
-          - production
 
 concurrency:
-  group: deploy-${{ github.ref }}
+  group: deploy-production
   cancel-in-progress: false
 
 jobs:
@@ -24,75 +16,29 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+
     steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 🐘 Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.4'
-          extensions: mbstring, intl
-
-      - name: 🔍 Check if deployment target exists
-        id: check-target
+      - name: 🚀 Déclencher le déploiement via webhook
         env:
-          SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
-          SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
-          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+          WEBHOOK_SECRET: ${{ secrets.DEPLOY_WEBHOOK_SECRET }}
         run: |
-          mkdir -p ~/.ssh
-          echo "$SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          
-          # Test SSH connection
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=10 \
-            "${SSH_USER}@${SSH_HOST}" "echo OK" && echo "target_exists=true" >> $GITHUB_OUTPUT || echo "target_exists=false" >> $GITHUB_OUTPUT
+          PAYLOAD='{"ref":"refs/heads/main"}'
+          SIGNATURE="sha256=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" | awk '{print $2}')"
 
-      - name: 🚀 Deploy (Update mode)
-        if: steps.check-target.outputs.target_exists == 'true'
-        env:
-          SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
-          SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
-          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          PRENOM: ${{ secrets.DEPLOY_PRENOM }}
-          PREREQ_PRESET: 'o'
-          CONFIRM_PRESET: 'o'
-        run: |
-          mkdir -p ~/.ssh
-          echo "$SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          
-          export SSH_KEY_PATH=~/.ssh/deploy_key
-          export PRENOM_PRESET="$PRENOM"
-          export PREREQ_PRESET="o"
-          export CONFIRM_PRESET="o"
-          
-          bash bin/deploy.sh --update
+          RESPONSE=$(curl -s -o /tmp/deploy_response.txt -w "%{http_code}" \
+            -X POST "$WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -H "X-Hub-Signature-256: $SIGNATURE" \
+            --data "$PAYLOAD" \
+            --max-time 60)
 
-      - name: 🚀 Deploy (Initial setup)
-        if: steps.check-target.outputs.target_exists == 'false'
-        env:
-          SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
-          SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
-          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          PRENOM: ${{ secrets.DEPLOY_PRENOM }}
-          DB_PASSWORD: ${{ secrets.DEPLOY_DB_PASSWORD }}
-          PREREQ_PRESET: 'o'
-          CONFIRM_PRESET: 'o'
-        run: |
-          mkdir -p ~/.ssh
-          echo "$SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          
-          export SSH_KEY_PATH=~/.ssh/deploy_key
-          export PRENOM_PRESET="$PRENOM"
-          export DB_PASSWORD_PRESET="$DB_PASSWORD"
-          export PREREQ_PRESET="o"
-          export CONFIRM_PRESET="o"
-          
-          bash bin/deploy.sh
+          echo "HTTP status: $RESPONSE"
+          echo "Response: $(cat /tmp/deploy_response.txt)"
 
-      - name: ✅ Deployment complete
-        if: success()
-        run: echo "Deployment successful. Check the logs for details."
+          if [ "$RESPONSE" != "200" ]; then
+            echo "❌ Déploiement échoué (HTTP $RESPONSE)"
+            exit 1
+          fi
+
+          echo "✅ Déploiement réussi"
