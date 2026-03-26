@@ -38,6 +38,9 @@ jobs:
       - name: 📦 Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
+      - name: 🔍 Audit des dépendances
+        run: composer audit
+
       - name: ⏳ Wait for MariaDB
         run: |
           until mysqladmin ping -h 127.0.0.1 -P 3306 -u root -proot --silent; do
