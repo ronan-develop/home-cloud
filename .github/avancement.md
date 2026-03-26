@@ -1,8 +1,8 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-03-24
+> Dernière mise à jour : 2026-03-26
 
-> **Status git :** `main` — tout mergé, 301 tests ✅
+> **Status git :** `main` — tout mergé, 312 tests ✅
 
 ---
 
@@ -43,9 +43,9 @@ src/
 
 ---
 
-## ✅ Audit Sécurité — TERMINÉ (2026-03-24)
+## ✅ Audit Sécurité — TERMINÉ (2026-03-26)
 
-Score global : **8/10** — aucun point critique détecté.
+Score global : **9/10** — 4/5 axes de remédiation implémentés.
 
 | Point audité | Résultat |
 |---|---|
@@ -56,13 +56,18 @@ Score global : **8/10** — aucun point critique détecté.
 | CORS (regex serrée en prod) | ✅ OK |
 | Security Headers (CSP, X-Frame-Options…) | ✅ OK |
 | SQL injection (QueryBuilder paramétrisé) | ✅ OK |
-| Rate limiting sur /api/v1/auth/login | ❌ À faire |
-| Auth failure logging | ⚠️ À améliorer |
-| HSTS header | ⚠️ À faire |
-| `composer audit` en CI | ⚠️ À faire |
-| Assert sur DTOs | ⚠️ Basse priorité |
+| Rate limiting sur /api/v1/auth/login | ✅ Fait (PR #146 — 5 req / 15 min, HTTP 429) |
+| Auth failure logging | ✅ Fait (PR #146 — email, IP, user-agent) |
+| HSTS header | ✅ Fait (PR #146 — prod uniquement, max-age=31536000) |
+| `composer audit` en CI | ✅ Fait (PR #147 — step avant les tests) |
+| Assert sur DTOs | ⚠️ Basse priorité — reste à faire |
 
-→ Plan de remédiation : `.github/todo-security.md`
+### CI/CD — Node.js 24
+
+- `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true` ajouté (PR #147)
+- `node-version` mis à jour vers `22` (LTS)
+
+→ Détail des tâches restantes : `.github/todo-security.md`
 
 ---
 
@@ -76,7 +81,7 @@ Score global : **8/10** — aucun point critique détecté.
 
 ## 📊 État des tests
 
-- **301 tests**, 633 assertions
+- **312 tests**, 659 assertions
 - 1 skipped (test d'intégration Stopwatch conditionnel)
 - 0 failures, 0 errors
 
@@ -85,4 +90,9 @@ Score global : **8/10** — aucun point critique détecté.
 ## 🗺️ Prochaines pistes
 
 Voir `.github/todo-api-features.md` et `.github/todo-user-settings.md` pour les fonctionnalités restantes.
+
+### Priorité suggérée
+1. **Assert sur DTOs** (clôture sécurité — priorité basse) → `.github/todo-security.md`
+2. **API Features** PATCH/DELETE Folder, File, User + pagination → `.github/todo-api-features.md`
+3. **Page paramètres utilisateur** (email, mot de passe) → `.github/todo-user-settings.md`
 
