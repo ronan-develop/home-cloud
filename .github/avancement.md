@@ -1,6 +1,6 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-03-16
+> Dernière mise à jour : 2026-03-24
 
 > **Status git :** `main` — tout mergé, 301 tests ✅
 
@@ -40,6 +40,29 @@ src/
 - **DIP** : 14 interfaces, zéro dépendance concrète dans les processors
 - **DRY** : auth, ownership, IRI extraction — chacun centralisé une fois
 - **Testabilité** : tous les services mockables via leurs interfaces
+
+---
+
+## ✅ Audit Sécurité — TERMINÉ (2026-03-24)
+
+Score global : **8/10** — aucun point critique détecté.
+
+| Point audité | Résultat |
+|---|---|
+| Upload validation (MIME, extension, path traversal) | ✅ Excellent |
+| JWT RS256 + Refresh Token rotation | ✅ OK |
+| Autorisation (OwnershipChecker + Voter) | ✅ OK |
+| Mots de passe (argon2id/bcrypt) | ✅ OK |
+| CORS (regex serrée en prod) | ✅ OK |
+| Security Headers (CSP, X-Frame-Options…) | ✅ OK |
+| SQL injection (QueryBuilder paramétrisé) | ✅ OK |
+| Rate limiting sur /api/v1/auth/login | ❌ À faire |
+| Auth failure logging | ⚠️ À améliorer |
+| HSTS header | ⚠️ À faire |
+| `composer audit` en CI | ⚠️ À faire |
+| Assert sur DTOs | ⚠️ Basse priorité |
+
+→ Plan de remédiation : `.github/todo-security.md`
 
 ---
 
