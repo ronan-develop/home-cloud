@@ -1,8 +1,16 @@
-{# Composant Breadcrumbs — Fil d’Ariane dynamique #}
+{# Composant Breadcrumbs — Fil d'Ariane dynamique #}
 <nav class="main-breadcrumbs">
   {% for segment in segments %}
     {% if segment.url %}
-      <a href="{{ segment.url }}">{{ segment.label }}</a>
+      <a href="{{ segment.url }}">
+        {%- if segment.url == '/' -%}
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16" aria-label="Accueil" style="vertical-align: middle; margin-bottom: 2px;">
+            <path d="M10.707 2.293a1 1 0 0 0-1.414 0l-7 7A1 1 0 0 0 3 11h1v6a1 1 0 0 0 1 1h4v-4h2v4h4a1 1 0 0 0 1-1v-6h1a1 1 0 0 0 .707-1.707l-7-7Z"/>
+          </svg>
+        {%- else -%}
+          {{- segment.label -}}
+        {%- endif -%}
+      </a>
       {% if not loop.last %}&nbsp;&gt;&nbsp;{% endif %}
     {% else %}
       <span>{{ segment.label }}</span>
