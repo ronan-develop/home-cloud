@@ -57,7 +57,7 @@ if [[ -n "${SSH_KEY_PATH:-}" && -f "$SSH_KEY_PATH" ]]; then
 fi
 GIT_BRANCH="main"
 PHP_BIN="/usr/local/bin/php"
-COMPOSER_BIN="/opt/cpanel/composer/bin/composer"
+COMPOSER_BIN="composer"
 
 # ── Questionnaire ─────────────────────────────────────────────────────────────
 title "═══════════════════════════════════════"
@@ -170,8 +170,14 @@ info "Chemin de déploiement : ${DEPLOY_PATH}"
 title "── Déploiement en cours ────────────────────"
 
 if [[ "$UPDATE_MODE" == true ]]; then
-    info "Mode mise à jour : git pull + composer install"
-    ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" "cd ${DEPLOY_PATH} && git pull origin main && composer install --no-interaction --prefer-dist --no-progress" && \
+    info "Mode mise à jour : git pull + composer + cache + migrations + assets"
+    ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
+        "cd ${DEPLOY_PATH} && \
+         git pull origin main && \
+         ${COMPOSER_BIN} install --no-interaction --prefer-dist --no-progress --no-dev && \
+         ${PHP_BIN} bin/console cache:clear --env=prod && \
+         ${PHP_BIN} bin/console doctrine:migrations:migrate --no-interaction --env=prod && \
+         ${PHP_BIN} bin/console asset-map:compile" && \
     success "✅ Déploiement réussi !" || \
     { error "❌ Erreur lors du déploiement."; exit 1; }
 else
