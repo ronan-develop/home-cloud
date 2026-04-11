@@ -26,15 +26,22 @@ jobs:
           PAYLOAD='{"ref":"refs/heads/main"}'
           SIGNATURE="sha256=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" | awk '{print $2}')"
 
+          CURL_EXIT=0
           RESPONSE=$(curl -s --http1.1 -o /tmp/deploy_response.txt -w "%{http_code}" \
             -X POST "$WEBHOOK_URL" \
             -H "Content-Type: application/json" \
             -H "X-Hub-Signature-256: $SIGNATURE" \
             --data "$PAYLOAD" \
-            --max-time 60)
+            --max-time 120) || CURL_EXIT=$?
 
+          echo "Curl exit code: $CURL_EXIT"
           echo "HTTP status: $RESPONSE"
-          echo "Response: $(cat /tmp/deploy_response.txt)"
+          echo "Response body: $(cat /tmp/deploy_response.txt 2>/dev/null)"
+
+          if [ "$CURL_EXIT" != "0" ]; then
+            echo "❌ Erreur curl (code $CURL_EXIT)"
+            exit 1
+          fi
 
           if [ "$RESPONSE" != "200" ]; then
             echo "❌ Déploiement échoué (HTTP $RESPONSE)"
