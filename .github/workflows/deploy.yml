@@ -26,7 +26,7 @@ jobs:
           PAYLOAD='{"ref":"refs/heads/main"}'
           SIGNATURE="sha256=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" | awk '{print $2}')"
 
-          RESPONSE=$(curl -s -o /tmp/deploy_response.txt -w "%{http_code}" \
+          RESPONSE=$(curl -s --http1.1 -o /tmp/deploy_response.txt -w "%{http_code}" \
             -X POST "$WEBHOOK_URL" \
             -H "Content-Type: application/json" \
             -H "X-Hub-Signature-256: $SIGNATURE" \
