@@ -177,7 +177,8 @@ if [[ "$UPDATE_MODE" == true ]]; then
          ${COMPOSER_BIN} install --no-interaction --prefer-dist --no-progress --no-dev && \
          ${PHP_BIN} bin/console cache:clear --env=prod && \
          ${PHP_BIN} bin/console doctrine:migrations:migrate --no-interaction --env=prod && \
-         ${PHP_BIN} bin/console asset-map:compile" && \
+         ${PHP_BIN} bin/console asset-map:compile && \
+         echo '<!-- Deployed: '$(date '+%Y-%m-%d %H:%M:%S')' -->' > templates/deploy-info.html.twig" && \
     success "✅ Déploiement réussi !" || \
     { error "❌ Erreur lors du déploiement."; exit 1; }
 else

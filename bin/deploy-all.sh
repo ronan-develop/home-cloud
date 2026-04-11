@@ -149,6 +149,7 @@ ENVEOF
             ${PHP_BIN} bin/console doctrine:migrations:migrate --no-interaction --env=prod
             ${PHP_BIN} bin/console lexik:jwt:generate-keypair --skip-if-exists --env=prod
             ${PHP_BIN} bin/console asset-map:compile
+            echo '<!-- Deployed: '$(date '+%Y-%m-%d %H:%M:%S')' -->' > templates/deploy-info.html.twig
         "; then
             success "${SUBDOMAIN} — déploiement initial OK"
             RESULTS_OK+=("$SUBDOMAIN")
@@ -171,6 +172,7 @@ ENVEOF
             ${PHP_BIN} bin/console cache:clear --env=prod
             ${PHP_BIN} bin/console doctrine:migrations:migrate --no-interaction --env=prod
             ${PHP_BIN} bin/console asset-map:compile
+            echo '<!-- Deployed: '$(date '+%Y-%m-%d %H:%M:%S')' -->' > templates/deploy-info.html.twig
         "; then
             success "${SUBDOMAIN} — mise à jour OK"
             RESULTS_OK+=("$SUBDOMAIN")
