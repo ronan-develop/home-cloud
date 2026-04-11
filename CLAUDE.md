@@ -15,6 +15,7 @@ Sommaire de référence. Lire avant toute intervention — suivre les liens pour
 | Méthodologie TDD             | [.claude/tdd.md](.claude/tdd.md)                         |
 | Design frontend              | [.claude/frontend.md](.claude/frontend.md)               |
 | CI/CD, déploiement, suivi    | [.claude/cicd.md](.claude/cicd.md)                       |
+| Guide déploiement o2switch   | [.claude/deploiement.md](.claude/deploiement.md)         |
 
 ---
 
