@@ -1,6 +1,6 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-03-26
+> Dernière mise à jour : 2026-03-31
 
 > **Status git :** `main` — tout mergé, 312 tests ✅
 
