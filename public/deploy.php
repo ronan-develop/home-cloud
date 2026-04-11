@@ -42,6 +42,13 @@ if (!hash_equals($expected, $signature)) {
     exit('Invalid signature');
 }
 
+// ── Vérification de la branche ───────────────────────────────────────────────
+$data = json_decode($payload, true);
+if (($data['ref'] ?? '') !== 'refs/heads/main') {
+    http_response_code(200);
+    exit('Skipped: not main branch');
+}
+
 // ── Déploiement ───────────────────────────────────────────────────────────────
 $projectDir = dirname(__DIR__);
 $logFile    = $projectDir . '/var/log/deploy.log';
