@@ -36,3 +36,4 @@ php.ini
 
 # Deploy info (généré par les scripts de déploiement)
 /templates/deploy-info.html.twig
+/.deploy-targets
