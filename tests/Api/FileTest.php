@@ -52,13 +52,11 @@ final class FileTest extends AuthenticatedApiTestCase
 
     public function testGetFileReturns200WithCorrectData(): void
     {
-        $this->markTestSkipped('Temporary: Entity isolation issue with UUID generation');
-        $client = static::createClient();
-        \App\Tests\Api\ApiTestHelper::withFakeJwt($client);
-        $user = $this->em->getRepository(User::class)->findOneBy(['email' => $this->testUserEmail]);
-        $folder = $this->createFolder('Docs', $user, null, $this->em);
+        $uniqueEmail = 'fileget_' . uniqid() . '@example.com';
+        $user   = $this->createUser($uniqueEmail, 'password123', 'FileGetUser');
+        $folder = $this->createFolder('Docs_' . uniqid(), $user, null, $this->em);
         $unique = uniqid('file_', true);
-        $file = new File(
+        $file   = new File(
             "test_get_{$unique}.txt",
             'text/plain',
             42,
@@ -69,11 +67,14 @@ final class FileTest extends AuthenticatedApiTestCase
         );
         $this->em->persist($file);
         $this->em->flush();
-        $client->request('GET', '/api/v1/files/' . $file->getId());
+
+        $client = $this->createAuthenticatedClient($user);
+        $response = $client->request('GET', '/api/v1/files/' . $file->getId());
+
         $this->assertResponseStatusCodeSame(200);
-        $data = json_decode($client->getResponse()->getContent(), true);
-        $this->assertStringStartsWith('test_get_', $data['name']);
-        $this->assertSame('/api/v1/folders/' . $folder->getId(), $data['folder']);
+        $data = $response->toArray();
+        $this->assertStringStartsWith('test_get_', $data['originalName']);
+        $this->assertSame((string) $folder->getId(), $data['folderId']);
         $this->assertSame('/api/v1/files/' . $file->getId(), $data['@id']);
     }
 
