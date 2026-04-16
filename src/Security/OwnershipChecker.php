@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Security;
 
 use App\Entity\Album;
+use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\Share;
 use App\Interface\AuthenticationResolverInterface;
@@ -26,7 +27,7 @@ final readonly class OwnershipChecker implements OwnershipCheckerInterface
         private LoggerInterface $logger,
     ) {}
 
-    public function isOwner(Folder|Album|Share $resource): bool
+    public function isOwner(Folder|Album|Share|File $resource): bool
     {
         $user = $this->authResolver->getAuthenticatedUser();
 
@@ -48,7 +49,7 @@ final readonly class OwnershipChecker implements OwnershipCheckerInterface
         return $isOwner;
     }
 
-    public function denyUnlessOwner(Folder|Album|Share $resource): void
+    public function denyUnlessOwner(Folder|Album|Share|File $resource): void
     {
         $user = $this->authResolver->getAuthenticatedUser();
 
