@@ -11,7 +11,7 @@
 ## File
 
 - [ ] PATCH /api/v1/files/{id} (renommage, changement de dossier)
-- [ ] DELETE /api/v1/files/{id} (test ownership, suppression physique, erreurs)
+- [x] DELETE /api/v1/files/{id} (ownership check, suppression physique, tests 204/403/404) — PR #159
 - [ ] Pagination, tri, recherche sur /api/v1/files
 - [ ] Validation nom fichier (unicité dans dossier, caractères interdits)
 - [ ] Tests fonctionnels (CRUD, droits, erreurs, upload, download)
