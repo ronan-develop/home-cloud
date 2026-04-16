@@ -220,7 +220,7 @@ final class MediaTest extends AuthenticatedApiTestCase
 
         $this->assertFileExists($thumbFile);
 
-        $this->createAuthenticatedClient()->request('DELETE', '/api/v1/files/' . $file->getId());
+        $this->createAuthenticatedClient($user)->request('DELETE', '/api/v1/files/' . $file->getId());
 
         $this->assertResponseStatusCodeSame(204);
         $this->assertFileDoesNotExist($thumbFile);

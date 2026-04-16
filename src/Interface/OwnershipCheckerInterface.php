@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Interface;
 
 use App\Entity\Album;
+use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\Share;
 
@@ -14,10 +15,10 @@ use App\Entity\Share;
  */
 interface OwnershipCheckerInterface
 {
-    public function isOwner(Folder|Album|Share $resource): bool;
+    public function isOwner(Folder|Album|Share|File $resource): bool;
 
     /**
      * @throws \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException si non propriétaire
      */
-    public function denyUnlessOwner(Folder|Album|Share $resource): void;
+    public function denyUnlessOwner(Folder|Album|Share|File $resource): void;
 }
