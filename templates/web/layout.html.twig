@@ -3,6 +3,7 @@
 {# Modales globales #}
 <twig:MoveModal />
 <twig:DeleteFolderModal />
+<twig:RenameModal />
 
 {% endblock %}
 {% extends 'base.html.twig' %}
@@ -238,30 +239,10 @@
 <script>
 // Global rename helper: adds rename buttons next to folder names in lists and sidebar
 (function () {
-    async function renameFolder(id, currentName) {
-        var newName = prompt('Renommer le dossier', currentName);
-        if (newName === null) return; // cancelled
-        newName = newName.trim();
-        if (!newName) { alert('Le nom ne peut pas être vide'); return; }
-        if (newName.length > 255) { alert('Le nom est trop long (255 caractères max)'); return; }
-        if (!/^[^\\/:*?"<>|]+$/u.test(newName)) { alert('Caractères invalides dans le nom'); return; }
-        try {
-            var token = await HC.getToken();
-            var res = await fetch('/api/v1/folders/' + encodeURIComponent(id), {
-                method: 'PATCH',
-                headers: {
-                    'Authorization': 'Bearer ' + token,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ name: newName })
-            });
-            if (res.ok) {
-                window.location.reload();
-            } else {
-                var txt = await res.text();
-                alert('Erreur: ' + res.status + '\n' + txt);
-            }
-        } catch (e) { alert('Erreur réseau: ' + e.message); }
+    function renameFolder(id, currentName) {
+        if (typeof window.openRenameModal === 'function') {
+            window.openRenameModal('folder', id, currentName);
+        }
     }
 
     function attachRenameButtons() {
