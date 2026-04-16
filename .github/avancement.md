@@ -2,7 +2,7 @@
 
 > Dernière mise à jour : 2026-04-16
 
-> **Status git :** `main` — tout mergé, 315 tests ✅
+> **Status git :** `main` — tout mergé, 309 tests ✅
 
 ---
 
@@ -86,6 +86,25 @@ Score global : **9/10** — 4/5 axes de remédiation implémentés.
 |----|---------|---------|
 | #149 | `feat/breadcrumb-home-icon` | Icône home SVG Heroicons sur le lien racine du fil d'Ariane (remplace "Tous les fichiers") — `aria-label="Accueil"`, hérite la couleur du thème |
 
+## ✅ Frontend — RenameModal (2026-04-16)
+
+| PR | Branche | Contenu |
+|----|---------|---------|
+| #162 | `feat/rename-modal` | Remplace `prompt()` par une modale glassmorphism — `openRenameModal()` / `submitRename()`, validation inline, toast, Entrée/Échap |
+
+## ✅ Chore — Cleanup code mort (2026-04-16)
+
+| Fichier supprimé | Raison |
+|-----------------|--------|
+| `assets/controllers/hello_controller.js` | Exemple Stimulus jamais utilisé |
+| `assets/controllers/new_menu_controller.js` | Jamais appliqué via `data-controller` |
+| `assets/controllers/file_upload_controller.js` | Idem |
+| `templates/components/Modal.html.twig` | Alpine.js, jamais inclus |
+| `templates/components/Button.html.twig` | Orphelin |
+| `templates/components/folder_browser.html.twig` | TDD RED abandonné |
+| `tests/Web/FolderBrowserComponentTest.php` | Couplé au template supprimé |
+| `.env APP_SHARE_DIR` | Variable jamais utilisée |
+
 ---
 
 ## ⚠️ Bugs connus
@@ -98,8 +117,8 @@ Score global : **9/10** — 4/5 axes de remédiation implémentés.
 
 ## 📊 État des tests
 
-- **315 tests**, 663 assertions
-- 1 skipped (test d'intégration Stopwatch conditionnel)
+- **309 tests**, 643 assertions
+- 0 skipped (test GET File corrigé — PR #163)
 - 0 failures, 0 errors
 
 ---
