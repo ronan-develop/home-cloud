@@ -10,6 +10,7 @@ use ApiPlatform\Metadata\Delete;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\FileOutput;
 use App\Interface\DefaultFolderServiceInterface;
+use App\Interface\OwnershipCheckerInterface;
 use App\Repository\FileRepository;
 use App\Repository\MediaRepository;
 use App\Security\AuthenticationResolver;
@@ -41,6 +42,7 @@ final class FileProcessor implements ProcessorInterface
         private readonly MediaRepository $mediaRepository,
         private readonly StorageServiceInterface $storageService,
         private readonly AuthenticationResolver $authResolver,
+        private readonly OwnershipCheckerInterface $ownershipChecker,
         private readonly DefaultFolderServiceInterface $defaultFolderService,
         private readonly FileActionService $fileActionService,
         private readonly RequestStack $requestStack,
@@ -66,6 +68,8 @@ final class FileProcessor implements ProcessorInterface
     {
         $file = $this->fileRepository->find($uriVariables['id'])
             ?? throw new NotFoundHttpException('File not found');
+
+        $this->ownershipChecker->denyUnlessOwner($file);
 
         // Supprimer le thumbnail du disque AVANT le cascade DB (onDelete: CASCADE supprime la ligne Media)
         $media = $this->mediaRepository->findOneBy(['file' => $file]);
