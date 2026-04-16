@@ -1,8 +1,8 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-03-31
+> Dernière mise à jour : 2026-04-16
 
-> **Status git :** `main` — tout mergé, 312 tests ✅
+> **Status git :** `main` — tout mergé, 315 tests ✅
 
 ---
 
@@ -71,6 +71,23 @@ Score global : **9/10** — 4/5 axes de remédiation implémentés.
 
 ---
 
+## ✅ Sécurité — DELETE File ownership check (2026-04-16)
+
+| PR | Branche | Contenu |
+|----|---------|---------|
+| #159 | `fix/file-delete-ownership-check` | `OwnershipChecker` étendu à `File` + `denyUnlessOwner` dans `FileProcessor::handleDelete` — tout user authentifié pouvait supprimer les fichiers d'autrui |
+| #159 | `fix/file-delete-ownership-check` | `FileDeleteTest` : 3 tests fonctionnels DELETE 204/403/404 |
+| #159 | `fix/file-delete-ownership-check` | Bug latent `MediaTest` corrigé (mauvais user dans `createAuthenticatedClient`) |
+| #159 | `fix/file-delete-ownership-check` | `.deploy-targets` ajouté au `.gitignore` |
+
+## ✅ Frontend — Breadcrumb icône home (2026-04-16)
+
+| PR | Branche | Contenu |
+|----|---------|---------|
+| #149 | `feat/breadcrumb-home-icon` | Icône home SVG Heroicons sur le lien racine du fil d'Ariane (remplace "Tous les fichiers") — `aria-label="Accueil"`, hérite la couleur du thème |
+
+---
+
 ## ⚠️ Bugs connus
 
 | Priorité | Bug | Détail |
@@ -81,7 +98,7 @@ Score global : **9/10** — 4/5 axes de remédiation implémentés.
 
 ## 📊 État des tests
 
-- **312 tests**, 659 assertions
+- **315 tests**, 663 assertions
 - 1 skipped (test d'intégration Stopwatch conditionnel)
 - 0 failures, 0 errors
 
@@ -107,6 +124,6 @@ Voir `.github/todo-api-features.md` et `.github/todo-user-settings.md` pour les 
 
 ### Priorité suggérée
 1. **Assert sur DTOs** (clôture sécurité — priorité basse) → `.github/todo-security.md`
-2. **API Features** PATCH/DELETE Folder, File, User + pagination → `.github/todo-api-features.md`
+2. **API Features** PATCH/DELETE File, PATCH/DELETE Folder, User + pagination → `.github/todo-api-features.md`
 3. **Page paramètres utilisateur** (email, mot de passe) → `.github/todo-user-settings.md`
 
