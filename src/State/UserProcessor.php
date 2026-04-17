@@ -7,6 +7,7 @@ namespace App\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\State\ProcessorInterface;
+use ApiPlatform\Validator\ValidatorInterface;
 use App\ApiResource\UserOutput;
 use App\Interface\AuthenticationResolverInterface;
 use App\Interface\UserRepositoryInterface;
@@ -36,10 +37,13 @@ final class UserProcessor implements ProcessorInterface
         private readonly UserProvider $provider,
         private readonly AuthenticationResolverInterface $authResolver,
         private readonly UserPasswordHasherInterface $passwordHasher,
+        private readonly ValidatorInterface $validator,
     ) {}
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): mixed
     {
+        $this->validator->validate($data, $operation->getValidationContext() ?? []);
+
         return match (true) {
             $operation instanceof Patch => $this->handlePatch($data, $uriVariables),
             default => $data,
@@ -57,9 +61,6 @@ final class UserProcessor implements ProcessorInterface
         }
 
         if (!empty($data->email)) {
-            if (!filter_var($data->email, FILTER_VALIDATE_EMAIL)) {
-                throw new UnprocessableEntityHttpException('Email invalide.');
-            }
             $existing = $this->userRepository->findOneBy(['email' => $data->email]);
             if ($existing !== null && !$existing->getId()->equals($user->getId())) {
                 throw new UnprocessableEntityHttpException('Cet email est déjà utilisé.');
@@ -68,16 +69,10 @@ final class UserProcessor implements ProcessorInterface
         }
 
         if (!empty($data->displayName)) {
-            if (strlen($data->displayName) > 255) {
-                throw new UnprocessableEntityHttpException('displayName trop long (max 255 caractères).');
-            }
             $user->setDisplayName($data->displayName);
         }
 
         if ($data->password !== null) {
-            if (strlen($data->password) < 8) {
-                throw new UnprocessableEntityHttpException('Le mot de passe doit contenir au moins 8 caractères.');
-            }
             $user->setPassword($this->passwordHasher->hashPassword($user, $data->password));
         }
 

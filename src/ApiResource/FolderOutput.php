@@ -14,6 +14,7 @@ use ApiPlatform\OpenApi\Model;
 use App\State\FolderProcessor;
 use App\State\FolderProvider;
 use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
     shortName: 'Folder',
@@ -34,6 +35,7 @@ use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
         ),
         new Post(
             uriTemplate: '/v1/folders',
+            validationContext: ['groups' => ['Default', 'create']],
             openapi: new Model\Operation(
                 summary: 'Crée un nouveau dossier.',
                 description: 'Crée un dossier. `parentId` est optionnel ; si absent, le dossier est à la racine.',
@@ -75,6 +77,9 @@ use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
 final class FolderOutput
 {
     public string $id = '';
+
+    #[Assert\NotBlank(groups: ['create'])]
+    #[Assert\Length(max: 255)]
     public string $name = '';
     public ?string $parentId = null;
     public ?string $ownerId = null;

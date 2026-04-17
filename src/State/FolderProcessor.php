@@ -9,6 +9,7 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\State\ProcessorInterface;
+use ApiPlatform\Validator\ValidatorInterface;
 use App\ApiResource\FolderOutput;
 use App\Enum\FolderMediaType;
 use App\Interface\FolderRepositoryInterface;
@@ -40,10 +41,15 @@ final class FolderProcessor implements ProcessorInterface
         private readonly FolderProvider $provider,
         private readonly RequestStack $requestStack,
         private readonly IriExtractor $iriExtractor,
+        private readonly ValidatorInterface $validator,
     ) {}
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): mixed
     {
+        if (!$operation instanceof Delete) {
+            $this->validator->validate($data, $operation->getValidationContext() ?? []);
+        }
+
         return match (true) {
             $operation instanceof Post   => $this->handlePost($data),
             $operation instanceof Patch  => $this->handlePatch($data, $uriVariables),
@@ -57,9 +63,6 @@ final class FolderProcessor implements ProcessorInterface
      */
     private function handlePost(FolderOutput $data): FolderOutput
     {
-        if (empty($data->name)) {
-            throw new BadRequestHttpException('name is required');
-        }
         if (empty($data->ownerId)) {
             throw new BadRequestHttpException('ownerId is required');
         }

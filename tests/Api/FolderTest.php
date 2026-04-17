@@ -112,13 +112,13 @@ final class FolderTest extends AuthenticatedApiTestCase
         $this->assertSame((string) $parent->getId(), $data['parentId']);
     }
 
-    public function testPostFolderReturns400WhenNameIsMissing(): void
+    public function testPostFolderReturns422WhenNameIsMissing(): void
     {
         $owner = $this->createUser();
         $this->createAuthenticatedClient()->request('POST', '/api/v1/folders', [
             'json' => ['ownerId' => (string) $owner->getId()],
         ]);
-        $this->assertResponseStatusCodeSame(400);
+        $this->assertResponseStatusCodeSame(422);
     }
 
     // --- PATCH /api/v1/folders/{id} ---

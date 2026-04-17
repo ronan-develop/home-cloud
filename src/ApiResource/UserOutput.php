@@ -11,6 +11,7 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\OpenApi\Model;
 use App\State\UserProcessor;
 use App\State\UserProvider;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
     shortName: 'User',
@@ -48,9 +49,15 @@ use App\State\UserProvider;
 final class UserOutput
 {
     public string $id = '';
+
+    #[Assert\Email]
     public string $email = '';
+
+    #[Assert\Length(max: 255)]
     public string $displayName = '';
+
     public string $createdAt = '';
-    /** Champ write-only : accepté en entrée PATCH, jamais exposé en réponse. */
+
+    #[Assert\Length(min: 8)]
     public ?string $password = null;
 }
