@@ -47,13 +47,18 @@ final class FolderProvider implements ProviderInterface
         }
 
         [$page, $offset, $limit] = $this->pagination->getPagination($operation, $context);
-        $criteria = [];
+
         $user = $this->authResolver->getAuthenticatedUser();
-        if ($user !== null) {
-            $criteria['owner'] = $user;
+        if ($user === null) {
+            return new TraversablePaginator(new \ArrayIterator([]), $page, $limit, 0);
         }
-        $total = $this->repository->count($criteria);
-        $items = array_map($this->toOutput(...), $this->repository->findBy($criteria, [], $limit, $offset));
+
+        $request = $context['request'] ?? null;
+        $search  = $request?->query->get('name');
+        $order   = $request?->query->all('order') ?? [];
+
+        $total = $this->repository->countFiltered($user, $search ?: null);
+        $items = array_map($this->toOutput(...), $this->repository->findFiltered($user, $search ?: null, $order, $limit, $offset));
 
         return new TraversablePaginator(new \ArrayIterator($items), $page, $limit, $total);
     }
