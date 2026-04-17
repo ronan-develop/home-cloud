@@ -9,5 +9,6 @@ api_platform:
         json: ['application/json']
     defaults:
         stateless: true
+        validate: true
         cache_headers:
             vary: ['Content-Type', 'Authorization', 'Origin']
