@@ -7,7 +7,9 @@ namespace App\ApiResource;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
 use ApiPlatform\OpenApi\Model;
+use App\State\UserProcessor;
 use App\State\UserProvider;
 
 #[ApiResource(
@@ -27,18 +29,21 @@ use App\State\UserProvider;
                 description: 'Retourne la liste paginée des utilisateurs. Paramètres : `page` (défaut 1), `itemsPerPage` (défaut 30).',
             ),
         ),
+        new Patch(
+            uriTemplate: '/v1/users/{id}',
+            processor: UserProcessor::class,
+            openapi: new Model\Operation(
+                summary: 'Modifie le profil de l\'utilisateur connecté.',
+                description: 'Permet de modifier email, displayName et/ou password. Réservé au propriétaire du compte.',
+            ),
+        ),
     ],
     provider: UserProvider::class,
 )]
 /**
- * DTO de sortie en lecture seule pour la ressource User.
+ * DTO pour la ressource User (lecture + mise à jour partielle).
  *
- * Rôle : expose uniquement les champs publics d'un utilisateur via l'API.
- * Ne contient jamais de mot de passe ni de donnée sensible.
- *
- * Choix : classe séparée de l'entité User pour découpler le modèle de
- * persistance du contrat d'API — toute modification du schéma DB n'impacte
- * pas la réponse JSON tant que UserProvider assure le mapping.
+ * Le champ `password` est accepté en entrée (PATCH) mais jamais retourné en sortie.
  */
 final class UserOutput
 {
@@ -46,4 +51,6 @@ final class UserOutput
     public string $email = '';
     public string $displayName = '';
     public string $createdAt = '';
+    /** Champ write-only : accepté en entrée PATCH, jamais exposé en réponse. */
+    public ?string $password = null;
 }
