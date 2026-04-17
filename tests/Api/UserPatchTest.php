@@ -113,4 +113,52 @@ final class UserPatchTest extends AuthenticatedApiTestCase
 
         $this->assertResponseStatusCodeSame(422);
     }
+
+    /** Email invalide → 422 avec clé violations (format standard API Platform) */
+    public function testPatchWithInvalidEmailReturnsViolations(): void
+    {
+        $alice = $this->em->getRepository(\App\Entity\User::class)->findOneBy(['email' => 'alice@example.com']);
+
+        $client = $this->createAuthenticatedClient($alice);
+        $client->request('PATCH', '/api/v1/users/' . $alice->getId(), [
+            'json' => ['email' => 'not-an-email'],
+            'headers' => ['Content-Type' => 'application/merge-patch+json'],
+        ]);
+
+        $this->assertResponseStatusCodeSame(422);
+        $data = $client->getResponse()->toArray(false);
+        $this->assertArrayHasKey('violations', $data);
+    }
+
+    /** displayName trop long (> 255) → 422 avec violations */
+    public function testPatchWithTooLongDisplayNameReturns422(): void
+    {
+        $alice = $this->em->getRepository(\App\Entity\User::class)->findOneBy(['email' => 'alice@example.com']);
+
+        $client = $this->createAuthenticatedClient($alice);
+        $client->request('PATCH', '/api/v1/users/' . $alice->getId(), [
+            'json' => ['displayName' => str_repeat('a', 256)],
+            'headers' => ['Content-Type' => 'application/merge-patch+json'],
+        ]);
+
+        $this->assertResponseStatusCodeSame(422);
+        $data = $client->getResponse()->toArray(false);
+        $this->assertArrayHasKey('violations', $data);
+    }
+
+    /** Mot de passe trop court → 422 avec violations */
+    public function testPatchWithShortPasswordReturnsViolations(): void
+    {
+        $alice = $this->em->getRepository(\App\Entity\User::class)->findOneBy(['email' => 'alice@example.com']);
+
+        $client = $this->createAuthenticatedClient($alice);
+        $client->request('PATCH', '/api/v1/users/' . $alice->getId(), [
+            'json' => ['password' => '123'],
+            'headers' => ['Content-Type' => 'application/merge-patch+json'],
+        ]);
+
+        $this->assertResponseStatusCodeSame(422);
+        $data = $client->getResponse()->toArray(false);
+        $this->assertArrayHasKey('violations', $data);
+    }
 }

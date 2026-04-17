@@ -155,7 +155,7 @@ final class FolderCrudTest extends AuthenticatedApiTestCase
         );
     }
 
-    public function testCreateFolderMissingNameReturns400(): void
+    public function testCreateFolderMissingNameReturns422(): void
     {
         $em = static::getContainer()->get(\Doctrine\ORM\EntityManagerInterface::class);
         $user = $em->getRepository(\App\Entity\User::class)->findOneBy(['email' => 'alice@example.com']);
@@ -165,7 +165,26 @@ final class FolderCrudTest extends AuthenticatedApiTestCase
                 'ownerId' => (string) $user->getId(),
             ],
         ]);
-        static::assertResponseStatusCodeSame(400);
+        static::assertResponseStatusCodeSame(422);
+        $data = $client->getResponse()->toArray(false);
+        $this->assertArrayHasKey('violations', $data);
+    }
+
+    /** name > 255 caractères → 422 avec violations */
+    public function testCreateFolderWithTooLongNameReturns422(): void
+    {
+        $em = static::getContainer()->get(\Doctrine\ORM\EntityManagerInterface::class);
+        $user = $em->getRepository(\App\Entity\User::class)->findOneBy(['email' => 'alice@example.com']);
+        $client = $this->createAuthenticatedClient($user);
+        $client->request('POST', '/api/v1/folders', [
+            'json' => [
+                'name'    => str_repeat('a', 256),
+                'ownerId' => (string) $user->getId(),
+            ],
+        ]);
+        static::assertResponseStatusCodeSame(422);
+        $data = $client->getResponse()->toArray(false);
+        $this->assertArrayHasKey('violations', $data);
     }
 
     public function testCreateFolderDuplicateNameInParentReturns400(): void
