@@ -27,6 +27,54 @@ class FileRepository extends ServiceEntityRepository implements FileRepositoryIn
     }
 
     /**
+     * Retourne les fichiers filtrés + triés + paginés.
+     *
+     * @param array<string, string> $orderBy  ex: ['originalName' => 'ASC']
+     * @return File[]
+     */
+    public function findFiltered(?string $search, ?string $folderId, array $orderBy, int $limit, int $offset): array
+    {
+        $qb = $this->createQueryBuilder('f')
+            ->setMaxResults($limit)
+            ->setFirstResult($offset);
+
+        if ($folderId !== null) {
+            $qb->andWhere('IDENTITY(f.folder) = :folderId')
+               ->setParameter('folderId', \Symfony\Component\Uid\Uuid::fromString($folderId)->toBinary());
+        }
+
+        if ($search !== null && $search !== '') {
+            $qb->andWhere('f.originalName LIKE :q')->setParameter('q', '%' . $search . '%');
+        }
+
+        $allowed = ['originalName' => 'f.originalName', 'size' => 'f.size', 'createdAt' => 'f.createdAt'];
+        foreach ($orderBy as $field => $dir) {
+            if (isset($allowed[$field])) {
+                $qb->addOrderBy($allowed[$field], strtoupper($dir) === 'DESC' ? 'DESC' : 'ASC');
+            }
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /** Compte les fichiers avec filtres optionnels. */
+    public function countFiltered(?string $search, ?string $folderId): int
+    {
+        $qb = $this->createQueryBuilder('f')->select('COUNT(f.id)');
+
+        if ($folderId !== null) {
+            $qb->andWhere('IDENTITY(f.folder) = :folderId')
+               ->setParameter('folderId', \Symfony\Component\Uid\Uuid::fromString($folderId)->toBinary());
+        }
+
+        if ($search !== null && $search !== '') {
+            $qb->andWhere('f.originalName LIKE :q')->setParameter('q', '%' . $search . '%');
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    /**
      * Recherche les fichiers dont le nom contient $query (case-insensitive) pour un owner donné.
      *
      * @return File[]

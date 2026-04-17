@@ -114,6 +114,49 @@ class FolderRepository extends ServiceEntityRepository implements FolderReposito
     }
 
     /**
+     * Retourne les dossiers filtrés + triés + paginés pour un owner donné.
+     *
+     * @param array<string, string> $orderBy  ex: ['name' => 'ASC']
+     * @return Folder[]
+     */
+    public function findFiltered(User $owner, ?string $search, array $orderBy, int $limit, int $offset): array
+    {
+        $qb = $this->createQueryBuilder('f')
+            ->where('IDENTITY(f.owner) = :ownerId')
+            ->setParameter('ownerId', $owner->getId()->toBinary())
+            ->setMaxResults($limit)
+            ->setFirstResult($offset);
+
+        if ($search !== null && $search !== '') {
+            $qb->andWhere('f.name LIKE :q')->setParameter('q', '%' . $search . '%');
+        }
+
+        $allowed = ['name' => 'f.name', 'createdAt' => 'f.createdAt'];
+        foreach ($orderBy as $field => $dir) {
+            if (isset($allowed[$field])) {
+                $qb->addOrderBy($allowed[$field], strtoupper($dir) === 'DESC' ? 'DESC' : 'ASC');
+            }
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /** Compte les dossiers d'un owner, avec filtre optionnel sur le nom. */
+    public function countFiltered(User $owner, ?string $search): int
+    {
+        $qb = $this->createQueryBuilder('f')
+            ->select('COUNT(f.id)')
+            ->where('IDENTITY(f.owner) = :ownerId')
+            ->setParameter('ownerId', $owner->getId()->toBinary());
+
+        if ($search !== null && $search !== '') {
+            $qb->andWhere('f.name LIKE :q')->setParameter('q', '%' . $search . '%');
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    /**
      * Recherche les dossiers dont le nom contient $query (case-insensitive) pour un owner donné.
      *
      * @return Folder[]
