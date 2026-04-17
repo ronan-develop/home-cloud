@@ -24,3 +24,22 @@
 .lg-btn:active { transform: translateY(0); }
 .lg-btn:focus { box-shadow: 0 0 0 3px var(--clr-focus-ring), 0 4px 24px 0 var(--clr-shadow); }
 
+.btn {
+    border: none;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0.625rem 1.25rem;
+    cursor: pointer;
+    transition: all 0.18s;
+    outline: none;
+}
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-primary {
+    background: #2563eb;
+    color: #fff;
+}
+.btn-primary:hover:not(:disabled) { background: #3b82f6; }
+.btn-primary:active:not(:disabled) { background: #1d4ed8; }
+
