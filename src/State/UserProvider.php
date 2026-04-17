@@ -46,7 +46,7 @@ final class UserProvider implements ProviderInterface
         return new TraversablePaginator(new \ArrayIterator($items), $page, $limit, $total);
     }
 
-    private function toOutput(User $user): UserOutput
+    public function toOutput(User $user): UserOutput
     {
         $output = new UserOutput();
         $output->id = (string) $user->getId();
