@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php bin/phpunit *)",
+      "Bash(php bin/console cache:clear *)",
+      "Bash(composer show *)",
+      "Bash(gh run list *)",
+      "Bash(gh pr checks *)"
+    ]
+  }
+}
