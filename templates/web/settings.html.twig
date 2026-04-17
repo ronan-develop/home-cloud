@@ -1,0 +1,189 @@
+{% extends 'web/layout.html.twig' %}
+
+{% block title %}Paramètres — HomeCloud{% endblock %}
+
+{% block content %}
+
+<div class="max-w-xl mx-auto flex flex-col gap-6">
+
+    <h1 class="text-2xl font-bold text-white">Paramètres du compte</h1>
+
+    {# ── Card profil ── #}
+    <div class="rounded-2xl bg-white/10 backdrop-blur-2xl border border-white/20 p-6 flex flex-col gap-5"
+         style="filter: url(#glass-distort);">
+
+        <h2 class="text-base font-semibold text-white/80">Informations personnelles</h2>
+
+        <div class="flex flex-col gap-4">
+
+            <div class="flex flex-col gap-1">
+                <label for="settings-displayName" class="text-xs font-medium text-white/60 uppercase tracking-wider">Nom affiché</label>
+                <input id="settings-displayName" type="text" value="{{ user.displayName }}"
+                       class="bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white text-sm
+                              placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-blue-400/60
+                              transition-all">
+            </div>
+
+            <div class="flex flex-col gap-1">
+                <label for="settings-email" class="text-xs font-medium text-white/60 uppercase tracking-wider">Adresse e-mail</label>
+                <input id="settings-email" type="email" value="{{ user.email }}"
+                       class="bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white text-sm
+                              placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-blue-400/60
+                              transition-all">
+            </div>
+
+        </div>
+
+        <div class="flex justify-end">
+            <button id="btn-save-profile" onclick="saveProfile()"
+                    class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-sm
+                           font-semibold rounded-xl transition-all disabled:opacity-50">
+                Enregistrer
+            </button>
+        </div>
+
+    </div>
+
+    {# ── Card mot de passe ── #}
+    <div class="rounded-2xl bg-white/10 backdrop-blur-2xl border border-white/20 p-6 flex flex-col gap-5"
+         style="filter: url(#glass-distort);">
+
+        <h2 class="text-base font-semibold text-white/80">Changer le mot de passe</h2>
+
+        <div class="flex flex-col gap-4">
+
+            <div class="flex flex-col gap-1">
+                <label for="settings-password" class="text-xs font-medium text-white/60 uppercase tracking-wider">Nouveau mot de passe</label>
+                <input id="settings-password" type="password" placeholder="8 caractères minimum"
+                       class="bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white text-sm
+                              placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-blue-400/60
+                              transition-all">
+            </div>
+
+            <div class="flex flex-col gap-1">
+                <label for="settings-password-confirm" class="text-xs font-medium text-white/60 uppercase tracking-wider">Confirmer</label>
+                <input id="settings-password-confirm" type="password" placeholder="Répéter le mot de passe"
+                       class="bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white text-sm
+                              placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-blue-400/60
+                              transition-all">
+            </div>
+
+        </div>
+
+        <div class="flex justify-end">
+            <button id="btn-save-password" onclick="savePassword()"
+                    class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-sm
+                           font-semibold rounded-xl transition-all disabled:opacity-50">
+                Changer le mot de passe
+            </button>
+        </div>
+
+    </div>
+
+</div>
+
+{# ── Toast ── #}
+<div id="settings-toast"
+     class="hidden fixed bottom-6 right-6 z-50 px-5 py-3 rounded-2xl text-sm font-semibold shadow-xl
+            transition-all backdrop-blur-xl border">
+</div>
+
+{# ── SVG filter (glass distortion) ── #}
+<svg class="hidden" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <filter id="glass-distort" x="-5%" y="-5%" width="110%" height="110%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.65 0.65" numOctaves="3" seed="2" result="noise"/>
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+    </defs>
+</svg>
+
+<script>
+(function () {
+    var userId = '{{ user.id }}';
+
+    function showToast(message, isError) {
+        var toast = document.getElementById('settings-toast');
+        toast.textContent = message;
+        if (isError) {
+            toast.className = toast.className.replace(/hidden/, '').trim();
+            toast.style.cssText = 'background:rgba(220,38,38,0.85); color:#fff; border-color:rgba(255,255,255,0.15);';
+        } else {
+            toast.className = toast.className.replace(/hidden/, '').trim();
+            toast.style.cssText = 'background:rgba(22,163,74,0.85); color:#fff; border-color:rgba(255,255,255,0.15);';
+        }
+        toast.classList.remove('hidden');
+        clearTimeout(toast._timer);
+        toast._timer = setTimeout(function () { toast.classList.add('hidden'); }, 3500);
+    }
+
+    async function patch(payload) {
+        var token = await HC.getToken();
+        var res = await fetch('/api/v1/users/' + userId, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/merge-patch+json',
+                'Authorization': 'Bearer ' + token,
+            },
+            body: JSON.stringify(payload),
+        });
+        return res;
+    }
+
+    window.saveProfile = async function () {
+        var displayName = document.getElementById('settings-displayName').value.trim();
+        var email       = document.getElementById('settings-email').value.trim();
+        var btn         = document.getElementById('btn-save-profile');
+
+        if (!displayName && !email) { showToast('Aucune modification.', true); return; }
+
+        btn.disabled = true;
+        try {
+            var payload = {};
+            if (displayName) payload.displayName = displayName;
+            if (email)       payload.email       = email;
+
+            var res = await patch(payload);
+            if (res.ok) {
+                showToast('Profil mis à jour.', false);
+            } else {
+                var data = await res.json().catch(function () { return {}; });
+                showToast(data['hydra:description'] || 'Erreur lors de la mise à jour.', true);
+            }
+        } catch (e) {
+            showToast('Erreur réseau.', true);
+        } finally {
+            btn.disabled = false;
+        }
+    };
+
+    window.savePassword = async function () {
+        var password = document.getElementById('settings-password').value;
+        var confirm  = document.getElementById('settings-password-confirm').value;
+        var btn      = document.getElementById('btn-save-password');
+
+        if (!password) { showToast('Saisissez un nouveau mot de passe.', true); return; }
+        if (password !== confirm) { showToast('Les mots de passe ne correspondent pas.', true); return; }
+        if (password.length < 8) { showToast('Minimum 8 caractères.', true); return; }
+
+        btn.disabled = true;
+        try {
+            var res = await patch({ password: password });
+            if (res.ok) {
+                document.getElementById('settings-password').value = '';
+                document.getElementById('settings-password-confirm').value = '';
+                showToast('Mot de passe modifié.', false);
+            } else {
+                var data = await res.json().catch(function () { return {}; });
+                showToast(data['hydra:description'] || 'Erreur lors du changement.', true);
+            }
+        } catch (e) {
+            showToast('Erreur réseau.', true);
+        } finally {
+            btn.disabled = false;
+        }
+    };
+})();
+</script>
+
+{% endblock %}
