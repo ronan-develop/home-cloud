@@ -61,30 +61,23 @@ final class FileProvider implements ProviderInterface
             return $this->toOutput($file);
         }
 
-        // Filtre optionnel par dossier : GET /api/v1/files?folderId=<uuid>
-        $folderId = $this->requestStack->getCurrentRequest()?->query->get('folderId');
+        $req      = $this->requestStack->getCurrentRequest();
+        $folderId = $req?->query->get('folderId');
+        $search   = $req?->query->get('originalName');
+        $order    = $req?->query->all('order') ?? [];
 
         [$page, $offset, $limit] = $this->pagination->getPagination($operation, $context);
 
         if ($folderId !== null) {
             try {
-                $folder = $this->folderRepository->find(Uuid::fromString($folderId));
+                Uuid::fromString($folderId);
             } catch (\InvalidArgumentException) {
                 return new TraversablePaginator(new \ArrayIterator([]), $page, $limit, 0);
             }
-
-            if ($folder === null) {
-                return new TraversablePaginator(new \ArrayIterator([]), $page, $limit, 0);
-            }
-
-            $total = $this->repository->count(['folder' => $folder]);
-            $items = array_map($this->toOutput(...), $this->repository->findBy(['folder' => $folder], [], $limit, $offset));
-
-            return new TraversablePaginator(new \ArrayIterator($items), $page, $limit, $total);
         }
 
-        $total = $this->repository->count([]);
-        $items = array_map($this->toOutput(...), $this->repository->findBy([], [], $limit, $offset));
+        $total = $this->repository->countFiltered($search ?: null, $folderId);
+        $items = array_map($this->toOutput(...), $this->repository->findFiltered($search ?: null, $folderId, $order, $limit, $offset));
 
         return new TraversablePaginator(new \ArrayIterator($items), $page, $limit, $total);
     }
