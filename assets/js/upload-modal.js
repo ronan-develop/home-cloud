@@ -466,7 +466,7 @@ function closeUploadModal() {
  */
 export function initUploadModal() {
     document.addEventListener('hc:files-selected', async (event) => {
-        const { files } = event.detail;
+        const { files, folderId } = event.detail;
         if (!files || !Array.isArray(files)) {
             console.warn('[UploadModal] Invalid files:', files);
             return;
@@ -495,7 +495,7 @@ export function initUploadModal() {
             console.warn('[UploadModal] Could not fetch folders:', err);
         }
 
-        openUploadModal(files, { folders }).catch(err => {
+        openUploadModal(files, { folders, folderId: folderId || '' }).catch(err => {
             console.error('[UploadModal] Error opening modal:', err);
         });
     });
