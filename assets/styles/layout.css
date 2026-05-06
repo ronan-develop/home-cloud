@@ -133,34 +133,88 @@ details[open] > .sidebar-folder-summary .sidebar-toggle-icon::before { content: 
 		border-left-color: #475569;
 	}
 }
-/* === Variables de thème (light / dark automatique via OS) === */
+/* === Variables de thème — design system HomeCloud === */
 :root {
-	--clr-bg:            #f7f8fa;
-	--clr-text:          #222;
-	--clr-text-muted:    #6b7280;
-	--clr-surface:       #fff;
-	--clr-surface-hover: #f0f4fa;
-	--clr-border:        #e0e7ef;
-	--clr-focus-ring:    #a5b4fc;
-	--clr-error-bg:      #fee2e2;
-	--clr-error-border:  #fecaca;
+	/* Accent */
+	--hc-accent:       #2b5fff;
+	--hc-accent-2:     #6e8bff;
+	--hc-accent-soft:  rgba(43, 95, 255, 0.12);
+
+	/* Surfaces & texte (light) */
+	--hc-bg:           #f4f5f8;
+	--hc-bg-2:         #eceef3;
+	--hc-surface:      rgba(255, 255, 255, 0.72);
+	--hc-surface-2:    rgba(255, 255, 255, 0.55);
+	--hc-surface-strong: rgba(255, 255, 255, 0.92);
+	--hc-border:       rgba(15, 23, 42, 0.08);
+	--hc-border-strong: rgba(15, 23, 42, 0.14);
+	--hc-text:         #0b1220;
+	--hc-text-2:       #475569;
+	--hc-text-3:       #94a3b8;
+	--hc-shadow:       0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px -8px rgba(15, 23, 42, 0.12);
+	--hc-shadow-lg:    0 1px 2px rgba(15, 23, 42, 0.06), 0 24px 64px -16px rgba(15, 23, 42, 0.18);
+
+	/* Gradients ambient */
+	--hc-grad-1:  #d6e4ff;
+	--hc-grad-2:  #ffd8e8;
+	--hc-grad-3:  #d6f5e9;
+
+	/* Statuts */
+	--hc-ok:   #10b981;
+	--hc-warn: #f59e0b;
+	--hc-err:  #ef4444;
+
+	/* Aliases backward-compat --clr-* */
+	--clr-bg:            var(--hc-bg);
+	--clr-text:          var(--hc-text);
+	--clr-text-muted:    var(--hc-text-2);
+	--clr-surface:       var(--hc-surface);
+	--clr-surface-hover: var(--hc-surface-2);
+	--clr-border:        var(--hc-border);
+	--clr-focus-ring:    var(--hc-accent);
+	--clr-error-bg:      rgba(239, 68, 68, 0.10);
+	--clr-error-border:  rgba(239, 68, 68, 0.25);
 	--clr-error-text:    #b91c1c;
-	--clr-shadow:        rgba(31, 38, 135, 0.07);
+	--clr-shadow:        var(--hc-shadow);
 }
 
+/* Dark mode explicite (toggle JS via data-theme) */
+[data-theme="dark"] {
+	--hc-bg:           #07090f;
+	--hc-bg-2:         #0a0d16;
+	--hc-surface:      rgba(20, 25, 38, 0.55);
+	--hc-surface-2:    rgba(20, 25, 38, 0.35);
+	--hc-surface-strong: rgba(28, 33, 48, 0.85);
+	--hc-border:       rgba(255, 255, 255, 0.08);
+	--hc-border-strong: rgba(255, 255, 255, 0.16);
+	--hc-text:         #e6ebf5;
+	--hc-text-2:       #9aa4b8;
+	--hc-text-3:       #5b6478;
+	--hc-shadow:       0 1px 2px rgba(0,0,0,0.4), 0 8px 24px -8px rgba(0,0,0,0.6);
+	--hc-shadow-lg:    0 1px 2px rgba(0,0,0,0.5), 0 24px 64px -16px rgba(0,0,0,0.8);
+	--hc-grad-1:  #1e3a8a;
+	--hc-grad-2:  #6b21a8;
+	--hc-grad-3:  #134e4a;
+}
+
+/* Dark mode automatique via OS (fallback si pas de toggle JS) */
 @media (prefers-color-scheme: dark) {
-	:root {
-		--clr-bg:            #0f172a;
-		--clr-text:          #f1f5f9;
-		--clr-text-muted:    #94a3b8;
-		--clr-surface:       rgba(255, 255, 255, 0.08);
-		--clr-surface-hover: rgba(255, 255, 255, 0.13);
-		--clr-border:        rgba(255, 255, 255, 0.15);
-		--clr-focus-ring:    #818cf8;
-		--clr-error-bg:      rgba(239, 68, 68, 0.15);
-		--clr-error-border:  rgba(239, 68, 68, 0.30);
-		--clr-error-text:    #fca5a5;
-		--clr-shadow:        rgba(0, 0, 0, 0.30);
+	:root:not([data-theme="light"]) {
+		--hc-bg:           #07090f;
+		--hc-bg-2:         #0a0d16;
+		--hc-surface:      rgba(20, 25, 38, 0.55);
+		--hc-surface-2:    rgba(20, 25, 38, 0.35);
+		--hc-surface-strong: rgba(28, 33, 48, 0.85);
+		--hc-border:       rgba(255, 255, 255, 0.08);
+		--hc-border-strong: rgba(255, 255, 255, 0.16);
+		--hc-text:         #e6ebf5;
+		--hc-text-2:       #9aa4b8;
+		--hc-text-3:       #5b6478;
+		--hc-shadow:       0 1px 2px rgba(0,0,0,0.4), 0 8px 24px -8px rgba(0,0,0,0.6);
+		--hc-shadow-lg:    0 1px 2px rgba(0,0,0,0.5), 0 24px 64px -16px rgba(0,0,0,0.8);
+		--hc-grad-1:  #1e3a8a;
+		--hc-grad-2:  #6b21a8;
+		--hc-grad-3:  #134e4a;
 	}
 }
 
@@ -169,10 +223,10 @@ body {
 	box-sizing: border-box;
 	min-height: 100vh;
 	margin: 0;
-	background: var(--clr-bg);
-	font-family: 'Inter', Arial, sans-serif;
-	font-size: 1.15rem;
-	color: var(--clr-text);
+	background: var(--hc-bg);
+	font-family: 'Geist', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+	font-size: 1rem;
+	color: var(--hc-text);
 }
 
 /* === Navbar === */
