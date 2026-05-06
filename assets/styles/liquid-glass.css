@@ -111,3 +111,69 @@
 		border-radius: 1.6rem;
 	}
 }
+
+/* === Glassmorphism — design system HomeCloud === */
+.glass {
+	background: var(--hc-surface);
+	border: 1px solid var(--hc-border);
+	border-radius: 1rem;
+	box-shadow: var(--hc-shadow);
+	backdrop-filter: blur(24px) saturate(180%);
+}
+
+.glass-strong {
+	background: var(--hc-surface-strong);
+	border: 1px solid var(--hc-border);
+	border-radius: 1.25rem;
+	box-shadow: var(--hc-shadow-lg);
+	backdrop-filter: blur(32px) saturate(200%);
+}
+
+/* === Ambient background (orbs + grain) === */
+.hc-ambient {
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+	overflow: hidden;
+	z-index: 0;
+	background: var(--hc-bg);
+}
+.hc-ambient::before {
+	content: '';
+	position: absolute;
+	width: 720px; height: 720px;
+	border-radius: 50%;
+	background: var(--hc-grad-1);
+	filter: blur(80px);
+	opacity: 0.7;
+	top: -200px; left: -120px;
+}
+.hc-ambient::after {
+	content: '';
+	position: absolute;
+	width: 600px; height: 600px;
+	border-radius: 50%;
+	background: var(--hc-grad-2);
+	filter: blur(80px);
+	opacity: 0.6;
+	bottom: -160px; right: -120px;
+}
+.hc-ambient .orb {
+	position: absolute;
+	width: 520px; height: 520px;
+	border-radius: 50%;
+	background: var(--hc-grad-3);
+	filter: blur(80px);
+	opacity: 0.45;
+	top: 40%; left: 50%;
+	transform: translate(-50%, -50%);
+}
+.hc-ambient .grain {
+	position: absolute;
+	inset: 0;
+	opacity: 0.35;
+	mix-blend-mode: overlay;
+	pointer-events: none;
+	background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+[data-theme="dark"] .hc-ambient .grain { opacity: 0.2; }

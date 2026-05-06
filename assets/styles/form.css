@@ -1,13 +1,12 @@
 /* === Formulaires === */
 .lg-label {
 	display: block;
-	font-size: 0.82rem;
+	font-size: 0.75rem;
 	font-weight: 600;
-	color: rgba(255,255,255,0.70);
+	color: var(--hc-text-2);
 	text-transform: uppercase;
-	letter-spacing: 0.07em;
+	letter-spacing: 0.06em;
 	margin-bottom: 0.45rem;
-	font-family: 'Inter', Arial, sans-serif;
 	text-align: left;
 }
 
@@ -15,35 +14,55 @@
 	display: block;
 	width: 100%;
 	box-sizing: border-box;
-	border: 1px solid rgba(255,255,255,0.22);
-	border-radius: 1.5rem;
-	background: rgba(255,255,255,0.12);
-	color: #fff;
-	padding: 1.1rem 1.5rem;
-	margin-bottom: 1.2rem;
-	font-size: 1.15rem;
-	font-family: 'Inter', Arial, sans-serif;
-	box-shadow: 0 2px 8px 0 var(--clr-shadow);
+	border: 1px solid var(--hc-border);
+	border-radius: 0.75rem;
+	background: var(--hc-surface-2);
+	color: var(--hc-text);
+	padding: 0.65rem 1rem;
+	margin-bottom: 1rem;
+	font-size: 0.9rem;
+	box-shadow: none;
 	outline: none;
-	transition: background 0.2s, box-shadow 0.2s;
+	transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
-.lg-input::placeholder { color: rgba(255,255,255,0.40); }
+.lg-input::placeholder { color: var(--hc-text-3); }
 .lg-input:focus {
-	background: rgba(255,255,255,0.18);
-	box-shadow: 0 0 0 2px var(--clr-focus-ring), 0 2px 8px 0 var(--clr-shadow);
+	background: var(--hc-surface);
+	border-color: var(--hc-accent);
+	box-shadow: 0 0 0 4px var(--hc-accent-soft);
 	outline: none;
 }
 
+/* Classe générique .input (design system) */
+.input {
+	display: block;
+	width: 100%;
+	box-sizing: border-box;
+	border: 1px solid var(--hc-border);
+	border-radius: 0.75rem;
+	background: var(--hc-surface-2);
+	color: var(--hc-text);
+	padding: 0.6rem 0.9rem;
+	font-size: 0.875rem;
+	outline: none;
+	transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+.input::placeholder { color: var(--hc-text-3); }
+.input:focus {
+	background: var(--hc-surface);
+	border-color: var(--hc-accent);
+	box-shadow: 0 0 0 4px var(--hc-accent-soft);
+}
+
 .lg-error {
-	margin-bottom: 1.2rem;
-	padding: 0.75rem 1.2rem;
-	border-radius: 1rem;
-	background: var(--clr-error-bg);
-	border: 1px solid var(--clr-error-border);
-	color: var(--clr-error-text);
-	font-size: 1rem;
+	margin-bottom: 1rem;
+	padding: 0.65rem 1rem;
+	border-radius: 0.75rem;
+	background: rgba(239, 68, 68, 0.08);
+	border: 1px solid rgba(239, 68, 68, 0.2);
+	color: var(--hc-err);
+	font-size: 0.875rem;
 	display: flex;
 	align-items: center;
 	gap: 0.5rem;
-	font-family: 'Inter', Arial, sans-serif;
 }
