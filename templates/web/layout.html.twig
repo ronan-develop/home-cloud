@@ -10,52 +10,100 @@
 
 {% block body %}
 
-<div class="flex min-h-screen">
+{# ── Drawer overlay (mobile) ── #}
+<div id="drawer-overlay" class="drawer-overlay" onclick="HCCloseDrawer()"></div>
 
-    {# ── Sidebar ── #}
-    <aside class="sidebar w-[250px] min-w-[220px] bg-gray-100 border-r border-gray-200 flex flex-col flex-shrink-0">
+{# ── App layout ── #}
+<div class="hc-app-grid">
 
-        {# Header : logo + bouton Nouveau #}
-        <div class="sidebar-header flex flex-col items-start gap-5 pt-8 pb-4 px-5">
-            <a href="{{ path('app_home') }}" class="flex items-center gap-2 no-underline text-gray-900 font-bold text-[1.1rem]">
-                <span>☁️</span>
-                <span>HomeCloud</span>
+    {# ── Sidebar (desktop : sticky | mobile : drawer) ── #}
+    <aside id="hc-sidebar" class="hc-sidebar">
+
+        {# En-tête : logo + bouton fermeture (mobile) #}
+        <div class="hc-sidebar-header">
+            <a href="{{ path('app_home') }}" class="hc-brand">
+                <span class="navbar-logo">
+                    <span class="navbar-logo-cloud">☁️</span>
+                </span>
+                <span class="navbar-logo-title">HomeCloud</span>
             </a>
+            <button class="btn btn-ghost btn-icon hc-sidebar-close" onclick="HCCloseDrawer()" title="Fermer" aria-label="Fermer le menu">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        {# Bouton Nouveau #}
+        <div class="hc-sidebar-new">
             <twig:NewMenu />
         </div>
 
-        {# Navigation #}
-        <nav class="flex flex-col gap-1 px-3 flex-grow">
+        {# Navigation principale #}
+        <nav class="hc-sidebar-nav">
+            <div class="hc-sidebar-section-label">Espace</div>
+
+            {% set current_route = app.request.attributes.get('_route') %}
             {% set nav_items = [
                 { route: 'app_home',    icon: '📁', label: 'Mes fichiers' },
-                { route: 'app_gallery', icon: '🖼️', label: 'Galerie' },
+                { route: 'app_gallery', icon: '🖼️',  label: 'Galerie' },
                 { route: 'app_albums',  icon: '📚', label: 'Albums' },
-                { route: '#',           icon: '🔗', label: 'Partages' },
+                { route: null,          icon: '🔗', label: 'Partages' },
             ] %}
+
             {% for item in nav_items %}
-                <a href="{{ item.route starts with '#' ? '#' : path(item.route) }}"
-                   class="flex items-center gap-[0.65rem] px-[0.85rem] py-[0.55rem] rounded-lg text-sm text-gray-700 no-underline transition-colors hover:bg-gray-200">
+                <a href="{{ item.route ? path(item.route) : '#' }}"
+                   class="hc-nav-item {{ item.route and current_route == item.route ? 'active' : '' }}">
                     <span>{{ item.icon }}</span>
                     {{ item.label }}
                 </a>
             {% endfor %}
         </nav>
 
-        {# Footer : user + settings + logout #}
-        <div class="mt-auto px-5 py-4 border-t border-gray-200 flex items-center justify-between gap-2">
-            <a href="{{ path('app_settings') }}" class="text-[0.8rem] text-gray-500 truncate no-underline flex-1"
-               title="Paramètres du compte">{{ app.user.displayName }}</a>
-            <a href="{{ path('app_logout') }}" class="text-[0.8rem] text-red-500 no-underline whitespace-nowrap flex-shrink-0">Déconnexion</a>
+        {# Footer : utilisateur + paramètres + déconnexion #}
+        <div class="hc-sidebar-footer">
+            <a href="{{ path('app_settings') }}" class="hc-sidebar-user" title="Paramètres du compte">
+                {{ app.user.displayName }}
+            </a>
+            <a href="{{ path('app_logout') }}" class="hc-sidebar-logout">Déconnexion</a>
         </div>
     </aside>
 
-    {# ── Main ── #}
-    <main class="flex-1 bg-[#181f2a] p-10 min-h-screen flex flex-col gap-9 overflow-auto text-gray-50">
+    {# ── Zone principale ── #}
+    <div class="hc-layout-main">
+
+        {# Barre supérieure #}
+        <header class="hc-topbar">
+            {# Burger (mobile uniquement) #}
+            <button class="btn btn-ghost btn-icon hc-topbar-burger" onclick="HCOpenDrawer()" title="Menu" aria-label="Ouvrir le menu">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M3 6h18M3 12h18M3 18h18"/>
+                </svg>
+            </button>
+
+            <div class="flex-1"></div>
+
+            {# Bascule thème #}
+            <button class="btn btn-soft btn-icon" id="hc-theme-toggle" onclick="HCToggleTheme()" title="Basculer le thème" aria-label="Changer le thème">
+                <svg id="hc-theme-icon-sun" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="5"/>
+                    <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                </svg>
+                <svg id="hc-theme-icon-moon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hidden">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+            </button>
+
+            {# Avatar utilisateur #}
+            <div class="hc-user-avatar" title="{{ app.user.displayName }}">
+                {{ app.user.displayName|first|upper }}
+            </div>
+        </header>
 
         {# Flash messages #}
         {% for type, messages in app.flashes %}
             {% for message in messages %}
-                <div class="flash-{{ type }} px-4 py-3 rounded-xl text-sm border
+                <div class="flash-{{ type }} mx-6 mt-4 px-4 py-3 rounded-xl text-sm border
                             {% if type == 'error' %}bg-red-50 text-red-600 border-red-200
                             {% elseif type == 'success' %}bg-green-50 text-green-600 border-green-200
                             {% else %}bg-blue-50 text-blue-600 border-blue-200{% endif %}">
@@ -64,8 +112,43 @@
             {% endfor %}
         {% endfor %}
 
-        {% block content %}{% endblock %}
-    </main>
+        {# Contenu de la page #}
+        <main class="hc-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+
+{# ── Tab bar mobile ── #}
+<div class="tab-bar md:hidden">
+    {% set current_route = app.request.attributes.get('_route') %}
+    <a href="{{ path('app_home') }}" class="tab-bar-item {{ current_route == 'app_home' ? 'active' : '' }}">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/>
+        </svg>
+        <span>Fichiers</span>
+    </a>
+    <a href="{{ path('app_gallery') }}" class="tab-bar-item {{ current_route == 'app_gallery' ? 'active' : '' }}">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"/>
+            <path d="M3 15l5-5 4 4 3-3 6 6"/>
+        </svg>
+        <span>Galerie</span>
+    </a>
+    <a href="{{ path('app_albums') }}" class="tab-bar-item {{ current_route == 'app_albums' ? 'active' : '' }}">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M4 19V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v13"/>
+            <path d="M4 19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2"/>
+        </svg>
+        <span>Albums</span>
+    </a>
+    <a href="{{ path('app_settings') }}" class="tab-bar-item {{ current_route == 'app_settings' ? 'active' : '' }}">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
+        <span>Réglages</span>
+    </a>
 </div>
 
 {# === Modal sélection dossier pour upload === #}
@@ -147,7 +230,7 @@
         var file = e.detail.file;
         _pendingFile = file;
         _uploadFolderId = '';
-        document.getElementById('upload-filename').textContent = '\uD83D\uDCCE ' + file.name;
+        document.getElementById('upload-filename').textContent = '📎 ' + file.name;
         document.getElementById('new-folder-name').value = '';
         document.querySelectorAll('.folder-opt').forEach(function (el) {
             el.classList.remove('active-folder', 'bg-blue-50', 'text-blue-700');
@@ -308,6 +391,49 @@
     // re-attach on mutations (for dynamic content)
     var obs = new MutationObserver(function () { attachRenameButtons(); });
     obs.observe(document.body, { childList: true, subtree: true });
+})();
+</script>
+
+<script>
+// ── Drawer & thème ────────────────────────────────────────────────────────
+(function () {
+    var sidebar  = document.getElementById('hc-sidebar');
+    var overlay  = document.getElementById('drawer-overlay');
+    var sunIcon  = document.getElementById('hc-theme-icon-sun');
+    var moonIcon = document.getElementById('hc-theme-icon-moon');
+
+    function applyThemeIcons() {
+        var theme = document.documentElement.getAttribute('data-theme') || 'light';
+        if (sunIcon && moonIcon) {
+            sunIcon.classList.toggle('hidden', theme === 'dark');
+            moonIcon.classList.toggle('hidden', theme !== 'dark');
+        }
+    }
+
+    window.HCOpenDrawer = function () {
+        if (sidebar) sidebar.classList.add('open');
+        if (overlay) overlay.classList.add('open');
+    };
+
+    window.HCCloseDrawer = function () {
+        if (sidebar) sidebar.classList.remove('open');
+        if (overlay) overlay.classList.remove('open');
+    };
+
+    window.HCToggleTheme = function () {
+        var current = document.documentElement.getAttribute('data-theme') || 'light';
+        var next = current === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('hc-theme', next);
+        applyThemeIcons();
+    };
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') window.HCCloseDrawer();
+    });
+
+    // Icônes au chargement
+    document.addEventListener('DOMContentLoaded', applyThemeIcons);
 })();
 </script>
 
