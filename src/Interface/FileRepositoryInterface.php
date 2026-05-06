@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Interface;
 
 use App\Entity\File;
+use App\Entity\Folder;
 use Symfony\Component\Uid\Uuid;
 
 /**
@@ -21,4 +22,6 @@ interface FileRepositoryInterface
      * @return File|null
      */
     public function findById(Uuid $id): ?File;
+
+    public function findOneByNameInFolder(string $name, Folder $folder): ?File;
 }

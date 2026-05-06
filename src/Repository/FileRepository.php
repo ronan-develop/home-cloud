@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\File;
+use App\Entity\Folder;
 use App\Entity\User;
 use App\Interface\FileRepositoryInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -92,13 +93,13 @@ class FileRepository extends ServiceEntityRepository implements FileRepositoryIn
             ->getResult();
     }
 
-    /**
-     * Find a file by ID (implements FileRepositoryInterface).
-     *
-     * @return File|null
-     */
     public function findById(Uuid $id): ?File
     {
         return $this->find($id);
+    }
+
+    public function findOneByNameInFolder(string $name, Folder $folder): ?File
+    {
+        return $this->findOneBy(['originalName' => $name, 'folder' => $folder]);
     }
 }

@@ -43,6 +43,12 @@ final class FileActionService
     public function rename(File $file, string $newName): void
     {
         $this->filenameValidator->validate($newName);
+
+        $existing = $this->fileRepository->findOneByNameInFolder($newName, $file->getFolder());
+        if ($existing !== null && !$existing->getId()->equals($file->getId())) {
+            throw new BadRequestHttpException('A file with this name already exists in this folder');
+        }
+
         $file->setOriginalName($newName);
         $this->em->flush();
     }
@@ -54,18 +60,18 @@ final class FileActionService
      */
     public function move(File $file, Folder $targetFolder, User $requester): void
     {
-        // 1. Auth: file owner
         $this->authChecker->assertOwns($file, $requester);
-
-        // 2. Auth: target folder owner
         $this->authChecker->assertOwns($targetFolder, $requester);
 
-        // 3. Validation: cycle check (prevent B > A > C, move B under C)
         if ($this->authChecker->wouldCreateCycle($file->getFolder(), $targetFolder)) {
             throw new BadRequestHttpException('Moving would create a folder cycle');
         }
 
-        // 4. Persist
+        $existing = $this->fileRepository->findOneByNameInFolder($file->getOriginalName(), $targetFolder);
+        if ($existing !== null && !$existing->getId()->equals($file->getId())) {
+            throw new BadRequestHttpException('A file with this name already exists in the target folder');
+        }
+
         $file->setFolder($targetFolder);
         $this->em->flush();
     }
