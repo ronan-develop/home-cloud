@@ -1,8 +1,8 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-04-16
+> Dernière mise à jour : 2026-04-17
 
-> **Status git :** `main` — tout mergé, 309 tests ✅
+> **Status git :** `main` — PR #166, #167, #168 mergées — 327 tests ✅
 
 ---
 
@@ -60,7 +60,7 @@ Score global : **9/10** — 4/5 axes de remédiation implémentés.
 | Auth failure logging | ✅ Fait (PR #146 — email, IP, user-agent) |
 | HSTS header | ✅ Fait (PR #146 — prod uniquement, max-age=31536000) |
 | `composer audit` en CI | ✅ Fait (PR #147 — step avant les tests) |
-| Assert sur DTOs | ⚠️ Basse priorité — reste à faire |
+| Assert sur DTOs | ✅ Fait (PR #167 — `#[Assert\Email]`, `#[Assert\Length]`, `#[Assert\NotBlank]` sur UserOutput et FolderOutput, violations 422) |
 
 ### CI/CD — Node.js 24
 
@@ -92,6 +92,25 @@ Score global : **9/10** — 4/5 axes de remédiation implémentés.
 |----|---------|---------|
 | #162 | `feat/rename-modal` | Remplace `prompt()` par une modale glassmorphism — `openRenameModal()` / `submitRename()`, validation inline, toast, Entrée/Échap |
 
+## ✅ Frontend — Page paramètres utilisateur (2026-04-17)
+
+| PR | Branche | Contenu |
+|----|---------|---------|
+| #165 | `feat/user-settings-patch` | Route `/settings`, `UserSettingsController`, formulaires profil + mot de passe, PATCH `/api/v1/users/{id}`, `UserProcessor`, `UserPatchTest` (200/403/404/422) |
+| #166 | `style/settings-css-refactor` | Extraction des styles inline → `settings.css` (`.settings-card`, `.settings-input`…), `.btn`/`.btn-primary` dans `button.css`, suppression SVG filter glass-distort |
+
+## ✅ API — Pagination/tri/recherche Folders & Files (2026-04-17)
+
+| PR | Branche | Contenu |
+|----|---------|---------|
+| #168 | `feat/folder-file-filters` | `FolderRepository::findFiltered/countFiltered` + `FileRepository::findFiltered/countFiltered` ; `FolderProvider`/`FileProvider` lisent `?name=`, `?originalName=`, `?order[field]=asc\|desc` ; `FolderFilterTest` + `FileFilterTest` (8 tests) |
+
+## ✅ Sécurité — Assert sur DTOs (2026-04-17)
+
+| PR | Branche | Contenu |
+|----|---------|---------|
+| #167 | `feat/assert-dto-constraints` | `#[Assert\Email]`, `#[Assert\Length]` sur `UserOutput` ; `#[Assert\NotBlank(groups:create)]` + `#[Assert\Length]` sur `FolderOutput::name` ; injection `ValidatorInterface` dans processors ; 422 retourne désormais `violations` |
+
 ## ✅ Chore — Cleanup code mort (2026-04-16)
 
 | Fichier supprimé | Raison |
@@ -117,9 +136,9 @@ Score global : **9/10** — 4/5 axes de remédiation implémentés.
 
 ## 📊 État des tests
 
-- **309 tests**, 643 assertions
-- 0 skipped (test GET File corrigé — PR #163)
-- 0 failures, 0 errors
+- **327 tests**, 679 assertions
+- 0 skipped, 0 failures, 0 errors
+- +18 tests depuis PR #167 (violations Assert) et PR #168 (filtres)
 
 ---
 
@@ -139,10 +158,8 @@ Score global : **9/10** — 4/5 axes de remédiation implémentés.
 
 ## 🗺️ Prochaines pistes
 
-Voir `.github/todo-api-features.md` et `.github/todo-user-settings.md` pour les fonctionnalités restantes.
-
-### Priorité suggérée
-1. **Assert sur DTOs** (clôture sécurité — priorité basse) → `.github/todo-security.md`
-2. **API Features** PATCH/DELETE File, PATCH/DELETE Folder, User + pagination → `.github/todo-api-features.md`
-3. **Page paramètres utilisateur** (email, mot de passe) → `.github/todo-user-settings.md`
+### Reste à faire
+1. **Validation unicité** nom dossier/fichier dans un même parent → `.github/todo-api-features.md`
+2. **Documentation OpenAPI** à jour
+3. **Bug drag & drop upload** → voir section bugs connus
 
