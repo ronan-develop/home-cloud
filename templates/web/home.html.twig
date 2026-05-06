@@ -49,13 +49,42 @@
 </div>
 
 <script>
-// Ajoute la classe drop-active sur dragenter/leave pour feedback visuel
-const importCard = document.getElementById('main-import-card');
-if(importCard) {
-  importCard.addEventListener('dragenter', () => importCard.classList.add('drop-active'));
-  importCard.addEventListener('dragleave', () => importCard.classList.remove('drop-active'));
-  importCard.addEventListener('drop',      () => importCard.classList.remove('drop-active'));
-}
+(function () {
+  const importCard = document.getElementById('main-import-card');
+  if (!importCard) return;
+
+  // Compteur pour ignorer les dragleave sur les éléments enfants
+  let dragCounter = 0;
+
+  // Activation sur tout le document — la zone réagit dès que le fichier entre dans la page
+  document.addEventListener('dragenter', (e) => {
+    e.preventDefault();
+    dragCounter++;
+    importCard.classList.add('drop-active');
+  });
+
+  document.addEventListener('dragover', (e) => { e.preventDefault(); });
+
+  document.addEventListener('dragleave', (e) => {
+    dragCounter--;
+    // relatedTarget null = le curseur a quitté la fenêtre du navigateur
+    if (dragCounter <= 0 || e.relatedTarget === null) {
+      dragCounter = 0;
+      importCard.classList.remove('drop-active');
+    }
+  });
+
+  document.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dragCounter = 0;
+    importCard.classList.remove('drop-active');
+    const files = Array.from(e.dataTransfer.files).filter(f => f.size > 0);
+    if (files.length === 0) return;
+    const folderIdInput = importCard.querySelector('input[name="folder_id"]');
+    const folderId = folderIdInput ? folderIdInput.value : '';
+    document.dispatchEvent(new CustomEvent('hc:files-selected', { detail: { files, folderId } }));
+  });
+}());
 </script>
 
 {% endblock %}
