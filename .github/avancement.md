@@ -1,8 +1,8 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-04-17
+> Dernière mise à jour : 2026-05-06
 
-> **Status git :** `main` — PR #166, #167, #168 mergées — 327 tests ✅
+> **Status git :** `main` — PR #169 mergée — 334 tests ✅
 
 ---
 
@@ -111,6 +111,13 @@ Score global : **9/10** — 4/5 axes de remédiation implémentés.
 |----|---------|---------|
 | #167 | `feat/assert-dto-constraints` | `#[Assert\Email]`, `#[Assert\Length]` sur `UserOutput` ; `#[Assert\NotBlank(groups:create)]` + `#[Assert\Length]` sur `FolderOutput::name` ; injection `ValidatorInterface` dans processors ; 422 retourne désormais `violations` |
 
+## ✅ API + Frontend — Validation unicité & fix drag & drop (2026-05-06)
+
+| PR | Branche | Contenu |
+|----|---------|---------|
+| #169 | `feat/uniqueness-validation` | `findOneByNameInFolder` dans `FileRepository` ; unicité vérifiée sur rename + move dans `FileActionService` et `FolderService` (parent effectif) ; `FileUniquenessTest` (4 tests) + `FolderUniquenessTest` (3 tests) |
+| #169 | `feat/uniqueness-validation` | Fix drag & drop : écoute sur `document` entier avec compteur anti-flickering ; `folderId` du fil d'ariane propagé jusqu'à la destination d'upload (`hc-folder-list`, `upload-modal`) |
+
 ## ✅ Chore — Cleanup code mort (2026-04-16)
 
 | Fichier supprimé | Raison |
@@ -126,19 +133,11 @@ Score global : **9/10** — 4/5 axes de remédiation implémentés.
 
 ---
 
-## ⚠️ Bugs connus
-
-| Priorité | Bug | Détail |
-|----------|-----|--------|
-| 🟡 Moyen | **Drag & drop upload non fonctionnel** | Quand on glisse un fichier sur la zone, le navigateur l'ouvre au lieu de déclencher l'upload. L'upload via le bouton "parcourir" fonctionne. À investiguer. |
-
----
-
 ## 📊 État des tests
 
-- **327 tests**, 679 assertions
+- **334 tests**, ~686 assertions
 - 0 skipped, 0 failures, 0 errors
-- +18 tests depuis PR #167 (violations Assert) et PR #168 (filtres)
+- +7 tests depuis PR #169 (unicité fichier/dossier)
 
 ---
 
@@ -159,7 +158,6 @@ Score global : **9/10** — 4/5 axes de remédiation implémentés.
 ## 🗺️ Prochaines pistes
 
 ### Reste à faire
-1. **Validation unicité** nom dossier/fichier dans un même parent → `.github/todo-api-features.md`
-2. **Documentation OpenAPI** à jour
-3. **Bug drag & drop upload** → voir section bugs connus
+1. **Redesign UI** — intégration du design system `demo/` (tokens CSS, Geist, glassmorphism, mode clair/sombre, responsive)
+2. **Documentation OpenAPI** à jour (filtres, codes 400 unicité, PATCH User)
 
