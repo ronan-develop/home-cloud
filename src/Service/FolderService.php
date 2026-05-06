@@ -98,11 +98,24 @@ final class FolderService
 
         if ($newName !== '') {
             $this->filenameValidator->validate($newName);
-            $criteria = ['name' => $newName, 'owner' => $folder->getOwner(), 'parent' => $folder->getParent()];
-            $existing = $this->folderRepository->findOneBy($criteria);
+        }
+
+        // Unicité vérifiée contre le parent effectif (nouveau si déplacement, sinon actuel)
+        $effectiveName   = $newName !== '' ? $newName : $folder->getName();
+        $effectiveParent = $parentChanged ? $newParent : $folder->getParent();
+
+        if ($newName !== '' || $parentChanged) {
+            $existing = $this->folderRepository->findOneBy([
+                'name'   => $effectiveName,
+                'owner'  => $folder->getOwner(),
+                'parent' => $effectiveParent,
+            ]);
             if ($existing !== null && !$existing->getId()->equals($folder->getId())) {
                 throw new BadRequestHttpException('A folder with this name already exists in the parent');
             }
+        }
+
+        if ($newName !== '') {
             $folder->setName($newName);
         }
 

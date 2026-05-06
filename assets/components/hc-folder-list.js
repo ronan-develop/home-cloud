@@ -39,9 +39,10 @@ class HCFolderList extends HTMLElement {
             return { id: null, isNew: true, newName: this._newName };
         }
         const folder = this._folders.find(f => f.id === this._selectedId);
-        return folder
-            ? { ...folder, isNew: false }
-            : { id: null, isNew: false };
+        if (folder) return { ...folder, isNew: false };
+        // Dossier connu (ex: sous-dossier non listé par l'API) — on retourne l'ID tel quel
+        if (this._selectedId) return { id: this._selectedId, isNew: false };
+        return { id: null, isNew: false };
     }
 
     _render() {
