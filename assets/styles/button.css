@@ -9,37 +9,76 @@
 	font-weight: 700;
 	font-size: 1.18rem;
 	padding: 1.1rem 0;
-	box-shadow: 0 4px 24px 0 var(--clr-shadow);
+	box-shadow: var(--hc-shadow);
 	transition: all 0.2s;
 	cursor: pointer;
-	font-family: 'Inter', Arial, sans-serif;
 	outline: none;
 	margin-top: 0.5rem;
 }
 .lg-btn:hover {
 	transform: translateY(-2px);
-	box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
+	box-shadow: var(--hc-shadow-lg);
 	filter: brightness(1.05);
 }
-.lg-btn:active { transform: translateY(0); }
-.lg-btn:focus { box-shadow: 0 0 0 3px var(--clr-focus-ring), 0 4px 24px 0 var(--clr-shadow); }
+.lg-btn:active  { transform: translateY(0); }
+.lg-btn:focus   { box-shadow: 0 0 0 3px var(--hc-accent-soft), var(--hc-shadow); }
 
+/* Bouton standard */
 .btn {
-    border: none;
-    border-radius: 0.75rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    padding: 0.625rem 1.25rem;
-    cursor: pointer;
-    transition: all 0.18s;
-    outline: none;
+	border: none;
+	border-radius: 0.75rem;
+	font-size: 0.875rem;
+	font-weight: 600;
+	padding: 0.625rem 1.25rem;
+	cursor: pointer;
+	transition: all 0.18s;
+	outline: none;
 }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* Variantes design system */
 .btn-primary {
-    background: #2563eb;
-    color: #fff;
+	background: var(--hc-accent);
+	color: #fff;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
 }
-.btn-primary:hover:not(:disabled) { background: #3b82f6; }
-.btn-primary:active:not(:disabled) { background: #1d4ed8; }
+.btn-primary:hover:not(:disabled) {
+	background: var(--hc-accent-2);
+	transform: translateY(-1px);
+	box-shadow: 0 8px 20px -4px var(--hc-accent);
+}
+.btn-primary:active:not(:disabled) { transform: translateY(0); }
+
+.btn-soft {
+	background: var(--hc-surface-2);
+	color: var(--hc-text);
+	border: 1px solid var(--hc-border);
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+.btn-soft:hover:not(:disabled) {
+	background: var(--hc-surface);
+	border-color: var(--hc-border-strong);
+}
+
+.btn-ghost {
+	background: transparent;
+	color: var(--hc-text);
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+.btn-ghost:hover:not(:disabled) { background: var(--hc-surface-2); }
+
+.btn-icon {
+	width: 2rem;
+	height: 2rem;
+	padding: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
 

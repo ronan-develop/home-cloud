@@ -46,7 +46,7 @@
    Chaque section de design (liquid glass, layout, forms, etc.) est dans un fichier dédié.
 */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap');
 @import "liquid-glass.css";
 @import "layout.css";
 @import "form.css";
