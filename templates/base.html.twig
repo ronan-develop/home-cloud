@@ -2,14 +2,20 @@
 <html lang="fr">
     <head>
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
         <title>{% block title %}HomeCloud{% endblock %}</title>
         <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
         {{ include('deploy-info.html.twig', ignore_missing=true) }}
         {{ importmap('app') }}
         {% block stylesheets %}{% endblock %}
+        <script>
+            (function () {
+                var t = localStorage.getItem('hc-theme') || 'light';
+                document.documentElement.setAttribute('data-theme', t);
+            })();
+        </script>
     </head>
-    <body class="bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 min-h-screen transition-colors">
+    <body>
         {# SVG filters (Liquid Glass) #}
         <svg class="hidden" xmlns="http://www.w3.org/2000/svg">
             <defs>
@@ -19,6 +25,12 @@
                 </filter>
             </defs>
         </svg>
+
+        {# Ambient background #}
+        <div class="hc-ambient" aria-hidden="true">
+            <div class="orb"></div>
+            <div class="grain"></div>
+        </div>
 
         {# Affichage global des messages flash #}
         {% for label, messages in app.flashes %}
