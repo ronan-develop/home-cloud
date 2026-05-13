@@ -41,18 +41,6 @@
 .main-breadcrumbs-current {
    color: #fff;
 }
-/* === main.css ===
-   Ce fichier centralise les imports CSS pour HomeCloud.
-   Chaque section de design (liquid glass, layout, forms, etc.) est dans un fichier dédié.
-*/
-
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap');
-@import "liquid-glass.css";
-@import "layout.css";
-@import "form.css";
-@import "button.css";
-@import "animation.css";
-
 /* Import-card : zone de drop en évidence */
 .import-card {
   border: 2.5px dashed #a5b4fc;
