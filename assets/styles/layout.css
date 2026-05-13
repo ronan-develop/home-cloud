@@ -486,30 +486,26 @@ nav:hover .navbar-logo-cloud {
 
 /* ── Mobile (< 768px) ── */
 @media (max-width: 767px) {
-	html, body {
-		height: auto;
-		min-height: 100%;
-		overflow-x: hidden;
+	body {
+		padding-bottom: 64px;
 	}
 
 	.hc-app-grid {
-		display: flex;
-		flex-direction: column;
-		height: auto;
-		min-height: 100vh;
+		grid-template-columns: 1fr;
+		height: 100%;
 	}
 
 	.hc-layout-main {
-		flex: 1;
-		height: auto;
-		overflow: visible;
+		height: 100%;
+		overflow: hidden;
 	}
 
 	.hc-content {
-		flex: none;
+		flex: 1;
 		min-height: 0;
-		overflow: visible;
-		padding: 20px 16px 88px;
+		overflow: auto;
+		-webkit-overflow-scrolling: touch;
+		padding: 20px 16px 24px;
 	}
 
 	.hc-sidebar {
