@@ -435,6 +435,7 @@ nav:hover .navbar-logo-cloud {
 /* ── Contenu scrollable ── */
 .hc-content {
 	flex: 1;
+	min-height: 0;
 	overflow: auto;
 	padding: 28px 32px;
 	color: var(--hc-text);
