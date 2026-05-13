@@ -1,27 +1,4 @@
 /* === Boutons === */
-.lg-btn {
-	display: block;
-	width: 100%;
-	border: none;
-	border-radius: 2rem;
-	background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
-	color: #222;
-	font-weight: 700;
-	font-size: 1.18rem;
-	padding: 1.1rem 0;
-	box-shadow: var(--hc-shadow);
-	transition: all 0.2s;
-	cursor: pointer;
-	outline: none;
-	margin-top: 0.5rem;
-}
-.lg-btn:hover {
-	transform: translateY(-2px);
-	box-shadow: var(--hc-shadow-lg);
-	filter: brightness(1.05);
-}
-.lg-btn:active  { transform: translateY(0); }
-.lg-btn:focus   { box-shadow: 0 0 0 3px var(--hc-accent-soft), var(--hc-shadow); }
 
 /* Bouton standard */
 .btn {
