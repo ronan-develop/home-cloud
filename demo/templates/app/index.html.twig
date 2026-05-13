@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HomeCloud</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/assets/css/homecloud.css">
+</head>
+<body data-theme="light" class="bg-[var(--hc-bg)] text-[var(--hc-text)]">
+
+<!-- Ambient background -->
+<div class="ambient">
+  <div class="orb"></div>
+  <div class="grain"></div>
+</div>
+
+<!-- LOGIN PAGE -->
+<div data-page="login" class="min-h-screen flex items-center justify-center p-4 relative z-10">
+  <div class="glass-strong p-8 w-full max-w-md rounded-2xl">
+    <div class="text-center mb-8">
+      <div class="w-16 h-16 mx-auto mb-4 rounded-xl bg-gradient-to-br from-[var(--hc-accent)] to-[var(--hc-accent-2)] flex items-center justify-center text-white">
+        <!-- Cloud icon -->
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M17.5 19a4.5 4.5 0 0 0 0-9c-.5-3-3-5-6-5a6 6 0 0 0-6 6c0 .5.05 1 .15 1.5A4 4 0 0 0 6 19h11.5z"/>
+        </svg>
+      </div>
+      <h1 class="text-2xl font-bold tracking-tight">Bienvenue</h1>
+      <p class="text-[var(--hc-text-3)] text-sm mt-1">Connectez-vous à votre HomeCloud</p>
+    </div>
+
+    <form class="space-y-4">
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-[var(--hc-text-2)] mb-2">Email</label>
+        <input type="email" placeholder="vous@example.com" class="input" value="ronan@home.lan">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-[var(--hc-text-2)] mb-2">Mot de passe</label>
+        <input type="password" placeholder="••••••••" class="input" value="demo">
+      </div>
+      <div class="flex items-center justify-between text-sm">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" class="w-4 h-4 rounded accent-[var(--hc-accent)]" checked>
+          <span>Se souvenir</span>
+        </label>
+        <a href="#" class="text-[var(--hc-accent)] hover:underline">Mot de passe oublié ?</a>
+      </div>
+      <button type="button" onclick="window.homecloud.goto('dashboard')" class="btn-primary w-full flex items-center justify-center gap-2">
+        Se connecter
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </form>
+
+    <div class="my-6 flex items-center gap-4">
+      <div class="flex-1 h-px bg-[var(--hc-border)]"></div>
+      <span class="text-xs uppercase tracking-widest text-[var(--hc-text-3)]">ou</span>
+      <div class="flex-1 h-px bg-[var(--hc-border)]"></div>
+    </div>
+
+    <button class="btn-soft w-full flex items-center justify-center gap-2">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3m0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      Passkey
+    </button>
+  </div>
+</div>
+
+<!-- MAIN APP LAYOUT -->
+<div class="hidden" data-page="dashboard" data-page-layout="main">
+  <div class="min-h-screen grid grid-cols-[248px_1fr] gap-0">
+    <!-- SIDEBAR -->
+    <aside class="bg-gradient-to-b from-white/20 to-transparent backdrop-blur border-r border-[var(--hc-border)] p-4 space-y-4 h-screen overflow-y-auto sticky top-0">
+      <!-- Brand -->
+      <div class="flex items-center gap-3 pb-4 mb-4 border-b border-[var(--hc-border)]">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--hc-accent)] to-[var(--hc-accent-2)] flex items-center justify-center text-white text-sm font-bold">HC</div>
+        <div class="flex-1">
+          <div class="font-semibold text-sm">HomeCloud</div>
+          <div class="text-xs text-[var(--hc-text-3)]">v1.4.2</div>
+        </div>
+      </div>
+
+      <!-- New button -->
+      <button class="btn-primary w-full justify-start gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        Nouveau
+      </button>
+
+      <!-- Navigation -->
+      <nav class="space-y-1">
+        <div class="px-2 py-1.5 text-xs font-semibold uppercase tracking-widest text-[var(--hc-text-3)]">Espace</div>
+        <a href="#" data-nav-item="dashboard" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-[var(--hc-text-2)] hover:bg-white/10 bg-white/20 border border-white/10">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 9.5V21h14V9.5"/></svg>
+          Tableau de bord
+        </a>
+        <a href="#" data-nav-item="files" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-[var(--hc-text-2)] hover:bg-white/10">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg>
+          Mes fichiers
+        </a>
+        <a href="#" data-nav-item="gallery" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-[var(--hc-text-2)] hover:bg-white/10">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"/></svg>
+          Galerie
+        </a>
+        <a href="#" data-nav-item="shares" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-[var(--hc-text-2)] hover:bg-white/10">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 22a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+          Partages
+        </a>
+        <a href="#" data-nav-item="settings" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-[var(--hc-text-2)] hover:bg-white/10">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m3.08 3.08l4.24 4.24M1 12h6m6 0h6m-17.78 7.78l4.24-4.24m3.08-3.08l4.24-4.24"/></svg>
+          Paramètres
+        </a>
+      </nav>
+
+      <!-- Storage -->
+      <div class="mt-auto pt-4 border-t border-[var(--hc-border)]">
+        <div class="glass p-3 space-y-2 text-sm">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-semibold uppercase">Stockage</span>
+            <span class="mono text-xs font-semibold">68%</span>
+          </div>
+          <div class="w-full h-2 rounded-full bg-[var(--hc-bg-2)] overflow-hidden border border-[var(--hc-border)]">
+            <div class="h-full bg-gradient-to-r from-[var(--hc-accent)] to-[var(--hc-accent-2)]" style="width: 68%"></div>
+          </div>
+          <div class="text-xs text-[var(--hc-text-3)]">
+            <span class="mono font-semibold text-[var(--hc-text-2)]">1.36 To</span> sur <span class="mono">2 To</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex flex-col overflow-hidden">
+      <!-- TOPBAR -->
+      <div class="flex items-center gap-3 px-6 py-3 border-b border-[var(--hc-border)] bg-white/10 backdrop-blur sticky top-0 z-20">
+        <div class="flex items-center gap-2 text-sm text-[var(--hc-text-2)]">
+          <span>Accueil</span>
+        </div>
+        <div class="flex-1"></div>
+        
+        <!-- Search -->
+        <div class="glass px-3 py-1.5 rounded-lg min-w-72 flex items-center gap-2 cursor-pointer hover:bg-white/20">
+          <svg class="w-4 h-4 text-[var(--hc-text-3)]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
+          <span class="text-sm text-[var(--hc-text-3)]">Rechercher fichiers...</span>
+          <span class="ml-auto text-xs px-2 py-1 bg-[var(--hc-bg-2)] text-[var(--hc-text-3)] rounded border border-[var(--hc-border)]">⌘K</span>
+        </div>
+
+        <!-- Actions -->
+        <button class="btn-soft btn-icon" data-toggle-theme>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m3.08 3.08l4.24 4.24M1 12h6m6 0h6m-17.78 7.78l4.24-4.24m3.08-3.08l4.24-4.24"/></svg>
+        </button>
+        <button class="btn-soft btn-icon">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8h-1V7c0-.553-.447-1-1-1H8c-.553 0-1 .447-1 1v1H6c-1.657 0-3 1.343-3 3v9c0 1.657 1.343 3 3 3h12c1.657 0 3-1.343 3-3v-9c0-1.657-1.343-3-3-3zm0 11c0 .552-.448 1-1 1H7c-.552 0-1-.448-1-1v-7h13v7z"/></svg>
+        </button>
+        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--hc-accent)] to-[var(--hc-accent-2)] flex items-center justify-center text-white text-xs font-bold">R</div>
+      </div>
+
+      <!-- PAGE CONTENT -->
+      <div class="flex-1 overflow-y-auto p-8">
+        <!-- Dashboard content will be injected here -->
+        <div class="space-y-8">
+          <div>
+            <h1 class="text-3xl font-bold tracking-tight">Bonjour Ronan 👋</h1>
+            <p class="text-[var(--hc-text-2)] mt-1">Voici l'état de votre cloud</p>
+          </div>
+
+          <!-- Stats grid -->
+          <div class="grid grid-cols-4 gap-3">
+            <div class="glass p-4 rounded-xl">
+              <div class="text-xs font-semibold uppercase text-[var(--hc-text-2)] mb-2 flex items-center gap-2">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 3h14v16H5z"/></svg>
+                Stockage
+              </div>
+              <div class="mono text-2xl font-bold">1.36 To</div>
+              <div class="text-xs text-[var(--hc-text-3)] mt-1">sur 2 To · 68%</div>
+            </div>
+            <div class="glass p-4 rounded-xl">
+              <div class="text-xs font-semibold uppercase text-[var(--hc-text-2)] mb-2">Fichiers</div>
+              <div class="mono text-2xl font-bold">12 488</div>
+              <div class="text-xs text-[var(--hc-text-3)] mt-1"><span class="text-[var(--hc-ok)] font-medium">+128</span> cette semaine</div>
+            </div>
+            <div class="glass p-4 rounded-xl">
+              <div class="text-xs font-semibold uppercase text-[var(--hc-text-2)] mb-2">Partages</div>
+              <div class="mono text-2xl font-bold">8</div>
+              <div class="text-xs text-[var(--hc-text-3)] mt-1">3 avec mot de passe</div>
+            </div>
+            <div class="glass p-4 rounded-xl">
+              <div class="text-xs font-semibold uppercase text-[var(--hc-text-2)] mb-2">Serveur</div>
+              <div class="mono text-2xl font-bold">12%</div>
+              <div class="text-xs text-[var(--hc-text-3)] mt-1">CPU · RAM 2.1/8 Go</div>
+            </div>
+          </div>
+
+          <!-- Placeholder for more content -->
+          <div class="glass p-6 rounded-xl text-center text-[var(--hc-text-2)]">
+            Pages supplémentaires à venir...
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- FILES PAGE (hidden by default) -->
+<div data-page="files" class="hidden" data-page-layout="main">
+  <div class="min-h-screen grid grid-cols-[248px_1fr]">
+    <!-- Reuse same sidebar -->
+  </div>
+</div>
+
+<!-- DROP OVERLAY -->
+<div id="drop-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-[var(--hc-accent)]/10 backdrop-blur-2xl border-2 border-dashed border-[var(--hc-accent)] rounded-2xl m-4">
+  <div class="text-center">
+    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--hc-accent)] to-[var(--hc-accent-2)] flex items-center justify-center text-white mx-auto mb-3 shadow-lg">
+      <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+    </div>
+    <div class="text-lg font-semibold text-[var(--hc-text)]">Déposez pour importer</div>
+    <p class="text-[var(--hc-text-2)] text-sm mt-1">Les fichiers seront ajoutés au dossier courant</p>
+  </div>
+</div>
+
+<script src="/assets/js/icons.js"></script>
+<script src="/assets/js/app.js"></script>
+</body>
+</html>

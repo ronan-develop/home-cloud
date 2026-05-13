@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>HomeCloud — Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css"/>
+<style>
+  html, body, #root { height: 100%; }
+  /* Tweaks panel customizations */
+</style>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="shared.jsx"></script>
+<script type="text/babel" src="screens-1.jsx"></script>
+<script type="text/babel" src="screens-2.jsx"></script>
+<script type="text/babel" src="screens-3.jsx"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef } = React;
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accent": "#2b5fff",
+  "density": "comfortable",
+  "showFamily": true,
+  "fontPair": "geist"
+}/*EDITMODE-END*/;
+
+function App() {
+  const [theme, setTheme] = useState('light');
+  const [route, setRoute] = useState('login');
+  const [photo, setPhoto] = useState(null);
+  const [shareFile, setShareFile] = useState(null);
+  const [cmdkOpen, setCmdkOpen] = useState(false);
+  const [showDrop, setShowDrop] = useState(false);
+  const [showMobile, setShowMobile] = useState(false);
+  const dragCounter = useRef(0);
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+  // Apply theme + tweaks
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--hc-accent', t.accent);
+    const hex = t.accent.replace('#','');
+    const r = parseInt(hex.substring(0,2), 16);
+    const g = parseInt(hex.substring(2,4), 16);
+    const b = parseInt(hex.substring(4,6), 16);
+    document.documentElement.style.setProperty('--hc-accent-soft', `rgba(${r}, ${g}, ${b}, 0.12)`);
+  }, [t.accent]);
+
+  // Cmd+K
+  useEffect(() => {
+    const h = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault(); setCmdkOpen(v => !v);
+      }
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, []);
+
+  // Drag-drop
+  useEffect(() => {
+    const onEnter = (e) => { e.preventDefault(); dragCounter.current++; setShowDrop(true); };
+    const onLeave = (e) => { e.preventDefault(); dragCounter.current--; if (dragCounter.current<=0) setShowDrop(false); };
+    const onOver = (e) => e.preventDefault();
+    const onDrop = (e) => { e.preventDefault(); dragCounter.current=0; setShowDrop(false); };
+    window.addEventListener('dragenter', onEnter);
+    window.addEventListener('dragleave', onLeave);
+    window.addEventListener('dragover', onOver);
+    window.addEventListener('drop', onDrop);
+    return () => {
+      window.removeEventListener('dragenter', onEnter);
+      window.removeEventListener('dragleave', onLeave);
+      window.removeEventListener('dragover', onOver);
+      window.removeEventListener('drop', onDrop);
+    };
+  }, []);
+
+  const goto = (r) => {
+    if (r === 'theme') { setTheme(t => t==='dark'?'light':'dark'); return; }
+    setRoute(r);
+  };
+
+  const crumbs = {
+    dashboard: ['Accueil'],
+    files:     ['Mes fichiers'],
+    gallery:   ['Galerie'],
+    shares:    ['Partages'],
+    starred:   ['Favoris'],
+    trash:     ['Corbeille'],
+    settings:  ['Paramètres'],
+  }[route] || [route];
+
+  if (route === 'login') {
+    return (
+      <ThemeCtx.Provider value={{ theme, setTheme }}>
+        <NavCtx.Provider value={{ route, goto }}>
+          <LoginScreen onLogin={() => setRoute('dashboard')} />
+        </NavCtx.Provider>
+      </ThemeCtx.Provider>
+    );
+  }
+
+  return (
+    <ThemeCtx.Provider value={{ theme, setTheme }}>
+      <NavCtx.Provider value={{ route, goto }}>
+        <div className="hc-ambient" data-screen-label="Background ambient"><div className="orb"/><div className="grain"/></div>
+
+        <div className="app-shell" data-screen-label="App shell">
+          <Sidebar/>
+          <main className="main">
+            <Topbar
+              crumbs={crumbs}
+              onSearch={() => setCmdkOpen(true)}
+              rightExtras={
+                <button className="btn btn-soft" onClick={()=>setShowMobile(v=>!v)} title="Aperçu mobile">
+                  📱 Mobile
+                </button>
+              }
+            />
+            <div className="content" data-screen-label={`Content · ${route}`}>
+              {route === 'dashboard' && <DashboardScreen onOpenFiles={()=>setRoute('files')} />}
+              {route === 'files' && <FilesScreen onOpenFile={(f)=>{
+                if (f.type === 'image' && f.thumb) setPhoto({src: f.thumb.replace('w=200','w=600'), name: f.name});
+              }} onShare={setShareFile}/>}
+              {route === 'gallery' && <GalleryScreen onOpenPhoto={setPhoto}/>}
+              {route === 'shares' && <SharesScreen/>}
+              {route === 'starred' && <EmptyState icon={<Icons.star size={28}/>} title="Aucun favori" sub="Marquez les fichiers importants pour les retrouver ici."/>}
+              {route === 'trash' && <EmptyState icon={<Icons.trash size={28}/>} title="Corbeille vide" sub="Les fichiers supprimés sont gardés 30 jours."/>}
+              {route === 'settings' && <SettingsScreen/>}
+            </div>
+          </main>
+        </div>
+
+        {photo && <Lightbox photo={photo} onClose={()=>setPhoto(null)}/>}
+        {shareFile && <ShareModal file={shareFile} onClose={()=>setShareFile(null)}/>}
+        {cmdkOpen && <CmdK onClose={()=>setCmdkOpen(false)} goto={goto}/>}
+        {showDrop && <DropOverlay/>}
+
+        {showMobile && (
+          <div className="modal-bg" onClick={()=>setShowMobile(false)}>
+            <div onClick={e=>e.stopPropagation()}><MobileView/></div>
+          </div>
+        )}
+
+        <TweaksPanel title="Tweaks">
+          <TweakSection label="Apparence"/>
+          <TweakColor label="Accent" value={t.accent}
+            onChange={v => setTweak('accent', v)} />
+          <TweakRadio label="Thème" value={theme}
+            options={[{value:'light',label:'Clair'},{value:'dark',label:'Sombre'}]}
+            onChange={setTheme}/>
+          <TweakRadio label="Densité" value={t.density}
+            options={[
+              {value:'compact',label:'Compact'},
+              {value:'comfortable',label:'Confort'},
+              {value:'spacious',label:'Aéré'},
+            ]}
+            onChange={v => setTweak('density', v)}/>
+          <TweakToggle label="Famille dans la sidebar"
+            value={t.showFamily}
+            onChange={v => setTweak('showFamily', v)}/>
+
+          <TweakSection label="Navigation rapide"/>
+          <TweakButton label="Écran de login" onClick={()=>setRoute('login')}/>
+          <TweakButton label="Aperçu mobile" onClick={()=>setShowMobile(true)}/>
+          <TweakButton label="Modale partage" onClick={()=>setShareFile(DEMO_FILES[3])}/>
+          <TweakButton label="Command palette ⌘K" onClick={()=>setCmdkOpen(true)}/>
+        </TweaksPanel>
+      </NavCtx.Provider>
+    </ThemeCtx.Provider>
+  );
+}
+
+// (TweaksPanel handles host protocol itself — no bridge needed)
+
+const EmptyState = ({icon, title, sub}) => (
+  <div style={{display:'grid', placeItems:'center', height:'100%', textAlign:'center', padding:32}}>
+    <div>
+      <div style={{width:64, height:64, borderRadius:18, background:'var(--hc-surface-2)', color:'var(--hc-text-2)', display:'grid', placeItems:'center', margin:'0 auto 14px'}}>{icon}</div>
+      <div style={{fontSize:18, fontWeight:600, marginBottom:4}}>{title}</div>
+      <div className="muted">{sub}</div>
+    </div>
+  </div>
+);
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
