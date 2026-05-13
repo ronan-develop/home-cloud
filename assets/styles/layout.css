@@ -510,7 +510,14 @@ nav:hover .navbar-logo-cloud {
 	.hc-sidebar-close { display: inline-flex; }
 	.hc-topbar-burger { display: inline-flex; }
 
-	.hc-content { padding: 20px 16px 80px; }
+	.hc-content {
+		padding: 20px 16px 0;
+	}
+	.hc-content::after {
+		content: '';
+		display: block;
+		height: 88px;
+	}
 	.hc-topbar { padding: 10px 16px; }
 }
 
