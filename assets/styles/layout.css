@@ -486,13 +486,10 @@ nav:hover .navbar-logo-cloud {
 
 /* ── Mobile (< 768px) ── */
 @media (max-width: 767px) {
-	body {
-		padding-bottom: 64px;
-	}
-
 	.hc-app-grid {
 		grid-template-columns: 1fr;
-		height: 100%;
+		/* hauteur exacte = viewport - tab-bar, sans dépendre du padding du body */
+		height: calc(100vh - 64px);
 	}
 
 	.hc-layout-main {
