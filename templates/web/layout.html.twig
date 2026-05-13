@@ -22,10 +22,12 @@
         {# En-tête : logo + bouton fermeture (mobile) #}
         <div class="hc-sidebar-header">
             <a href="{{ path('app_home') }}" class="hc-brand">
-                <span class="navbar-logo">
-                    <span class="navbar-logo-cloud">☁️</span>
-                </span>
-                <span class="navbar-logo-title">HomeCloud</span>
+                <div class="hc-brand-icon">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M17.5 19a4.5 4.5 0 0 0 0-9c-.5-3-3-5-6-5a6 6 0 0 0-6 6c0 .5.05 1 .15 1.5A4 4 0 0 0 6 19h11.5z"/>
+                    </svg>
+                </div>
+                <span class="hc-brand-name">HomeCloud</span>
             </a>
             <button class="btn btn-ghost btn-icon hc-sidebar-close" onclick="HCCloseDrawer()" title="Fermer" aria-label="Fermer le menu">
                 <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -44,20 +46,40 @@
             <div class="hc-sidebar-section-label">Espace</div>
 
             {% set current_route = app.request.attributes.get('_route') %}
-            {% set nav_items = [
-                { route: 'app_home',    icon: '📁', label: 'Mes fichiers' },
-                { route: 'app_gallery', icon: '🖼️',  label: 'Galerie' },
-                { route: 'app_albums',  icon: '📚', label: 'Albums' },
-                { route: null,          icon: '🔗', label: 'Partages' },
-            ] %}
 
-            {% for item in nav_items %}
-                <a href="{{ item.route ? path(item.route) : '#' }}"
-                   class="hc-nav-item {{ item.route and current_route == item.route ? 'active' : '' }}">
-                    <span>{{ item.icon }}</span>
-                    {{ item.label }}
-                </a>
-            {% endfor %}
+            <a href="{{ path('app_home') }}"
+               class="hc-nav-item {{ current_route == 'app_home' ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/>
+                </svg>
+                Mes fichiers
+            </a>
+
+            <a href="{{ path('app_gallery') }}"
+               class="hc-nav-item {{ current_route == 'app_gallery' ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"/>
+                    <path d="M3 15l5-5 4 4 3-3 6 6"/>
+                </svg>
+                Galerie
+            </a>
+
+            <a href="{{ path('app_albums') }}"
+               class="hc-nav-item {{ current_route == 'app_albums' ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M4 19V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v13"/>
+                    <path d="M4 19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2"/>
+                </svg>
+                Albums
+            </a>
+
+            <a href="#"
+               class="hc-nav-item">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 22a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/>
+                </svg>
+                Partages
+            </a>
         </nav>
 
         {# Footer : utilisateur + paramètres + déconnexion #}
@@ -82,6 +104,14 @@
             </button>
 
             <div class="flex-1"></div>
+
+            {# Recherche #}
+            <div class="hc-search">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/>
+                </svg>
+                <span>Rechercher...</span>
+            </div>
 
             {# Bascule thème #}
             <button class="btn btn-soft btn-icon" id="hc-theme-toggle" onclick="HCToggleTheme()" title="Basculer le thème" aria-label="Changer le thème">
