@@ -1,0 +1,31 @@
+name: Chore / Refactoring
+description: Nettoyage, refactorisation, mise à jour de dépendances, outillage
+labels: ["chore"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Qu'est-ce qui doit être fait et pourquoi ?
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Périmètre
+      description: Fichiers ou modules concernés
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      options:
+        - Refactoring
+        - Mise à jour de dépendance
+        - Nettoyage de code mort
+        - Documentation
+        - CI/CD
+        - Outillage

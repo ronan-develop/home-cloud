@@ -1,0 +1,45 @@
+name: Feature
+description: Nouvelle fonctionnalité ou amélioration
+labels: ["feature"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Quelle fonctionnalité veux-tu ajouter, et pourquoi ?
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Critères d'acceptation
+      description: Comment saura-t-on que c'est terminé ?
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Zone concernée
+      options:
+        - API (endpoint, State, ApiResource)
+        - Frontend (CSS, Twig, Stimulus)
+        - Auth (JWT, sécurité)
+        - Stockage (fichiers, MediaService)
+        - Autre
+    validations:
+      required: true
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: Effort estimé
+      options:
+        - XS — moins d'1h
+        - S — demi-journée
+        - M — 1 journée
+        - L — plusieurs jours
