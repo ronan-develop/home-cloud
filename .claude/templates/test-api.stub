@@ -1,0 +1,104 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tests\Api;
+
+use App\Entity\User;
+use App\Entity\__Name__;
+use App\Tests\AuthenticatedApiTestCase;
+use PHPUnit\Framework\Assert;
+
+final class __Name__Test extends AuthenticatedApiTestCase
+{
+    private User $owner;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // DAMA DoctrineTestBundle gère le rollback — pas de purge manuelle
+        $this->owner = $this->createUser('alice@example.com', null, 'Alice');
+    }
+
+    // ── Collection ────────────────────────────────────────────────────────────
+
+    public function testGetCollectionReturns200(): void
+    {
+        $client = $this->createAuthenticatedClient($this->owner);
+        $response = $client->request('GET', '/api/v1/__names__');
+
+        Assert::assertSame(200, $response->getStatusCode());
+        Assert::assertIsArray($response->toArray());
+    }
+
+    // ── Item ──────────────────────────────────────────────────────────────────
+
+    public function testGetItemReturns200(): void
+    {
+        $entity = $this->createEntity($this->owner);
+
+        $client = $this->createAuthenticatedClient($this->owner);
+        $response = $client->request('GET', '/api/v1/__names__/' . $entity->getId());
+
+        Assert::assertSame(200, $response->getStatusCode());
+        Assert::assertArrayHasKey('id', $response->toArray());
+    }
+
+    public function testGetItemReturns404WhenNotFound(): void
+    {
+        $client = $this->createAuthenticatedClient($this->owner);
+        $response = $client->request('GET', '/api/v1/__names__/00000000-0000-0000-0000-000000000000');
+
+        Assert::assertSame(404, $response->getStatusCode());
+    }
+
+    // ── Ownership ─────────────────────────────────────────────────────────────
+
+    public function testGetItemReturns403WhenNotOwner(): void
+    {
+        $other = $this->createUser('bob@example.com', null, 'Bob');
+        $entity = $this->createEntity($other);
+
+        $client = $this->createAuthenticatedClient($this->owner);
+        $response = $client->request('GET', '/api/v1/__names__/' . $entity->getId());
+
+        Assert::assertSame(403, $response->getStatusCode());
+    }
+
+    // ── POST ──────────────────────────────────────────────────────────────────
+
+    public function testPostReturns201(): void
+    {
+        $client = $this->createAuthenticatedClient($this->owner);
+        $response = $client->request('POST', '/api/v1/__names__', [
+            'json' => [
+                // TODO: payload
+            ],
+        ]);
+
+        Assert::assertSame(201, $response->getStatusCode());
+        Assert::assertArrayHasKey('id', $response->toArray());
+    }
+
+    // ── DELETE ────────────────────────────────────────────────────────────────
+
+    public function testDeleteReturns204(): void
+    {
+        $entity = $this->createEntity($this->owner);
+
+        $client = $this->createAuthenticatedClient($this->owner);
+        $response = $client->request('DELETE', '/api/v1/__names__/' . $entity->getId());
+
+        Assert::assertSame(204, $response->getStatusCode());
+    }
+
+    // ── Helper ────────────────────────────────────────────────────────────────
+
+    private function createEntity(User $owner): __Name__
+    {
+        $entity = new __Name__(/* TODO: args */ $owner);
+        $this->em->persist($entity);
+        $this->em->flush();
+        return $entity;
+    }
+}
