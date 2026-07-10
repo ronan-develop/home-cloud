@@ -225,4 +225,41 @@ final class WebLayoutTest extends WebTestCase
         $html = $breadcrumbs->html();
         $this->assertNotEmpty($html, 'Les breadcrumbs doivent avoir du contenu');
     }
+
+    public function testNoDoubloSectionTitle(): void
+    {
+        $client = static::createClient();
+        $em = static::getContainer()->get(EntityManagerInterface::class);
+
+        // Setup utilisateur
+        $conn = $em->getConnection();
+        $conn->executeStatement('SET FOREIGN_KEY_CHECKS=0');
+        $conn->executeStatement('DELETE FROM users');
+        $conn->executeStatement('SET FOREIGN_KEY_CHECKS=1');
+
+        $hasher = static::getContainer()->get(UserPasswordHasherInterface::class);
+        $user = new User('test@example.com', 'Testeur');
+        $user->setPassword($hasher->hashPassword($user, 'secret123'));
+        $em->persist($user);
+        $em->flush();
+
+        // Login et accès à la page
+        $crawler = $client->request('GET', '/login');
+        $form = $crawler->selectButton('Se connecter')->form([
+            'email' => 'test@example.com',
+            'password' => 'secret123',
+        ]);
+        $client->submit($form);
+        $client->followRedirect();
+        $crawler = $client->request('GET', '/');
+        $this->assertResponseIsSuccessful();
+
+        // Vérifie qu'il n'y a qu'un seul .section-title (pas de doublon)
+        $sectionTitles = $crawler->filter('.section-title');
+        $this->assertCount(1, $sectionTitles, 'Il doit y avoir exactement 1 .section-title, pas de doublon');
+
+        // Vérifie que le .section-title ne contient que "Dossiers" (pas d'autres textes)
+        $titleText = $sectionTitles->text();
+        $this->assertStringContainsString('Dossiers', $titleText, 'Le titre doit contenir "Dossiers"');
+    }
 }
