@@ -1,0 +1,51 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Entity;
+
+use App\Repository\__Name__Repository;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Uid\Uuid;
+
+#[ORM\Entity(repositoryClass: __Name__Repository::class)]
+#[ORM\Table(name: '__names__')]
+class __Name__
+{
+    #[ORM\Id]
+    #[ORM\Column(type: 'uuid', unique: true)]
+    private Uuid $id;
+
+    // TODO: ajouter les colonnes métier ici
+
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(nullable: false)]
+    private User $owner;
+
+    #[ORM\Column]
+    private \DateTimeImmutable $createdAt;
+
+    public function __construct(
+        // TODO: paramètres métier
+        User $owner,
+    ) {
+        $this->id = Uuid::v7();
+        $this->owner = $owner;
+        $this->createdAt = new \DateTimeImmutable();
+    }
+
+    public function getId(): Uuid
+    {
+        return $this->id;
+    }
+
+    public function getOwner(): User
+    {
+        return $this->owner;
+    }
+
+    public function getCreatedAt(): \DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+}
