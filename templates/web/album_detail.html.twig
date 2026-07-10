@@ -1,4 +1,5 @@
 {% extends 'web/layout.html.twig' %}
+{% import 'macros/icon.html.twig' as icons %}
 
 {% block title %}{{ album.name }} — HomeCloud{% endblock %}
 
@@ -9,7 +10,7 @@
         <a href="{{ path('app_albums') }}"
            style="font-size:0.875rem; color:#6b7280; text-decoration:none;">← Albums</a>
         <h1 style="font-size:1.5rem; font-weight:700; color:#111827; margin-top:0.25rem;">
-            📚 {{ album.name }}
+            {{ icons.icon('album', 20) }} {{ album.name }}
         </h1>
         <p style="font-size:0.875rem; color:#9ca3af;">
             <span data-testid="album-media-count">{{ album.medias|length }}</span> média{{ album.medias|length != 1 ? 's' : '' }}
@@ -20,8 +21,8 @@
     <form method="post" action="{{ path('app_album_delete', {id: album.id}) }}"
           onsubmit="return confirm('Supprimer l\'album « {{ album.name }} » ?')">
         <button type="submit"
-                style="padding:0.4rem 0.9rem; background:#ef4444; color:#fff; border:none; border-radius:0.5rem; font-size:0.875rem; cursor:pointer;">
-            🗑 Supprimer
+                style="padding:0.4rem 0.9rem; background:#ef4444; color:#fff; border:none; border-radius:0.5rem; font-size:0.875rem; cursor:pointer; display:flex; align-items:center; gap:0.4rem;">
+            {{ icons.icon('trash', 16) }} Supprimer
         </button>
     </form>
 </div>
