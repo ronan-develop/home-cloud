@@ -5,7 +5,7 @@
 {% block content %}
 
 <div class="flex items-center justify-between mb-6">
-    <h1 style="font-size:1.5rem; font-weight:700; color:#111827;">🖼️ Galerie médias</h1>
+    <h1 style="font-size:1.5rem; font-weight:700; color:#111827;"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-images"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Galerie médias</h1>
 
     {# Filtres photo/vidéo #}
     <div style="display:flex; gap:0.5rem;">
@@ -25,7 +25,7 @@
            style="padding:0.35rem 0.85rem; border-radius:0.5rem; font-size:0.875rem; text-decoration:none;
                   background:{{ type == 'video' ? '#3b82f6' : '#e5e7eb' }};
                   color:{{ type == 'video' ? '#fff' : '#374151' }};">
-            🎬 Vidéos
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-video"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg> Vidéos
         </a>
     </div>
 </div>
@@ -33,7 +33,7 @@
 {% if medias is empty %}
     <div data-testid="gallery-empty"
          style="text-align:center; padding:4rem 2rem; color:#9ca3af;">
-        <p style="font-size:3rem;">🖼️</p>
+        <p style="font-size:3rem;"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-images"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></p>
         <p style="font-size:1.1rem; font-weight:600; margin-top:1rem;">Aucun média pour l'instant</p>
         <p style="font-size:0.875rem; margin-top:0.5rem;">Uploadez des photos ou vidéos depuis l'explorateur de fichiers.</p>
     </div>
@@ -54,7 +54,7 @@
                              style="width:100%; height:100%; object-fit:cover;">
                     {% else %}
                         <div style="display:flex; align-items:center; justify-content:center; height:100%; font-size:2.5rem;">
-                            {{ media.mediaType == 'video' ? '🎬' : '🖼️' }}
+                            {{ media.mediaType == 'video' ? '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-video"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>' : '<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-images"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' }}
                         </div>
                     {% endif %}
                 </a>
