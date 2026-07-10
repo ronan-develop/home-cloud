@@ -317,14 +317,23 @@ nav:hover .navbar-logo-cloud {
 	min-height: 0;
 }
 
-.hc-sidebar-section-label,
-.section-title {
+.hc-sidebar-section-label {
 	font-size: 10.5px;
 	font-weight: 600;
 	text-transform: uppercase;
 	letter-spacing: 0.08em;
 	color: var(--hc-text-3);
 	padding: 14px 8px 6px;
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+.section-title {
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: var(--hc-text);
 	margin: 0;
 	display: flex;
 	align-items: center;
