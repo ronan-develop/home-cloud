@@ -188,4 +188,41 @@ final class WebLayoutTest extends WebTestCase
         // Vérifie que le texte "Dossiers" est présent
         $this->assertStringContainsString('Dossiers', $sectionTitle->text(), 'Le titre doit contenir "Dossiers"');
     }
+
+    public function testBreadcrumbsAreDisplayed(): void
+    {
+        $client = static::createClient();
+        $em = static::getContainer()->get(EntityManagerInterface::class);
+
+        // Setup utilisateur
+        $conn = $em->getConnection();
+        $conn->executeStatement('SET FOREIGN_KEY_CHECKS=0');
+        $conn->executeStatement('DELETE FROM users');
+        $conn->executeStatement('SET FOREIGN_KEY_CHECKS=1');
+
+        $hasher = static::getContainer()->get(UserPasswordHasherInterface::class);
+        $user = new User('test@example.com', 'Testeur');
+        $user->setPassword($hasher->hashPassword($user, 'secret123'));
+        $em->persist($user);
+        $em->flush();
+
+        // Login et accès à la page
+        $crawler = $client->request('GET', '/login');
+        $form = $crawler->selectButton('Se connecter')->form([
+            'email' => 'test@example.com',
+            'password' => 'secret123',
+        ]);
+        $client->submit($form);
+        $client->followRedirect();
+        $crawler = $client->request('GET', '/');
+        $this->assertResponseIsSuccessful();
+
+        // Vérifie que les breadcrumbs existent
+        $breadcrumbs = $crawler->filter('.main-breadcrumbs');
+        $this->assertCount(1, $breadcrumbs, 'Le composant breadcrumbs doit exister');
+
+        // Vérifie que les breadcrumbs sont visibles et contiennent du contenu
+        $html = $breadcrumbs->html();
+        $this->assertNotEmpty($html, 'Les breadcrumbs doivent avoir du contenu');
+    }
 }
