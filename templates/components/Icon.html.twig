@@ -1,0 +1,13 @@
+{# Composant Icon — Icônes Heroicons SVG réutilisables #}
+<svg
+    width="{{ size }}"
+    height="{{ size }}"
+    fill="{% if variant == 'solid' %}currentColor{% else %}none{% endif %}"
+    stroke="{% if variant == 'stroke' %}currentColor{% else %}none{% endif %}"
+    stroke-width="{{ getStrokeWidth() }}"
+    viewBox="{{ getViewBox() }}"
+    class="hc-icon hc-icon-{{ name }}"
+>
+    {{ getHeroicon()|raw }}
+</svg>
+{# Props : name (required), size (default 16), variant (default 'stroke') #}
