@@ -116,7 +116,7 @@
                     </svg>
                 </button>
 
-                <a href="{{ path('app_settings') }}" class="hc-user-avatar" title="Paramètres du compte">
+                <a href="{{ path('app_settings') }}" class="hc-user-avatar" title="Paramètres du compte — {{ app.user.displayName }}" aria-label="Compte : {{ app.user.displayName }}">
                     {{ app.user.displayName|first|upper }}
                 </a>
 
