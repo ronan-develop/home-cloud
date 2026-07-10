@@ -218,7 +218,7 @@ function createUploadItem(file) {
 
     const icon = document.createElement('span');
     icon.className = 'upload-item__icon';
-    icon.textContent = '📎';
+    icon.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:rgba(255,255,255,0.85)"><path d="M13.828 10.172a4 4 0 0 0-5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101m-.758-4.899a4 4 0 0 0 5.658 0l4-4a4 4 0 0 0-5.656-5.656l-1.1 1.1"/></svg>';
 
     const name = document.createElement('span');
     name.className = 'upload-item__name';

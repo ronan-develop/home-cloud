@@ -6,6 +6,7 @@
 
 {% endblock %}
 {% extends 'base.html.twig' %}
+{% import 'macros/icon.html.twig' as icons %}
 
 {% block body %}
 
@@ -22,9 +23,7 @@
         <div class="hc-sidebar-header">
             <a href="{{ path('app_home') }}" class="hc-brand">
                 <div class="hc-brand-icon">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path d="M17.5 19a4.5 4.5 0 0 0 0-9c-.5-3-3-5-6-5a6 6 0 0 0-6 6c0 .5.05 1 .15 1.5A4 4 0 0 0 6 19h11.5z"/>
-                    </svg>
+                    {{ icons.icon('cloud', 16) }}
                 </div>
                 <span class="hc-brand-name">HomeCloud</span>
             </a>
@@ -116,7 +115,7 @@
                     </svg>
                 </button>
 
-                <a href="{{ path('app_settings') }}" class="hc-user-avatar" title="Paramètres du compte">
+                <a href="{{ path('app_settings') }}" class="hc-user-avatar" title="Paramètres du compte — {{ app.user.displayName }}" aria-label="Compte : {{ app.user.displayName }}">
                     {{ app.user.displayName|first|upper }}
                 </a>
 
@@ -194,13 +193,13 @@
         <div data-testid="upload-folder-list" class="flex flex-col gap-1 max-h-48 overflow-y-auto mb-3">
             <button type="button" onclick="selectUploadFolder('', this)"
                     class="folder-opt active-folder flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-left transition-colors">
-                <span>🏠</span> Mes fichiers (racine)
+                {{ icons.icon('home', 16) }} Mes fichiers (racine)
             </button>
             {% for folder in userFolders %}
                 <button type="button" onclick="selectUploadFolder('{{ folder.id }}', this)"
                         class="folder-opt flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-left
                                text-gray-600 hover:bg-blue-50 transition-colors">
-                    <span>📁</span> {{ folder.name }}
+                    <span><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-folder"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg></span> {{ folder.name }}
                 </button>
             {% endfor %}
         </div>
@@ -227,8 +226,8 @@
             </button>
             <button id="upload-submit-btn" onclick="submitUpload()"
                     class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold
-                           rounded-xl transition-colors disabled:opacity-50">
-                Uploader ⬆️
+                           rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2">
+                Uploader {{ icons.icon('upload', 14) }}
             </button>
         </div>
     </div>
@@ -390,8 +389,8 @@
                 btn.type = 'button';
                 btn.title = 'Renommer';
                 btn.className = 'inline-rename-btn ml-2 text-sm text-gray-400 hover:text-green-600';
-                btn.textContent = '✏️';
-                btn.style.border = 'none'; btn.style.background = 'none'; btn.style.cursor = 'pointer';
+                btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+                btn.style.border = 'none'; btn.style.background = 'none'; btn.style.cursor = 'pointer'; btn.style.display = 'inline-flex'; btn.style.alignItems = 'center';
                 btn.addEventListener('click', function (e) {
                     e.preventDefault(); e.stopPropagation();
                     renameFolder(id, el.textContent.trim());
@@ -408,8 +407,8 @@
             var id = btn.getAttribute('onclick')?.match(/selectUploadFolder\('\s*([^']+)\s*'/)?.[1] || btn.dataset.id || null;
             if (id) {
                 var rbtn = document.createElement('button');
-                rbtn.type = 'button'; rbtn.title = 'Renommer'; rbtn.className = 'ml-2 text-sm'; rbtn.textContent = '✏️';
-                rbtn.style.border = 'none'; rbtn.style.background = 'none'; rbtn.style.cursor = 'pointer';
+                rbtn.type = 'button'; rbtn.title = 'Renommer'; rbtn.className = 'ml-2 text-sm'; rbtn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+                rbtn.style.border = 'none'; rbtn.style.background = 'none'; rbtn.style.cursor = 'pointer'; rbtn.style.display = 'inline-flex'; rbtn.style.alignItems = 'center';
                 rbtn.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); renameFolder(id, btn.textContent.trim()); });
                 btn.appendChild(rbtn);
             }

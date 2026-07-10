@@ -137,16 +137,13 @@ final class WebLayoutTest extends WebTestCase
         ]);
         $client->submit($form);
         $client->followRedirect();
-        $crawler = $client->request('GET', '/files');
+        $crawler = $client->request('GET', '/');
         $this->assertResponseIsSuccessful();
 
-        // Vérifie que la barre de recherche est un input ou contient un input
-        $searchBar = $crawler->filter('.hc-search');
-        $this->assertCount(1, $searchBar, 'La barre de recherche doit exister');
-
-        // Vérifie que la barre est cliquable (doit avoir role ou être interactive)
-        $html = $searchBar->html();
-        $this->assertNotEmpty($html, 'La barre de recherche doit avoir du contenu HTML');
+        // Vérifie que la barre de recherche est un input de type text
+        $searchBar = $crawler->filter('input.hc-search');
+        $this->assertCount(1, $searchBar, 'La barre de recherche doit être un input');
+        $this->assertEquals('text', $searchBar->attr('type'), 'L\'input doit être de type text');
     }
 
     public function testSectionTitleDossiersIsAligned(): void

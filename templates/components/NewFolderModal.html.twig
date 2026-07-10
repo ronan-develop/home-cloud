@@ -1,4 +1,5 @@
 {# === NewFolderModal component === #}
+{% import 'macros/icon.html.twig' as icons %}
 <div data-testid="new-folder-modal"
      style="display:none; position:fixed; inset:0; z-index:9998; background:rgba(0,0,0,0.45);
             align-items:center; justify-content:center;">
@@ -37,12 +38,12 @@
             </label>
             <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:0.5rem;">
                 {% set media_types = [
-                    { value: 'general',  icon: '📁', label: 'Général'   },
-                    { value: 'photo',    icon: '🖼️', label: 'Photos'    },
-                    { value: 'video',    icon: '🎬', label: 'Vidéos'    },
-                    { value: 'document', icon: '📄', label: 'Documents' },
-                    { value: 'music',    icon: '🎵', label: 'Musique'   },
-                    { value: 'other',    icon: '📦', label: 'Autre'     },
+                    { value: 'general',  icon: 'folder', label: 'Général'   },
+                    { value: 'photo',    icon: 'images', label: 'Photos'    },
+                    { value: 'video',    icon: 'video',  label: 'Vidéos'    },
+                    { value: 'document', icon: 'file',   label: 'Documents' },
+                    { value: 'music',    icon: 'music',  label: 'Musique'   },
+                    { value: 'other',    icon: 'package',label: 'Autre'     },
                 ] %}
                 {% for mt in media_types %}
                     <label data-testid="media-type-{{ mt.value }}"
@@ -58,7 +59,7 @@
                                {% if mt.value == 'general' %}checked{% endif %}
                                style="display:none;"
                                onchange="updateMediaTypeStyle()">
-                        <span style="font-size:1.3rem;">{{ mt.icon }}</span>
+                        <span style="font-size:1.3rem; display:inline-flex; align-items:center; justify-content:center;">{{ icons.icon(mt.icon, 20) }}</span>
                         {{ mt.label }}
                     </label>
                 {% endfor %}
@@ -76,9 +77,9 @@
                     style="width:100%; padding:0.55rem 0.85rem; border:1px solid #e5e7eb;
                            border-radius:0.6rem; font-size:0.875rem; color:#111827; background:#fff;
                            outline:none; cursor:pointer;">
-                <option value="">📂 Racine (mes fichiers)</option>
+                <option value="">Racine (mes fichiers)</option>
                 {% for folder in folders %}
-                    <option value="{{ folder.id }}">📁 {{ folder.name }}</option>
+                    <option value="{{ folder.id }}">→ {{ folder.name }}</option>
                 {% endfor %}
             </select>
         </div>

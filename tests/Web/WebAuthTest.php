@@ -82,7 +82,7 @@ final class WebAuthTest extends WebTestCase
         $this->client->followRedirect();
 
         $this->assertResponseIsSuccessful();
-        $this->assertSelectorTextContains('aside', 'Alice Dupont');
+        $this->assertSelectorTextContains('.hc-user-avatar', 'A', 'L\'avatar du user doit afficher l\'initiale');
     }
 
     // --- Flash messages ---
