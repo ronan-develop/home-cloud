@@ -19,7 +19,7 @@
   {% else %}
     <a href="{{ node.url }}" class="sidebar-folder-link{% if node.isActive %} active{% endif %}" data-level="{{ level }}">
       <span class="sidebar-no-toggle"></span>
-      <span class="sidebar-folder-icon">📁</span>
+      <span class="sidebar-folder-icon">{{ icons.icon('folder', 16) }}</span>
       <span class="sidebar-folder-name">{{ node.name }}</span>
     </a>
   {% endif %}
