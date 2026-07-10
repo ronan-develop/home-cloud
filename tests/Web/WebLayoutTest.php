@@ -148,4 +148,44 @@ final class WebLayoutTest extends WebTestCase
         $html = $searchBar->html();
         $this->assertNotEmpty($html, 'La barre de recherche doit avoir du contenu HTML');
     }
+
+    public function testSectionTitleDossiersIsAligned(): void
+    {
+        $client = static::createClient();
+        $em = static::getContainer()->get(EntityManagerInterface::class);
+
+        // Setup utilisateur
+        $conn = $em->getConnection();
+        $conn->executeStatement('SET FOREIGN_KEY_CHECKS=0');
+        $conn->executeStatement('DELETE FROM users');
+        $conn->executeStatement('SET FOREIGN_KEY_CHECKS=1');
+
+        $hasher = static::getContainer()->get(UserPasswordHasherInterface::class);
+        $user = new User('test@example.com', 'Testeur');
+        $user->setPassword($hasher->hashPassword($user, 'secret123'));
+        $em->persist($user);
+        $em->flush();
+
+        // Login et accès à la page
+        $crawler = $client->request('GET', '/login');
+        $form = $crawler->selectButton('Se connecter')->form([
+            'email' => 'test@example.com',
+            'password' => 'secret123',
+        ]);
+        $client->submit($form);
+        $client->followRedirect();
+        $crawler = $client->request('GET', '/');
+        $this->assertResponseIsSuccessful();
+
+        // Vérifie que la section "Dossiers" existe avec l'icône et du texte
+        $sectionTitle = $crawler->filter('.section-title');
+        $this->assertCount(1, $sectionTitle, 'Le titre section "Dossiers" doit exister');
+
+        // Vérifie que .section-title contient un icon et du texte
+        $icon = $sectionTitle->filter('.section-title-icon');
+        $this->assertCount(1, $icon, 'Le titre "Dossiers" doit avoir une icône');
+
+        // Vérifie que le texte "Dossiers" est présent
+        $this->assertStringContainsString('Dossiers', $sectionTitle->text(), 'Le titre doit contenir "Dossiers"');
+    }
 }
