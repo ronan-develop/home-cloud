@@ -80,14 +80,6 @@
                 Partages
             </a>
         </nav>
-
-        {# Footer : utilisateur + paramètres + déconnexion #}
-        <div class="hc-sidebar-footer">
-            <a href="{{ path('app_settings') }}" class="hc-sidebar-user" title="Paramètres du compte">
-                {{ app.user.displayName }}
-            </a>
-            <a href="{{ path('app_logout') }}" class="hc-sidebar-logout">Déconnexion</a>
-        </div>
     </aside>
 
     {# ── Zone principale ── #}
@@ -123,10 +115,19 @@
                 </svg>
             </button>
 
-            {# Avatar utilisateur #}
-            <div class="hc-user-avatar" title="{{ app.user.displayName }}">
+            {# Avatar utilisateur → paramètres du compte #}
+            <a href="{{ path('app_settings') }}" class="hc-user-avatar" title="Paramètres du compte">
                 {{ app.user.displayName|first|upper }}
-            </div>
+            </a>
+
+            {# Déconnexion #}
+            <a href="{{ path('app_logout') }}" class="hc-logout-btn" title="Déconnexion" aria-label="Déconnexion">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <path d="M16 17l5-5-5-5"/>
+                    <path d="M21 12H9"/>
+                </svg>
+            </a>
         </header>
 
         {# Flash messages #}
