@@ -1,4 +1,5 @@
 {# Composant SidebarFolders — Arbre récursif avec indentation data-level #}
+{% import 'macros/icon.html.twig' as icons %}
 {% macro folder_node(node, level) %}
   {% import _self as macros %}
   {% set level = level ?? 0 %}
@@ -6,7 +7,7 @@
     <details class="sidebar-folder-group" data-level="{{ level }}"{% if node.isOpen %} open{% endif %}>
       <summary class="sidebar-folder-summary{% if node.isActive %} active{% endif %}">
         <span class="sidebar-toggle-icon"></span>
-        <span class="sidebar-folder-icon">📁</span>
+        <span class="sidebar-folder-icon"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-folder"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg></span>
         <a href="{{ node.url }}" class="sidebar-folder-name" onclick="event.stopPropagation()">{{ node.name }}</a>
       </summary>
       <div class="sidebar-folder-children">
