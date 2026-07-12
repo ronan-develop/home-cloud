@@ -2,7 +2,17 @@
 
 > Dernière mise à jour : 2026-07-12
 
-> **Status git :** branche `feat/albums-design-alignment` — 374 tests ✅
+> **Status git :** branche `feat/gallery-sort` — 383 tests ✅
+
+---
+
+## ✨ Tri de la galerie médias (2026-07-12)
+
+Ajout d'un menu de tri sur `/gallery` (Plus récent, Plus ancien, Nom A→Z/Z→A, Taille croissante/décroissante).
+
+- Réutilise la convention `?order[champ]=direction` déjà en place dans `FileRepository`/`FolderRepository` (PR #168) plutôt que d'en créer une nouvelle — `MediaRepository::findByOwner()` accepte désormais un `array $orderBy` avec la même whitelist et le même comportement d'ignorance silencieuse des champs inconnus (pas de 400, cohérence avec l'API)
+- `<select>` natif dans `gallery.html.twig`, propage le tri courant dans les liens de filtre photo/vidéo pour que les deux se combinent
+- `WebFixturesTrait::createMediaFile()` étendu (`$size`, `$createdAt` optionnels, Reflection pour `createdAt` qui n'a pas de setter en prod) pour pouvoir tester le tri
 
 ---
 
