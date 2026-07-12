@@ -197,4 +197,57 @@ final class AlbumWebTest extends WebTestCase
         $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/delete');
         $this->assertResponseStatusCodeSame(403);
     }
+
+    // --- Alignement design system (dashboard) ---
+
+    public function testAlbumsListHasPageHeaderWithTitle(): void
+    {
+        $this->createUser();
+        $this->login();
+
+        $this->client->request('GET', '/albums');
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorTextContains('h1', 'Mes albums');
+    }
+
+    public function testAlbumsListHasNoHardcodedLegacyColors(): void
+    {
+        $user = $this->createUser();
+        $this->createAlbum($user, 'Vacances 2024');
+        $this->login();
+
+        $crawler = $this->client->request('GET', '/albums');
+        $this->assertResponseIsSuccessful();
+        $main = $crawler->filter('main')->html();
+
+        foreach (['#111827', '#3b82f6', '#e5e7eb', '#d1d5db', '#9ca3af', '#ef4444'] as $forbidden) {
+            $this->assertStringNotContainsString(
+                $forbidden,
+                $main,
+                sprintf('La liste des albums ne doit plus contenir "%s" (couleur legacy hors design system)', $forbidden)
+            );
+        }
+    }
+
+    public function testAlbumDetailHasNoHardcodedLegacyColors(): void
+    {
+        $user  = $this->createUser();
+        $album = $this->createAlbum($user, 'Album Détail');
+        $media = $this->createMedia($user, 'pic.jpg');
+        $album->addMedia($media);
+        $this->em->flush();
+        $this->login();
+
+        $crawler = $this->client->request('GET', '/albums/' . $album->getId()->toRfc4122());
+        $this->assertResponseIsSuccessful();
+        $main = $crawler->filter('main')->html();
+
+        foreach (['#111827', '#3b82f6', '#e5e7eb', '#d1d5db', '#9ca3af', '#ef4444', '#6b7280', '#f3f4f6'] as $forbidden) {
+            $this->assertStringNotContainsString(
+                $forbidden,
+                $main,
+                sprintf('Le détail d\'album ne doit plus contenir "%s" (couleur legacy hors design system)', $forbidden)
+            );
+        }
+    }
 }
