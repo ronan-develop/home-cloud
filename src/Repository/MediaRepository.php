@@ -8,7 +8,6 @@ use App\Entity\Media;
 use App\Entity\User;
 use App\Interface\MediaRepositoryInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\ORM\LockMode;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Uid\Uuid;
 
@@ -30,18 +29,35 @@ class MediaRepository extends ServiceEntityRepository implements MediaRepository
         return $this->find($id);
     }
 
-    /** @return Media[] */
-    public function findByOwner(User $user, ?string $type = null): array
+    /**
+     * @param array<string, string> $orderBy Champ => direction ('asc'|'desc'). Même
+     *                                        convention que FileRepository::findFiltered() :
+     *                                        champs inconnus ignorés silencieusement.
+     * @return Media[]
+     */
+    public function findByOwner(User $user, ?string $type = null, array $orderBy = []): array
     {
         $qb = $this->createQueryBuilder('m')
             ->join('m.file', 'f')
             ->join('f.owner', 'u')
             ->where('u.id = :userId')
-            ->setParameter('userId', $user->getId(), 'uuid')
-            ->orderBy('f.createdAt', 'DESC');
+            ->setParameter('userId', $user->getId(), 'uuid');
 
         if ($type !== null) {
             $qb->andWhere('m.mediaType = :type')->setParameter('type', $type);
+        }
+
+        $allowed = ['originalName' => 'f.originalName', 'size' => 'f.size', 'createdAt' => 'f.createdAt'];
+        $applied = false;
+        foreach ($orderBy as $field => $dir) {
+            if (isset($allowed[$field])) {
+                $qb->addOrderBy($allowed[$field], strtoupper($dir) === 'DESC' ? 'DESC' : 'ASC');
+                $applied = true;
+            }
+        }
+
+        if (!$applied) {
+            $qb->orderBy('f.createdAt', 'DESC');
         }
 
         return $qb->getQuery()->getResult();

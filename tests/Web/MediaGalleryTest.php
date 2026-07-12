@@ -212,4 +212,147 @@ final class MediaGalleryTest extends WebTestCase
             );
         }
     }
+
+    // --- Tri ---
+
+    public function testGalleryDefaultSortIsMostRecentFirst(): void
+    {
+        $user = $this->createUser();
+        $this->createMediaFile($user, 'old.jpg', 'photo', 1024, new \DateTimeImmutable('-2 days'));
+        $this->createMediaFile($user, 'new.jpg', 'photo', 1024, new \DateTimeImmutable('-1 hour'));
+        $this->login();
+
+        $this->client->request('GET', '/gallery');
+        $content = $this->client->getResponse()->getContent();
+        $this->assertLessThan(
+            strpos($content, 'old.jpg'),
+            strpos($content, 'new.jpg'),
+            'Sans tri explicite, le média le plus récent doit apparaître en premier'
+        );
+    }
+
+    public function testGallerySortByOldestFirst(): void
+    {
+        $user = $this->createUser();
+        $this->createMediaFile($user, 'old.jpg', 'photo', 1024, new \DateTimeImmutable('-2 days'));
+        $this->createMediaFile($user, 'new.jpg', 'photo', 1024, new \DateTimeImmutable('-1 hour'));
+        $this->login();
+
+        $this->client->request('GET', '/gallery?order[createdAt]=asc');
+        $content = $this->client->getResponse()->getContent();
+        $this->assertLessThan(
+            strpos($content, 'new.jpg'),
+            strpos($content, 'old.jpg'),
+            '?order[createdAt]=asc doit afficher le plus ancien en premier'
+        );
+    }
+
+    public function testGallerySortByNameAscending(): void
+    {
+        $user = $this->createUser();
+        $this->createMediaFile($user, 'banane.jpg', 'photo');
+        $this->createMediaFile($user, 'abricot.jpg', 'photo');
+        $this->login();
+
+        $this->client->request('GET', '/gallery?order[originalName]=asc');
+        $content = $this->client->getResponse()->getContent();
+        $this->assertLessThan(
+            strpos($content, 'banane.jpg'),
+            strpos($content, 'abricot.jpg'),
+            '?order[originalName]=asc doit afficher "abricot" avant "banane"'
+        );
+    }
+
+    public function testGallerySortByNameDescending(): void
+    {
+        $user = $this->createUser();
+        $this->createMediaFile($user, 'banane.jpg', 'photo');
+        $this->createMediaFile($user, 'abricot.jpg', 'photo');
+        $this->login();
+
+        $this->client->request('GET', '/gallery?order[originalName]=desc');
+        $content = $this->client->getResponse()->getContent();
+        $this->assertLessThan(
+            strpos($content, 'abricot.jpg'),
+            strpos($content, 'banane.jpg'),
+            '?order[originalName]=desc doit afficher "banane" avant "abricot"'
+        );
+    }
+
+    public function testGallerySortBySizeAscending(): void
+    {
+        $user = $this->createUser();
+        $this->createMediaFile($user, 'gros.jpg', 'photo', 5_000_000);
+        $this->createMediaFile($user, 'petit.jpg', 'photo', 1_000);
+        $this->login();
+
+        $this->client->request('GET', '/gallery?order[size]=asc');
+        $content = $this->client->getResponse()->getContent();
+        $this->assertLessThan(
+            strpos($content, 'gros.jpg'),
+            strpos($content, 'petit.jpg'),
+            '?order[size]=asc doit afficher le plus petit fichier en premier'
+        );
+    }
+
+    public function testGallerySortBySizeDescending(): void
+    {
+        $user = $this->createUser();
+        $this->createMediaFile($user, 'gros.jpg', 'photo', 5_000_000);
+        $this->createMediaFile($user, 'petit.jpg', 'photo', 1_000);
+        $this->login();
+
+        $this->client->request('GET', '/gallery?order[size]=desc');
+        $content = $this->client->getResponse()->getContent();
+        $this->assertLessThan(
+            strpos($content, 'petit.jpg'),
+            strpos($content, 'gros.jpg'),
+            '?order[size]=desc doit afficher le plus gros fichier en premier'
+        );
+    }
+
+    public function testGalleryUnknownSortFieldIsIgnoredNotRejected(): void
+    {
+        $user = $this->createUser();
+        $this->createMediaFile($user, 'photo.jpg', 'photo');
+        $this->login();
+
+        $this->client->request('GET', '/gallery?order[champInconnu]=asc');
+        $this->assertResponseIsSuccessful();
+    }
+
+    public function testGallerySortMenuShowsAllOptionsWithActiveMarked(): void
+    {
+        $this->createUser();
+        $this->login();
+
+        $crawler = $this->client->request('GET', '/gallery?order[originalName]=asc');
+        $this->assertResponseIsSuccessful();
+
+        $select = $crawler->filter('.hc-sort-select');
+        $this->assertGreaterThanOrEqual(1, $select->count(), 'Le sélecteur de tri doit exister');
+        $this->assertCount(6, $select->filter('option'), 'Le sélecteur de tri doit proposer 6 options');
+
+        $selected = $select->filter('option[selected]');
+        $this->assertCount(1, $selected, 'Une seule option doit être marquée comme sélectionnée');
+    }
+
+    public function testGallerySortCombinesWithTypeFilter(): void
+    {
+        $user = $this->createUser();
+        $this->createMediaFile($user, 'banane.jpg', 'photo');
+        $this->createMediaFile($user, 'abricot.jpg', 'photo');
+        $this->createMediaFile($user, 'video-z.mp4', 'video');
+        $this->login();
+
+        $this->client->request('GET', '/gallery?type=photo&order[originalName]=asc');
+        $content = $this->client->getResponse()->getContent();
+
+        $this->assertStringNotContainsString('video-z.mp4', $content);
+        $this->assertLessThan(
+            strpos($content, 'banane.jpg'),
+            strpos($content, 'abricot.jpg'),
+            'Le tri doit continuer à s\'appliquer quand il est combiné au filtre type'
+        );
+    }
 }
