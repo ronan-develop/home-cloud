@@ -319,9 +319,7 @@ nav:hover .navbar-logo-cloud {
 	padding: 16px;
 	height: 100%;
 	border-right: 1px solid var(--hc-border);
-	background: linear-gradient(180deg, var(--hc-surface-2), transparent);
-	backdrop-filter: blur(20px) saturate(180%);
-	-webkit-backdrop-filter: blur(20px) saturate(180%);
+	background: var(--hc-surface);
 	overflow-y: auto;
 	transition: transform 0.25s ease;
 }

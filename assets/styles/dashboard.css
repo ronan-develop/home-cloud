@@ -125,6 +125,13 @@
 }
 .hc-btn-primary:hover { box-shadow: none; }
 
+/* ── Bouton "tinted" — fond accent-soft, ombre crisp qui disparaît au survol ── */
+.hc-btn-soft {
+  box-shadow: var(--hc-shadow-crisp);
+  transition: box-shadow .15s ease;
+}
+.hc-btn-soft:hover { box-shadow: none; }
+
 /* ── Nav sidebar : ombre légère au survol des items non sélectionnés ── */
 .hc-nav-item:hover {
   box-shadow: var(--hc-shadow-crisp);
