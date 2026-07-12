@@ -6,6 +6,7 @@ namespace App\Tests\Web;
 
 use App\Entity\File;
 use App\Entity\Folder;
+use App\Entity\Media;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -29,6 +30,7 @@ final class SearchTest extends WebTestCase
 
         $conn = $this->em->getConnection();
         $conn->executeStatement('SET FOREIGN_KEY_CHECKS=0');
+        $conn->executeStatement('DELETE FROM medias');
         $conn->executeStatement('DELETE FROM files');
         $conn->executeStatement('DELETE FROM folders');
         $conn->executeStatement('DELETE FROM users');
@@ -99,6 +101,41 @@ final class SearchTest extends WebTestCase
         $this->assertResponseIsSuccessful();
         $data = json_decode($this->client->getResponse()->getContent(), true);
         $this->assertEmpty($data['items']);
+    }
+
+    public function testSearchExposesThumbnailUrlForMediaWithThumbnail(): void
+    {
+        $owner = $this->em->getRepository(User::class)->find($this->user->getId());
+
+        $folder = new Folder('Photos', $owner);
+        $this->em->persist($folder);
+        $file = new File('vacances.jpg', 'image/jpeg', 4096, '2026/03/vacances.jpg', $folder, $owner);
+        $this->em->persist($file);
+
+        $media = new Media($file, 'photo');
+        $media->setThumbnailPath('thumbs/vacances.jpg');
+        $this->em->persist($media);
+        $this->em->flush();
+
+        $this->client->request('GET', '/search?q=vacances', [], [], ['HTTP_ACCEPT' => 'application/json']);
+        $this->assertResponseIsSuccessful();
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+
+        $item = current(array_filter($data['items'], fn (array $i) => $i['name'] === 'vacances.jpg'));
+        $this->assertNotFalse($item);
+        $this->assertSame($media->getId()->toRfc4122(), $item['mediaId']);
+        $this->assertStringContainsString('/gallery/' . $media->getId()->toRfc4122() . '/thumbnail', $item['thumbnailUrl']);
+    }
+
+    public function testSearchOmitsThumbnailUrlForFileWithoutMedia(): void
+    {
+        $this->client->request('GET', '/search?q=rapport', [], [], ['HTTP_ACCEPT' => 'application/json']);
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+
+        $item = current(array_filter($data['items'], fn (array $i) => $i['name'] === 'rapport-annuel.pdf'));
+        $this->assertNotFalse($item);
+        $this->assertArrayNotHasKey('mediaId', $item);
+        $this->assertArrayNotHasKey('thumbnailUrl', $item);
     }
 
     public function testSearchDoesNotReturnOtherUsersData(): void
