@@ -108,6 +108,10 @@ services:
         arguments:
             $storageDir: '%app.storage_dir%'
 
+    App\DataFixtures\AppFixtures:
+        arguments:
+            $storageDir: '%app.storage_dir%'
+
     App\EventListener\SecurityHeadersListener:
         arguments:
             $env: '%kernel.environment%'

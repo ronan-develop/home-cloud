@@ -28,18 +28,20 @@ class ResetPasswordControllerTest extends WebTestCase
 
         $this->userRepository = $container->get(UserRepository::class);
 
-        // Purge d'abord les reset_password_request pour éviter les violations de clé étrangère
-        $resetPasswordRequestRepo = $this->em->getRepository(\App\Entity\ResetPasswordRequest::class);
-        foreach ($resetPasswordRequestRepo->findAll() as $resetRequest) {
-            $this->em->remove($resetRequest);
-        }
-        $this->em->flush();
-
-        foreach ($this->userRepository->findAll() as $user) {
-            $this->em->remove($user);
-        }
-
-        $this->em->flush();
+        // Purge complète (cascade FK désactivée le temps du nettoyage) — la base
+        // de test peut contenir des dossiers/fichiers/médias/albums liés aux users
+        // (ex: fixtures de démo), pas seulement des reset_password_request.
+        $conn = $this->em->getConnection();
+        $conn->executeStatement('SET FOREIGN_KEY_CHECKS=0');
+        $conn->executeStatement('DELETE FROM reset_password_request');
+        $conn->executeStatement('DELETE FROM album_media');
+        $conn->executeStatement('DELETE FROM albums');
+        $conn->executeStatement('DELETE FROM medias');
+        $conn->executeStatement('DELETE FROM files');
+        $conn->executeStatement('DELETE FROM folders');
+        $conn->executeStatement('DELETE FROM users');
+        $conn->executeStatement('SET FOREIGN_KEY_CHECKS=1');
+        $this->em->clear();
     }
 
     public function testResetPasswordController(): void
