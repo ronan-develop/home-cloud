@@ -57,6 +57,10 @@ final class ExplorerPageTest extends WebTestCase
         if ($this->client->getResponse()->isRedirect()) {
             $this->client->followRedirect();
         }
+
+        // Depuis #185, la redirection post-login pointe vers le dashboard (/) —
+        // ces tests ciblent l'explorateur, on y navigue donc explicitement.
+        $this->client->request('GET', '/explorer');
     }
 
     // --- Route /explorer ---
@@ -211,5 +215,49 @@ final class ExplorerPageTest extends WebTestCase
 
         $cloudIcons = $this->client->getCrawler()->filter('.import-card svg.hc-icon-cloud');
         $this->assertGreaterThanOrEqual(1, $cloudIcons->count(), 'ImportCard doit avoir icône cloud SVG');
+    }
+
+    // --- Alignement design system (dashboard) ---
+
+    public function testExplorerHasPageHeaderWithTitle(): void
+    {
+        $this->createUser();
+        $this->login();
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorTextContains('h1', 'Mes fichiers');
+    }
+
+    public function testExplorerHeaderShowsFolderAndFileCount(): void
+    {
+        $user = $this->createUser();
+
+        $folder = new Folder('Uploads', $user);
+        $this->em->persist($folder);
+        $this->em->flush();
+
+        $this->login();
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorTextContains('.hc-page-sub', 'dossier');
+    }
+
+    public function testExplorerHasNoHardcodedLegacyColors(): void
+    {
+        $this->createUser();
+        $this->login();
+
+        $this->assertResponseIsSuccessful();
+        $crawler = $this->client->getCrawler();
+        $scoped = ($crawler->filter('.import-card')->html() ?: '')
+            . ($crawler->filter('[data-testid="file-explorer"]')->html() ?: '');
+
+        foreach (['#a5b4fc', '#e0c3fc', '#8ec5fc', 'bg-blue-500', 'text-white'] as $forbidden) {
+            $this->assertStringNotContainsString(
+                $forbidden,
+                $scoped,
+                sprintf('L\'explorateur ne doit plus contenir "%s" (couleur legacy hors design system)', $forbidden)
+            );
+        }
     }
 }
