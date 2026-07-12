@@ -1,27 +1,20 @@
-{# Composant MainToolbar — Barre de recherche XHR #}
-<div class="main-toolbar">
-  <input type="search"
-         id="main-search-input"
-         class="main-search search-glass"
-         placeholder="{{ placeholder|default('Rechercher...') }}"
-         autocomplete="off" />
-</div>
-
-{# Overlay résultats de recherche #}
-<div id="search-results-overlay" class="hidden" style="
-    position:fixed; inset:0; z-index:40;
-    background:rgba(0,0,0,0.45); backdrop-filter:blur(4px);
-    align-items:flex-start; justify-content:center; padding-top:6rem;">
-  <div style="background:#1e293b; border:1px solid rgba(255,255,255,0.12); border-radius:1.25rem;
-              box-shadow:0 8px 40px rgba(0,0,0,0.5); width:100%; max-width:540px; overflow:hidden;">
-    <div style="padding:0.75rem 1.25rem; border-bottom:1px solid rgba(255,255,255,0.08);
-                display:flex; align-items:center; justify-content:space-between;">
-      <span id="search-results-count" style="font-size:0.8rem; color:rgba(255,255,255,0.5);">Recherche…</span>
-      <button onclick="closeSearch()" style="background:none; border:none; color:rgba(255,255,255,0.5);
-              font-size:1.2rem; cursor:pointer; line-height:1;">×</button>
+{# Overlay résultats de recherche XHR — branché sur #main-search-input du layout #}
+<div id="search-results-overlay"
+     class="hidden fixed inset-0 z-50 flex items-start justify-center bg-black/45 backdrop-blur-sm pt-20"
+     tabindex="-1"
+     aria-modal="true"
+     role="dialog">
+  <div class="bg-slate-900 border border-white/20 rounded-2xl
+              shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
+    <div class="flex items-center justify-between px-3 py-2 border-b border-white/10">
+      <span id="search-results-count" class="text-xs text-white/50">Recherche…</span>
+      <button type="button" onclick="closeModal('search-results-overlay')"
+              title="Fermer" aria-label="Fermer la recherche"
+              class="flex items-center justify-center w-7 h-7 rounded-full
+                     bg-white/10 hover:bg-white/20 text-white/70 hover:text-white
+                     text-base leading-none transition-colors">×</button>
     </div>
-    <ul id="search-results-list" style="list-style:none; margin:0; padding:0.5rem 0; max-height:60vh; overflow-y:auto;">
-    </ul>
+    <ul id="search-results-list" class="list-none m-0 py-1 max-h-[40vh] overflow-y-auto"></ul>
   </div>
 </div>
 
@@ -33,9 +26,9 @@
     var count   = document.getElementById('search-results-count');
     var timer   = null;
 
-    function openSearch()  { overlay.classList.remove('hidden'); overlay.style.display = 'flex'; }
-    function closeSearch() { overlay.classList.add('hidden'); overlay.style.display = 'none'; input.value = ''; }
-    window.closeSearch = closeSearch;
+    if (!input || !overlay) return;
+
+    function closeSearch() { closeModal('search-results-overlay'); input.value = ''; }
 
     input.addEventListener('input', function () {
         clearTimeout(timer);
@@ -55,7 +48,7 @@
     async function doSearch(q) {
         count.textContent = 'Recherche…';
         list.innerHTML    = '';
-        openSearch();
+        openMoveElementModal('search-results-overlay');
         try {
             var res  = await fetch('/search?q=' + encodeURIComponent(q), {
                 headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
@@ -74,23 +67,46 @@
 
         list.innerHTML = '';
         if (items.length === 0) {
-            list.innerHTML = '<li style="padding:1.5rem; text-align:center; color:rgba(255,255,255,0.4); font-size:0.875rem;">Aucun fichier ni dossier trouvé</li>';
+            var empty = document.createElement('li');
+            empty.className = 'px-6 py-6 text-center text-sm text-white/40';
+            empty.textContent = 'Aucun fichier ni dossier trouvé';
+            list.appendChild(empty);
             return;
         }
 
         items.forEach(function (item) {
             var icon = item.isFolder ? '📁' : iconForMime(item.mimeType);
             var url  = item.isFolder ? item.url : item.folderUrl;
-            var li   = document.createElement('li');
-            li.innerHTML = '<a href="' + url + '" onclick="closeSearch()" style="display:flex; align-items:center; gap:0.75rem; padding:0.65rem 1.25rem; text-decoration:none; color:#f1f5f9; transition:background 0.12s;"'
-                + ' onmouseover="this.style.background=\'rgba(255,255,255,0.07)\'"'
-                + ' onmouseout="this.style.background=\'transparent\'">'
-                + '<span style="font-size:1.25rem; flex-shrink:0;">' + icon + '</span>'
-                + '<div style="min-width:0;">'
-                + '<div style="font-size:0.875rem; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escHtml(item.name) + '</div>'
-                + (item.isFolder ? '' : '<div style="font-size:0.72rem; color:rgba(255,255,255,0.45); margin-top:0.1rem;">📁 ' + escHtml(item.folderName) + '</div>')
-                + '</div>'
-                + '</a>';
+
+            var li = document.createElement('li');
+
+            var a = document.createElement('a');
+            a.href = url;
+            a.className = 'flex items-center gap-2.5 px-3 py-2 text-slate-100 no-underline hover:bg-white/10 transition-colors';
+            a.addEventListener('click', closeSearch);
+
+            var iconSpan = document.createElement('span');
+            iconSpan.className = 'text-base shrink-0';
+            iconSpan.textContent = icon;
+
+            var textWrap = document.createElement('div');
+            textWrap.className = 'min-w-0';
+
+            var nameDiv = document.createElement('div');
+            nameDiv.className = 'text-sm font-medium overflow-hidden text-ellipsis whitespace-nowrap';
+            nameDiv.textContent = item.name;
+            textWrap.appendChild(nameDiv);
+
+            if (!item.isFolder) {
+                var folderDiv = document.createElement('div');
+                folderDiv.className = 'text-xs text-white/45 mt-0.5';
+                folderDiv.textContent = '📁 ' + item.folderName;
+                textWrap.appendChild(folderDiv);
+            }
+
+            a.appendChild(iconSpan);
+            a.appendChild(textWrap);
+            li.appendChild(a);
             list.appendChild(li);
         });
     }
@@ -103,10 +119,5 @@
         if (mime === 'application/pdf')      return '📄';
         return '📎';
     }
-
-    function escHtml(str) {
-        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
 }());
 </script>
-{# Props attendues : placeholder (texte) #}
