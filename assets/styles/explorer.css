@@ -1,0 +1,110 @@
+/*
+ * assets/styles/explorer.css
+ * Styles pour l'explorateur de fichiers (/explorer)
+ * Aligné sur le design system du dashboard (assets/styles/dashboard.css).
+ * Dépend des variables --hc-* définies dans layout.css.
+ */
+
+/* ── Layout explorateur (aside + contenu) ── */
+.hc-explorer-grid {
+  display: flex;
+  gap: 16px;
+}
+
+/* ── En-tête de page ── */
+.hc-page-sub {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--hc-text-3);
+}
+
+/* ── Carte unifiée dossier / fichier ── */
+.hc-item-card {
+  background: var(--hc-surface);
+  border: 1px solid var(--hc-border);
+  border-radius: 6px;
+  padding: 16px;
+  box-shadow: var(--hc-shadow-crisp);
+  transition: background .15s ease;
+}
+.hc-item-card:hover {
+  background: var(--hc-surface-2);
+}
+
+/* ── Pastille icône ── */
+.hc-item-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.hc-item-icon--folder { background: var(--hc-indigo-soft); color: var(--hc-indigo); }
+.hc-item-icon--image  { background: var(--hc-accent-soft); color: var(--hc-accent); }
+.hc-item-icon--doc    { background: var(--hc-green-soft);  color: var(--hc-green); }
+
+/* ── Typo carte ── */
+.hc-item-name {
+  font: 600 13.5px 'Geist', sans-serif;
+  color: var(--hc-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hc-item-meta {
+  font: 500 12px 'Geist', sans-serif;
+  color: var(--hc-text-3);
+  margin-top: 2px;
+}
+
+/* ── Actions carte ── */
+.hc-item-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.hc-item-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 6px;
+  color: var(--hc-text-3);
+  transition: background .15s ease, color .15s ease;
+  cursor: pointer;
+}
+.hc-item-action--edit:hover { color: var(--hc-green);  background: var(--hc-green-soft); }
+.hc-item-action--move:hover { color: var(--hc-indigo); background: var(--hc-indigo-soft); }
+.hc-item-action--danger:hover { color: var(--hc-err); background: rgba(239, 68, 68, 0.10); }
+
+/* ── Dropzone d'import ── */
+.hc-dropzone {
+  border: 2px dashed var(--hc-border-strong);
+  border-radius: 6px;
+  transition: border-color .15s ease, background .15s ease;
+}
+.hc-dropzone.drop-active {
+  border-color: var(--hc-accent);
+  background: var(--hc-accent-soft);
+}
+
+/* ── État vide ── */
+.hc-empty-state h2 {
+  color: var(--hc-text);
+}
+.hc-empty-state p {
+  color: var(--hc-text-3);
+}
+
+/* ── Responsive ── */
+@media (max-width: 767px) {
+  .hc-explorer-grid {
+    flex-direction: column;
+  }
+}
