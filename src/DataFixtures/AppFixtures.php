@@ -56,7 +56,6 @@ class AppFixtures extends Fixture
         foreach (self::PHOTO_SPECS as $i => $spec) {
             $filename = sprintf('demo-photo-%d.svg', $i + 1);
             $relativePath = $this->writePlaceholderSvg($filename, $spec['label'], $spec['color']);
-            $thumbnailRelativePath = $this->writePlaceholderSvg('thumb-' . $filename, $spec['label'], $spec['color'], thumbs: true);
 
             $file = new File(
                 originalName: $spec['label'] . '.svg',
@@ -68,10 +67,13 @@ class AppFixtures extends Fixture
             );
             $manager->persist($file);
 
+            // Pas de thumbnailPath : ThumbnailService génère toujours un vrai JPEG via
+            // GD (absent de cet environnement), jamais de SVG. Simuler un thumbnail
+            // inexistant mentirait sur le contrat réel — le template retombe sur son
+            // icône de repli déjà prévue quand thumbnailPath est null.
             $media = new Media($file, 'photo');
             $media->setWidth(800);
             $media->setHeight(600);
-            $media->setThumbnailPath($thumbnailRelativePath);
             $manager->persist($media);
 
             $medias[] = $media;
@@ -94,31 +96,26 @@ class AppFixtures extends Fixture
 
     /**
      * Génère un SVG placeholder simple (fond coloré + libellé) et l'écrit sur
-     * disque dans var/storage/, en réutilisant les conventions de StorageService.
+     * disque dans var/storage/demo/, en réutilisant les conventions de StorageService.
      * Aucune dépendance à GD ni au réseau — juste du balisage SVG texte.
      *
      * @return string Chemin relatif à storageDir (ex: "demo/demo-photo-1.svg")
      */
-    private function writePlaceholderSvg(string $filename, string $label, string $color, bool $thumbs = false): string
+    private function writePlaceholderSvg(string $filename, string $label, string $color): string
     {
-        $subDir = $thumbs ? 'thumbs' : 'demo';
-        $width = $thumbs ? 300 : 800;
-        $height = $thumbs ? 300 : 600;
-        $fontSize = $thumbs ? 20 : 32;
-
         $svg = <<<SVG
-            <svg xmlns="http://www.w3.org/2000/svg" width="{$width}" height="{$height}" viewBox="0 0 {$width} {$height}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
               <rect width="100%" height="100%" fill="{$color}"/>
-              <text x="50%" y="50%" font-family="sans-serif" font-size="{$fontSize}" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">{$label}</text>
+              <text x="50%" y="50%" font-family="sans-serif" font-size="32" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">{$label}</text>
             </svg>
             SVG;
 
-        $dir = $this->storageDir . '/' . $subDir;
+        $dir = $this->storageDir . '/demo';
         if (!is_dir($dir)) {
             mkdir($dir, 0775, true);
         }
 
-        $relativePath = $subDir . '/' . $filename;
+        $relativePath = 'demo/' . $filename;
         file_put_contents($this->storageDir . '/' . $relativePath, $svg);
 
         return $relativePath;
