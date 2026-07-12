@@ -1,0 +1,19 @@
+/*
+ * assets/styles/albums.css
+ * Styles pour la page albums (/albums, /albums/{id})
+ * Aligné sur le design system du dashboard (assets/styles/dashboard.css).
+ * Dépend des variables --hc-* définies dans layout.css et des classes
+ * .hc-item-card / .hc-item-icon / .hc-media-* définies dans explorer.css / gallery.css.
+ */
+
+.hc-album-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.hc-album-card {
+  display: block;
+  text-decoration: none;
+  cursor: pointer;
+}
