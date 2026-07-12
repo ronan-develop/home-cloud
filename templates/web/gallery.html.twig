@@ -4,76 +4,81 @@
 
 {% block content %}
 
-<div class="flex items-center justify-between mb-6">
-    <h1 style="font-size:1.5rem; font-weight:700; color:#111827;"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-images"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Galerie médias</h1>
+<div class="flex flex-col gap-7 max-w-[1100px] mx-auto h-full">
+
+  {# En-tête de page #}
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-black tracking-tight mb-1 flex items-center gap-2">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-images"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        Galerie
+      </h1>
+      <p class="hc-page-sub">{{ medias|length }} médias</p>
+    </div>
 
     {# Filtres photo/vidéo #}
-    <div style="display:flex; gap:0.5rem;">
-        <a href="{{ path('app_gallery') }}"
-           style="padding:0.35rem 0.85rem; border-radius:0.5rem; font-size:0.875rem; text-decoration:none;
-                  background:{{ type is null ? '#3b82f6' : '#e5e7eb' }};
-                  color:{{ type is null ? '#fff' : '#374151' }};">
-            Tous
-        </a>
-        <a href="{{ path('app_gallery', {type: 'photo'}) }}"
-           style="padding:0.35rem 0.85rem; border-radius:0.5rem; font-size:0.875rem; text-decoration:none;
-                  background:{{ type == 'photo' ? '#3b82f6' : '#e5e7eb' }};
-                  color:{{ type == 'photo' ? '#fff' : '#374151' }};">
-            📷 Photos
-        </a>
-        <a href="{{ path('app_gallery', {type: 'video'}) }}"
-           style="padding:0.35rem 0.85rem; border-radius:0.5rem; font-size:0.875rem; text-decoration:none;
-                  background:{{ type == 'video' ? '#3b82f6' : '#e5e7eb' }};
-                  color:{{ type == 'video' ? '#fff' : '#374151' }};">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-video"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg> Vidéos
-        </a>
+    <div class="flex gap-2">
+      <a href="{{ path('app_gallery') }}"
+         class="hc-filter-pill {{ type is null ? 'hc-filter-pill--active' : '' }}">
+        Tous
+      </a>
+      <a href="{{ path('app_gallery', {type: 'photo'}) }}"
+         class="hc-filter-pill {{ type == 'photo' ? 'hc-filter-pill--active' : '' }}">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-images"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        Photos
+      </a>
+      <a href="{{ path('app_gallery', {type: 'video'}) }}"
+         class="hc-filter-pill {{ type == 'video' ? 'hc-filter-pill--active' : '' }}">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-video"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        Vidéos
+      </a>
     </div>
-</div>
+  </div>
 
-{% if medias is empty %}
-    <div data-testid="gallery-empty"
-         style="text-align:center; padding:4rem 2rem; color:#9ca3af;">
-        <p style="font-size:3rem;"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-images"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></p>
-        <p style="font-size:1.1rem; font-weight:600; margin-top:1rem;">Aucun média pour l'instant</p>
-        <p style="font-size:0.875rem; margin-top:0.5rem;">Uploadez des photos ou vidéos depuis l'explorateur de fichiers.</p>
+  {% if medias is empty %}
+    <div data-testid="gallery-empty">
+      <twig:EmptyState
+        title="Aucun média pour l'instant"
+        subtitle="Uploadez des photos ou vidéos depuis l'explorateur de fichiers."
+        icon="<svg width='64' height='64' fill='none' stroke='currentColor' stroke-width='1.5' viewBox='0 0 24 24' class='hc-icon hc-icon-images'><path d='M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z'/><circle cx='8.5' cy='8.5' r='1.5'/><polyline points='21 15 16 10 5 21'/></svg>"
+      />
     </div>
-{% else %}
-    <div data-testid="media-gallery"
-         style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:1rem;">
-        {% for media in medias %}
-            <div data-testid="media-thumbnail"
-                 style="border-radius:0.75rem; overflow:hidden; background:#f3f4f6; position:relative; aspect-ratio:1; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,0.08);">
-                <a href="{{ path('app_media_view', {id: media.id}) }}"
-                   data-lightbox
-                   data-media-type="{{ media.mediaType }}"
-                   style="display:block; width:100%; height:100%;">
-                    {% if media.thumbnailPath %}
-                        <img src="{{ asset('storage/thumbs/' ~ media.thumbnailPath|split('/')|last) }}"
-                             alt="{{ media.file.originalName }}"
-                             loading="lazy"
-                             style="width:100%; height:100%; object-fit:cover;">
-                    {% else %}
-                        <div style="display:flex; align-items:center; justify-content:center; height:100%; font-size:2.5rem;">
-                            {{ media.mediaType == 'video' ? '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-video"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>' : '<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-images"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' }}
-                        </div>
-                    {% endif %}
-                </a>
-                <div style="position:absolute; bottom:0; left:0; right:0; padding:0.4rem 0.6rem;
-                            background:linear-gradient(transparent, rgba(0,0,0,0.55));
-                            font-size:0.7rem; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                    {{ media.file.originalName }}
-                </div>
-            </div>
-        {% endfor %}
+  {% else %}
+    <div data-testid="media-gallery" class="hc-media-grid">
+      {% for media in medias %}
+        <div data-testid="media-thumbnail" class="hc-media-thumb">
+          <a href="{{ path('app_media_view', {id: media.id}) }}"
+             data-lightbox
+             data-media-type="{{ media.mediaType }}"
+             class="hc-media-thumb-link">
+            {% if media.thumbnailPath %}
+              <img src="{{ asset('storage/thumbs/' ~ media.thumbnailPath|split('/')|last) }}"
+                   alt="{{ media.file.originalName }}"
+                   loading="lazy"
+                   class="hc-media-thumb-img">
+            {% else %}
+              <div class="hc-media-thumb-fallback">
+                {% if media.mediaType == 'video' %}
+                  <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-video"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                {% else %}
+                  <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-images"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                {% endif %}
+              </div>
+            {% endif %}
+          </a>
+          <div class="hc-media-thumb-caption">
+            {{ media.file.originalName }}
+          </div>
+        </div>
+      {% endfor %}
     </div>
 
     {# Lightbox simple (CSS + JS inline — pas de dépendance externe) #}
-    <div id="lightbox" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9);
-         z-index:1000; align-items:center; justify-content:center; cursor:zoom-out;">
-        <img id="lightbox-img" src="" alt="" style="max-width:90vw; max-height:90vh; border-radius:0.5rem; object-fit:contain;">
-        <button onclick="document.getElementById('lightbox').style.display='none'"
-                style="position:absolute; top:1.5rem; right:2rem; background:none; border:none;
-                       color:#fff; font-size:2rem; cursor:pointer;">✕</button>
+    <div id="lightbox" class="hc-lightbox">
+      <img id="lightbox-img" src="" alt="" class="hc-lightbox-img">
+      <button onclick="document.getElementById('lightbox').style.display='none'" class="hc-lightbox-close" aria-label="Fermer">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
     </div>
     <script>
     document.querySelectorAll('[data-lightbox]').forEach(function(el) {
@@ -86,6 +91,8 @@
         });
     });
     </script>
-{% endif %}
+  {% endif %}
+
+</div>
 
 {% endblock %}

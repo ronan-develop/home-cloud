@@ -2,7 +2,19 @@
 
 > Dernière mise à jour : 2026-07-12
 
-> **Status git :** branche `feat/explorer-design-alignment` — 368 tests ✅
+> **Status git :** branche `feat/gallery-design-alignment` — 371 tests ✅
+
+---
+
+## 🎨 Alignement design /gallery sur le dashboard (2026-07-12)
+
+Migration de la page `/gallery` (Galerie médias) vers le design system `--hc-*`, dans la continuité du redesign `/explorer` (PR #186).
+
+- `assets/styles/gallery.css` créé : pilules de filtre, grille de vignettes, lightbox — cohérents avec `dashboard.css`/`explorer.css`
+- `gallery.html.twig` entièrement réécrit : suppression de tous les styles inline et hex en dur (`#111827`, `#3b82f6`, `#e5e7eb`, `#374151`, `#9ca3af`, `#f3f4f6`)
+- Emoji `📷` remplacé par une icône SVG Heroicons
+- Réutilisation du composant `EmptyState` partagé (déjà migré lors du redesign `/explorer`)
+- En-tête de page ajouté (titre + décompte de médias)
 
 ---
 

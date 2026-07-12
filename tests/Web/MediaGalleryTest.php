@@ -171,4 +171,45 @@ final class MediaGalleryTest extends WebTestCase
         $this->client->request('GET', '/gallery/' . $media->getId()->toRfc4122());
         $this->assertResponseStatusCodeSame(404);
     }
+
+    // --- Alignement design system (dashboard) ---
+
+    public function testGalleryHasPageHeaderWithTitle(): void
+    {
+        $this->createUser();
+        $this->login();
+
+        $this->client->request('GET', '/gallery');
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorTextContains('h1', 'Galerie');
+    }
+
+    public function testGalleryHasNoEmoji(): void
+    {
+        $this->createUser();
+        $this->login();
+
+        $crawler = $this->client->request('GET', '/gallery');
+        $this->assertResponseIsSuccessful();
+        $this->assertStringNotContainsString('📷', $crawler->filter('main')->html());
+    }
+
+    public function testGalleryHasNoHardcodedLegacyColors(): void
+    {
+        $user = $this->createUser();
+        $this->createMediaFile($user, 'photo.jpg', 'photo');
+        $this->login();
+
+        $crawler = $this->client->request('GET', '/gallery');
+        $this->assertResponseIsSuccessful();
+        $main = $crawler->filter('main')->html();
+
+        foreach (['#111827', '#3b82f6', '#e5e7eb', '#374151', '#9ca3af', '#f3f4f6'] as $forbidden) {
+            $this->assertStringNotContainsString(
+                $forbidden,
+                $main,
+                sprintf('La galerie ne doit plus contenir "%s" (couleur legacy hors design system)', $forbidden)
+            );
+        }
+    }
 }
