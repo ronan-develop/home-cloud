@@ -29,7 +29,6 @@ final class DashboardTest extends WebTestCase
         $conn->executeStatement('DELETE FROM shares');
         $conn->executeStatement('DELETE FROM files');
         $conn->executeStatement('DELETE FROM folders');
-        $conn->executeStatement('DELETE FROM users');
         $conn->executeStatement('SET FOREIGN_KEY_CHECKS=1');
         $this->em->clear();
     }
@@ -37,7 +36,6 @@ final class DashboardTest extends WebTestCase
     private function createUser(string $email = 'dashboard@example.com', string $displayName = 'Dashboard User'): User
     {
         $user = new User($email, $displayName);
-        $user->setRoles(['ROLE_USER']);
         $this->em->persist($user);
         $this->em->flush();
         return $user;
@@ -45,8 +43,12 @@ final class DashboardTest extends WebTestCase
 
     private function login(string $email = 'dashboard@example.com'): void
     {
+        $this->em->clear();
         $user = $this->em->getRepository(User::class)->findOneBy(['email' => $email]);
-        $this->client->loginUser($user);
+        if ($user === null) {
+            throw new \RuntimeException("User not found: $email");
+        }
+        $this->client->loginUser($user, 'web');
     }
 
     // --- Authentication & Access ---
