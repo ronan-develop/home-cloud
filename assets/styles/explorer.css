@@ -45,6 +45,16 @@
 .hc-item-icon--image  { background: var(--hc-accent-soft); color: var(--hc-accent); }
 .hc-item-icon--doc    { background: var(--hc-green-soft);  color: var(--hc-green); }
 
+/* ── Pastille icône import (dropzone) — variante large ── */
+.hc-item-icon--lg {
+  width: 56px;
+  height: 56px;
+}
+.hc-item-icon--lg svg {
+  width: 28px;
+  height: 28px;
+}
+
 /* ── Typo carte ── */
 .hc-item-name {
   font: 600 13.5px 'Geist', sans-serif;

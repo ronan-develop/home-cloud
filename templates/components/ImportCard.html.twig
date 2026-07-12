@@ -4,7 +4,7 @@
 {# Composant ImportCard — Zone d'import drag & drop + bouton #}
 <div class="import-card hc-dropzone flex flex-col items-center gap-4 p-8 text-center" id="main-import-card" data-testid="upload-zone">
   <form method="post" action="{{ path('app_file_upload') }}" enctype="multipart/form-data" id="main-upload-form" class="flex flex-col items-center gap-4 w-full">
-    <div class="import-icon hc-item-icon hc-item-icon--image" style="width:56px; height:56px;">{{ icons.icon('cloud', 28) }}</div>
+    <div class="import-icon hc-item-icon hc-item-icon--image hc-item-icon--lg">{{ icons.icon('cloud', 28) }}</div>
     <div class="import-text" style="color:var(--hc-text); font-size:1.05rem; text-align:center;">
       Cliquez pour importer un fichier<br>ou glissez-déposez ici
     </div>
