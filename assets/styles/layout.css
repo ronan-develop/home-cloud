@@ -7,7 +7,7 @@
 .sidebar-folders-title {
 	font-size: 0.85rem;
 	font-weight: 600;
-	color: #94a3b8;
+	color: var(--hc-text-3);
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
 	padding-left: 0.5rem;
@@ -25,9 +25,9 @@
 	align-items: center;
 	gap: 0.4rem;
 	padding: 0.35rem 0.5rem;
-	border-radius: 0.6rem;
+	border-radius: 6px;
 	font-size: 0.875rem;
-	color: #6b7280;
+	color: var(--hc-text-2);
 	text-decoration: none;
 	transition: background 0.15s, color 0.15s;
 	cursor: pointer;
@@ -36,13 +36,13 @@
 }
 .sidebar-folder-link:hover,
 .sidebar-folder-summary:hover {
-	background: #e5e7eb;
-	color: #111827;
+	background: var(--hc-surface-2);
+	color: var(--hc-text);
 }
 .sidebar-folder-link.active,
 .sidebar-folder-summary.active {
-	background: #e0e7ff;
-	color: #2563eb;
+	background: var(--hc-accent-soft);
+	color: var(--hc-accent);
 	font-weight: 600;
 }
 
@@ -110,28 +110,18 @@ details[open] > .sidebar-folder-summary .sidebar-toggle-icon::before { content: 
 	padding-left: 0.4rem;
 	margin-left: 0.35rem;
 	margin-right: 0.5rem;
-	border-left: 1.5px solid #d1d5db;
+	border-left: 1.5px solid var(--hc-border-strong);
 	display: flex;
 	flex-direction: column;
 	margin-top: 0.1rem;
 	margin-bottom: 0.1rem;
 }
 
-
-@media (prefers-color-scheme: dark) {
-	.sidebar-folder-link.active,
-	.sidebar-folder-summary.active {
-		background: #1e293b;
-		color: #a5b4fc;
-	}
-	.sidebar-folder-link:hover,
-	.sidebar-folder-summary:hover {
-		background: #334155;
-		color: #fff;
-	}
-	.sidebar-folder-children {
-		border-left-color: #475569;
-	}
+.sidebar-folder-empty {
+	font-size: 12.5px;
+	font-weight: 500;
+	color: var(--hc-text-3);
+	padding: 0.35rem 0.5rem;
 }
 /* === Variables de thème — design system HomeCloud === */
 :root {
