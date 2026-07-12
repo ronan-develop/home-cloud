@@ -2,7 +2,18 @@
 
 > Dernière mise à jour : 2026-07-12
 
-> **Status git :** branche `feat/gallery-design-alignment` — 371 tests ✅
+> **Status git :** branche `feat/albums-design-alignment` — 374 tests ✅
+
+---
+
+## 🎨 Alignement design /albums sur le dashboard (2026-07-12)
+
+Migration de `albums.html.twig` et `album_detail.html.twig` vers le design system `--hc-*`, troisième étape après `/explorer` (#186) et `/gallery` (#187).
+
+- `assets/styles/albums.css` créé : grille de cartes, réutilise `.hc-item-card`/`.hc-item-icon` (explorer.css) et `.hc-media-*` (gallery.css) plutôt que de dupliquer
+- Suppression de tous les styles inline et hex en dur (`#111827`, `#3b82f6`, `#ef4444`, `#e5e7eb`, `#d1d5db`, `#9ca3af`, `#6b7280`, `#f3f4f6`)
+- Réutilisation du composant `EmptyState` partagé pour les deux pages (liste vide, album sans média)
+- En-tête de page ajouté (titre + décompte d'albums)
 
 ---
 
