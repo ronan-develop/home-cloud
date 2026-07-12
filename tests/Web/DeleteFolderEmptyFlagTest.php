@@ -81,7 +81,7 @@ final class DeleteFolderEmptyFlagTest extends WebTestCase
         $this->em->clear();
 
         $this->login();
-        $crawler = $this->client->request('GET', '/');
+        $crawler = $this->client->request('GET', '/explorer');
 
         // DEBUG: dump homepage HTML for inspection
         file_put_contents('/tmp/homepage_debug.html', $this->client->getResponse()->getContent());

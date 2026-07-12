@@ -34,7 +34,7 @@ security:
                 username_parameter: email
                 password_parameter: password
                 enable_csrf: true
-                default_target_path: app_home
+                default_target_path: app_explorer
             logout:
                 path: app_logout
                 target: app_login

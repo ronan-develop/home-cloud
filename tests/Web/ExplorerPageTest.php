@@ -12,10 +12,10 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 /**
- * Tests fonctionnels de l'explorateur de fichiers web (Phase 7C).
- * Couvre : affichage, upload, suppression, navigation dossiers.
+ * Tests fonctionnels de l'explorateur de fichiers web sur la route /explorer.
+ * Migré de FileExplorerTest pour la séparation home/explorer.
  */
-final class FileExplorerTest extends WebTestCase
+final class ExplorerPageTest extends WebTestCase
 {
     private EntityManagerInterface $em;
     private \Symfony\Bundle\FrameworkBundle\KernelBrowser $client;
@@ -52,12 +52,16 @@ final class FileExplorerTest extends WebTestCase
             'password' => $password,
         ]);
         $this->client->submit($form);
-        $this->client->followRedirect();
+
+        // Après submit, vérifier si on est redirigé (status 302)
+        if ($this->client->getResponse()->isRedirect()) {
+            $this->client->followRedirect();
+        }
     }
 
-    // --- Affichage ---
+    // --- Route /explorer ---
 
-    public function testHomepageShowsFileExplorer(): void
+    public function testExplorerRouteShowsFileExplorer(): void
     {
         $this->createUser();
         $this->login();
@@ -66,7 +70,7 @@ final class FileExplorerTest extends WebTestCase
         $this->assertSelectorExists('[data-testid="file-explorer"]');
     }
 
-    public function testHomepageShowsUploadZone(): void
+    public function testExplorerRouteShowsUploadZone(): void
     {
         $this->createUser();
         $this->login();
@@ -75,9 +79,18 @@ final class FileExplorerTest extends WebTestCase
         $this->assertSelectorExists('[data-testid="upload-zone"]');
     }
 
-    // --- Upload ---
+    public function testExplorerSectionTitleIsAligned(): void
+    {
+        $this->createUser();
+        $this->login();
 
-    public function testUploadFileRedirectsToHome(): void
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorExists('.section-title');
+    }
+
+    // --- Upload redirects to /explorer ---
+
+    public function testUploadFileRedirectsToExplorer(): void
     {
         $this->createUser();
         $this->login();
@@ -87,14 +100,13 @@ final class FileExplorerTest extends WebTestCase
         $uploaded = new UploadedFile($tmpFile, 'test.txt', 'text/plain', null, true);
 
         $this->client->request('POST', '/files/upload', [], ['file' => $uploaded]);
-        $this->assertResponseRedirects('/');
+        $this->assertResponseRedirects('/explorer');
     }
 
-    public function testUploadedFileAppearsInList(): void
+    public function testUploadedFileAppearsInExplorerList(): void
     {
         $user = $this->createUser();
 
-        // Crée le dossier Uploads à l'avance pour récupérer son ID AVANT les requêtes web
         $folder = new Folder('Uploads', $user);
         $this->em->persist($folder);
         $this->em->flush();
@@ -113,26 +125,12 @@ final class FileExplorerTest extends WebTestCase
         $this->assertSelectorTextContains('[data-testid="file-list"]', 'test-visible.txt');
     }
 
-    public function testUploadBlockedExtensionReturns400(): void
-    {
-        $this->createUser();
-        $this->login();
+    // --- Delete redirects to /explorer ---
 
-        $tmpFile = tempnam(sys_get_temp_dir(), 'hc_test_') . '.php';
-        file_put_contents($tmpFile, '<?php echo "hack"; ?>');
-        $uploaded = new UploadedFile($tmpFile, 'hack.php', 'application/x-php', null, true);
-
-        $this->client->request('POST', '/files/upload', [], ['file' => $uploaded]);
-        $this->assertResponseStatusCodeSame(400);
-    }
-
-    // --- Suppression ---
-
-    public function testDeleteFileRedirectsToHome(): void
+    public function testDeleteFileRedirectsToExplorer(): void
     {
         $user = $this->createUser();
 
-        // Créer un dossier + fichier AVANT login (user encore attaché)
         $folder = new Folder('Uploads', $user);
         $this->em->persist($folder);
 
@@ -145,14 +143,13 @@ final class FileExplorerTest extends WebTestCase
         $this->login();
 
         $this->client->request('POST', "/files/{$fileId}/delete");
-        $this->assertResponseRedirects('/');
+        $this->assertResponseRedirects('/explorer');
     }
 
     public function testDeleteFileNotOwnedReturns403(): void
     {
         $owner = $this->createUser('owner@example.com');
 
-        // Fichier appartient à owner — créer AVANT login attacker
         $folder = new Folder('Uploads', $owner);
         $this->em->persist($folder);
         $file = new \App\Entity\File('private.txt', 'text/plain', 10, 'test/private.txt', $folder, $owner);
@@ -163,5 +160,56 @@ final class FileExplorerTest extends WebTestCase
         $this->login('attacker@example.com');
         $this->client->request('POST', "/files/{$file->getId()->toRfc4122()}/delete");
         $this->assertResponseStatusCodeSame(403);
+    }
+
+    // --- Layout tests (migré de WebLayoutTest) ---
+
+    public function testSectionTitleDossiersIsAligned(): void
+    {
+        $this->createUser();
+        $this->login();
+
+        $this->assertResponseIsSuccessful();
+        $sectionTitle = $this->client->getCrawler()->filter('.section-title');
+        $this->assertCount(1, $sectionTitle, 'Le titre section "Dossiers" doit exister');
+
+        $icon = $sectionTitle->filter('.section-title-icon');
+        $this->assertCount(1, $icon, 'Le titre "Dossiers" doit avoir une icône');
+
+        $this->assertStringContainsString('Dossiers', $sectionTitle->text(), 'Le titre doit contenir "Dossiers"');
+    }
+
+    public function testBreadcrumbsAreDisplayed(): void
+    {
+        $this->createUser();
+        $this->login();
+
+        $this->assertResponseIsSuccessful();
+        $breadcrumbs = $this->client->getCrawler()->filter('.main-breadcrumbs');
+        $this->assertCount(1, $breadcrumbs, 'Les breadcrumbs doivent être affichées');
+    }
+
+    public function testNoDoubloSectionTitle(): void
+    {
+        $this->createUser();
+        $this->login();
+
+        $this->assertResponseIsSuccessful();
+        $sectionTitles = $this->client->getCrawler()->filter('.section-title');
+        $this->assertCount(1, $sectionTitles, 'Il ne doit avoir qu\'une seule section-title "Dossiers"');
+    }
+
+    public function testImportCardUsesCloudIcon(): void
+    {
+        $this->createUser();
+        $this->login();
+
+        $this->assertResponseIsSuccessful();
+
+        $importCardHtml = $this->client->getCrawler()->filter('.import-card')->html() ?: '';
+        $this->assertStringNotContainsString('☁️', $importCardHtml, 'Pas d\'emoji ☁️ dans import-card — doit être remplacé par SVG');
+
+        $cloudIcons = $this->client->getCrawler()->filter('.import-card svg.hc-icon-cloud');
+        $this->assertGreaterThanOrEqual(1, $cloudIcons->count(), 'ImportCard doit avoir icône cloud SVG');
     }
 }

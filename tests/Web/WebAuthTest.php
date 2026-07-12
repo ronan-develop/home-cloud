@@ -61,7 +61,7 @@ final class WebAuthTest extends WebTestCase
         $this->createUser();
         $this->login();
 
-        $this->assertResponseRedirects('/');
+        $this->assertResponseRedirects('/explorer');
     }
 
     public function testAfterLoginDashboardIsAccessible(): void
@@ -151,7 +151,7 @@ final class WebAuthTest extends WebTestCase
         $this->client->request('GET', '/logout');
         $this->client->followRedirect(); // → /login
 
-        $this->client->request('GET', '/');
+        $this->client->request('GET', '/explorer');
         $this->assertResponseRedirects('/login');
     }
 }

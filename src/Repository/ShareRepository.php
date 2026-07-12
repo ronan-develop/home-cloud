@@ -74,4 +74,17 @@ class ShareRepository extends ServiceEntityRepository implements ShareRepository
 
         return $qb->getQuery()->getOneOrNullResult();
     }
+
+    /** Compte les shares actifs (non expirés) d'un owner. */
+    public function countActiveByOwner(User $owner): int
+    {
+        return (int) $this->createQueryBuilder('s')
+            ->select('COUNT(s.id)')
+            ->where('s.owner = :ownerId')
+            ->andWhere('s.expiresAt IS NULL OR s.expiresAt > :now')
+            ->setParameter('ownerId', $owner->getId(), 'uuid')
+            ->setParameter('now', new \DateTimeImmutable())
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }

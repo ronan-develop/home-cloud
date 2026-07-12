@@ -66,7 +66,7 @@ final class FolderWebController extends AbstractController
 
         $redirectFolderId = $request->request->get('redirect_folder_id');
 
-        return $this->redirect($redirectFolderId ? '/?folder=' . $redirectFolderId : '/');
+        return $this->redirect($redirectFolderId ? '/explorer?folder=' . $redirectFolderId : '/explorer');
     }
 
     /**

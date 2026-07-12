@@ -22,7 +22,7 @@ final class WebLayoutTest extends WebTestCase
     public function testHomepageRedirectsToLoginWhenUnauthenticated(): void
     {
         $client = static::createClient();
-        $client->request('GET', '/');
+        $client->request('GET', '/explorer');
 
         $this->assertResponseRedirects('/login');
     }
@@ -100,7 +100,7 @@ final class WebLayoutTest extends WebTestCase
         $client->followRedirect();
 
         // Accès à la page d'accueil authentifiée
-        $crawler = $client->request('GET', '/');
+        $crawler = $client->request('GET', '/explorer');
         $this->assertResponseIsSuccessful();
 
         // Vérifie que la topbar existe
@@ -137,7 +137,7 @@ final class WebLayoutTest extends WebTestCase
         ]);
         $client->submit($form);
         $client->followRedirect();
-        $crawler = $client->request('GET', '/');
+        $crawler = $client->request('GET', '/explorer');
         $this->assertResponseIsSuccessful();
 
         // Vérifie que la barre de recherche est un input de type text
@@ -171,7 +171,7 @@ final class WebLayoutTest extends WebTestCase
         ]);
         $client->submit($form);
         $client->followRedirect();
-        $crawler = $client->request('GET', '/');
+        $crawler = $client->request('GET', '/explorer');
         $this->assertResponseIsSuccessful();
 
         // Vérifie que la section "Dossiers" existe avec l'icône et du texte
@@ -211,7 +211,7 @@ final class WebLayoutTest extends WebTestCase
         ]);
         $client->submit($form);
         $client->followRedirect();
-        $crawler = $client->request('GET', '/');
+        $crawler = $client->request('GET', '/explorer');
         $this->assertResponseIsSuccessful();
 
         // Vérifie que les breadcrumbs existent
@@ -248,7 +248,7 @@ final class WebLayoutTest extends WebTestCase
         ]);
         $client->submit($form);
         $client->followRedirect();
-        $crawler = $client->request('GET', '/');
+        $crawler = $client->request('GET', '/explorer');
         $this->assertResponseIsSuccessful();
 
         // Vérifie qu'il n'y a qu'un seul .section-title (pas de doublon)

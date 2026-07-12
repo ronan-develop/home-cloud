@@ -136,9 +136,18 @@ details[open] > .sidebar-folder-summary .sidebar-toggle-icon::before { content: 
 /* === Variables de thème — design system HomeCloud === */
 :root {
 	/* Accent */
-	--hc-accent:       #2b5fff;
-	--hc-accent-2:     #6e8bff;
-	--hc-accent-soft:  rgba(43, 95, 255, 0.12);
+	--hc-accent:       #A34B4B;
+	--hc-accent-2:     #8A3D3D;
+	--hc-accent-soft:  rgba(163, 75, 75, 0.12);
+
+	/* Nouveaux accents secondaires */
+	--hc-indigo:       #6B5FA8;
+	--hc-indigo-soft:  rgba(107, 95, 168, 0.10);
+	--hc-green:        #3F8F6B;
+	--hc-green-soft:   rgba(63, 143, 107, 0.10);
+
+	/* Ombre "crisp" décalée bas-droite */
+	--hc-shadow-crisp: 2px 3px 8px -1px rgba(35, 35, 35, 0.20);
 
 	/* Surfaces & texte (light) */
 	--hc-bg:           #f4f5f8;
@@ -175,6 +184,17 @@ details[open] > .sidebar-folder-summary .sidebar-toggle-icon::before { content: 
 
 /* Dark mode explicite (toggle JS via data-theme) */
 [data-theme="dark"] {
+	--hc-accent:       #E3A3A3;
+	--hc-accent-2:     #C98888;
+	--hc-accent-soft:  rgba(227, 163, 163, 0.16);
+
+	--hc-indigo:       #B3A9E8;
+	--hc-indigo-soft:  rgba(179, 169, 232, 0.18);
+	--hc-green:        #8FD1B0;
+	--hc-green-soft:   rgba(143, 209, 176, 0.18);
+
+	--hc-shadow-crisp: 2px 3px 8px -1px rgba(0, 0, 0, 0.35);
+
 	--hc-bg:           #07090f;
 	--hc-bg-2:         #0a0d16;
 	--hc-surface:      rgba(20, 25, 38, 0.55);
@@ -192,6 +212,17 @@ details[open] > .sidebar-folder-summary .sidebar-toggle-icon::before { content: 
 /* Dark mode automatique via OS (fallback si pas de toggle JS) */
 @media (prefers-color-scheme: dark) {
 	:root:not([data-theme="light"]) {
+		--hc-accent:       #E3A3A3;
+		--hc-accent-2:     #C98888;
+		--hc-accent-soft:  rgba(227, 163, 163, 0.16);
+
+		--hc-indigo:       #B3A9E8;
+		--hc-indigo-soft:  rgba(179, 169, 232, 0.18);
+		--hc-green:        #8FD1B0;
+		--hc-green-soft:   rgba(143, 209, 176, 0.18);
+
+		--hc-shadow-crisp: 2px 3px 8px -1px rgba(0, 0, 0, 0.35);
+
 		--hc-bg:           #07090f;
 		--hc-bg-2:         #0a0d16;
 		--hc-surface:      rgba(20, 25, 38, 0.55);

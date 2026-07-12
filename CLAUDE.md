@@ -91,6 +91,9 @@ Mobile (<768px)  : grid-template-columns: 1fr + tab-bar fixe en bas
 ./vendor/bin/phpunit --filter NomDuTest       # test ciblé
 php bin/console doctrine:migrations:migrate   # appliquer les migrations
 php bin/console make:migration                # générer une migration
+composer build-assets                         # build Tailwind + recompile AssetMapper
+php bin/console tailwind:build --watch        # recompiler Tailwind à chaque changement CSS (dev)
+composer dev-check                            # build assets complets + suite PHPUnit
 ```
 
 ---

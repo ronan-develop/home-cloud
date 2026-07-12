@@ -1,0 +1,75 @@
+{% extends 'web/layout.html.twig' %}
+
+{% block title %}Mes fichiers — HomeCloud{% endblock %}
+
+{% block content %}
+
+{% set folderIcon %}<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg>{% endset %}
+
+{# === ImportCard component === #}
+<twig:ImportCard :current-folder="currentFolder ?? null" />
+
+{# === Explorateur === #}
+<div data-testid="file-explorer" class="flex gap-4">
+
+    {# Sidebar dossiers #}
+
+    <aside class="w-auto min-w-36 max-w-80 shrink-0">
+        <twig:SectionTitle text="Dossiers" :icon="folderIcon" />
+        <twig:SidebarFolders :tree="sidebarTree" />
+    </aside>
+
+    {# Liste fichiers #}
+    <div class="flex-1" data-testid="file-list">
+        {# Breadcrumbs inline avec le sidebar #}
+        <twig:Breadcrumbs :segments="breadcrumbSegments" />
+
+                {# === FoldersGrid component === #}
+                {# Fusionne dossiers et fichiers pour affichage unifié #}
+                <twig:FoldersGrid :folders="folders" :files="files" />
+                <!-- Suppression du code orphelin après migration vers FoldersGrid -->
+    </div>
+
+</div>
+
+<script>
+(function () {
+  const importCard = document.getElementById('main-import-card');
+  if (!importCard) return;
+
+  // Compteur pour ignorer les dragleave sur les éléments enfants
+  let dragCounter = 0;
+
+  // Activation sur tout le document — la zone réagit dès que le fichier entre dans la page
+  document.addEventListener('dragenter', (e) => {
+    e.preventDefault();
+    dragCounter++;
+    importCard.classList.add('drop-active');
+  });
+
+  document.addEventListener('dragover', (e) => { e.preventDefault(); });
+
+  document.addEventListener('dragleave', (e) => {
+    dragCounter--;
+    // relatedTarget null = le curseur a quitté la fenêtre du navigateur
+    if (dragCounter <= 0 || e.relatedTarget === null) {
+      dragCounter = 0;
+      importCard.classList.remove('drop-active');
+    }
+  });
+
+  document.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dragCounter = 0;
+    importCard.classList.remove('drop-active');
+    const files = Array.from(e.dataTransfer.files).filter(f => f.size > 0);
+    if (files.length === 0) return;
+    const folderIdInput = importCard.querySelector('input[name="folder_id"]');
+    const folderId = folderIdInput ? folderIdInput.value : '';
+    document.dispatchEvent(new CustomEvent('hc:files-selected', { detail: { files, folderId } }));
+  });
+}());
+</script>
+
+{% endblock %}
+

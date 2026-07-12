@@ -260,4 +260,20 @@ class FolderRepository extends ServiceEntityRepository implements FolderReposito
             );
         }, $rows);
     }
+
+    /**
+     * Retourne les dossiers récents d'un owner, triés par createdAt DESC.
+     *
+     * @return Folder[]
+     */
+    public function findRecentByOwner(User $owner, int $limit = 5): array
+    {
+        return $this->createQueryBuilder('f')
+            ->where('IDENTITY(f.owner) = :ownerId')
+            ->setParameter('ownerId', $owner->getId()->toBinary())
+            ->orderBy('f.createdAt', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
 }

@@ -1,0 +1,129 @@
+{% extends 'web/layout.html.twig' %}
+
+{% block title %}Tableau de bord — HomeCloud{% endblock %}
+
+{% block content %}
+
+<div class="flex flex-col gap-7 max-w-3xl">
+
+  <!-- En-tête avec salutation et bouton Importer -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-black tracking-tight mb-1">Bonjour, {{ app.user.displayName }}</h1>
+      <p class="text-sm font-medium text-slate-500">{{ 'now'|date('d F Y', false, 'fr_FR') }}</p>
+    </div>
+    <button onclick="document.getElementById('upload-modal')?.showModal && document.getElementById('upload-modal').showModal()"
+            class="hc-btn-primary flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 text-white font-semibold text-sm cursor-pointer hover:bg-red-700 transition-colors">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <path d="M17 8l-5-5-5 5"></path>
+        <line x1="12" y1="3" x2="12" y2="15"></line>
+      </svg>
+      Importer
+    </button>
+  </div>
+
+  <!-- Cartes statistiques -->
+  <div class="hc-stat-grid">
+
+    <!-- Carte Stockage utilisé -->
+    <div class="hc-stat-card">
+      <div class="hc-stat-card__head">
+        <div class="hc-stat-icon hc-stat-icon--accent">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path d="M22 12H2"></path>
+            <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+          </svg>
+        </div>
+        <span class="font-semibold text-sm">Stockage utilisé</span>
+      </div>
+      <div class="hc-stat-value--placeholder">{{ storageUsedLabel }}</div>
+      <div class="hc-stat-sub">Stockage illimité</div>
+    </div>
+
+    <!-- Carte Fichiers & dossiers -->
+    <div class="hc-stat-card">
+      <div class="hc-stat-card__head">
+        <div class="hc-stat-icon hc-stat-icon--indigo">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"></path>
+          </svg>
+        </div>
+        <span class="font-semibold text-sm">Fichiers & dossiers</span>
+      </div>
+      <div class="hc-stat-value">{{ totalCount }}</div>
+      <div class="hc-stat-sub">{{ folderCount }} dossiers · {{ fileCount }} fichiers</div>
+    </div>
+
+    <!-- Carte Partages actifs -->
+    <div class="hc-stat-card">
+      <div class="hc-stat-card__head">
+        <div class="hc-stat-icon hc-stat-icon--green">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <circle cx="18" cy="5" r="2.4"></circle>
+            <circle cx="6" cy="12" r="2.4"></circle>
+            <circle cx="18" cy="19" r="2.4"></circle>
+            <line x1="8.2" y1="10.8" x2="15.8" y2="6.4"></line>
+            <line x1="8.2" y1="13.2" x2="15.8" y2="17.6"></line>
+          </svg>
+        </div>
+        <span class="font-semibold text-sm">Partages actifs</span>
+      </div>
+      <div class="hc-stat-value">{{ activeSharesCount }}</div>
+      <div class="hc-stat-sub">Partages créés</div>
+    </div>
+
+  </div>
+
+  <!-- Section Fichiers récents -->
+  <div>
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-bold text-base">Fichiers récents</h2>
+      <a href="{{ path('app_explorer') }}" class="font-semibold text-sm text-red-600 hover:text-red-700 transition-colors">Tout voir</a>
+    </div>
+
+    {% if recentItems %}
+      <div class="hc-file-list">
+        {% for item in recentItems %}
+          <a href="{% if item.type == 'folder' %}{{ path('app_explorer', {folder: item.id}) }}{% else %}{{ path('app_explorer', {folder: item.id}) }}{% endif %}"
+             class="hc-file-row group">
+            <div class="hc-file-icon
+              {%- if item.type == 'folder' %} hc-file-icon--folder
+              {%- elseif item.type == 'file' %} hc-file-icon--image
+              {%- else %} hc-file-icon--doc
+              {%- endif %}">
+              {% if item.type == 'folder' %}
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                  <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"></path>
+                </svg>
+              {% else %}
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                  <path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"></path>
+                  <path d="M3 16l5-5 5 5"></path>
+                  <path d="M14 14l3-3 4 4"></path>
+                  <path d="M9.5 9a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"></path>
+                </svg>
+              {% endif %}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="hc-file-name">{{ item.name }}</div>
+              <div class="hc-file-meta">
+                {% if item.type == 'folder' %}Dossier{% else %}Fichier{% endif %}
+              </div>
+            </div>
+            <div class="hc-file-date">
+              {{ item.createdAt|date('d/m/Y', false, 'fr_FR') }}
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="rounded-lg border border-slate-200 p-6 text-center">
+        <p class="text-sm text-slate-500">Aucun fichier ou dossier récent</p>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+{% endblock %}

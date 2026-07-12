@@ -78,6 +78,13 @@
             "assets:install %PUBLIC_DIR%": "symfony-cmd",
             "importmap:install": "symfony-cmd"
         },
+        "build-assets": [
+            "php bin/console tailwind:build"
+        ],
+        "dev-check": [
+            "@build-assets",
+            "./vendor/bin/phpunit --configuration phpunit.dist.xml"
+        ],
         "post-install-cmd": [
             "@auto-scripts"
         ],

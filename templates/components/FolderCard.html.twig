@@ -1,7 +1,7 @@
 {# Composant FolderCard — Carte dossier #}
 {% import 'macros/icon.html.twig' as icons %}
 <div class="folder-card">
-	<a href="{{ path('app_home', { folder: item.id }) }}" class="block">
+	<a href="{{ path('app_explorer', { folder: item.id }) }}" class="block">
 		<div class="folder-icon">{{ icons.icon('folder', 24) }}</div>
 		<div class="folder-name">{{ item.name }}</div>
 	</a>
