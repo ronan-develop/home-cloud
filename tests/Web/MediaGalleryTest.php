@@ -25,6 +25,8 @@ final class MediaGalleryTest extends WebTestCase
         $this->em = static::getContainer()->get(EntityManagerInterface::class);
         $conn = $this->em->getConnection();
         $conn->executeStatement('SET FOREIGN_KEY_CHECKS=0');
+        $conn->executeStatement('DELETE FROM album_media');
+        $conn->executeStatement('DELETE FROM albums');
         $conn->executeStatement('DELETE FROM medias');
         $conn->executeStatement('DELETE FROM files');
         $conn->executeStatement('DELETE FROM folders');
@@ -354,5 +356,68 @@ final class MediaGalleryTest extends WebTestCase
             strpos($content, 'abricot.jpg'),
             'Le tri doit continuer à s\'appliquer quand il est combiné au filtre type'
         );
+    }
+
+    // --- Sélection multiple pour ajout à un album ---
+
+    public function testGalleryWithoutAlbumParamHasNoSelectionCheckboxes(): void
+    {
+        $user  = $this->createUser();
+        $media = $this->createMediaFile($user, 'photo.jpg', 'photo');
+        $this->login();
+
+        $this->client->request('GET', '/gallery');
+        $this->assertSelectorNotExists('input[type="checkbox"][name="mediaIds[]"][value="' . $media->getId()->toRfc4122() . '"]');
+    }
+
+    public function testGalleryWithAlbumParamShowsSelectionCheckboxes(): void
+    {
+        $user  = $this->createUser();
+        $media = $this->createMediaFile($user, 'photo.jpg', 'photo');
+        $album = new \App\Entity\Album('Vacances', $user);
+        $this->em->persist($album);
+        $this->em->flush();
+        $this->login();
+
+        $this->client->request('GET', '/gallery?album=' . $album->getId()->toRfc4122());
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorExists('input[type="checkbox"][name="mediaIds[]"][value="' . $media->getId()->toRfc4122() . '"]');
+    }
+
+    public function testGalleryWithAlbumParamShowsAddToThisAlbumBar(): void
+    {
+        $user  = $this->createUser();
+        $this->createMediaFile($user, 'photo.jpg', 'photo');
+        $album = new \App\Entity\Album('Vacances', $user);
+        $this->em->persist($album);
+        $this->em->flush();
+        $this->login();
+
+        $this->client->request('GET', '/gallery?album=' . $album->getId()->toRfc4122());
+        $this->assertSelectorExists('[data-testid="gallery-add-to-current-album"][data-album-id="' . $album->getId()->toRfc4122() . '"]');
+    }
+
+    public function testGalleryWithUnknownAlbumParamIgnoresIt(): void
+    {
+        $user  = $this->createUser();
+        $media = $this->createMediaFile($user, 'photo.jpg', 'photo');
+        $this->login();
+
+        $this->client->request('GET', '/gallery?album=019f5700-0000-7000-8000-000000000000');
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorNotExists('input[type="checkbox"][name="mediaIds[]"][value="' . $media->getId()->toRfc4122() . '"]');
+    }
+
+    public function testGalleryWithAlbumParamNotOwnedByUserIsForbidden(): void
+    {
+        $alice = $this->createUser('alice@example.com');
+        $bob   = $this->createUser('bob@example.com');
+        $album = new \App\Entity\Album('Album Alice', $alice);
+        $this->em->persist($album);
+        $this->em->flush();
+
+        $this->login('bob@example.com');
+        $this->client->request('GET', '/gallery?album=' . $album->getId()->toRfc4122());
+        $this->assertResponseStatusCodeSame(403);
     }
 }

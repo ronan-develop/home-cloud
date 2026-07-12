@@ -46,6 +46,7 @@
           Vidéos
         </a>
       </div>
+
     </div>
   </div>
 
@@ -58,9 +59,22 @@
       />
     </div>
   {% else %}
-    <div data-testid="media-gallery" class="hc-media-grid">
+    {% if targetAlbum %}
+      <div class="hc-gallery-picking-banner">
+        Sélectionnez les photos à ajouter à « {{ targetAlbum.name }} »
+      </div>
+    {% endif %}
+
+    <div data-testid="media-gallery" class="hc-media-grid" data-controller="gallery-selection">
       {% for media in medias %}
-        <div data-testid="media-thumbnail" class="hc-media-thumb">
+        <div data-testid="media-thumbnail" class="hc-media-thumb" data-gallery-selection-target="thumb">
+          {% if targetAlbum %}
+            <label class="hc-media-thumb-select">
+              <input type="checkbox" name="mediaIds[]" value="{{ media.id }}" form="gallery-add-to-album-form"
+                     class="hc-media-thumb-checkbox" data-gallery-selection-target="checkbox"
+                     data-action="change->gallery-selection#update">
+            </label>
+          {% endif %}
           <a href="{{ path('app_media_view', {id: media.id}) }}"
              data-lightbox
              data-media-type="{{ media.mediaType }}"
@@ -86,60 +100,35 @@
           </div>
         </div>
       {% endfor %}
+
+      {% if targetAlbum %}
+        {# Barre d'action flottante — ajout direct à l'album ciblé par ?album= #}
+        <form id="gallery-add-to-album-form" method="post" action="{{ path('app_album_add_media', {id: targetAlbum.id}) }}"
+              class="hc-selection-bar hidden" data-gallery-selection-target="bar">
+          <span class="hc-selection-count" data-gallery-selection-target="count">0 sélectionné</span>
+          <div class="hc-selection-actions">
+            <button type="submit" class="hc-selection-confirm" data-testid="gallery-add-to-current-album" data-album-id="{{ targetAlbum.id }}">
+              Ajouter à « {{ targetAlbum.name }} »
+            </button>
+            <a href="{{ path('app_album_detail', {id: targetAlbum.id}) }}" class="hc-selection-cancel">Annuler</a>
+          </div>
+        </form>
+      {% endif %}
     </div>
 
-    {# Lightbox simple (CSS + JS inline — pas de dépendance externe) #}
-    <div id="lightbox" class="hc-lightbox">
-      <button id="lightbox-prev" class="hc-lightbox-nav hc-lightbox-nav--prev" aria-label="Média précédent">
+    {# Lightbox simple #}
+    <div id="lightbox" class="hc-lightbox" data-controller="gallery-lightbox">
+      <button data-gallery-lightbox-target="prev" data-action="gallery-lightbox#prev" class="hc-lightbox-nav hc-lightbox-nav--prev" aria-label="Média précédent">
         <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="15 6 9 12 15 18"/></svg>
       </button>
-      <img id="lightbox-img" src="" alt="" class="hc-lightbox-img">
-      <button id="lightbox-next" class="hc-lightbox-nav hc-lightbox-nav--next" aria-label="Média suivant">
+      <img data-gallery-lightbox-target="img" src="" alt="" class="hc-lightbox-img">
+      <button data-gallery-lightbox-target="next" data-action="gallery-lightbox#next" class="hc-lightbox-nav hc-lightbox-nav--next" aria-label="Média suivant">
         <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg>
       </button>
-      <button onclick="document.getElementById('lightbox').style.display='none'" class="hc-lightbox-close" aria-label="Fermer">
+      <button data-action="gallery-lightbox#close" class="hc-lightbox-close" aria-label="Fermer">
         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
     </div>
-    <script>
-    (function () {
-        var links = Array.prototype.slice.call(document.querySelectorAll('[data-lightbox]'));
-        var srcs = links.map(function (el) { return el.getAttribute('data-full-src'); });
-        var current = -1;
-
-        var lightbox = document.getElementById('lightbox');
-        var img = document.getElementById('lightbox-img');
-        var prevBtn = document.getElementById('lightbox-prev');
-        var nextBtn = document.getElementById('lightbox-next');
-
-        function show(index) {
-            if (index < 0 || index >= srcs.length) return;
-            current = index;
-            img.src = srcs[current];
-            lightbox.style.display = 'flex';
-            prevBtn.style.visibility = current > 0 ? 'visible' : 'hidden';
-            nextBtn.style.visibility = current < srcs.length - 1 ? 'visible' : 'hidden';
-        }
-
-        links.forEach(function (el, index) {
-            el.addEventListener('click', function (e) {
-                if (!srcs[index]) return;
-                e.preventDefault();
-                show(index);
-            });
-        });
-
-        prevBtn.addEventListener('click', function () { show(current - 1); });
-        nextBtn.addEventListener('click', function () { show(current + 1); });
-
-        document.addEventListener('keydown', function (e) {
-            if (lightbox.style.display !== 'flex') return;
-            if (e.key === 'ArrowLeft') show(current - 1);
-            if (e.key === 'ArrowRight') show(current + 1);
-            if (e.key === 'Escape') lightbox.style.display = 'none';
-        });
-    })();
-    </script>
   {% endif %}
 
 </div>

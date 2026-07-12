@@ -97,6 +97,89 @@
   text-overflow: ellipsis;
 }
 
+/* ── Sélection multiple (toujours visible, pour ajout à un album) ── */
+.hc-media-thumb-select {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+}
+
+.hc-media-thumb-checkbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.hc-media-thumb--selected {
+  outline: 3px solid var(--hc-accent);
+  outline-offset: -3px;
+}
+
+.hc-selection-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--hc-surface);
+  border: 1px solid var(--hc-border);
+  box-shadow: var(--hc-shadow-crisp);
+}
+
+.hc-selection-count {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--hc-text-2);
+}
+
+.hc-selection-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hc-selection-confirm {
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: none;
+  background: var(--hc-accent);
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s ease;
+}
+.hc-selection-confirm:hover {
+  background: var(--hc-accent-2);
+}
+
+.hc-selection-cancel {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: none;
+  background: none;
+  font-size: 0.8125rem;
+  color: var(--hc-text-3);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+/* ── Bandeau d'info en contexte "ajout à un album" ── */
+.hc-gallery-picking-banner {
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: var(--hc-accent-soft);
+  color: var(--hc-accent);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
 /* ── Lightbox ── */
 .hc-lightbox {
   display: none;

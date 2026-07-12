@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller\Web;
 
 use App\Entity\User;
+use App\Interface\AlbumRepositoryInterface;
 use App\Interface\MediaRepositoryInterface;
 use App\Interface\StorageServiceInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -25,6 +26,7 @@ final class MediaGalleryController extends AbstractController
     public function __construct(
         private readonly MediaRepositoryInterface $mediaRepository,
         private readonly StorageServiceInterface $storageService,
+        private readonly AlbumRepositoryInterface $albumRepository,
     ) {}
 
     #[Route('/gallery', name: 'app_gallery')]
@@ -37,10 +39,21 @@ final class MediaGalleryController extends AbstractController
 
         $medias = $this->mediaRepository->findByOwner($user, $type ?: null, $order);
 
+        $targetAlbum = null;
+        $albumParam = $request->query->get('album');
+        if ($albumParam !== null) {
+            $targetAlbum = $this->albumRepository->findById(Uuid::fromString($albumParam));
+
+            if ($targetAlbum !== null && !$targetAlbum->getOwner()->getId()->equals($user->getId())) {
+                throw $this->createAccessDeniedException('Cet album ne vous appartient pas.');
+            }
+        }
+
         return $this->render('web/gallery.html.twig', [
-            'medias' => $medias,
-            'type'   => $type,
-            'order'  => $order,
+            'medias'      => $medias,
+            'type'        => $type,
+            'order'       => $order,
+            'targetAlbum' => $targetAlbum,
         ]);
     }
 
@@ -54,9 +67,10 @@ final class MediaGalleryController extends AbstractController
         }
 
         return $this->render('web/gallery.html.twig', [
-            'medias' => [$media],
-            'type'   => null,
-            'order'  => [],
+            'medias'      => [$media],
+            'type'        => null,
+            'order'       => [],
+            'targetAlbum' => null,
         ]);
     }
 
