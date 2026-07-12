@@ -47,7 +47,7 @@ final class SearchController extends AbstractController
                 'id'       => $folder->getId()->toRfc4122(),
                 'name'     => $folder->getName(),
                 'isFolder' => true,
-                'url'      => '/?folder=' . $folder->getId()->toRfc4122(),
+                'url'      => '/explorer?folder=' . $folder->getId()->toRfc4122(),
             ];
         }
 
@@ -60,7 +60,7 @@ final class SearchController extends AbstractController
                 'size'       => $file->getSize(),
                 'folderId'   => $file->getFolder()->getId()->toRfc4122(),
                 'folderName' => $file->getFolder()->getName(),
-                'folderUrl'  => '/?folder=' . $file->getFolder()->getId()->toRfc4122(),
+                'folderUrl'  => '/explorer?folder=' . $file->getFolder()->getId()->toRfc4122(),
             ];
         }
 

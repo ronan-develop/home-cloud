@@ -103,7 +103,7 @@ class FolderRepository extends ServiceEntityRepository implements FolderReposito
             $nodes[] = [
                 'id'       => $id,
                 'name'     => $folder->getName(),
-                'url'      => '/?folder=' . $id,
+                'url'      => '/explorer?folder=' . $id,
                 'isActive' => $currentFolder !== null && $folder->getId()->equals($currentFolder->getId()),
                 'isOpen'   => isset($openIds[$id]),
                 'children' => $this->buildTree($all, $folder, $openIds, $currentFolder),
