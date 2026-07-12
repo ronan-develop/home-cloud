@@ -1,0 +1,148 @@
+/*
+ * assets/styles/dashboard.css
+ * Styles pour le nouveau tableau de bord d'accueil
+ * Dépend des tokens de layout.css (variables --hc-*).
+ * Utilise les conventions existantes : préfixe .hc-, breakpoints mobiles.
+ */
+
+/* ── Cartes stats (dashboard) ── */
+.hc-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.hc-stat-card {
+  background: var(--hc-surface);
+  border: 1px solid var(--hc-border);
+  border-radius: 6px;
+  padding: 20px;
+  box-shadow: var(--hc-shadow-crisp);
+  break-inside: avoid;
+}
+
+.hc-stat-card__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--hc-text-2);
+}
+
+.hc-stat-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.hc-stat-icon--accent { background: var(--hc-accent-soft); color: var(--hc-accent); }
+.hc-stat-icon--indigo  { background: var(--hc-indigo-soft); color: var(--hc-indigo); }
+.hc-stat-icon--green   { background: var(--hc-green-soft);  color: var(--hc-green); }
+
+.hc-stat-value {
+  font-weight: 800;
+  font-size: 23px;
+  margin-top: 14px;
+  letter-spacing: -.01em;
+  color: var(--hc-text);
+}
+
+.hc-stat-value--placeholder {
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: 14px;
+  color: var(--hc-text-3);
+}
+
+.hc-stat-sub {
+  font: 500 12.5px 'Geist', sans-serif;
+  color: var(--hc-text-3);
+  margin-top: 12px;
+}
+
+/* ── Liste "Fichiers récents" ── */
+.hc-file-list {
+  background: var(--hc-surface);
+  border: 1px solid var(--hc-border);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: var(--hc-shadow-crisp);
+}
+
+.hc-file-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--hc-border);
+  cursor: pointer;
+  transition: background .15s ease;
+}
+.hc-file-row:last-child { border-bottom: none; }
+.hc-file-row:hover { background: var(--hc-surface-2); }
+
+.hc-file-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.hc-file-icon--folder { background: var(--hc-indigo-soft); color: var(--hc-indigo); }
+.hc-file-icon--image  { background: var(--hc-accent-soft); color: var(--hc-accent); }
+.hc-file-icon--doc    { background: var(--hc-green-soft);  color: var(--hc-green); }
+
+.hc-file-name {
+  font: 600 13.5px 'Geist', sans-serif;
+  color: var(--hc-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hc-file-meta {
+  font: 500 12px 'Geist', sans-serif;
+  color: var(--hc-text-3);
+  margin-top: 2px;
+}
+
+.hc-file-date {
+  font: 500 12.5px 'Geist', sans-serif;
+  color: var(--hc-text-3);
+  flex-shrink: 0;
+  width: 70px;
+  text-align: right;
+}
+
+/* ── Bouton primaire "tinted" — ombre qui disparaît au survol ── */
+.hc-btn-primary {
+  box-shadow: var(--hc-shadow-crisp);
+  transition: box-shadow .15s ease;
+}
+.hc-btn-primary:hover { box-shadow: none; }
+
+/* ── Nav sidebar : ombre légère au survol des items non sélectionnés ── */
+.hc-nav-item:hover {
+  box-shadow: var(--hc-shadow-crisp);
+  transition: background .15s ease, box-shadow .15s ease, color .15s ease;
+}
+
+/* ── Responsive — complète le bloc mobile déjà défini dans layout.css ── */
+@media (max-width: 767px) {
+  .hc-stat-grid {
+    grid-template-columns: 1fr;
+  }
+  .hc-file-date {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .hc-stat-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
