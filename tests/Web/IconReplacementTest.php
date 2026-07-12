@@ -38,7 +38,7 @@ final class IconReplacementTest extends WebTestCase
         ]);
         $client->submit($form);
         $client->followRedirect();
-        $crawler = $client->request('GET', '/');
+        $crawler = $client->request('GET', '/explorer');
         $this->assertResponseIsSuccessful();
 
         // Vérifie qu'il n'y a PLUS d'emoji 📁 dans les composants remplacés (SidebarFolders n'a pas d'émojis grâce au SVG inline)
@@ -70,7 +70,7 @@ final class IconReplacementTest extends WebTestCase
         ]);
         $client->submit($form);
         $client->followRedirect();
-        $crawler = $client->request('GET', '/');
+        $crawler = $client->request('GET', '/explorer');
         $this->assertResponseIsSuccessful();
 
         // Vérifie qu'il n'y a PLUS d'emoji ☁️ dans l'import-card

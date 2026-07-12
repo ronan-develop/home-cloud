@@ -21,7 +21,7 @@
 
         {# En-tête : logo + bouton fermeture (mobile) #}
         <div class="hc-sidebar-header">
-            <a href="{{ path('app_home') }}" class="hc-brand">
+            <a href="{{ path('app_explorer') }}" class="hc-brand">
                 <div class="hc-brand-icon">
                     {{ icons.icon('cloud', 16) }}
                 </div>
@@ -45,8 +45,8 @@
 
             {% set current_route = app.request.attributes.get('_route') %}
 
-            <a href="{{ path('app_home') }}"
-               class="hc-nav-item {{ current_route == 'app_home' ? 'active' : '' }}">
+            <a href="{{ path('app_explorer') }}"
+               class="hc-nav-item {{ current_route == 'app_explorer' ? 'active' : '' }}">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/>
                 </svg>
@@ -151,7 +151,7 @@
 {# ── Tab bar mobile ── #}
 <div class="tab-bar md:hidden">
     {% set current_route = app.request.attributes.get('_route') %}
-    <a href="{{ path('app_home') }}" class="tab-bar-item {{ current_route == 'app_home' ? 'active' : '' }}">
+    <a href="{{ path('app_explorer') }}" class="tab-bar-item {{ current_route == 'app_explorer' ? 'active' : '' }}">
         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/>
         </svg>

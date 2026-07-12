@@ -154,7 +154,7 @@ final class FolderDeleteWebTest extends WebTestCase
             'redirect_folder_id' => (string) $parentId,
         ]);
 
-        $this->assertResponseRedirects('/?folder=' . $parentId);
+        $this->assertResponseRedirects('/explorer?folder=' . $parentId);
     }
 
     public function testDeleteFolderRedirectsToRootIfNoRedirect(): void
@@ -170,7 +170,7 @@ final class FolderDeleteWebTest extends WebTestCase
             'delete_contents' => '1',
         ]);
 
-        $this->assertResponseRedirects('/');
+        $this->assertResponseRedirects('/explorer');
     }
 
     // ── Sécurité ─────────────────────────────────────────────────────────────
@@ -219,7 +219,7 @@ final class FolderDeleteWebTest extends WebTestCase
         $this->em->clear();
 
         $this->login();
-        $this->client->request('GET', '/');
+        $this->client->request('GET', '/explorer');
         $this->assertSelectorExists('[data-testid="delete-folder-btn-' . $folderId . '"]');
     }
 
@@ -229,7 +229,7 @@ final class FolderDeleteWebTest extends WebTestCase
         $this->em->clear();
 
         $this->login();
-        $this->client->request('GET', '/');
+        $this->client->request('GET', '/explorer');
 
         $this->assertSelectorExists('#delete-folder-modal');
         $this->assertSelectorExists('[data-testid="delete-folder-recursive-btn"]');

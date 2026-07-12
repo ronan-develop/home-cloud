@@ -15,18 +15,18 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Uid\Uuid;
 
 /**
- * Point d'entrée de l'interface web (dashboard principal).
+ * Explorateur de fichiers.
  * Toutes les routes sont protégées par le firewall session.
  */
 #[IsGranted('ROLE_USER')]
-final class HomeController extends AbstractController
+final class ExplorerController extends AbstractController
 {
     public function __construct(
         private readonly FolderRepository $folderRepository,
         private readonly FileRepository $fileRepository,
     ) {}
 
-    #[Route('/', name: 'app_home')]
+    #[Route('/explorer', name: 'app_explorer')]
     public function index(Request $request): Response
     {
         /** @var User $user */
@@ -62,16 +62,16 @@ final class HomeController extends AbstractController
         }
 
         // Segments breadcrumb : Accueil + ancêtres cliquables + dossier courant (non cliquable)
-        $breadcrumbSegments = [['label' => 'Tous les fichiers', 'url' => '/']];
+        $breadcrumbSegments = [['label' => 'Tous les fichiers', 'url' => '/explorer']];
         foreach ($breadcrumbFolders as $i => $f) {
             $isLast = $i === array_key_last($breadcrumbFolders);
             $breadcrumbSegments[] = [
                 'label' => $f->getName(),
-                'url'   => $isLast ? null : '/?folder=' . $f->getId()->toRfc4122(),
+                'url'   => $isLast ? null : '/explorer?folder=' . $f->getId()->toRfc4122(),
             ];
         }
 
-        return $this->render('web/home.html.twig', [
+        return $this->render('web/explorer.html.twig', [
             'currentFolder'      => $currentFolder,
             'breadcrumbSegments' => $breadcrumbSegments,
             'folders'            => $folders,

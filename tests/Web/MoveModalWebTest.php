@@ -41,44 +41,44 @@ final class MoveModalWebTest extends WebTestCase
 
     public function testMoveFolderButtonExistsForEachFolder(): void
     {
-        $this->client->request('GET', '/');
+        $this->client->request('GET', '/explorer');
         $this->assertSelectorExists('[data-testid^="move-folder-btn-"]', 'Le bouton déplacer dossier doit exister');
     }
 
     public function testMoveFileButtonExistsForEachFile(): void
     {
-        $this->client->request('GET', '/?folder=' . $this->folderId);
+        $this->client->request('GET', '/explorer?folder=' . $this->folderId);
         $this->assertSelectorExists('[data-testid^="move-file-btn-"]', 'Le bouton déplacer fichier doit exister');
     }
 
     public function testGlobalMoveModalExistsInDOM(): void
     {
-        $this->client->request('GET', '/');
+        $this->client->request('GET', '/explorer');
         $this->assertSelectorExists('#move-modal', 'La modale globale doit exister');
         $this->assertSelectorExists('#move-modal.hidden', 'La modale doit être fermée par défaut');
     }
 
     public function testMoveModalHasFolderListArea(): void
     {
-        $this->client->request('GET', '/');
+        $this->client->request('GET', '/explorer');
         $this->assertSelectorExists('#move-target-list', 'La zone de liste des dossiers doit exister');
     }
 
     public function testMoveModalHasSubmitButton(): void
     {
-        $this->client->request('GET', '/');
+        $this->client->request('GET', '/explorer');
         $this->assertSelectorExists('#move-submit-btn', 'Le bouton confirmer doit exister');
     }
 
     public function testMoveModalHasTitle(): void
     {
-        $this->client->request('GET', '/');
+        $this->client->request('GET', '/explorer');
         $this->assertSelectorExists('#move-modal-title', 'Le titre de la modale doit exister');
     }
 
     public function testMoveModalClosedByDefault(): void
     {
-        $this->client->request('GET', '/');
+        $this->client->request('GET', '/explorer');
         $this->assertSelectorExists('#move-modal.hidden', 'La modale doit être fermée par défaut');
     }
 }

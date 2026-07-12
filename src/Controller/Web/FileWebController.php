@@ -79,7 +79,7 @@ final class FileWebController extends AbstractController
 
         if ($uploadedFile->getError() !== \UPLOAD_ERR_OK) {
             $this->addFlash('error', 'Erreur d\'upload : ' . $uploadedFile->getErrorMessage());
-            return $this->redirect($folderId ? '/?folder=' . $folderId : '/');
+            return $this->redirect($folderId ? '/explorer?folder=' . $folderId : '/explorer');
         }
 
         $ext = strtolower($uploadedFile->getClientOriginalExtension() ?? '');
@@ -114,9 +114,9 @@ final class FileWebController extends AbstractController
 
         $this->addFlash('success', "Fichier « {$originalName} » uploadé avec succès.");
 
-        $redirectUrl = '/';
+        $redirectUrl = '/explorer';
         if ($folderId) {
-            $redirectUrl = '/?folder=' . $folderId;
+            $redirectUrl = '/explorer?folder=' . $folderId;
         }
 
         return $this->redirect($redirectUrl);
@@ -145,6 +145,6 @@ final class FileWebController extends AbstractController
 
         $folderId = $request->request->get('folder_id');
 
-        return $this->redirect($folderId ? '/?folder=' . $folderId : '/');
+        return $this->redirect($folderId ? '/explorer?folder=' . $folderId : '/explorer');
     }
 }
