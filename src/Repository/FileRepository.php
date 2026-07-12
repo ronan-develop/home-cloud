@@ -102,4 +102,31 @@ class FileRepository extends ServiceEntityRepository implements FileRepositoryIn
     {
         return $this->findOneBy(['originalName' => $name, 'folder' => $folder]);
     }
+
+    /** Compte tous les fichiers d'un owner. */
+    public function countByOwner(User $owner): int
+    {
+        return (int) $this->createQueryBuilder('f')
+            ->select('COUNT(f.id)')
+            ->andWhere('IDENTITY(f.owner) = :ownerId')
+            ->setParameter('ownerId', $owner->getId()->toBinary())
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Retourne les fichiers récents d'un owner, triés par createdAt DESC.
+     *
+     * @return File[]
+     */
+    public function findRecentByOwner(User $owner, int $limit = 5): array
+    {
+        return $this->createQueryBuilder('f')
+            ->andWhere('IDENTITY(f.owner) = :ownerId')
+            ->setParameter('ownerId', $owner->getId()->toBinary())
+            ->orderBy('f.createdAt', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
 }
