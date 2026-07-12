@@ -111,6 +111,7 @@ services:
     App\DataFixtures\AppFixtures:
         arguments:
             $storageDir: '%app.storage_dir%'
+            $projectDir: '%kernel.project_dir%'
 
     App\EventListener\SecurityHeadersListener:
         arguments:

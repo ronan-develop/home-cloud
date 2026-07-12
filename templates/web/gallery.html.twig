@@ -64,9 +64,10 @@
           <a href="{{ path('app_media_view', {id: media.id}) }}"
              data-lightbox
              data-media-type="{{ media.mediaType }}"
+             data-full-src="{{ path('app_media_full', {id: media.id}) }}"
              class="hc-media-thumb-link">
             {% if media.thumbnailPath %}
-              <img src="{{ asset('storage/thumbs/' ~ media.thumbnailPath|split('/')|last) }}"
+              <img src="{{ path('app_media_thumbnail', {id: media.id}) }}"
                    alt="{{ media.file.originalName }}"
                    loading="lazy"
                    class="hc-media-thumb-img">
@@ -89,21 +90,55 @@
 
     {# Lightbox simple (CSS + JS inline — pas de dépendance externe) #}
     <div id="lightbox" class="hc-lightbox">
+      <button id="lightbox-prev" class="hc-lightbox-nav hc-lightbox-nav--prev" aria-label="Média précédent">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="15 6 9 12 15 18"/></svg>
+      </button>
       <img id="lightbox-img" src="" alt="" class="hc-lightbox-img">
+      <button id="lightbox-next" class="hc-lightbox-nav hc-lightbox-nav--next" aria-label="Média suivant">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg>
+      </button>
       <button onclick="document.getElementById('lightbox').style.display='none'" class="hc-lightbox-close" aria-label="Fermer">
         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
     </div>
     <script>
-    document.querySelectorAll('[data-lightbox]').forEach(function(el) {
-        el.addEventListener('click', function(e) {
-            var img = el.querySelector('img');
-            if (!img) return;
-            e.preventDefault();
-            document.getElementById('lightbox-img').src = img.src;
-            document.getElementById('lightbox').style.display = 'flex';
+    (function () {
+        var links = Array.prototype.slice.call(document.querySelectorAll('[data-lightbox]'));
+        var srcs = links.map(function (el) { return el.getAttribute('data-full-src'); });
+        var current = -1;
+
+        var lightbox = document.getElementById('lightbox');
+        var img = document.getElementById('lightbox-img');
+        var prevBtn = document.getElementById('lightbox-prev');
+        var nextBtn = document.getElementById('lightbox-next');
+
+        function show(index) {
+            if (index < 0 || index >= srcs.length) return;
+            current = index;
+            img.src = srcs[current];
+            lightbox.style.display = 'flex';
+            prevBtn.style.visibility = current > 0 ? 'visible' : 'hidden';
+            nextBtn.style.visibility = current < srcs.length - 1 ? 'visible' : 'hidden';
+        }
+
+        links.forEach(function (el, index) {
+            el.addEventListener('click', function (e) {
+                if (!srcs[index]) return;
+                e.preventDefault();
+                show(index);
+            });
         });
-    });
+
+        prevBtn.addEventListener('click', function () { show(current - 1); });
+        nextBtn.addEventListener('click', function () { show(current + 1); });
+
+        document.addEventListener('keydown', function (e) {
+            if (lightbox.style.display !== 'flex') return;
+            if (e.key === 'ArrowLeft') show(current - 1);
+            if (e.key === 'ArrowRight') show(current + 1);
+            if (e.key === 'Escape') lightbox.style.display = 'none';
+        });
+    })();
     </script>
   {% endif %}
 
