@@ -76,6 +76,8 @@ final class ExplorerController extends AbstractController
             'breadcrumbSegments' => $breadcrumbSegments,
             'folders'            => $folders,
             'files'              => $files,
+            'folderCount'        => count($folders),
+            'fileCount'          => count($files),
             'sidebarTree'        => $this->folderRepository->findAllAsTree($user, $currentFolder),
         ]);
     }

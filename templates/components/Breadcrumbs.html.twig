@@ -11,7 +11,7 @@
           {{- segment.label -}}
         {%- endif -%}
       </a>
-      {% if not loop.last %}&nbsp;&gt;&nbsp;{% endif %}
+      {% if not loop.last %}<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-chevron-right" style="vertical-align: middle; margin: 0 2px; opacity:.6;"><polyline points="9 6 15 12 9 18"/></svg>{% endif %}
     {% else %}
       <span>{{ segment.label }}</span>
     {% endif %}

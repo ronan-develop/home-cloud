@@ -6,29 +6,38 @@
 
 {% set folderIcon %}<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg>{% endset %}
 
-{# === ImportCard component === #}
-<twig:ImportCard :current-folder="currentFolder ?? null" />
+<div class="flex flex-col gap-7 max-w-[1100px] mx-auto h-full">
 
-{# === Explorateur === #}
-<div data-testid="file-explorer" class="flex gap-4">
-
-    {# Sidebar dossiers #}
-
-    <aside class="w-auto min-w-36 max-w-80 shrink-0">
-        <twig:SectionTitle text="Dossiers" :icon="folderIcon" />
-        <twig:SidebarFolders :tree="sidebarTree" />
-    </aside>
-
-    {# Liste fichiers #}
-    <div class="flex-1" data-testid="file-list">
-        {# Breadcrumbs inline avec le sidebar #}
-        <twig:Breadcrumbs :segments="breadcrumbSegments" />
-
-                {# === FoldersGrid component === #}
-                {# Fusionne dossiers et fichiers pour affichage unifié #}
-                <twig:FoldersGrid :folders="folders" :files="files" />
-                <!-- Suppression du code orphelin après migration vers FoldersGrid -->
+  {# En-tête de page #}
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-black tracking-tight mb-1">Mes fichiers</h1>
+      <p class="hc-page-sub">{{ folderCount }} dossiers · {{ fileCount }} fichiers</p>
     </div>
+  </div>
+
+  <twig:Breadcrumbs :segments="breadcrumbSegments" />
+
+  {# === ImportCard component === #}
+  <twig:ImportCard :current-folder="currentFolder ?? null" />
+
+  {# === Explorateur === #}
+  <div data-testid="file-explorer" class="hc-explorer-grid">
+
+      {# Sidebar dossiers #}
+      <aside class="w-auto min-w-36 max-w-80 shrink-0">
+          <twig:SectionTitle text="Dossiers" :icon="folderIcon" />
+          <twig:SidebarFolders :tree="sidebarTree" />
+      </aside>
+
+      {# Liste fichiers #}
+      <div class="flex-1" data-testid="file-list">
+          {# === FoldersGrid component === #}
+          {# Fusionne dossiers et fichiers pour affichage unifié #}
+          <twig:FoldersGrid :folders="folders" :files="files" />
+      </div>
+
+  </div>
 
 </div>
 

@@ -46,13 +46,3 @@
    text-decoration: underline;
 }
 
-/* Import-card : zone de drop en évidence */
-.import-card {
-  border: 2.5px dashed #a5b4fc;
-  transition: border-color 0.18s;
-  padding: 2.5rem 2rem;
-}
-.import-card.drop-active {
-  border-color: #2563eb;
-  background: rgba(165,180,252,0.10);
-}
