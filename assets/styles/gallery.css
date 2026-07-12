@@ -5,6 +5,21 @@
  * Dépend des variables --hc-* définies dans layout.css.
  */
 
+/* ── Sélecteur de tri ── */
+.hc-sort-select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  background: var(--hc-surface);
+  color: var(--hc-text);
+  border: 1px solid var(--hc-border);
+  cursor: pointer;
+}
+.hc-sort-select:hover {
+  border-color: var(--hc-border-strong);
+}
+
 /* ── Pilules de filtre photo/vidéo ── */
 .hc-filter-pill {
   display: inline-flex;

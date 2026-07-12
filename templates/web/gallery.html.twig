@@ -16,22 +16,36 @@
       <p class="hc-page-sub">{{ medias|length }} médias</p>
     </div>
 
-    {# Filtres photo/vidéo #}
-    <div class="flex gap-2">
-      <a href="{{ path('app_gallery') }}"
-         class="hc-filter-pill {{ type is null ? 'hc-filter-pill--active' : '' }}">
-        Tous
-      </a>
-      <a href="{{ path('app_gallery', {type: 'photo'}) }}"
-         class="hc-filter-pill {{ type == 'photo' ? 'hc-filter-pill--active' : '' }}">
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-images"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        Photos
-      </a>
-      <a href="{{ path('app_gallery', {type: 'video'}) }}"
-         class="hc-filter-pill {{ type == 'video' ? 'hc-filter-pill--active' : '' }}">
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-video"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-        Vidéos
-      </a>
+    <div class="flex gap-2 items-center">
+      {# Tri #}
+      {% set currentSortField = order|keys|first %}
+      {% set currentSortDir = order|length ? order|first : 'desc' %}
+      <select class="hc-sort-select" onchange="window.location.href = this.value" aria-label="Trier la galerie">
+        <option value="{{ path('app_gallery', {type: type, order: {createdAt: 'desc'}}) }}" {{ (currentSortField is null or (currentSortField == 'createdAt' and currentSortDir == 'desc')) ? 'selected' }}>Plus récent</option>
+        <option value="{{ path('app_gallery', {type: type, order: {createdAt: 'asc'}}) }}" {{ (currentSortField == 'createdAt' and currentSortDir == 'asc') ? 'selected' }}>Plus ancien</option>
+        <option value="{{ path('app_gallery', {type: type, order: {originalName: 'asc'}}) }}" {{ (currentSortField == 'originalName' and currentSortDir == 'asc') ? 'selected' }}>Nom (A→Z)</option>
+        <option value="{{ path('app_gallery', {type: type, order: {originalName: 'desc'}}) }}" {{ (currentSortField == 'originalName' and currentSortDir == 'desc') ? 'selected' }}>Nom (Z→A)</option>
+        <option value="{{ path('app_gallery', {type: type, order: {size: 'asc'}}) }}" {{ (currentSortField == 'size' and currentSortDir == 'asc') ? 'selected' }}>Taille (petit→grand)</option>
+        <option value="{{ path('app_gallery', {type: type, order: {size: 'desc'}}) }}" {{ (currentSortField == 'size' and currentSortDir == 'desc') ? 'selected' }}>Taille (grand→petit)</option>
+      </select>
+
+      {# Filtres photo/vidéo #}
+      <div class="flex gap-2">
+        <a href="{{ path('app_gallery', {order: order}) }}"
+           class="hc-filter-pill {{ type is null ? 'hc-filter-pill--active' : '' }}">
+          Tous
+        </a>
+        <a href="{{ path('app_gallery', {type: 'photo', order: order}) }}"
+           class="hc-filter-pill {{ type == 'photo' ? 'hc-filter-pill--active' : '' }}">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-images"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          Photos
+        </a>
+        <a href="{{ path('app_gallery', {type: 'video', order: order}) }}"
+           class="hc-filter-pill {{ type == 'video' ? 'hc-filter-pill--active' : '' }}">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-video"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          Vidéos
+        </a>
+      </div>
     </div>
   </div>
 

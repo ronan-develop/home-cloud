@@ -29,12 +29,14 @@ final class MediaGalleryController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
         $type = $request->query->get('type');
+        $order = $request->query->all('order');
 
-        $medias = $this->mediaRepository->findByOwner($user, $type ?: null);
+        $medias = $this->mediaRepository->findByOwner($user, $type ?: null, $order);
 
         return $this->render('web/gallery.html.twig', [
             'medias' => $medias,
             'type'   => $type,
+            'order'  => $order,
         ]);
     }
 
@@ -50,6 +52,7 @@ final class MediaGalleryController extends AbstractController
         return $this->render('web/gallery.html.twig', [
             'medias' => [$media],
             'type'   => null,
+            'order'  => [],
         ]);
     }
 }
