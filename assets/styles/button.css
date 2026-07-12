@@ -20,13 +20,13 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 0.4rem;
+	box-shadow: var(--hc-shadow-crisp);
+	transition: box-shadow 0.15s ease, background 0.15s ease;
 }
 .btn-primary:hover:not(:disabled) {
 	background: var(--hc-accent-2);
-	transform: translateY(-1px);
-	box-shadow: 0 8px 20px -4px var(--hc-accent);
+	box-shadow: none;
 }
-.btn-primary:active:not(:disabled) { transform: translateY(0); }
 
 .btn-soft {
 	background: var(--hc-surface-2);

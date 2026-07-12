@@ -1,5 +1,5 @@
 {# Composant FoldersGrid — Grille de dossiers et fichiers #}
-<div class="folders-grid">
+<div class="folders-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
   {% if folders is empty and files is empty %}
     <twig:EmptyState
       title="Aucun fichier ni dossier"
