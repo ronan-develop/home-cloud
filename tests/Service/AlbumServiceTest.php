@@ -10,7 +10,6 @@ use App\Interface\AlbumRepositoryInterface;
 use App\Service\AlbumService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 /**
  * Tests unitaires AlbumService — SRP : création et suppression d'albums.
@@ -73,7 +72,7 @@ final class AlbumServiceTest extends TestCase
         $user = $this->makeUser();
         $this->repository->expects($this->never())->method('save');
 
-        $this->expectException(BadRequestHttpException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('nom');
 
         $this->service->create('', $user);
@@ -84,7 +83,7 @@ final class AlbumServiceTest extends TestCase
         $user = $this->makeUser();
         $this->repository->expects($this->never())->method('save');
 
-        $this->expectException(BadRequestHttpException::class);
+        $this->expectException(\InvalidArgumentException::class);
 
         $this->service->create('   ', $user);
     }
