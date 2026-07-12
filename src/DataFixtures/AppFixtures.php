@@ -9,13 +9,19 @@ use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\Media;
 use App\Entity\User;
+use App\Service\ExifService;
+use App\Service\ThumbnailService;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 /**
- * Fixtures de démo — utilisateur, dossiers, fichiers/médias (SVG placeholder
- * générés localement, aucune dépendance réseau) et albums.
+ * Fixtures de démo — utilisateur, dossiers, fichiers/médias et albums.
+ *
+ * Les photos proviennent de fixtures/demo-photos/ (JPEG libres de droit,
+ * Pixabay — voir le nom de fichier pour l'attribution auteur). Le même
+ * traitement que MediaProcessHandler (EXIF + thumbnail) est appliqué ici en
+ * synchrone, pour que la démo reflète fidèlement le pipeline de production.
  *
  * Usage : php bin/console doctrine:fixtures:load
  * Chargées uniquement en dev/test (voir config/bundles.php).
@@ -25,19 +31,19 @@ class AppFixtures extends Fixture
     private const DEMO_EMAIL = 'demo@homecloud.local';
     private const DEMO_PASSWORD = 'demo12345';
 
-    /** @var array<int, array{label: string, color: string}> */
-    private const PHOTO_SPECS = [
-        ['label' => 'Vacances plage',    'color' => '#4A90D9'],
-        ['label' => 'Montagne',          'color' => '#5FA65F'],
-        ['label' => 'Portrait',          'color' => '#D97A4A'],
-        ['label' => 'Ville la nuit',     'color' => '#6B5FA8'],
-        ['label' => 'Coucher de soleil', 'color' => '#D9A84A'],
-        ['label' => 'Forêt',             'color' => '#3F8F6B'],
+    /** @var array<int, array{file: string, name: string}> */
+    private const DEMO_PHOTOS = [
+        ['file' => 'himmelstraeume-bachalpsee-7572681_1920.jpg', 'name' => 'Bachalpsee.jpg'],
+        ['file' => 'kanenori-sunset-7133867_1920.jpg',           'name' => 'Coucher de soleil.jpg'],
+        ['file' => 'tieubaotruong-field-9295186_1920.jpg',       'name' => 'Champ.jpg'],
     ];
 
     public function __construct(
         private readonly UserPasswordHasherInterface $passwordHasher,
+        private readonly ExifService $exifService,
+        private readonly ThumbnailService $thumbnailService,
         private readonly string $storageDir,
+        private readonly string $projectDir,
     ) {}
 
     public function load(ObjectManager $manager): void
@@ -53,73 +59,68 @@ class AppFixtures extends Fixture
         $manager->persist($docsFolder);
 
         $medias = [];
-        foreach (self::PHOTO_SPECS as $i => $spec) {
-            $filename = sprintf('demo-photo-%d.svg', $i + 1);
-            $relativePath = $this->writePlaceholderSvg($filename, $spec['label'], $spec['color']);
-            $thumbnailRelativePath = $this->writePlaceholderSvg('thumb-' . $filename, $spec['label'], $spec['color'], thumbs: true);
+        foreach (self::DEMO_PHOTOS as $spec) {
+            $relativePath = $this->copyDemoPhoto($spec['file']);
+            $absolutePath = $this->storageDir . '/' . $relativePath;
 
             $file = new File(
-                originalName: $spec['label'] . '.svg',
-                mimeType: 'image/svg+xml',
-                size: filesize($this->storageDir . '/' . $relativePath) ?: 0,
+                originalName: $spec['name'],
+                mimeType: 'image/jpeg',
+                size: filesize($absolutePath) ?: 0,
                 path: $relativePath,
                 folder: $photosFolder,
                 owner: $user,
             );
             $manager->persist($file);
 
+            // Même traitement que MediaProcessHandler (production, asynchrone) :
+            // extraction EXIF + génération du thumbnail. thumbnailPath reste null
+            // si GD est absent de l'environnement (dégradation gracieuse déjà
+            // prévue par ThumbnailService) — le template retombe alors sur son
+            // icône de repli.
+            $exif = $this->exifService->extract($absolutePath);
             $media = new Media($file, 'photo');
-            $media->setWidth(800);
-            $media->setHeight(600);
-            $media->setThumbnailPath($thumbnailRelativePath);
+            $media->setWidth($exif['width']);
+            $media->setHeight($exif['height']);
+            $media->setTakenAt($exif['takenAt']);
+            $media->setCameraModel($exif['cameraModel']);
+            $media->setGpsLat($exif['gpsLat']);
+            $media->setGpsLon($exif['gpsLon']);
+            $media->setThumbnailPath($this->thumbnailService->generate($absolutePath));
             $manager->persist($media);
 
             $medias[] = $media;
         }
 
-        $vacationAlbum = new Album('Vacances 2026', $user);
-        foreach (array_slice($medias, 0, 3) as $media) {
-            $vacationAlbum->addMedia($media);
+        $album = new Album('Paysages', $user);
+        foreach ($medias as $media) {
+            $album->addMedia($media);
         }
-        $manager->persist($vacationAlbum);
-
-        $natureAlbum = new Album('Nature', $user);
-        foreach (array_slice($medias, 3) as $media) {
-            $natureAlbum->addMedia($media);
-        }
-        $manager->persist($natureAlbum);
+        $manager->persist($album);
 
         $manager->flush();
     }
 
     /**
-     * Génère un SVG placeholder simple (fond coloré + libellé) et l'écrit sur
-     * disque dans var/storage/, en réutilisant les conventions de StorageService.
-     * Aucune dépendance à GD ni au réseau — juste du balisage SVG texte.
+     * Copie une photo de démo depuis fixtures/demo-photos/ vers var/storage/demo/,
+     * en réutilisant les conventions de StorageService (chemin relatif au storageDir).
      *
-     * @return string Chemin relatif à storageDir (ex: "demo/demo-photo-1.svg")
+     * @return string Chemin relatif à storageDir (ex: "demo/photo.jpg")
      */
-    private function writePlaceholderSvg(string $filename, string $label, string $color, bool $thumbs = false): string
+    private function copyDemoPhoto(string $filename): string
     {
-        $subDir = $thumbs ? 'thumbs' : 'demo';
-        $width = $thumbs ? 300 : 800;
-        $height = $thumbs ? 300 : 600;
-        $fontSize = $thumbs ? 20 : 32;
+        $source = $this->projectDir . '/fixtures/demo-photos/' . $filename;
+        if (!is_file($source)) {
+            throw new \RuntimeException(sprintf('Photo de démo introuvable : %s', $source));
+        }
 
-        $svg = <<<SVG
-            <svg xmlns="http://www.w3.org/2000/svg" width="{$width}" height="{$height}" viewBox="0 0 {$width} {$height}">
-              <rect width="100%" height="100%" fill="{$color}"/>
-              <text x="50%" y="50%" font-family="sans-serif" font-size="{$fontSize}" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">{$label}</text>
-            </svg>
-            SVG;
-
-        $dir = $this->storageDir . '/' . $subDir;
+        $dir = $this->storageDir . '/demo';
         if (!is_dir($dir)) {
             mkdir($dir, 0775, true);
         }
 
-        $relativePath = $subDir . '/' . $filename;
-        file_put_contents($this->storageDir . '/' . $relativePath, $svg);
+        $relativePath = 'demo/' . $filename;
+        copy($source, $this->storageDir . '/' . $relativePath);
 
         return $relativePath;
     }
