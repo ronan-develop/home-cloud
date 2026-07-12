@@ -75,8 +75,8 @@
         }
 
         items.forEach(function (item) {
-            var icon = item.isFolder ? '📁' : iconForMime(item.mimeType);
-            var url  = item.isFolder ? item.url : item.folderUrl;
+            var iconSvg = item.isFolder ? ICONS.folder : iconForMime(item.mimeType);
+            var url      = item.isFolder ? item.url : item.folderUrl;
 
             var li = document.createElement('li');
 
@@ -86,8 +86,8 @@
             a.addEventListener('click', closeSearch);
 
             var iconSpan = document.createElement('span');
-            iconSpan.className = 'text-base shrink-0';
-            iconSpan.textContent = icon;
+            iconSpan.className = 'shrink-0 text-white/70';
+            iconSpan.innerHTML = iconSvg;
 
             var textWrap = document.createElement('div');
             textWrap.className = 'min-w-0';
@@ -99,8 +99,11 @@
 
             if (!item.isFolder) {
                 var folderDiv = document.createElement('div');
-                folderDiv.className = 'text-xs text-white/45 mt-0.5';
-                folderDiv.textContent = '📁 ' + item.folderName;
+                folderDiv.className = 'flex items-center gap-1 text-xs text-white/45 mt-0.5';
+                folderDiv.innerHTML = ICONS.folder;
+                var folderNameSpan = document.createElement('span');
+                folderNameSpan.textContent = item.folderName;
+                folderDiv.appendChild(folderNameSpan);
                 textWrap.appendChild(folderDiv);
             }
 
@@ -111,13 +114,23 @@
         });
     }
 
+    // Heroicons (stroke, viewBox 24x24) — mêmes tracés que macros/icon.html.twig,
+    // dupliqués ici car ce rendu est généré côté client (résultats XHR), donc
+    // hors de portée du moteur de templates Twig.
+    var ICONS = {
+        folder: '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-folder"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg>',
+        images: '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-images"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
+        video: '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-video"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>',
+        music: '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-music"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
+        file: '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-file"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>'
+    };
+
     function iconForMime(mime) {
-        if (!mime) return '📎';
-        if (mime.startsWith('image/'))       return '🖼️';
-        if (mime.startsWith('video/'))       return '🎬';
-        if (mime.startsWith('audio/'))       return '🎵';
-        if (mime === 'application/pdf')      return '📄';
-        return '📎';
+        if (!mime) return ICONS.file;
+        if (mime.startsWith('image/'))       return ICONS.images;
+        if (mime.startsWith('video/'))       return ICONS.video;
+        if (mime.startsWith('audio/'))       return ICONS.music;
+        return ICONS.file;
     }
 }());
 </script>
