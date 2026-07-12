@@ -44,7 +44,7 @@
       {% for media in album.medias %}
         <div class="hc-media-thumb">
           {% if media.thumbnailPath %}
-            <img src="{{ asset('storage/thumbs/' ~ media.thumbnailPath|split('/')|last) }}"
+            <img src="{{ path('media_thumbnail', {id: media.id}) }}"
                  alt="{{ media.file.originalName }}"
                  loading="lazy"
                  class="hc-media-thumb-img">

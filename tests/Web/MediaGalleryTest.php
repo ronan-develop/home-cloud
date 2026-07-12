@@ -84,6 +84,29 @@ final class MediaGalleryTest extends WebTestCase
         $this->assertSelectorTextContains('[data-testid="media-thumbnail"]', 'sunset.jpg');
     }
 
+    public function testGalleryThumbnailSrcPointsToRealRoute(): void
+    {
+        $user = $this->createUser();
+        $media = $this->createMediaFile($user, 'sunset.jpg', 'photo');
+        $this->login();
+
+        $crawler = $this->client->request('GET', '/gallery');
+        $this->assertResponseIsSuccessful();
+
+        $img = $crawler->filter('[data-testid="media-thumbnail"] img');
+        $this->assertCount(1, $img, 'La vignette doit être une image');
+        $this->assertStringNotContainsString(
+            '/storage/thumbs/',
+            $img->attr('src'),
+            'Le src ne doit plus pointer vers le chemin public inexistant /storage/thumbs/'
+        );
+        $this->assertStringContainsString(
+            '/api/v1/medias/' . $media->getId()->toRfc4122() . '/thumbnail',
+            $img->attr('src'),
+            'Le src doit pointer vers la route media_thumbnail'
+        );
+    }
+
     public function testGalleryShowsEmptyStateWhenNoMedia(): void
     {
         $this->createUser();
