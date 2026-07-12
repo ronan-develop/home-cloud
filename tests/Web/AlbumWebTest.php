@@ -138,6 +138,41 @@ final class AlbumWebTest extends WebTestCase
         $this->assertResponseStatusCodeSame(400);
     }
 
+    public function testCreateAlbumWithSelectedMediaIdsAddsThemToAlbum(): void
+    {
+        $user   = $this->createUser();
+        $media1 = $this->createMedia($user, 'photo1.jpg');
+        $media2 = $this->createMedia($user, 'photo2.jpg');
+        $this->login();
+
+        $this->client->request('POST', '/albums/create', [
+            'name'     => 'Vacances',
+            'mediaIds' => [$media1->getId()->toRfc4122(), $media2->getId()->toRfc4122()],
+        ]);
+
+        $response = $this->client->getResponse();
+        $this->assertTrue($response->isRedirect());
+
+        $this->client->followRedirect();
+        $this->assertSelectorTextContains('[data-testid="album-media-count"]', '2');
+    }
+
+    public function testCreateAlbumIgnoresMediaIdNotOwnedByUser(): void
+    {
+        $alice      = $this->createUser('alice@example.com');
+        $bob        = $this->createUser('bob@example.com');
+        $bobsMedia  = $this->createMedia($bob, 'secret.jpg');
+
+        $this->login('alice@example.com');
+        $this->client->request('POST', '/albums/create', [
+            'name'     => 'Vacances',
+            'mediaIds' => [$bobsMedia->getId()->toRfc4122()],
+        ]);
+
+        $this->client->followRedirect();
+        $this->assertSelectorTextContains('[data-testid="album-media-count"]', '0');
+    }
+
     // --- Détail ---
 
     public function testAlbumDetailPageReturns200(): void
@@ -175,6 +210,55 @@ final class AlbumWebTest extends WebTestCase
         $this->assertResponseStatusCodeSame(403);
     }
 
+    // --- Ajout de médias à un album existant ---
+
+    public function testAddMediaToAlbumRedirectsToAlbumDetail(): void
+    {
+        $user   = $this->createUser();
+        $album  = $this->createAlbum($user, 'Vacances');
+        $media  = $this->createMedia($user, 'photo.jpg');
+        $this->login();
+
+        $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/add-media', [
+            'mediaIds' => [$media->getId()->toRfc4122()],
+        ]);
+
+        $this->assertResponseRedirects('/albums/' . $album->getId()->toRfc4122());
+        $this->client->followRedirect();
+        $this->assertSelectorTextContains('[data-testid="album-media-count"]', '1');
+    }
+
+    public function testAddMediaToAlbumIgnoresMediaNotOwnedByUser(): void
+    {
+        $alice     = $this->createUser('alice@example.com');
+        $bob       = $this->createUser('bob@example.com');
+        $album     = $this->createAlbum($alice, 'Vacances');
+        $bobsMedia = $this->createMedia($bob, 'secret.jpg');
+
+        $this->login('alice@example.com');
+        $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/add-media', [
+            'mediaIds' => [$bobsMedia->getId()->toRfc4122()],
+        ]);
+
+        $this->client->followRedirect();
+        $this->assertSelectorTextContains('[data-testid="album-media-count"]', '0');
+    }
+
+    public function testAddMediaToAlbumForbiddenForOtherUser(): void
+    {
+        $alice = $this->createUser('alice@example.com');
+        $bob   = $this->createUser('bob@example.com');
+        $album = $this->createAlbum($alice, 'Album Alice');
+        $media = $this->createMedia($bob, 'photo.jpg');
+
+        $this->login('bob@example.com');
+        $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/add-media', [
+            'mediaIds' => [$media->getId()->toRfc4122()],
+        ]);
+
+        $this->assertResponseStatusCodeSame(403);
+    }
+
     // --- Suppression ---
 
     public function testDeleteAlbumRedirectsToList(): void
@@ -199,6 +283,17 @@ final class AlbumWebTest extends WebTestCase
     }
 
     // --- Alignement design system (dashboard) ---
+
+    public function testAlbumsPageShowsSelectablePhotosForCreation(): void
+    {
+        $user  = $this->createUser();
+        $media = $this->createMedia($user, 'photo.jpg');
+        $this->login();
+
+        $crawler = $this->client->request('GET', '/albums');
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorExists('input[type="checkbox"][name="mediaIds[]"][value="' . $media->getId()->toRfc4122() . '"]');
+    }
 
     public function testAlbumsListHasPageHeaderWithTitle(): void
     {
