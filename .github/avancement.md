@@ -1,8 +1,20 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-05-06
+> Dernière mise à jour : 2026-07-12
 
-> **Status git :** `main` — PR #169 mergée — 334 tests ✅
+> **Status git :** branche `feat/explorer-design-alignment` — 368 tests ✅
+
+---
+
+## 🎨 Alignement design /explorer sur le dashboard (2026-07-12)
+
+Migration de la page `/explorer` (Mes fichiers) vers le design system `--hc-*` déjà en place sur le dashboard (PR #183/#185). Voir [plan.md](../plan.md) pour le détail.
+
+- `assets/styles/explorer.css` créé : cartes, pastilles icône, actions, dropzone, état vide — cohérents avec `dashboard.css`
+- Sidebar dossiers (`layout.css`) migrée vers les variables `--hc-*` ; suppression d'un bloc `@media (prefers-color-scheme: dark)` redondant qui ignorait le toggle `[data-theme]`
+- `ImportCard`, `FolderCard`, `FileCard`, `EmptyState`, `Breadcrumbs` restylés (fini les hex en dur type `#a5b4fc`, `text-white`, dégradés violets)
+- En-tête de page ajouté (`h1` + décompte dossiers/fichiers), `ExplorerController` passe désormais `folderCount`/`fileCount`
+- Corrigé au passage : `login()` dans `ExplorerPageTest` suivait la redirection post-login vers `/dashboard` (commit #185) au lieu de rester sur `/explorer` — 6 tests cassés remis au vert
 
 ---
 
