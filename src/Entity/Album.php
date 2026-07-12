@@ -47,8 +47,13 @@ class Album
 
     public function __construct(string $name, User $owner)
     {
+        $trimmed = trim($name);
+        if ($trimmed === '') {
+            throw new \InvalidArgumentException('Le nom de l\'album ne peut pas être vide.');
+        }
+
         $this->id = Uuid::v7();
-        $this->name = $name;
+        $this->name = $trimmed;
         $this->owner = $owner;
         $this->medias = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
@@ -66,7 +71,11 @@ class Album
 
     public function setName(string $name): void
     {
-        $this->name = $name;
+        $trimmed = trim($name);
+        if ($trimmed === '') {
+            throw new \InvalidArgumentException('Le nom de l\'album ne peut pas être vide.');
+        }
+        $this->name = $trimmed;
     }
 
     public function getOwner(): User
