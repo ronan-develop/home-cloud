@@ -249,6 +249,7 @@ html, body {
 	height: 100%;
 	margin: 0;
 	padding: 0;
+	overflow: hidden;
 }
 body {
 	box-sizing: border-box;
@@ -597,6 +598,10 @@ nav:hover .navbar-logo-cloud {
 	width: 100%;
 	max-width: 420px;
 	padding: 2rem;
+	background: var(--hc-surface);
+	border: 1px solid var(--hc-border);
+	border-radius: 6px;
+	box-shadow: var(--hc-shadow-crisp);
 }
 
 .login-header {
@@ -608,8 +613,8 @@ nav:hover .navbar-logo-cloud {
 	width: 3.5rem;
 	height: 3.5rem;
 	margin: 0 auto 1rem;
-	border-radius: 0.75rem;
-	background: linear-gradient(135deg, var(--hc-accent), var(--hc-accent-2));
+	border-radius: 6px;
+	background: var(--hc-accent);
 	display: flex;
 	align-items: center;
 	justify-content: center;
