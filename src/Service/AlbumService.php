@@ -25,15 +25,10 @@ final class AlbumService
     /**
      * Crée un nouvel album pour l'utilisateur donné.
      *
-     * @throws BadRequestHttpException si le nom est vide ou uniquement des espaces
+     * @throws InvalidArgumentException si le nom est vide ou uniquement des espaces
      */
     public function create(string $name, User $owner): Album
     {
-        $name = trim($name);
-        if ($name === '') {
-            throw new BadRequestHttpException('Le nom de l\'album est obligatoire.');
-        }
-
         $album = new Album($name, $owner);
         $this->repository->save($album);
 

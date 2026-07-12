@@ -11,6 +11,7 @@ use App\Service\AlbumService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Uid\Uuid;
@@ -45,7 +46,12 @@ final class AlbumWebController extends AbstractController
 
         /** @var User $user */
         $user  = $this->getUser();
-        $album = $this->albumService->create($name, $user);
+
+        try {
+            $album = $this->albumService->create($name, $user);
+        } catch (\InvalidArgumentException $e) {
+            throw new BadRequestHttpException($e->getMessage());
+        }
 
         return $this->redirectToRoute('app_album_detail', ['id' => $album->getId()->toRfc4122()]);
     }
