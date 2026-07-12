@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Entity\File;
 use App\Entity\Media;
 use App\Entity\User;
 use App\Interface\MediaRepositoryInterface;
@@ -27,6 +28,11 @@ class MediaRepository extends ServiceEntityRepository implements MediaRepository
     public function findById(Uuid $id): ?Media
     {
         return $this->find($id);
+    }
+
+    public function findByFile(File $file): ?Media
+    {
+        return $this->findOneBy(['file' => $file]);
     }
 
     /**

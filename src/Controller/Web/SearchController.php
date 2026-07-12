@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller\Web;
 
 use App\Entity\User;
+use App\Interface\MediaRepositoryInterface;
 use App\Repository\FileRepository;
 use App\Repository\FolderRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -23,6 +24,7 @@ final class SearchController extends AbstractController
     public function __construct(
         private readonly FolderRepository $folderRepository,
         private readonly FileRepository $fileRepository,
+        private readonly MediaRepositoryInterface $mediaRepository,
     ) {}
 
     #[Route('/search', name: 'app_search', methods: ['GET'])]
@@ -52,7 +54,7 @@ final class SearchController extends AbstractController
         }
 
         foreach ($files as $file) {
-            $items[] = [
+            $item = [
                 'id'         => $file->getId()->toRfc4122(),
                 'name'       => $file->getOriginalName(),
                 'isFolder'   => false,
@@ -62,6 +64,14 @@ final class SearchController extends AbstractController
                 'folderName' => $file->getFolder()->getName(),
                 'folderUrl'  => '/explorer?folder=' . $file->getFolder()->getId()->toRfc4122(),
             ];
+
+            $media = $this->mediaRepository->findByFile($file);
+            if ($media !== null && $media->getThumbnailPath() !== null) {
+                $item['mediaId']      = $media->getId()->toRfc4122();
+                $item['thumbnailUrl'] = $this->generateUrl('app_media_thumbnail', ['id' => $media->getId()->toRfc4122()]);
+            }
+
+            $items[] = $item;
         }
 
         return $this->json(['items' => $items]);
