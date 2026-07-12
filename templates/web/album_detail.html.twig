@@ -5,60 +5,66 @@
 
 {% block content %}
 
-<div class="flex items-center justify-between mb-6">
+<div class="flex flex-col gap-7 max-w-[1100px] mx-auto h-full">
+
+  {# En-tête de page #}
+  <div class="flex items-center justify-between">
     <div>
-        <a href="{{ path('app_albums') }}"
-           style="font-size:0.875rem; color:#6b7280; text-decoration:none;">← Albums</a>
-        <h1 style="font-size:1.5rem; font-weight:700; color:#111827; margin-top:0.25rem;">
-            {{ icons.icon('album', 20) }} {{ album.name }}
-        </h1>
-        <p style="font-size:0.875rem; color:#9ca3af;">
-            <span data-testid="album-media-count">{{ album.medias|length }}</span> média{{ album.medias|length != 1 ? 's' : '' }}
-            · Créé le {{ album.createdAt|date('d/m/Y') }}
-        </p>
+      <a href="{{ path('app_albums') }}" class="hc-page-sub" style="text-decoration:none;">← Albums</a>
+      <h1 class="text-2xl font-black tracking-tight mb-1 flex items-center gap-2" style="margin-top:0.25rem;">
+        {{ icons.icon('album', 22) }}
+        {{ album.name }}
+      </h1>
+      <p class="hc-page-sub">
+        <span data-testid="album-media-count">{{ album.medias|length }}</span> média{{ album.medias|length != 1 ? 's' : '' }}
+        · Créé le {{ album.createdAt|date('d/m/Y') }}
+      </p>
     </div>
 
     <form method="post" action="{{ path('app_album_delete', {id: album.id}) }}"
-          onsubmit="return confirm('Supprimer l\'album « {{ album.name }} » ?')">
-        <button type="submit"
-                style="padding:0.4rem 0.9rem; background:#ef4444; color:#fff; border:none; border-radius:0.5rem; font-size:0.875rem; cursor:pointer; display:flex; align-items:center; gap:0.4rem;">
-            {{ icons.icon('trash', 16) }} Supprimer
-        </button>
+          onsubmit="return confirm('Supprimer l\'album « {{ album.name|e('js') }} » ?')">
+      <button type="submit" class="hc-item-action hc-item-action--danger flex items-center gap-2 px-4 py-2 rounded-md font-semibold text-sm"
+              style="border:1px solid var(--hc-border); color: var(--hc-err);">
+        {{ icons.icon('trash', 16) }}
+        Supprimer
+      </button>
     </form>
-</div>
+  </div>
 
-{% if album.medias is empty %}
-    <div style="text-align:center; padding:3rem 2rem; color:#9ca3af; border:2px dashed #e5e7eb; border-radius:0.75rem;">
-        <p style="font-size:2rem;"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-images"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></p>
-        <p style="margin-top:0.5rem; font-size:0.875rem;">Cet album ne contient aucun média.</p>
-        <a href="{{ path('app_gallery') }}"
-           style="display:inline-block; margin-top:1rem; padding:0.4rem 0.9rem; background:#3b82f6;
-                  color:#fff; border-radius:0.5rem; text-decoration:none; font-size:0.875rem;">
-            Ajouter depuis la galerie
-        </a>
-    </div>
-{% else %}
-    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:1rem;">
-        {% for media in album.medias %}
-            <div style="border-radius:0.75rem; overflow:hidden; background:#f3f4f6; aspect-ratio:1; position:relative;">
-                {% if media.thumbnailPath %}
-                    <img src="{{ asset('storage/thumbs/' ~ media.thumbnailPath|split('/')|last) }}"
-                         alt="{{ media.file.originalName }}"
-                         loading="lazy"
-                         style="width:100%; height:100%; object-fit:cover;">
-                {% else %}
-                    <div style="display:flex; align-items:center; justify-content:center; height:100%; font-size:2rem;">
-                        {{ media.mediaType == 'video' ? '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-video"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>' : '<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-images"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' }}
-                    </div>
-                {% endif %}
-                <div style="position:absolute; bottom:0; left:0; right:0; padding:0.3rem 0.5rem;
-                            background:linear-gradient(transparent, rgba(0,0,0,0.55));
-                            font-size:0.65rem; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                    {{ media.file.originalName }}
-                </div>
+  {% if album.medias is empty %}
+    <twig:EmptyState
+      title="Cet album ne contient aucun média"
+      subtitle="Ajoutez des photos ou vidéos depuis la galerie."
+      actionLabel="Ajouter depuis la galerie"
+      actionUrl="{{ path('app_gallery') }}"
+      icon="<svg width='64' height='64' fill='none' stroke='currentColor' stroke-width='1.5' viewBox='0 0 24 24' class='hc-icon hc-icon-images'><path d='M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z'/><circle cx='8.5' cy='8.5' r='1.5'/><polyline points='21 15 16 10 5 21'/></svg>"
+    />
+  {% else %}
+    <div class="hc-media-grid">
+      {% for media in album.medias %}
+        <div class="hc-media-thumb">
+          {% if media.thumbnailPath %}
+            <img src="{{ asset('storage/thumbs/' ~ media.thumbnailPath|split('/')|last) }}"
+                 alt="{{ media.file.originalName }}"
+                 loading="lazy"
+                 class="hc-media-thumb-img">
+          {% else %}
+            <div class="hc-media-thumb-fallback">
+              {% if media.mediaType == 'video' %}
+                <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-video"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+              {% else %}
+                <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-images"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              {% endif %}
             </div>
-        {% endfor %}
+          {% endif %}
+          <div class="hc-media-thumb-caption">
+            {{ media.file.originalName }}
+          </div>
+        </div>
+      {% endfor %}
     </div>
-{% endif %}
+  {% endif %}
+
+</div>
 
 {% endblock %}
