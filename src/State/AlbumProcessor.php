@@ -10,10 +10,10 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\AlbumOutput;
-use App\Entity\Album;
 use App\Interface\AlbumRepositoryInterface;
 use App\Interface\UserRepositoryInterface;
 use App\Security\OwnershipChecker;
+use App\Service\AlbumService;
 use App\Service\FilenameValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -34,6 +34,7 @@ final class AlbumProcessor implements ProcessorInterface
         private readonly AlbumProvider $provider,
         private readonly FilenameValidator $filenameValidator,
         private readonly OwnershipChecker $ownershipChecker,
+        private readonly AlbumService $albumService,
     ) {}
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): mixed
@@ -59,9 +60,11 @@ final class AlbumProcessor implements ProcessorInterface
         $owner = $this->userRepository->find($data->ownerId)
             ?? throw new NotFoundHttpException('User not found');
 
-        $album = new Album($data->name, $owner);
-        $this->em->persist($album);
-        $this->em->flush();
+        try {
+            $album = $this->albumService->create($data->name, $owner);
+        } catch (\InvalidArgumentException $e) {
+            throw new BadRequestHttpException($e->getMessage());
+        }
 
         return $this->provider->toOutput($album);
     }
@@ -73,7 +76,11 @@ final class AlbumProcessor implements ProcessorInterface
         $this->ownershipChecker->denyUnlessOwner($album);
         if ($data->name !== '') {
             $this->filenameValidator->validate($data->name);
-            $album->setName($data->name);
+            try {
+                $album->setName($data->name);
+            } catch (\InvalidArgumentException $e) {
+                throw new BadRequestHttpException($e->getMessage());
+            }
         }
         $this->em->flush();
         return $this->provider->toOutput($album);
