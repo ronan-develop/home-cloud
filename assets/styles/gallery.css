@@ -1,0 +1,130 @@
+/*
+ * assets/styles/gallery.css
+ * Styles pour la galerie médias (/gallery)
+ * Aligné sur le design system du dashboard (assets/styles/dashboard.css).
+ * Dépend des variables --hc-* définies dans layout.css.
+ */
+
+/* ── Pilules de filtre photo/vidéo ── */
+.hc-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+  background: var(--hc-surface-2);
+  color: var(--hc-text-2);
+  border: 1px solid var(--hc-border);
+  transition: background .15s ease, color .15s ease;
+}
+.hc-filter-pill:hover {
+  background: var(--hc-surface);
+  color: var(--hc-text);
+}
+.hc-filter-pill--active {
+  background: var(--hc-accent-soft);
+  color: var(--hc-accent);
+  border-color: transparent;
+}
+
+/* ── Grille de vignettes ── */
+.hc-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.hc-media-thumb {
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--hc-surface-2);
+  border: 1px solid var(--hc-border);
+  position: relative;
+  aspect-ratio: 1;
+  cursor: pointer;
+  box-shadow: var(--hc-shadow-crisp);
+}
+
+.hc-media-thumb-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.hc-media-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hc-media-thumb-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--hc-text-3);
+}
+
+.hc-media-thumb-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 6px 10px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
+  font-size: 0.7rem;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Lightbox ── */
+.hc-lightbox {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+}
+
+.hc-lightbox-img {
+  max-width: 90vw;
+  max-height: 90vh;
+  border-radius: 6px;
+  object-fit: contain;
+}
+
+.hc-lightbox-close {
+  position: absolute;
+  top: 1.5rem;
+  right: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  transition: background .15s ease;
+}
+.hc-lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ── Responsive ── */
+@media (max-width: 767px) {
+  .hc-media-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+  }
+}
