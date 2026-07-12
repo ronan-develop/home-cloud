@@ -13,7 +13,8 @@
       <p class="text-sm font-medium text-slate-500">{{ 'now'|date('d F Y', false, 'fr_FR') }}</p>
     </div>
     <button onclick="document.getElementById('upload-modal')?.showModal && document.getElementById('upload-modal').showModal()"
-            class="hc-btn-primary flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 text-white font-semibold text-sm cursor-pointer hover:bg-red-700 transition-colors">
+            class="hc-btn-primary flex items-center gap-2 px-4 py-2 rounded-md font-semibold text-sm cursor-pointer"
+            style="background: var(--hc-accent-soft); color: var(--hc-accent);">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
         <path d="M17 8l-5-5-5 5"></path>

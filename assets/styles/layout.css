@@ -150,12 +150,14 @@ details[open] > .sidebar-folder-summary .sidebar-toggle-icon::before { content: 
 	--hc-shadow-crisp: 2px 3px 8px -1px rgba(35, 35, 35, 0.20);
 
 	/* Surfaces & texte (light) */
-	--hc-bg:           #f4f5f8;
+	--hc-bg:           #FAFAFA;
 	--hc-bg-2:         #eceef3;
-	--hc-surface:      rgba(255, 255, 255, 0.72);
-	--hc-surface-2:    rgba(255, 255, 255, 0.55);
-	--hc-surface-strong: rgba(255, 255, 255, 0.92);
+	--hc-surface:      #FFFFFF;
+	--hc-surface-2:    #F7F8FA;
+	--hc-surface-strong: #FFFFFF;
+	--hc-input:        #F4F5F8;
 	--hc-border:       rgba(15, 23, 42, 0.08);
+	--hc-border-row:   rgba(15, 23, 42, 0.06);
 	--hc-border-strong: rgba(15, 23, 42, 0.14);
 	--hc-text:         #0b1220;
 	--hc-text-2:       #475569;
@@ -195,12 +197,14 @@ details[open] > .sidebar-folder-summary .sidebar-toggle-icon::before { content: 
 
 	--hc-shadow-crisp: 2px 3px 8px -1px rgba(0, 0, 0, 0.35);
 
-	--hc-bg:           #07090f;
+	--hc-bg:           #0A0C12;
 	--hc-bg-2:         #0a0d16;
-	--hc-surface:      rgba(20, 25, 38, 0.55);
-	--hc-surface-2:    rgba(20, 25, 38, 0.35);
-	--hc-surface-strong: rgba(28, 33, 48, 0.85);
-	--hc-border:       rgba(255, 255, 255, 0.08);
+	--hc-surface:      #12141C;
+	--hc-surface-2:    #161822;
+	--hc-surface-strong: #12141C;
+	--hc-input:        #181B26;
+	--hc-border:       rgba(255, 255, 255, 0.09);
+	--hc-border-row:   rgba(255, 255, 255, 0.06);
 	--hc-border-strong: rgba(255, 255, 255, 0.16);
 	--hc-text:         #e6ebf5;
 	--hc-text-2:       #9aa4b8;
@@ -223,12 +227,14 @@ details[open] > .sidebar-folder-summary .sidebar-toggle-icon::before { content: 
 
 		--hc-shadow-crisp: 2px 3px 8px -1px rgba(0, 0, 0, 0.35);
 
-		--hc-bg:           #07090f;
+		--hc-bg:           #0A0C12;
 		--hc-bg-2:         #0a0d16;
-		--hc-surface:      rgba(20, 25, 38, 0.55);
-		--hc-surface-2:    rgba(20, 25, 38, 0.35);
-		--hc-surface-strong: rgba(28, 33, 48, 0.85);
-		--hc-border:       rgba(255, 255, 255, 0.08);
+		--hc-surface:      #12141C;
+		--hc-surface-2:    #161822;
+		--hc-surface-strong: #12141C;
+		--hc-input:        #181B26;
+		--hc-border:       rgba(255, 255, 255, 0.09);
+		--hc-border-row:   rgba(255, 255, 255, 0.06);
 		--hc-border-strong: rgba(255, 255, 255, 0.16);
 		--hc-text:         #e6ebf5;
 		--hc-text-2:       #9aa4b8;
