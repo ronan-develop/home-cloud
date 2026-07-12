@@ -97,6 +97,37 @@
   text-overflow: ellipsis;
 }
 
+/* ── Retrait d'un média d'un album ── */
+.hc-media-thumb-remove-form {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+}
+
+.hc-media-thumb-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .15s ease, background .15s ease;
+}
+.hc-media-thumb:hover .hc-media-thumb-remove {
+  opacity: 1;
+}
+.hc-media-thumb-remove:hover {
+  background: var(--hc-err);
+}
+
 /* ── Sélection multiple (toujours visible, pour ajout à un album) ── */
 .hc-media-thumb-select {
   position: absolute;

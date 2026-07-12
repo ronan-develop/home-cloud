@@ -259,6 +259,54 @@ final class AlbumWebTest extends WebTestCase
         $this->assertResponseStatusCodeSame(403);
     }
 
+    // --- Retrait d'un média d'un album ---
+
+    public function testRemoveMediaFromAlbumRedirectsToAlbumDetail(): void
+    {
+        $user  = $this->createUser();
+        $album = $this->createAlbum($user, 'Vacances');
+        $media = $this->createMedia($user, 'photo.jpg');
+        $album->addMedia($media);
+        $this->em->flush();
+        $this->login();
+
+        $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/medias/' . $media->getId()->toRfc4122() . '/remove');
+
+        $this->assertResponseRedirects('/albums/' . $album->getId()->toRfc4122());
+        $this->client->followRedirect();
+        $this->assertSelectorTextContains('[data-testid="album-media-count"]', '0');
+    }
+
+    public function testRemoveMediaFromAlbumForbiddenForOtherUser(): void
+    {
+        $alice = $this->createUser('alice@example.com');
+        $bob   = $this->createUser('bob@example.com');
+        $album = $this->createAlbum($alice, 'Album Alice');
+        $media = $this->createMedia($alice, 'photo.jpg');
+        $album->addMedia($media);
+        $this->em->flush();
+
+        $this->login('bob@example.com');
+        $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/medias/' . $media->getId()->toRfc4122() . '/remove');
+
+        $this->assertResponseStatusCodeSame(403);
+    }
+
+    public function testRemoveMediaFromAlbumDoesNotDeleteTheMediaItself(): void
+    {
+        $user  = $this->createUser();
+        $album = $this->createAlbum($user, 'Vacances');
+        $media = $this->createMedia($user, 'photo.jpg');
+        $album->addMedia($media);
+        $this->em->flush();
+        $this->login();
+
+        $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/medias/' . $media->getId()->toRfc4122() . '/remove');
+
+        $this->client->request('GET', '/gallery');
+        $this->assertStringContainsString('photo.jpg', $this->client->getResponse()->getContent());
+    }
+
     // --- Suppression ---
 
     public function testDeleteAlbumRedirectsToList(): void

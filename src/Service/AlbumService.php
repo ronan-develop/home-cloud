@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\Album;
+use App\Entity\Media;
 use App\Entity\User;
 use App\Interface\AlbumRepositoryInterface;
 use App\Interface\MediaRepositoryInterface;
@@ -55,6 +56,16 @@ final class AlbumService
     public function addMedias(Album $album, array $mediaIds, User $owner): void
     {
         $this->addOwnedMediasTo($album, $mediaIds, $owner);
+        $this->repository->save($album);
+    }
+
+    /**
+     * Retire un média d'un album. Ne supprime que l'association — le Media
+     * (et son File) restent intacts et disponibles dans la galerie.
+     */
+    public function removeMedia(Album $album, Media $media): void
+    {
+        $album->removeMedia($media);
         $this->repository->save($album);
     }
 

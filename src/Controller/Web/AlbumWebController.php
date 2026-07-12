@@ -77,6 +77,22 @@ final class AlbumWebController extends AbstractController
         return $this->redirectToRoute('app_album_detail', ['id' => $album->getId()->toRfc4122()]);
     }
 
+    #[Route('/albums/{id}/medias/{mediaId}/remove', name: 'app_album_remove_media', methods: ['POST'], requirements: ['id' => '[0-9a-f\-]+', 'mediaId' => '[0-9a-f\-]+'])]
+    public function removeMedia(string $id, string $mediaId): Response
+    {
+        $album = $this->albumRepository->findById(Uuid::fromString($id))
+            ?? throw $this->createNotFoundException('Album introuvable.');
+
+        $this->denyAccessUnlessGranted(AlbumVoter::VIEW, $album);
+
+        $media = $this->mediaRepository->findById(Uuid::fromString($mediaId))
+            ?? throw $this->createNotFoundException('Média introuvable.');
+
+        $this->albumService->removeMedia($album, $media);
+
+        return $this->redirectToRoute('app_album_detail', ['id' => $album->getId()->toRfc4122()]);
+    }
+
     #[Route('/albums/{id}', name: 'app_album_detail', requirements: ['id' => '[0-9a-f\-]+'])]
     public function detail(string $id): Response
     {

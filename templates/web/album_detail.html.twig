@@ -51,6 +51,12 @@
     <div class="hc-media-grid">
       {% for media in album.medias %}
         <div class="hc-media-thumb">
+          <form method="post" action="{{ path('app_album_remove_media', {id: album.id, mediaId: media.id}) }}"
+                class="hc-media-thumb-remove-form" data-controller="confirm-submit"
+                data-confirm-submit-message-value="Retirer « {{ media.file.originalName }} » de l'album ?">
+            <button type="submit" class="hc-media-thumb-remove" data-testid="remove-media-from-album"
+                    title="Retirer de l'album" aria-label="Retirer de l'album">×</button>
+          </form>
           {% if media.thumbnailPath %}
             <img src="{{ path('app_media_thumbnail', {id: media.id}) }}"
                  alt="{{ media.file.originalName }}"
