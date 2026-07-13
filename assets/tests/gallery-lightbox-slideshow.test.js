@@ -1,5 +1,5 @@
 import { jest, describe, test, expect, beforeEach, afterEach } from '@jest/globals';
-import { Application } from '../vendor/@hotwired/stimulus/stimulus.index.js';
+import { Application } from '@hotwired/stimulus';
 import GalleryLightboxController from '../controllers/gallery_lightbox_controller.js';
 
 /**
