@@ -5,6 +5,7 @@ namespace App\Service;
 
 use App\Entity\File;
 use App\Entity\User;
+use App\Interface\CreateFileServiceInterface;
 use App\Interface\DefaultFolderServiceInterface;
 use App\Interface\StorageServiceInterface;
 use App\Repository\UserRepository;
@@ -25,7 +26,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  * - EntityManager (persistence)
  * - UserRepository (user lookup)
  */
-final class CreateFileService
+final class CreateFileService implements CreateFileServiceInterface
 {
     // Blocked MIME types (executables, scripts)
     private const BLOCKED_MIMES = [

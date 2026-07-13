@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace App\Controller\Web;
 
 use App\Entity\User;
+use App\Interface\AlbumImportServiceInterface;
 use App\Interface\AlbumRepositoryInterface;
+use App\Interface\AlbumServiceInterface;
 use App\Interface\MediaRepositoryInterface;
 use App\Security\AlbumVoter;
-use App\Service\AlbumService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -26,8 +27,9 @@ final class AlbumWebController extends AbstractController
 {
     public function __construct(
         private readonly AlbumRepositoryInterface $albumRepository,
-        private readonly AlbumService $albumService,
+        private readonly AlbumServiceInterface $albumService,
         private readonly MediaRepositoryInterface $mediaRepository,
+        private readonly AlbumImportServiceInterface $albumImportService,
     ) {}
 
     #[Route('/albums', name: 'app_albums')]
@@ -103,6 +105,23 @@ final class AlbumWebController extends AbstractController
 
         $mediaIds = $request->request->all('mediaIds');
         $this->albumService->reorder($album, $mediaIds);
+
+        return $this->redirectToRoute('app_album_detail', ['id' => $album->getId()->toRfc4122()]);
+    }
+
+    #[Route('/albums/{id}/import', name: 'app_album_import', methods: ['POST'], requirements: ['id' => '[0-9a-f\-]+'])]
+    public function import(string $id, Request $request): Response
+    {
+        $album = $this->albumRepository->findById(Uuid::fromString($id))
+            ?? throw $this->createNotFoundException('Album introuvable.');
+
+        $this->denyAccessUnlessGranted(AlbumVoter::VIEW, $album);
+
+        /** @var User $user */
+        $user  = $this->getUser();
+        $files = $request->files->all('files');
+
+        $this->albumImportService->import($album, $files, $user);
 
         return $this->redirectToRoute('app_album_detail', ['id' => $album->getId()->toRfc4122()]);
     }
