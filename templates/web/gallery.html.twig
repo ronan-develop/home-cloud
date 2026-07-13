@@ -67,7 +67,11 @@
 
     <div data-testid="media-gallery" class="hc-media-grid" data-controller="gallery-selection">
       {% for media in medias %}
-        <div data-testid="media-thumbnail" class="hc-media-thumb" data-gallery-selection-target="thumb">
+        <div data-testid="media-thumbnail" class="hc-media-thumb" data-gallery-selection-target="thumb"
+             data-controller="rename-media"
+             data-rename-media-url-value="{{ path('app_media_rename', {id: media.id}) }}"
+             data-rename-media-current-name-value="{{ media.file.originalName }}">
+          <twig:MediaThumbActions :media="media" />
           {% if targetAlbum %}
             <label class="hc-media-thumb-select">
               <input type="checkbox" name="mediaIds[]" value="{{ media.id }}" form="gallery-add-to-album-form"
@@ -95,7 +99,7 @@
               </div>
             {% endif %}
           </a>
-          <div class="hc-media-thumb-caption">
+          <div class="hc-media-thumb-caption" data-rename-media-target="caption">
             {{ media.file.originalName }}
           </div>
         </div>

@@ -7,6 +7,7 @@ use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\User;
 use App\Interface\AuthorizationCheckerInterface;
+use App\Interface\FileActionServiceInterface;
 use App\Interface\FileRepositoryInterface;
 use App\Interface\StorageServiceInterface;
 use App\Service\FilenameValidator;
@@ -25,7 +26,7 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
  * - EntityManager (persistence)
  * - FileRepositoryInterface (data access)
  */
-final class FileActionService
+final class FileActionService implements FileActionServiceInterface
 {
     public function __construct(
         private readonly FileRepositoryInterface $fileRepository,

@@ -420,4 +420,5 @@ final class MediaGalleryTest extends WebTestCase
         $this->client->request('GET', '/gallery?album=' . $album->getId()->toRfc4122());
         $this->assertResponseStatusCodeSame(403);
     }
+
 }
