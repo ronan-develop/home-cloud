@@ -47,6 +47,30 @@ security:
                 secret: '%kernel.secret%'
 
 
+# Le firewall `api` déclare `jwt: ~` : cela ACTIVE l'authentificateur JWT mais
+# n'EXIGE pas d'être authentifié. Sans access_control, toute route API non couverte
+# par un #[IsGranted] répondait 200 à un anonyme (fuite de données). On exige donc
+# explicitement ROLE_USER sur ^/api, en laissant passer les seules routes publiques
+# légitimes (connexion, refresh, réinitialisation de mot de passe, docs).
+#
+# Le front web n'est pas impacté : ses appels API portent déjà un
+# `Authorization: Bearer <jwt>` obtenu via le pont session→JWT (GET /web/token).
+#
+# ⚠️ L'environnement `test` redéfinit toute la sécurité dans
+# config/packages/test/security.yaml (access_control compris) : Symfony interdit de
+# fusionner deux `access_control`, d'où ce scope explicite dev+prod. Toute règle
+# ajoutée ici doit être répercutée là-bas.
+when@dev: &access_control
+    security:
+        access_control:
+            - { path: ^/api/v1/auth/login, roles: PUBLIC_ACCESS }
+            - { path: ^/api/v1/auth/token/refresh, roles: PUBLIC_ACCESS }
+            - { path: ^/api/reset-password, roles: PUBLIC_ACCESS }
+            - { path: ^/api/request-reset-password, roles: PUBLIC_ACCESS }
+            - { path: ^/api/docs, roles: PUBLIC_ACCESS }
+            - { path: ^/api, roles: ROLE_USER }
+
+when@prod: *access_control
 
 when@test:
     security:

@@ -25,7 +25,7 @@ final class FileTest extends AuthenticatedApiTestCase
         $filePath = '/tmp/' . $uniqueName;
         file_put_contents($filePath, 'Dummy content');
 
-        $browser = $this->createAuthenticatedClient($user)->getKernelBrowser();
+        $browser = $this->createAuthenticatedKernelBrowser($user);
         $uploadedFile = new \Symfony\Component\HttpFoundation\File\UploadedFile(
             $filePath,
             $uniqueName,
