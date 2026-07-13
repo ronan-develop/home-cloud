@@ -47,6 +47,13 @@ final class MediaGalleryAlbumBadgeTest extends WebTestCase
         $this->loginAs($email);
     }
 
+    private function setCreatedAt(Album $album, \DateTimeImmutable $createdAt): void
+    {
+        $prop = new \ReflectionProperty(Album::class, 'createdAt');
+        $prop->setAccessible(true);
+        $prop->setValue($album, $createdAt);
+    }
+
     public function testMediaWithoutAlbumShowsNoBadge(): void
     {
         $user = $this->createUser();
@@ -82,14 +89,17 @@ final class MediaGalleryAlbumBadgeTest extends WebTestCase
 
         $albumA = new Album('Vacances', $user);
         $albumA->addMedia($media);
+        $this->setCreatedAt($albumA, new \DateTimeImmutable('-3 seconds'));
         $this->em->persist($albumA);
 
         $albumB = new Album('Noël', $user);
         $albumB->addMedia($media);
+        $this->setCreatedAt($albumB, new \DateTimeImmutable('-2 seconds'));
         $this->em->persist($albumB);
 
         $albumC = new Album('Anniversaire', $user);
         $albumC->addMedia($media);
+        $this->setCreatedAt($albumC, new \DateTimeImmutable('-1 seconds'));
         $this->em->persist($albumC);
 
         $this->em->flush();
