@@ -258,6 +258,36 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
+.hc-lightbox-play {
+  position: absolute;
+  top: 1.5rem;
+  right: 5.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  transition: background .15s ease;
+}
+.hc-lightbox-play:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.hc-lightbox-play-icon--pause {
+  display: none;
+}
+.hc-lightbox-play[aria-pressed="true"] .hc-lightbox-play-icon--play {
+  display: none;
+}
+.hc-lightbox-play[aria-pressed="true"] .hc-lightbox-play-icon--pause {
+  display: block;
+}
+
 .hc-lightbox-nav {
   position: absolute;
   top: 50%;

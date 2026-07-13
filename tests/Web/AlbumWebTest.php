@@ -453,4 +453,33 @@ final class AlbumWebTest extends WebTestCase
             );
         }
     }
+
+    // --- Diaporama ---
+
+    public function testAlbumDetailThumbnailsAreLightboxLinks(): void
+    {
+        $user  = $this->createUser();
+        $album = $this->createAlbum($user, 'Vacances');
+        $media = $this->createMedia($user, 'photo.jpg');
+        $album->addMedia($media);
+        $this->em->flush();
+        $this->login();
+
+        $crawler = $this->client->request('GET', '/albums/' . $album->getId()->toRfc4122());
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorExists('[data-lightbox][data-full-src]');
+    }
+
+    public function testAlbumDetailHasSlideshowToggle(): void
+    {
+        $user  = $this->createUser();
+        $album = $this->createAlbum($user, 'Vacances');
+        $media = $this->createMedia($user, 'photo.jpg');
+        $album->addMedia($media);
+        $this->em->flush();
+        $this->login();
+
+        $this->client->request('GET', '/albums/' . $album->getId()->toRfc4122());
+        $this->assertSelectorExists('[data-testid="lightbox-slideshow-toggle"]');
+    }
 }

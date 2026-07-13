@@ -63,26 +63,33 @@
             <button type="submit" class="hc-media-thumb-remove" data-testid="remove-media-from-album"
                     title="Retirer de l'album" aria-label="Retirer de l'album">×</button>
           </form>
-          {% if media.thumbnailPath %}
-            <img src="{{ path('app_media_thumbnail', {id: media.id}) }}"
-                 alt="{{ media.file.originalName }}"
-                 loading="lazy"
-                 class="hc-media-thumb-img">
-          {% else %}
-            <div class="hc-media-thumb-fallback">
-              {% if media.mediaType == 'video' %}
-                <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-video"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-              {% else %}
-                <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-images"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-              {% endif %}
-            </div>
-          {% endif %}
+          <a href="{{ path('app_media_view', {id: media.id}) }}"
+             data-lightbox
+             data-full-src="{{ path('app_media_full', {id: media.id}) }}"
+             class="hc-media-thumb-link">
+            {% if media.thumbnailPath %}
+              <img src="{{ path('app_media_thumbnail', {id: media.id}) }}"
+                   alt="{{ media.file.originalName }}"
+                   loading="lazy"
+                   class="hc-media-thumb-img">
+            {% else %}
+              <div class="hc-media-thumb-fallback">
+                {% if media.mediaType == 'video' %}
+                  <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-video"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                {% else %}
+                  <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-images"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                {% endif %}
+              </div>
+            {% endif %}
+          </a>
           <div class="hc-media-thumb-caption">
             {{ media.file.originalName }}
           </div>
         </div>
       {% endfor %}
     </div>
+
+    <twig:GalleryLightbox />
   {% endif %}
 
 </div>
