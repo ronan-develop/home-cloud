@@ -64,6 +64,30 @@ abstract class AuthenticatedApiTestCase extends BaseApiTestCase
         return $client;
     }
 
+    /**
+     * KernelBrowser authentifié, pour les tests qui ne passent pas par le Client
+     * HttpClient d'API Platform (upload multipart, notamment).
+     *
+     * L'option `headers` de `createClient()` n'est comprise que par le Client
+     * d'API Platform : le KernelBrowser sous-jacent l'ignore. Il faut donc lui
+     * fournir les en-têtes au format serveur (`HTTP_*`), sans quoi la requête part
+     * en anonyme — ce qui, depuis que `^/api` exige ROLE_USER, produit un 401.
+     */
+    protected function createAuthenticatedKernelBrowser(string|User|null $user = null): \Symfony\Bundle\FrameworkBundle\KernelBrowser
+    {
+        $client = $this->createAuthenticatedClient($user);
+
+        $email = $user instanceof User ? $user->getEmail() : (is_string($user) ? $user : $this->testUserEmail);
+
+        $browser = $client->getKernelBrowser();
+        $browser->setServerParameters([
+            'HTTP_AUTHORIZATION' => 'Bearer FAKE_JWT_TOKEN',
+            'HTTP_X_USER_EMAIL'  => $email,
+        ]);
+
+        return $browser;
+    }
+
     protected function createUser(?string $email = null, ?string $password = null, ?string $name = null): User
     {
         $email = $email ?? $this->testUserEmail;

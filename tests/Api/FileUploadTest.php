@@ -26,7 +26,7 @@ final class FileUploadTest extends AuthenticatedApiTestCase
      */
     public function testUploadFileWithMultipart(): void
     {
-        $client = $this->createAuthenticatedClient($this->alice)->getKernelBrowser();
+        $client = $this->createAuthenticatedKernelBrowser($this->alice);
         $tempFile = tempnam(sys_get_temp_dir(), 'test_upload_');
         file_put_contents($tempFile, str_repeat('A', 10 * 1024 * 1024)); // 10 Mo
 

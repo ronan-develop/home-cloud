@@ -40,3 +40,5 @@ php.ini
 
 # import pour test
 /import/*
+# Rapport d'audit sécurité — local uniquement (décrit des failles ouvertes)
+/AUDIT-SECURITE.md

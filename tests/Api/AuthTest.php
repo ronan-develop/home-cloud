@@ -102,11 +102,9 @@ final class AuthTest extends AuthenticatedApiTestCase
 
     public function testApiReturns401WithoutToken(): void
     {
-        // L'API en environnement de test est en PUBLIC_ACCESS via TestJwtAuthenticator
-        // Les requêtes sans Authorization header sont anonymes mais autorisées
         static::createClient()->request('GET', '/api/v1/users');
 
-        $this->assertResponseStatusCodeSame(200);
+        $this->assertResponseStatusCodeSame(401);
     }
 
     public function testApiReturns200WithValidToken(): void
