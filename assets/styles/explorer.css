@@ -92,6 +92,10 @@
 .hc-item-action--edit:hover { color: var(--hc-green);  background: var(--hc-green-soft); }
 .hc-item-action--move:hover { color: var(--hc-indigo); background: var(--hc-indigo-soft); }
 .hc-item-action--danger:hover { color: var(--hc-err); background: rgba(239, 68, 68, 0.10); }
+.hc-item-action:focus-visible {
+  outline: 2px solid var(--hc-accent);
+  outline-offset: 2px;
+}
 
 /* ── Dropzone d'import ── */
 .hc-dropzone {
