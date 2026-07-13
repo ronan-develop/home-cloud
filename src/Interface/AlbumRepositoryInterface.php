@@ -18,4 +18,14 @@ interface AlbumRepositoryInterface
     public function save(Album $album): void;
 
     public function remove(Album $album): void;
+
+    /**
+     * Noms des albums contenant chacun des médias donnés, groupés par média.
+     *
+     * @param Uuid[] $mediaIds
+     * @return array<string, string[]> mediaId (RFC4122) => noms d'albums, dans
+     *                                  l'ordre de création de l'album (le plus
+     *                                  ancien en premier).
+     */
+    public function findAlbumNamesByMediaIds(array $mediaIds): array;
 }

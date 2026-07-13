@@ -149,6 +149,25 @@
   background: var(--hc-accent);
 }
 
+/* ── Badge d'appartenance à un album (sous les boutons d'action) ── */
+.hc-media-thumb-badge {
+  position: absolute;
+  top: 36px;
+  right: 6px;
+  z-index: 2;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--hc-accent);
+  backdrop-filter: blur(2px);
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  max-width: calc(100% - 12px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ── Sélection multiple (toujours visible, pour ajout à un album) ── */
 .hc-media-thumb-select {
   position: absolute;

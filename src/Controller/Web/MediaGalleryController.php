@@ -38,6 +38,9 @@ final class MediaGalleryController extends AbstractController
         $order = $request->query->all('order');
 
         $medias = $this->mediaRepository->findByOwner($user, $type ?: null, $order);
+        $albumNamesByMediaId = $this->albumRepository->findAlbumNamesByMediaIds(
+            array_map(static fn ($media) => $media->getId(), $medias)
+        );
 
         $targetAlbum = null;
         $albumParam = $request->query->get('album');
@@ -50,10 +53,11 @@ final class MediaGalleryController extends AbstractController
         }
 
         return $this->render('web/gallery.html.twig', [
-            'medias'      => $medias,
-            'type'        => $type,
-            'order'       => $order,
-            'targetAlbum' => $targetAlbum,
+            'medias'              => $medias,
+            'type'                => $type,
+            'order'               => $order,
+            'targetAlbum'         => $targetAlbum,
+            'albumNamesByMediaId' => $albumNamesByMediaId,
         ]);
     }
 
@@ -67,10 +71,11 @@ final class MediaGalleryController extends AbstractController
         }
 
         return $this->render('web/gallery.html.twig', [
-            'medias'      => [$media],
-            'type'        => null,
-            'order'       => [],
-            'targetAlbum' => null,
+            'medias'              => [$media],
+            'type'                => null,
+            'order'               => [],
+            'targetAlbum'         => null,
+            'albumNamesByMediaId' => $this->albumRepository->findAlbumNamesByMediaIds([$media->getId()]),
         ]);
     }
 
