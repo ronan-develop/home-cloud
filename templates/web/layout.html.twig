@@ -187,7 +187,10 @@
             <h2 class="text-base font-semibold text-gray-800 dark:text-gray-100">Importer</h2>
             <button onclick="closeModal('upload-modal')" class="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
         </div>
-        <p id="upload-filename" class="text-sm text-gray-500 mb-4 truncate"></p>
+        <p class="text-sm text-gray-500 mb-4 truncate flex items-center gap-1.5">
+            {{ icons.icon('file', 14) }}
+            <span id="upload-filename"></span>
+        </p>
 
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Destination</p>
         <div data-testid="upload-folder-list" class="flex flex-col gap-1 max-h-48 overflow-y-auto mb-3">
@@ -262,7 +265,7 @@
         var file = e.detail.file;
         _pendingFile = file;
         _uploadFolderId = '';
-        document.getElementById('upload-filename').textContent = '📎 ' + file.name;
+        document.getElementById('upload-filename').textContent = file.name;
         document.getElementById('new-folder-name').value = '';
         document.querySelectorAll('.folder-opt').forEach(function (el) {
             el.classList.remove('active-folder', 'bg-blue-50', 'text-blue-700');
@@ -345,7 +348,7 @@
     // ── Import dossier (stub — feature future) ──────────────────────────
     window.onFolderSelected = function (input) {
         input.value = '';
-        alert('Import de dossier — bientôt disponible 🚧');
+        alert('Import de dossier — bientôt disponible.');
     };
 })();
 </script>

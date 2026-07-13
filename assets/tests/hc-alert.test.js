@@ -23,7 +23,8 @@ describe('HCAlert', () => {
     const msg = el.shadowRoot.querySelector('.alert-message');
     expect(msg.textContent).toContain('Fichier uploadé');
     const icon = el.shadowRoot.querySelector('.alert-icon');
-    expect(icon.textContent).toBe('✅');
+    expect(icon.getAttribute('data-type')).toBe('success');
+    expect(icon.querySelector('svg')).toBeTruthy();
     instance.close();
   });
 

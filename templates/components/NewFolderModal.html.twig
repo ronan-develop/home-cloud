@@ -4,36 +4,39 @@
      style="display:none; position:fixed; inset:0; z-index:9998; background:rgba(0,0,0,0.45);
             align-items:center; justify-content:center;">
 
-    <div style="background:#ffffff; color:#111827; border-radius:1rem;
-                box-shadow:0 8px 40px rgba(0,0,0,0.18); width:100%; max-width:440px;
-                margin:1rem; padding:1.5rem;">
+    <div style="background:var(--hc-surface); color:var(--hc-text); border-radius:1rem;
+                box-shadow:var(--hc-shadow-lg); width:100%; max-width:440px;
+                margin:1rem; padding:1.5rem; border:1px solid var(--hc-border);">
 
         {# Header #}
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem;">
             <h2 style="font-size:1rem; font-weight:600; margin:0;">Nouveau dossier</h2>
             <button id="new-folder-modal-close"
                     type="button"
-                    style="background:none; border:none; font-size:1.4rem; color:#9ca3af; cursor:pointer; line-height:1;">×</button>
+                    style="background:none; border:none; color:var(--hc-text-3); cursor:pointer;
+                           display:inline-flex; align-items:center; justify-content:center; padding:0;">
+                {{ icons.icon('x', 18) }}
+            </button>
         </div>
 
         {# Nom #}
         <div style="margin-bottom:1.1rem;">
-            <label style="display:block; font-size:0.8rem; font-weight:500; color:#6b7280; margin-bottom:0.4rem; text-transform:uppercase; letter-spacing:0.05em;">
+            <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--hc-text-2); margin-bottom:0.4rem; text-transform:uppercase; letter-spacing:0.05em;">
                 Nom du dossier
             </label>
             <input type="text"
                    id="new-folder-name-input"
                    data-testid="new-folder-name"
                    placeholder="Mon dossier…"
-                   style="width:100%; box-sizing:border-box; padding:0.55rem 0.85rem; border:1px solid #e5e7eb;
-                          border-radius:0.6rem; font-size:0.875rem; color:#111827; background:#fff;
+                   style="width:100%; box-sizing:border-box; padding:0.55rem 0.85rem; border:1px solid var(--hc-border);
+                          border-radius:0.6rem; font-size:0.875rem; color:var(--hc-text); background:var(--hc-surface);
                           outline:none; transition:border-color 0.15s;"
-                   onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e5e7eb'">
+                   onfocus="this.style.borderColor='var(--hc-accent)'" onblur="this.style.borderColor='var(--hc-border)'">
         </div>
 
         {# Type de contenu #}
         <div style="margin-bottom:1.1rem;">
-            <label style="display:block; font-size:0.8rem; font-weight:500; color:#6b7280; margin-bottom:0.6rem; text-transform:uppercase; letter-spacing:0.05em;">
+            <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--hc-text-2); margin-bottom:0.6rem; text-transform:uppercase; letter-spacing:0.05em;">
                 Type de contenu
             </label>
             <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:0.5rem;">
@@ -48,11 +51,11 @@
                 {% for mt in media_types %}
                     <label data-testid="media-type-{{ mt.value }}"
                            style="display:flex; flex-direction:column; align-items:center; gap:0.25rem;
-                                  padding:0.5rem 0.25rem; border:1.5px solid #e5e7eb; border-radius:0.6rem;
-                                  cursor:pointer; font-size:0.75rem; color:#374151; transition:all 0.15s;
-                                  {% if mt.value == 'general' %}background:#eff6ff; border-color:#3b82f6;{% endif %}"
-                           onmouseover="if(!this.querySelector('input').checked){this.style.background='#f3f4f6'}"
-                           onmouseout="if(!this.querySelector('input').checked){this.style.background=''; this.style.borderColor='#e5e7eb';}">
+                                  padding:0.5rem 0.25rem; border:1.5px solid var(--hc-border); border-radius:0.6rem;
+                                  cursor:pointer; font-size:0.75rem; color:var(--hc-text-2); transition:all 0.15s;
+                                  {% if mt.value == 'general' %}background:var(--hc-accent-soft); border-color:var(--hc-accent);{% endif %}"
+                           onmouseover="if(!this.querySelector('input').checked){this.style.background='var(--hc-surface-2)'}"
+                           onmouseout="if(!this.querySelector('input').checked){this.style.background=''; this.style.borderColor='var(--hc-border)';}">
                         <input type="radio"
                                name="folder-media-type"
                                value="{{ mt.value }}"
@@ -68,14 +71,14 @@
 
         {# Emplacement #}
         <div style="margin-bottom:1.25rem;">
-            <label style="display:block; font-size:0.8rem; font-weight:500; color:#6b7280; margin-bottom:0.4rem; text-transform:uppercase; letter-spacing:0.05em;">
+            <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--hc-text-2); margin-bottom:0.4rem; text-transform:uppercase; letter-spacing:0.05em;">
                 Emplacement
             </label>
             <select id="new-folder-parent-select"
                     data-testid="parent-folder-select"
                     data-root-label="root"
-                    style="width:100%; padding:0.55rem 0.85rem; border:1px solid #e5e7eb;
-                           border-radius:0.6rem; font-size:0.875rem; color:#111827; background:#fff;
+                    style="width:100%; padding:0.55rem 0.85rem; border:1px solid var(--hc-border);
+                           border-radius:0.6rem; font-size:0.875rem; color:var(--hc-text); background:var(--hc-surface);
                            outline:none; cursor:pointer;">
                 <option value="">Racine (mes fichiers)</option>
                 {% for folder in folders %}
@@ -89,18 +92,19 @@
             <button id="new-folder-modal-cancel"
                     type="button"
                     style="padding:0.5rem 1rem; border:none; background:none; font-size:0.875rem;
-                           color:#6b7280; cursor:pointer; border-radius:0.6rem; transition:background 0.15s;"
-                    onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='none'">
+                           color:var(--hc-text-2); cursor:pointer; border-radius:0.6rem; transition:background 0.15s;"
+                    onmouseover="this.style.background='var(--hc-surface-2)'" onmouseout="this.style.background='none'">
                 Annuler
             </button>
             <button id="new-folder-submit-btn"
                     data-testid="new-folder-submit"
                     type="button"
-                    style="padding:0.5rem 1.25rem; background:#3b82f6; color:#fff; border:none;
+                    style="padding:0.5rem 1.25rem; background:var(--hc-accent); color:#fff; border:none;
                            border-radius:0.6rem; font-size:0.875rem; font-weight:600; cursor:pointer;
-                           transition:background 0.15s;"
-                    onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">
-                Créer ✓
+                           transition:background 0.15s; display:inline-flex; align-items:center; gap:0.4rem;"
+                    onmouseover="this.style.background='var(--hc-accent-2)'" onmouseout="this.style.background='var(--hc-accent)'">
+                {{ icons.icon('check', 16) }}
+                <span id="new-folder-submit-label">Créer</span>
             </button>
         </div>
     </div>
@@ -112,6 +116,7 @@
     var nameInput  = document.getElementById('new-folder-name-input');
     var parentSel  = document.getElementById('new-folder-parent-select');
     var submitBtn  = document.getElementById('new-folder-submit-btn');
+    var submitLabel = document.getElementById('new-folder-submit-label');
     var closeBtn   = document.getElementById('new-folder-modal-close');
     var cancelBtn  = document.getElementById('new-folder-modal-cancel');
 
@@ -133,11 +138,11 @@
         document.querySelectorAll('[data-testid^="media-type-"]').forEach(function (lbl) {
             var radio = lbl.querySelector('input[type="radio"]');
             if (radio && radio.checked) {
-                lbl.style.background = '#eff6ff';
-                lbl.style.borderColor = '#3b82f6';
+                lbl.style.background = 'var(--hc-accent-soft)';
+                lbl.style.borderColor = 'var(--hc-accent)';
             } else {
                 lbl.style.background = '';
-                lbl.style.borderColor = '#e5e7eb';
+                lbl.style.borderColor = 'var(--hc-border)';
             }
         });
     };
@@ -164,7 +169,7 @@
         var parentId = parentSel ? (parentSel.value || null) : null;
 
         submitBtn.disabled = true;
-        submitBtn.textContent = '…';
+        submitLabel.textContent = '…';
 
         var token = await window.HC.getToken();
         var res = await fetch('{{ path('_api_/v1/folders_post') }}', {
@@ -186,7 +191,7 @@
             window.location.reload();
         } else {
             submitBtn.disabled = false;
-            submitBtn.textContent = 'Créer ✓';
+            submitLabel.textContent = 'Créer';
             alert('Erreur lors de la création du dossier.');
         }
     });

@@ -57,7 +57,7 @@ class HCModal extends HTMLElement {
                 .hc-modal-card::before { content: ''; position: absolute; inset: 0; background: rgba(255,255,255,0.06); backdrop-filter: blur(18px) saturate(180%); pointer-events: none; border-radius: 1.6rem; }
                 .hc-modal-header { position: relative; z-index: 10; padding: 1rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:space-between; }
                 .hc-modal-title { margin:0; font-size:1.1rem; font-weight:600; color:inherit; }
-                .hc-modal-close-btn { background:none; border:none; cursor:pointer; font-size:1.25rem; padding:0.25rem; }
+                .hc-modal-close-btn { background:none; border:none; cursor:pointer; padding:0.25rem; display:inline-flex; align-items:center; justify-content:center; color:inherit; }
                 .hc-modal-content { position: relative; z-index:10; padding: 1rem 1.25rem; }
                 .hc-modal-footer { position:relative; z-index:10; padding:0.75rem 1.25rem; border-top: 1px solid rgba(255,255,255,0.06); display:flex; gap:0.5rem; justify-content:flex-end; }
                 @media (max-width:640px) { .hc-modal-card { max-width:95%; margin:0.5rem; } .hc-modal-content{padding:0.8rem} }
@@ -67,7 +67,7 @@ class HCModal extends HTMLElement {
                     ${title ? `
                         <div class="hc-modal-header" part="header">
                             <h2 id="${titleId}" class="hc-modal-title">${this._escapeHtml(title)}</h2>
-                            ${closeable ? '<button class="hc-modal-close-btn" aria-label="Fermer">✕</button>' : ''}
+                            ${closeable ? '<button class="hc-modal-close-btn" aria-label="Fermer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' : ''}
                         </div>
                     ` : ''}
 
