@@ -73,7 +73,8 @@
                 class="hc-media-thumb-remove-form" data-controller="confirm-submit"
                 data-confirm-submit-message-value="Retirer « {{ media.file.originalName }} » de l'album ?">
             <button type="submit" class="hc-media-thumb-remove" data-testid="remove-media-from-album"
-                    title="Retirer de l'album" aria-label="Retirer de l'album">×</button>
+                    title="Retirer de l'album" aria-label="Retirer de l'album"
+                    draggable="true" data-action="dragstart->album-reorder#preventDrag">×</button>
           </form>
           <a href="{{ path('app_media_view', {id: media.id}) }}"
              data-lightbox
