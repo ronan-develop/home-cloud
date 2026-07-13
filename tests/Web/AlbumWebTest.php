@@ -307,6 +307,66 @@ final class AlbumWebTest extends WebTestCase
         $this->assertStringContainsString('photo.jpg', $this->client->getResponse()->getContent());
     }
 
+    // --- Réordonnancement des médias d'un album ---
+
+    public function testReorderAlbumMediaRedirectsToAlbumDetail(): void
+    {
+        $user  = $this->createUser();
+        $album = $this->createAlbum($user, 'Vacances');
+        $m1 = $this->createMedia($user, 'a.jpg');
+        $m2 = $this->createMedia($user, 'b.jpg');
+        $album->addMedia($m1);
+        $album->addMedia($m2);
+        $this->em->flush();
+        $this->login();
+
+        $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/reorder', [
+            'mediaIds' => [$m2->getId()->toRfc4122(), $m1->getId()->toRfc4122()],
+        ]);
+
+        $this->assertResponseRedirects('/albums/' . $album->getId()->toRfc4122());
+    }
+
+    public function testReorderAlbumMediaPersistsNewOrder(): void
+    {
+        $user  = $this->createUser();
+        $album = $this->createAlbum($user, 'Vacances');
+        $m1 = $this->createMedia($user, 'a.jpg');
+        $m2 = $this->createMedia($user, 'b.jpg');
+        $album->addMedia($m1);
+        $album->addMedia($m2);
+        $this->em->flush();
+        $albumId = $album->getId()->toRfc4122();
+        $this->login();
+
+        $this->client->request('POST', '/albums/' . $albumId . '/reorder', [
+            'mediaIds' => [$m2->getId()->toRfc4122(), $m1->getId()->toRfc4122()],
+        ]);
+
+        $this->em->clear();
+        $reloaded = $this->em->getRepository(Album::class)->find($album->getId());
+        $medias = $reloaded->getMedias()->toArray();
+        $this->assertSame($m2->getId()->toRfc4122(), $medias[0]->getId()->toRfc4122());
+        $this->assertSame($m1->getId()->toRfc4122(), $medias[1]->getId()->toRfc4122());
+    }
+
+    public function testReorderAlbumMediaForbiddenForOtherUser(): void
+    {
+        $alice = $this->createUser('alice@example.com');
+        $bob   = $this->createUser('bob@example.com');
+        $album = $this->createAlbum($alice, 'Album Alice');
+        $media = $this->createMedia($alice, 'photo.jpg');
+        $album->addMedia($media);
+        $this->em->flush();
+
+        $this->login('bob@example.com');
+        $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/reorder', [
+            'mediaIds' => [$media->getId()->toRfc4122()],
+        ]);
+
+        $this->assertResponseStatusCodeSame(403);
+    }
+
     // --- Suppression ---
 
     public function testDeleteAlbumRedirectsToList(): void

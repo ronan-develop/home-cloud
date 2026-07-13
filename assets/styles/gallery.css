@@ -63,6 +63,14 @@
   box-shadow: var(--hc-shadow-crisp);
 }
 
+.hc-media-thumb[draggable="true"] {
+  cursor: grab;
+}
+
+.hc-media-thumb--dragging {
+  opacity: 0.4;
+}
+
 .hc-media-thumb-link {
   display: block;
   width: 100%;

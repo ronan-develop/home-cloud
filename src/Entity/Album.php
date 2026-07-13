@@ -7,19 +7,23 @@ namespace App\Entity;
 use App\Repository\AlbumRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\Criteria;
+use Doctrine\Common\Collections\Order;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Uuid;
 
 /**
  * Entité représentant un album de médias.
  *
- * Rôle : regrouper des médias sous un nom sans imposer de structure de dossier.
+ * Rôle : regrouper des médias sous un nom sans imposer de structure de dossier,
+ * dans un ordre choisi par l'utilisateur (réordonnancement manuel).
  *
  * Choix :
- * - ManyToMany avec Media (table pivot album_media) : un média peut appartenir
- *   à plusieurs albums, un album contient plusieurs médias.
+ * - AlbumMedia (jointure explicite avec position) plutôt qu'une ManyToMany
+ *   brute : porter l'ordre d'affichage nécessite une colonne métier sur la
+ *   table pivot, donc une entité à part entière.
  * - Pas de suppression en cascade des médias : supprimer un album ne supprime
- *   pas les fichiers/médias, seulement les associations.
+ *   pas les fichiers/médias, seulement les associations (AlbumMedia).
  * - owner ManyToOne User : un album appartient à un seul utilisateur.
  */
 #[ORM\Entity(repositoryClass: AlbumRepository::class)]
@@ -37,10 +41,9 @@ class Album
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private User $owner;
 
-    /** @var Collection<int, Media> */
-    #[ORM\ManyToMany(targetEntity: Media::class)]
-    #[ORM\JoinTable(name: 'album_media')]
-    private Collection $medias;
+    /** @var Collection<int, AlbumMedia> */
+    #[ORM\OneToMany(targetEntity: AlbumMedia::class, mappedBy: 'album', cascade: ['persist'], orphanRemoval: true)]
+    private Collection $albumMedias;
 
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
@@ -55,7 +58,7 @@ class Album
         $this->id = Uuid::v7();
         $this->name = $trimmed;
         $this->owner = $owner;
-        $this->medias = new ArrayCollection();
+        $this->albumMedias = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
     }
 
@@ -83,21 +86,78 @@ class Album
         return $this->owner;
     }
 
+    /**
+     * @return Collection<int, Media> Médias triés par position croissante.
+     */
     public function getMedias(): Collection
     {
-        return $this->medias;
+        $criteria = Criteria::create()->orderBy(['position' => Order::Ascending]);
+        $sorted   = $this->albumMedias->matching($criteria)->map(
+            fn (AlbumMedia $am) => $am->getMedia()
+        );
+
+        return new ArrayCollection(array_values($sorted->toArray()));
     }
 
     public function addMedia(Media $media): void
     {
-        if (!$this->medias->contains($media)) {
-            $this->medias->add($media);
+        if ($this->findAlbumMedia($media) !== null) {
+            return;
         }
+
+        $nextPosition = $this->albumMedias->count();
+        $this->albumMedias->add(new AlbumMedia($this, $media, $nextPosition));
     }
 
     public function removeMedia(Media $media): void
     {
-        $this->medias->removeElement($media);
+        $albumMedia = $this->findAlbumMedia($media);
+        if ($albumMedia !== null) {
+            $this->albumMedias->removeElement($albumMedia);
+        }
+    }
+
+    /**
+     * Réordonne les médias selon la liste d'IDs fournie (nouvel ordre complet).
+     * Les IDs inconnus ou ne correspondant à aucun média de l'album sont
+     * ignorés silencieusement ; les médias non mentionnés conservent leur
+     * position relative à la fin.
+     *
+     * @param Uuid[] $mediaIds
+     */
+    public function reorder(array $mediaIds): void
+    {
+        $byMediaId = [];
+        foreach ($this->albumMedias as $albumMedia) {
+            $byMediaId[$albumMedia->getMedia()->getId()->toRfc4122()] = $albumMedia;
+        }
+
+        $position = 0;
+        foreach ($mediaIds as $mediaId) {
+            $albumMedia = $byMediaId[$mediaId->toRfc4122()] ?? null;
+            if ($albumMedia === null) {
+                continue;
+            }
+            $albumMedia->setPosition($position);
+            unset($byMediaId[$mediaId->toRfc4122()]);
+            $position++;
+        }
+
+        foreach ($byMediaId as $remaining) {
+            $remaining->setPosition($position);
+            $position++;
+        }
+    }
+
+    private function findAlbumMedia(Media $media): ?AlbumMedia
+    {
+        foreach ($this->albumMedias as $albumMedia) {
+            if ($albumMedia->getMedia() === $media) {
+                return $albumMedia;
+            }
+        }
+
+        return null;
     }
 
     public function getCreatedAt(): \DateTimeImmutable

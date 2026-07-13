@@ -70,6 +70,27 @@ final class AlbumService
     }
 
     /**
+     * Applique un nouvel ordre d'affichage aux médias de l'album.
+     * Les identifiants invalides ou hors de l'album sont ignorés silencieusement.
+     *
+     * @param string[] $mediaIds Nouvel ordre complet, du premier au dernier.
+     */
+    public function reorder(Album $album, array $mediaIds): void
+    {
+        $uuids = [];
+        foreach ($mediaIds as $mediaId) {
+            try {
+                $uuids[] = Uuid::fromString($mediaId);
+            } catch (\InvalidArgumentException) {
+                continue;
+            }
+        }
+
+        $album->reorder($uuids);
+        $this->repository->save($album);
+    }
+
+    /**
      * Supprime un album (et ses associations album_media — pas les médias eux-mêmes).
      */
     public function delete(Album $album): void
