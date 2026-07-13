@@ -1,0 +1,110 @@
+/* === Variables de thème — design system HomeCloud === */
+:root {
+	/* Accent */
+	--hc-accent:       #A34B4B;
+	--hc-accent-2:     #8A3D3D;
+	--hc-accent-soft:  rgba(163, 75, 75, 0.12);
+
+	/* Nouveaux accents secondaires */
+	--hc-indigo:       #6B5FA8;
+	--hc-indigo-soft:  rgba(107, 95, 168, 0.10);
+	--hc-green:        #3F8F6B;
+	--hc-green-soft:   rgba(63, 143, 107, 0.10);
+
+	/* Ombre "crisp" décalée bas-droite */
+	--hc-shadow-crisp: 2px 3px 8px -1px rgba(35, 35, 35, 0.20);
+
+	/* Surfaces & texte (light) */
+	--hc-bg:           #FAFAFA;
+	--hc-bg-2:         #eceef3;
+	--hc-surface:      #FFFFFF;
+	--hc-surface-2:    #F7F8FA;
+	--hc-surface-strong: #FFFFFF;
+	--hc-input:        #F4F5F8;
+	--hc-border:       rgba(15, 23, 42, 0.08);
+	--hc-border-row:   rgba(15, 23, 42, 0.06);
+	--hc-border-strong: rgba(15, 23, 42, 0.14);
+	--hc-text:         #0b1220;
+	--hc-text-2:       #475569;
+	--hc-text-3:       #94a3b8;
+	--hc-shadow:       0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px -8px rgba(15, 23, 42, 0.12);
+	--hc-shadow-lg:    0 1px 2px rgba(15, 23, 42, 0.06), 0 24px 64px -16px rgba(15, 23, 42, 0.18);
+
+	/* Statuts */
+	--hc-ok:   #10b981;
+	--hc-warn: #f59e0b;
+	--hc-err:  #ef4444;
+
+	/* Aliases backward-compat --clr-* */
+	--clr-bg:            var(--hc-bg);
+	--clr-text:          var(--hc-text);
+	--clr-text-muted:    var(--hc-text-2);
+	--clr-surface:       var(--hc-surface);
+	--clr-surface-hover: var(--hc-surface-2);
+	--clr-border:        var(--hc-border);
+	--clr-focus-ring:    var(--hc-accent);
+	--clr-error-bg:      rgba(239, 68, 68, 0.10);
+	--clr-error-border:  rgba(239, 68, 68, 0.25);
+	--clr-error-text:    #b91c1c;
+	--clr-shadow:        var(--hc-shadow);
+}
+
+/* Dark mode explicite (toggle JS via data-theme) */
+[data-theme="dark"] {
+	--hc-accent:       #E3A3A3;
+	--hc-accent-2:     #C98888;
+	--hc-accent-soft:  rgba(227, 163, 163, 0.16);
+
+	--hc-indigo:       #B3A9E8;
+	--hc-indigo-soft:  rgba(179, 169, 232, 0.18);
+	--hc-green:        #8FD1B0;
+	--hc-green-soft:   rgba(143, 209, 176, 0.18);
+
+	--hc-shadow-crisp: 2px 3px 8px -1px rgba(0, 0, 0, 0.35);
+
+	--hc-bg:           #0A0C12;
+	--hc-bg-2:         #0a0d16;
+	--hc-surface:      #12141C;
+	--hc-surface-2:    #161822;
+	--hc-surface-strong: #12141C;
+	--hc-input:        #181B26;
+	--hc-border:       rgba(255, 255, 255, 0.09);
+	--hc-border-row:   rgba(255, 255, 255, 0.06);
+	--hc-border-strong: rgba(255, 255, 255, 0.16);
+	--hc-text:         #e6ebf5;
+	--hc-text-2:       #9aa4b8;
+	--hc-text-3:       #5b6478;
+	--hc-shadow:       0 1px 2px rgba(0,0,0,0.4), 0 8px 24px -8px rgba(0,0,0,0.6);
+	--hc-shadow-lg:    0 1px 2px rgba(0,0,0,0.5), 0 24px 64px -16px rgba(0,0,0,0.8);
+}
+
+/* Dark mode automatique via OS (fallback si pas de toggle JS) */
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--hc-accent:       #E3A3A3;
+		--hc-accent-2:     #C98888;
+		--hc-accent-soft:  rgba(227, 163, 163, 0.16);
+
+		--hc-indigo:       #B3A9E8;
+		--hc-indigo-soft:  rgba(179, 169, 232, 0.18);
+		--hc-green:        #8FD1B0;
+		--hc-green-soft:   rgba(143, 209, 176, 0.18);
+
+		--hc-shadow-crisp: 2px 3px 8px -1px rgba(0, 0, 0, 0.35);
+
+		--hc-bg:           #0A0C12;
+		--hc-bg-2:         #0a0d16;
+		--hc-surface:      #12141C;
+		--hc-surface-2:    #161822;
+		--hc-surface-strong: #12141C;
+		--hc-input:        #181B26;
+		--hc-border:       rgba(255, 255, 255, 0.09);
+		--hc-border-row:   rgba(255, 255, 255, 0.06);
+		--hc-border-strong: rgba(255, 255, 255, 0.16);
+		--hc-text:         #e6ebf5;
+		--hc-text-2:       #9aa4b8;
+		--hc-text-3:       #5b6478;
+		--hc-shadow:       0 1px 2px rgba(0,0,0,0.4), 0 8px 24px -8px rgba(0,0,0,0.6);
+		--hc-shadow-lg:    0 1px 2px rgba(0,0,0,0.5), 0 24px 64px -16px rgba(0,0,0,0.8);
+	}
+}
