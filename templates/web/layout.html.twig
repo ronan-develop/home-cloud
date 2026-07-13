@@ -149,7 +149,7 @@
 </div>
 
 {# ── Tab bar mobile ── #}
-<div class="tab-bar md:hidden">
+<div class="tab-bar">
     {% set current_route = app.request.attributes.get('_route') %}
     <a href="{{ path('app_explorer') }}" class="tab-bar-item {{ current_route == 'app_explorer' ? 'active' : '' }}">
         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
