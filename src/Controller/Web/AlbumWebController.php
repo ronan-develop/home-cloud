@@ -6,6 +6,7 @@ namespace App\Controller\Web;
 
 use App\Entity\User;
 use App\Interface\AlbumRepositoryInterface;
+use App\Interface\MediaRepositoryInterface;
 use App\Security\AlbumVoter;
 use App\Service\AlbumService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -26,6 +27,7 @@ final class AlbumWebController extends AbstractController
     public function __construct(
         private readonly AlbumRepositoryInterface $albumRepository,
         private readonly AlbumService $albumService,
+        private readonly MediaRepositoryInterface $mediaRepository,
     ) {}
 
     #[Route('/albums', name: 'app_albums')]
@@ -36,22 +38,57 @@ final class AlbumWebController extends AbstractController
 
         return $this->render('web/albums.html.twig', [
             'albums' => $this->albumRepository->findByOwner($user),
+            'medias' => $this->mediaRepository->findByOwner($user),
         ]);
     }
 
     #[Route('/albums/create', name: 'app_album_create', methods: ['POST'])]
     public function create(Request $request): Response
     {
-        $name = (string) $request->request->get('name', '');
+        $name     = (string) $request->request->get('name', '');
+        $mediaIds = $request->request->all('mediaIds');
 
         /** @var User $user */
         $user  = $this->getUser();
 
         try {
-            $album = $this->albumService->create($name, $user);
+            $album = $this->albumService->create($name, $user, $mediaIds);
         } catch (\InvalidArgumentException $e) {
             throw new BadRequestHttpException($e->getMessage());
         }
+
+        return $this->redirectToRoute('app_album_detail', ['id' => $album->getId()->toRfc4122()]);
+    }
+
+    #[Route('/albums/{id}/add-media', name: 'app_album_add_media', methods: ['POST'], requirements: ['id' => '[0-9a-f\-]+'])]
+    public function addMedia(string $id, Request $request): Response
+    {
+        $album = $this->albumRepository->findById(Uuid::fromString($id))
+            ?? throw $this->createNotFoundException('Album introuvable.');
+
+        $this->denyAccessUnlessGranted(AlbumVoter::VIEW, $album);
+
+        /** @var User $user */
+        $user     = $this->getUser();
+        $mediaIds = $request->request->all('mediaIds');
+
+        $this->albumService->addMedias($album, $mediaIds, $user);
+
+        return $this->redirectToRoute('app_album_detail', ['id' => $album->getId()->toRfc4122()]);
+    }
+
+    #[Route('/albums/{id}/medias/{mediaId}/remove', name: 'app_album_remove_media', methods: ['POST'], requirements: ['id' => '[0-9a-f\-]+', 'mediaId' => '[0-9a-f\-]+'])]
+    public function removeMedia(string $id, string $mediaId): Response
+    {
+        $album = $this->albumRepository->findById(Uuid::fromString($id))
+            ?? throw $this->createNotFoundException('Album introuvable.');
+
+        $this->denyAccessUnlessGranted(AlbumVoter::VIEW, $album);
+
+        $media = $this->mediaRepository->findById(Uuid::fromString($mediaId))
+            ?? throw $this->createNotFoundException('Média introuvable.');
+
+        $this->albumService->removeMedia($album, $media);
 
         return $this->redirectToRoute('app_album_detail', ['id' => $album->getId()->toRfc4122()]);
     }
