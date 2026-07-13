@@ -6,6 +6,7 @@ namespace App\Tests\Service;
 
 use App\Entity\File;
 use App\Entity\Media;
+use App\Interface\StorageServiceInterface;
 use App\Repository\MediaRepository;
 use App\Service\ExifService;
 use App\Service\MediaProcessor;
@@ -33,8 +34,11 @@ final class MediaProcessorTest extends TestCase
         $em->expects($this->once())->method('persist');
         $em->expects($this->once())->method('flush');
 
+        $storageService = $this->createMock(StorageServiceInterface::class);
+        $storageService->expects($this->once())->method('getAbsolutePath')->with('2026/02/test.jpg')->willReturn('/var/storage/2026/02/test.jpg');
+
         $exifService = $this->createMock(ExifService::class);
-        $exifService->method('extract')->willReturn([
+        $exifService->expects($this->once())->method('extract')->with('/var/storage/2026/02/test.jpg')->willReturn([
             'width' => 1920,
             'height' => 1080,
             'takenAt' => new \DateTimeImmutable('2024-06-15 12:00:00'),
@@ -44,9 +48,9 @@ final class MediaProcessorTest extends TestCase
         ]);
 
         $thumbnailService = $this->createMock(ThumbnailService::class);
-        $thumbnailService->method('generate')->willReturn('thumbs/test.jpg');
+        $thumbnailService->expects($this->once())->method('generate')->with('/var/storage/2026/02/test.jpg')->willReturn('thumbs/test.jpg');
 
-        $processor = new MediaProcessor($mediaRepo, $em, $exifService, $thumbnailService);
+        $processor = new MediaProcessor($mediaRepo, $em, $exifService, $thumbnailService, $storageService);
         $media = $processor->process($file);
 
         $this->assertInstanceOf(Media::class, $media);
@@ -64,8 +68,9 @@ final class MediaProcessorTest extends TestCase
 
         $exifService = $this->createMock(ExifService::class);
         $thumbnailService = $this->createMock(ThumbnailService::class);
+        $storageService = $this->createMock(StorageServiceInterface::class);
 
-        $processor = new MediaProcessor($mediaRepo, $em, $exifService, $thumbnailService);
+        $processor = new MediaProcessor($mediaRepo, $em, $exifService, $thumbnailService, $storageService);
         $media = $processor->process($file);
 
         $this->assertNull($media);
@@ -86,8 +91,9 @@ final class MediaProcessorTest extends TestCase
 
         $exifService = $this->createMock(ExifService::class);
         $thumbnailService = $this->createMock(ThumbnailService::class);
+        $storageService = $this->createMock(StorageServiceInterface::class);
 
-        $processor = new MediaProcessor($mediaRepo, $em, $exifService, $thumbnailService);
+        $processor = new MediaProcessor($mediaRepo, $em, $exifService, $thumbnailService, $storageService);
         $media = $processor->process($file);
 
         $this->assertSame($existingMedia, $media);
@@ -110,8 +116,9 @@ final class MediaProcessorTest extends TestCase
         $exifService->expects($this->never())->method('extract');
         $thumbnailService = $this->createMock(ThumbnailService::class);
         $thumbnailService->expects($this->never())->method('generate');
+        $storageService = $this->createMock(StorageServiceInterface::class);
 
-        $processor = new MediaProcessor($mediaRepo, $em, $exifService, $thumbnailService);
+        $processor = new MediaProcessor($mediaRepo, $em, $exifService, $thumbnailService, $storageService);
         $media = $processor->process($file);
 
         $this->assertInstanceOf(Media::class, $media);

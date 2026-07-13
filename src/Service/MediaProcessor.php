@@ -7,6 +7,7 @@ namespace App\Service;
 use App\Entity\File;
 use App\Entity\Media;
 use App\Interface\MediaProcessorInterface;
+use App\Interface\StorageServiceInterface;
 use App\Repository\MediaRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -35,6 +36,7 @@ final class MediaProcessor implements MediaProcessorInterface
         private readonly EntityManagerInterface $em,
         private readonly ExifService $exifService,
         private readonly ThumbnailService $thumbnailService,
+        private readonly StorageServiceInterface $storageService,
     ) {}
 
     public function process(File $file): ?Media
@@ -52,7 +54,9 @@ final class MediaProcessor implements MediaProcessorInterface
         $media = new Media($file, $mediaType);
 
         if ($mediaType === 'photo') {
-            $exif = $this->exifService->extract($file->getPath());
+            $absolutePath = $this->storageService->getAbsolutePath($file->getPath());
+
+            $exif = $this->exifService->extract($absolutePath);
             $media->setWidth($exif['width']);
             $media->setHeight($exif['height']);
             $media->setTakenAt($exif['takenAt']);
@@ -60,7 +64,7 @@ final class MediaProcessor implements MediaProcessorInterface
             $media->setGpsLat($exif['gpsLat']);
             $media->setGpsLon($exif['gpsLon']);
 
-            $thumb = $this->thumbnailService->generate($file->getPath());
+            $thumb = $this->thumbnailService->generate($absolutePath);
             $media->setThumbnailPath($thumb);
         }
 
