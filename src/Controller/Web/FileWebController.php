@@ -137,13 +137,20 @@ final class FileWebController extends AbstractController
             throw $this->createAccessDeniedException('Vous ne pouvez pas supprimer ce fichier.');
         }
 
-        $this->storage->delete($file->getPath());
+        $folderId = $request->request->get('folder_id');
+
+        try {
+            $this->storage->delete($file->getPath());
+        } catch (\Throwable) {
+            $this->addFlash('error', "Erreur lors de la suppression du fichier « {$file->getOriginalName()} ».");
+
+            return $this->redirect($folderId ? '/explorer?folder=' . $folderId : '/explorer');
+        }
+
         $this->em->remove($file);
         $this->em->flush();
 
         $this->addFlash('success', "Fichier « {$file->getOriginalName()} » supprimé.");
-
-        $folderId = $request->request->get('folder_id');
 
         return $this->redirect($folderId ? '/explorer?folder=' . $folderId : '/explorer');
     }

@@ -10,3 +10,12 @@ when@test:
         App\Tests\EventListener\TestAuthorizationListener:
             tags:
                 - { name: kernel.event_subscriber }
+
+        App\Service\StorageService:
+            public: true
+            arguments:
+                $storageDir: '%app.storage_dir%'
+
+        App\Interface\StorageServiceInterface:
+            alias: App\Service\StorageService
+            public: true
