@@ -33,7 +33,12 @@ window.openGlobalMoveModal = async function(type, id, name) {
 		const folders = await response.json();
 
 		list.innerHTML = '';
-		const rootText = type === 'file' ? '📤 Uploads (dossier par défaut)' : '🏠 Racine (niveau principal)';
+		const homeIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>';
+		const uploadIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>';
+		const folderIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg>';
+		const rootText = type === 'file'
+			? `${uploadIcon}Uploads (dossier par défaut)`
+			: `${homeIcon}Racine (niveau principal)`;
 		list.appendChild(makeFolderRadio({ value: '__root__', label: rootText, separator: true }));
 
 		if (!folders?.length) {
@@ -43,7 +48,7 @@ window.openGlobalMoveModal = async function(type, id, name) {
 		folders
 			.filter(f => !(type === 'folder' && f.id === id))
 			.sort((a, b) => a.name.localeCompare(b.name))
-			.forEach(f => list.appendChild(makeFolderRadio({ value: f.id, label: '📁 ' + f.name })));
+			.forEach(f => list.appendChild(makeFolderRadio({ value: f.id, label: folderIcon + f.name })));
 	} catch (err) {
 		list.innerHTML = '<p class="text-red-400 text-sm text-center py-4">Erreur de chargement</p>';
 		console.error(err);
@@ -71,7 +76,7 @@ window.submitMove = async function() {
 		});
 		Modal.close('move-modal');
 		if (response.ok) {
-			showToast('Déplacement réussi ✅', 'success');
+			showToast('Déplacement réussi', 'success');
 			setTimeout(() => window.location.reload(), 800);
 		} else {
 			const err = await response.json().catch(() => ({}));

@@ -104,7 +104,7 @@ window.submitRename = async function() {
 		});
 		Modal.close('rename-modal');
 		if (res.ok) {
-			showToast('Renommé ✅', 'success');
+			showToast('Renommé avec succès', 'success');
 			setTimeout(() => window.location.reload(), 800);
 		} else {
 			const err = await res.json().catch(() => ({}));

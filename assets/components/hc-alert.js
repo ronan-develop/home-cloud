@@ -39,7 +39,12 @@ class HCAlert extends HTMLElement {
     }
 
     _render() {
-        const iconMap = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+        const iconMap = {
+            success: '<polyline points="20 6 9 17 4 12"/>',
+            error: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+            warning: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+            info: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>',
+        };
         const colorMap = {
             success: { bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)', text: '#6ee7b7' },
             error:   { bg: 'rgba(239,68,68,0.12)',  border: 'rgba(239,68,68,0.3)',  text: '#fca5a5' },
@@ -48,7 +53,7 @@ class HCAlert extends HTMLElement {
         };
         const type = this._type || 'info';
         const colors = colorMap[type] || colorMap.info;
-        const icon = iconMap[type] || 'ℹ️';
+        const iconPaths = iconMap[type] || iconMap.info;
 
         this.shadowRoot.innerHTML = `
             <style>
@@ -63,7 +68,8 @@ class HCAlert extends HTMLElement {
                     border: 1px solid ${colors.border};
                     margin-bottom: 1rem;
                 }
-                .alert-icon { font-size: 1.2rem; flex-shrink: 0; line-height: 1; }
+                .alert-icon { flex-shrink: 0; line-height: 1; color: ${colors.text}; }
+                .alert-icon svg { display: block; }
                 .alert-message { color: ${colors.text}; font-size: 0.9rem; line-height: 1.5; }
                 .alert-actions { display: flex; justify-content: flex-end; }
                 button {
@@ -80,7 +86,9 @@ class HCAlert extends HTMLElement {
                 button:hover { background: rgba(255,255,255,0.14); }
             </style>
             <div class="alert-box">
-                <span class="alert-icon">${icon}</span>
+                <span class="alert-icon" data-type="${type}">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${iconPaths}</svg>
+                </span>
                 <span class="alert-message">${this._escapeHtml(this._message || '')}</span>
             </div>
             <div class="alert-actions">

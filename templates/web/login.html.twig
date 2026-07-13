@@ -1,4 +1,5 @@
 {% extends 'base.html.twig' %}
+{% import 'macros/icon.html.twig' as icons %}
 
 {% block title %}Connexion — HomeCloud{% endblock %}
 
@@ -20,7 +21,7 @@
 
     {% for message in app.flashes('error') %}
       <div class="flash-error" style="margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem">
-        <span>⚠️</span><span>{{ message }}</span>
+        {{ icons.icon('alert-triangle', 16) }}<span>{{ message }}</span>
       </div>
     {% endfor %}
 

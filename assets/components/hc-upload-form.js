@@ -319,7 +319,7 @@ class HCUploadForm extends HTMLElement {
 
             const icon = document.createElement('span');
             icon.className = 'folder-icon';
-            icon.textContent = folder.icon || '📁';
+            icon.innerHTML = folder.icon || '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg>';
 
             const name = document.createElement('span');
             name.textContent = folder.name;
@@ -367,7 +367,7 @@ class HCUploadForm extends HTMLElement {
 
             const icon = document.createElement('span');
             icon.className = 'file-item__icon';
-            icon.textContent = '📎';
+            icon.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>';
 
             const name = document.createElement('span');
             name.className = 'file-item__name';
@@ -473,12 +473,12 @@ class HCUploadForm extends HTMLElement {
 
         const statusEl = item.querySelector('.file-item__status');
         const statusMap = {
-            uploading: '⬆️ En cours',
-            completed: '✅ Terminé',
-            done: '✅ Terminé',
-            error: '❌ Erreur',
-            cancelled: '⏹️ Annulé',
-            pending: '⏳ En attente',
+            uploading: 'En cours',
+            completed: 'Terminé',
+            done: 'Terminé',
+            error: 'Erreur',
+            cancelled: 'Annulé',
+            pending: 'En attente',
         };
         statusEl.textContent = statusMap[stateClass] || state;
         statusEl.className = `file-item__status file-item__status--${stateClass}`;

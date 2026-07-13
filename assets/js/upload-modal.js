@@ -138,8 +138,9 @@ function createModalOverlay(files, currentFolderId, folders) {
     // Title
     const title = document.createElement('div');
     title.className = 'upload-modal-title';
-    title.style.cssText = 'font-size:1.25rem;font-weight:600;color:rgba(255,255,255,0.95);margin-bottom:1.25rem';
-    title.textContent = `Importer ${files.length} fichier${files.length > 1 ? 's' : ''}`;
+    title.style.cssText = 'font-size:1.25rem;font-weight:600;color:rgba(255,255,255,0.95);margin-bottom:1.25rem;display:flex;align-items:center;gap:0.5rem';
+    title.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>'
+        + `<span>Importer ${files.length} fichier${files.length > 1 ? 's' : ''}</span>`;
 
     // Destination section
     const destSection = document.createElement('div');
@@ -183,7 +184,7 @@ function createModalOverlay(files, currentFolderId, folders) {
     submitBtn.type = 'button';
     submitBtn.className = 'upload-btn upload-btn--submit';
     submitBtn.style.cssText = 'padding:0.6rem 1.25rem;border-radius:0.75rem;border:none;background:rgba(59,130,246,0.8);color:#fff;font-size:0.9rem;font-weight:600;cursor:pointer';
-    submitBtn.textContent = '⬆️ Uploader';
+    submitBtn.textContent = 'Uploader';
     submitBtn.id = 'hc-upload-submit-btn';
 
     actions.appendChild(cancelBtn);
@@ -286,12 +287,12 @@ function updateUploadItem(itemEl, state, progress, error) {
     // Update status text
     const statusEl = itemEl.querySelector('.upload-item__status');
     const statusMap = {
-        uploading: '⬆️ En cours',
-        completed: '✅ Terminé',
-        done: '✅ Terminé',
-        error: '❌ Erreur',
-        cancelled: '⏹️ Annulé',
-        pending: '⏳ En attente',
+        uploading: 'En cours',
+        completed: 'Terminé',
+        done: 'Terminé',
+        error: 'Erreur',
+        cancelled: 'Annulé',
+        pending: 'En attente',
     };
     statusEl.textContent = statusMap[stateClass] || state;
     statusEl.className = `upload-item__status upload-item__status--${stateClass}`;
@@ -412,21 +413,21 @@ async function openUploadModal(files, options = {}) {
             // Check results
             const stats = currentUploadQueue.getStats();
             if (stats.error === 0) {
-                window.showToast?.('✅ Tous les fichiers ont été importés', 'success');
+                window.showToast?.('Tous les fichiers ont été importés', 'success');
                 setTimeout(() => {
                     location.reload();
                 }, 2000);
             } else {
                 window.showToast?.(
-                    `⚠️ ${stats.error} fichier(s) en erreur, ${stats.completed} réussi(s)`,
-                    'error'
+                    `${stats.error} fichier(s) en erreur, ${stats.completed} réussi(s)`,
+                    'warning'
                 );
             }
 
             closeUploadModal();
         } catch (err) {
             console.error('Upload error:', err);
-            window.showToast?.('❌ Erreur lors de l\'upload: ' + err.message, 'error');
+            window.showToast?.('Erreur lors de l\'upload : ' + err.message, 'error');
             submitBtn.disabled = false;
         }
     });
