@@ -1,11 +1,11 @@
 @import "tailwindcss";
 @import "./theme.css";
+@import "./button.css";
+@import "./form.css";
 @import "./layout.css";
 @import "./app-shell.css";
 @import "./sidebar-folders.css";
 @import "./login.css";
-@import "./button.css";
-@import "./form.css";
 @import "./dashboard.css";
 @import "./explorer.css";
 @import "./gallery.css";
