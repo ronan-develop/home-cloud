@@ -211,6 +211,14 @@
   background: var(--hc-accent-2);
 }
 
+.hc-selection-confirm--danger {
+  background: var(--hc-err);
+}
+.hc-selection-confirm--danger:hover {
+  background: var(--hc-err);
+  opacity: 0.85;
+}
+
 .hc-selection-cancel {
   padding: 6px 12px;
   border-radius: 999px;

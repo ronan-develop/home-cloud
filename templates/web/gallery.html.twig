@@ -65,20 +65,19 @@
       </div>
     {% endif %}
 
-    <div data-testid="media-gallery" class="hc-media-grid" data-controller="gallery-selection">
+    <div data-testid="media-gallery" class="hc-media-grid" data-controller="gallery-selection"
+         data-gallery-selection-bulk-delete-url-value="{{ path('app_media_bulk_delete') }}">
       {% for media in medias %}
         <div data-testid="media-thumbnail" class="hc-media-thumb" data-gallery-selection-target="thumb"
              data-controller="rename-media"
              data-rename-media-url-value="{{ path('app_media_rename', {id: media.id}) }}"
              data-rename-media-current-name-value="{{ media.file.originalName }}">
           <twig:MediaThumbActions :media="media" />
-          {% if targetAlbum %}
-            <label class="hc-media-thumb-select">
-              <input type="checkbox" name="mediaIds[]" value="{{ media.id }}" form="gallery-add-to-album-form"
-                     class="hc-media-thumb-checkbox" data-gallery-selection-target="checkbox"
-                     data-action="change->gallery-selection#update">
-            </label>
-          {% endif %}
+          <label class="hc-media-thumb-select">
+            <input type="checkbox" {% if targetAlbum %}name="mediaIds[]" form="gallery-add-to-album-form"{% endif %} value="{{ media.id }}"
+                   class="hc-media-thumb-checkbox" data-gallery-selection-target="checkbox"
+                   data-action="change->gallery-selection#update">
+          </label>
           <a href="{{ path('app_media_view', {id: media.id}) }}"
              data-lightbox
              data-media-type="{{ media.mediaType }}"
@@ -117,6 +116,17 @@
             <a href="{{ path('app_album_detail', {id: targetAlbum.id}) }}" class="hc-selection-cancel">Annuler</a>
           </div>
         </form>
+      {% else %}
+        {# Barre d'action flottante — suppression définitive en masse #}
+        <div class="hc-selection-bar hidden" data-gallery-selection-target="bar">
+          <span class="hc-selection-count" data-gallery-selection-target="count">0 sélectionné</span>
+          <div class="hc-selection-actions">
+            <button type="button" class="hc-selection-confirm hc-selection-confirm--danger"
+                    data-testid="gallery-delete-selected" data-action="click->gallery-selection#deleteSelected">
+              Supprimer la sélection
+            </button>
+          </div>
+        </div>
       {% endif %}
     </div>
 

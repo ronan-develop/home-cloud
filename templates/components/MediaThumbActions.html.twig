@@ -2,10 +2,13 @@
    et retirer. Réutilisé par gallery.html.twig et album_detail.html.twig.
    Props attendues : media, renameUrl, removeUrl (null pour masquer le
    bouton de retrait — ex. dans la galerie, "retirer" n'a pas de sens hors
-   contexte d'un album). Le renommage se fait en place (fetch), sans
-   navigation — voir rename_media_controller.js. Le contrôleur est posé sur
-   le conteneur de la vignette (data-rename-media-*) par le template
-   appelant, ce composant ne fournit que le bouton déclencheur. #}
+   contexte d'un album). La suppression définitive se fait désormais via la
+   sélection multiple (case à cocher + barre "Supprimer la sélection"), pas
+   par vignette — voir gallery_selection_controller.js. Le renommage se fait
+   en place (fetch), sans navigation — voir rename_media_controller.js. Le
+   contrôleur est posé sur le conteneur de la vignette (data-rename-media-*)
+   par le template appelant, ce composant ne fournit que le bouton
+   déclencheur. #}
 <div class="hc-media-thumb-actions">
   <button type="button" data-action="click->rename-media#prompt"
           class="hc-media-thumb-action hc-media-thumb-action--rename"
