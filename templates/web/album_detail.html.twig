@@ -48,9 +48,15 @@
       icon="<svg width='64' height='64' fill='none' stroke='currentColor' stroke-width='1.5' viewBox='0 0 24 24' class='hc-icon hc-icon-images'><path d='M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z'/><circle cx='8.5' cy='8.5' r='1.5'/><polyline points='21 15 16 10 5 21'/></svg>"
     />
   {% else %}
-    <div class="hc-media-grid">
+    <p class="hc-page-sub" data-testid="album-reorder-hint">Glissez-déposez une photo pour changer son ordre.</p>
+
+    <div class="hc-media-grid" data-controller="album-reorder"
+         data-album-reorder-url-value="{{ path('app_album_reorder', {id: album.id}) }}">
       {% for media in album.medias %}
-        <div class="hc-media-thumb">
+        <div class="hc-media-thumb" draggable="true"
+             data-album-reorder-target="item"
+             data-media-id="{{ media.id }}"
+             data-action="dragstart->album-reorder#dragStart dragover->album-reorder#dragOver drop->album-reorder#drop dragend->album-reorder#dragEnd">
           <form method="post" action="{{ path('app_album_remove_media', {id: album.id, mediaId: media.id}) }}"
                 class="hc-media-thumb-remove-form" data-controller="confirm-submit"
                 data-confirm-submit-message-value="Retirer « {{ media.file.originalName }} » de l'album ?">

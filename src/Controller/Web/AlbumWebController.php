@@ -93,6 +93,20 @@ final class AlbumWebController extends AbstractController
         return $this->redirectToRoute('app_album_detail', ['id' => $album->getId()->toRfc4122()]);
     }
 
+    #[Route('/albums/{id}/reorder', name: 'app_album_reorder', methods: ['POST'], requirements: ['id' => '[0-9a-f\-]+'])]
+    public function reorder(string $id, Request $request): Response
+    {
+        $album = $this->albumRepository->findById(Uuid::fromString($id))
+            ?? throw $this->createNotFoundException('Album introuvable.');
+
+        $this->denyAccessUnlessGranted(AlbumVoter::VIEW, $album);
+
+        $mediaIds = $request->request->all('mediaIds');
+        $this->albumService->reorder($album, $mediaIds);
+
+        return $this->redirectToRoute('app_album_detail', ['id' => $album->getId()->toRfc4122()]);
+    }
+
     #[Route('/albums/{id}', name: 'app_album_detail', requirements: ['id' => '[0-9a-f\-]+'])]
     public function detail(string $id): Response
     {
