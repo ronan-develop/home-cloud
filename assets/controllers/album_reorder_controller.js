@@ -13,6 +13,14 @@ export default class extends Controller {
         this.dragged.classList.add('hc-media-thumb--dragging');
     }
 
+    // Empêche le bouton de suppression (draggable="true" pour bloquer le
+    // drag natif du navigateur sur un <button>) de démarrer un vrai
+    // réordonnancement — seul un clic doit déclencher sa propre action.
+    preventDrag(event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
     dragOver(event) {
         event.preventDefault();
         const target = event.currentTarget;

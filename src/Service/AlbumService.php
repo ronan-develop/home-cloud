@@ -8,6 +8,7 @@ use App\Entity\Album;
 use App\Entity\Media;
 use App\Entity\User;
 use App\Interface\AlbumRepositoryInterface;
+use App\Interface\AlbumServiceInterface;
 use App\Interface\MediaRepositoryInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Uid\Uuid;
@@ -19,7 +20,7 @@ use Symfony\Component\Uid\Uuid;
  * avec validation des règles métier (nom non vide).
  * La persistence est déléguée à AlbumRepositoryInterface (DIP).
  */
-final class AlbumService
+final class AlbumService implements AlbumServiceInterface
 {
     public function __construct(
         private readonly AlbumRepositoryInterface $repository,

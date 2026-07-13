@@ -367,6 +367,63 @@ final class AlbumWebTest extends WebTestCase
         $this->assertResponseStatusCodeSame(403);
     }
 
+    // --- Import direct depuis le disque ---
+
+    /**
+     * Copie temporaire de la fixture — UploadedFile en mode "test" (dernier
+     * argument true) ne déplace pas le fichier physiquement, mais on copie
+     * quand même par prudence pour ne jamais risquer d'altérer la fixture
+     * source versionnée dans le repo.
+     */
+    private function sampleUploadedPhoto(string $clientFilename = 'sunset.jpg'): \Symfony\Component\HttpFoundation\File\UploadedFile
+    {
+        $source = dirname(__DIR__, 2) . '/fixtures/demo-photos/kanenori-sunset-7133867_1920.jpg';
+        $tmp    = tempnam(sys_get_temp_dir(), 'album_import_test_') . '.jpg';
+        copy($source, $tmp);
+
+        return new \Symfony\Component\HttpFoundation\File\UploadedFile($tmp, $clientFilename, 'image/jpeg', null, true);
+    }
+
+    public function testImportPhotoToAlbumCreatesMediaAndAddsItImmediately(): void
+    {
+        $user  = $this->createUser();
+        $album = $this->createAlbum($user, 'Vacances');
+        $this->login();
+
+        $uploadedFile = $this->sampleUploadedPhoto();
+
+        $this->client->request(
+            'POST',
+            '/albums/' . $album->getId()->toRfc4122() . '/import',
+            [],
+            ['files' => [$uploadedFile]],
+        );
+
+        $this->assertResponseRedirects('/albums/' . $album->getId()->toRfc4122());
+        $this->client->followRedirect();
+        $this->assertSelectorTextContains('[data-testid="album-media-count"]', '1');
+    }
+
+    public function testImportPhotoToAlbumForbiddenForOtherUser(): void
+    {
+        $alice = $this->createUser('alice@example.com');
+        $bob   = $this->createUser('bob@example.com');
+        $album = $this->createAlbum($alice, 'Album Alice');
+
+        $this->login('bob@example.com');
+
+        $uploadedFile = $this->sampleUploadedPhoto();
+
+        $this->client->request(
+            'POST',
+            '/albums/' . $album->getId()->toRfc4122() . '/import',
+            [],
+            ['files' => [$uploadedFile]],
+        );
+
+        $this->assertResponseStatusCodeSame(403);
+    }
+
     // --- Suppression ---
 
     public function testDeleteAlbumRedirectsToList(): void
