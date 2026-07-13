@@ -7,7 +7,7 @@
     {% set stroke = variant == 'stroke' ? 'currentColor' : 'none' %}
     {% set strokeWidth = variant == 'solid' ? 0 : 2 %}
 
-    <svg width="{{ size }}" height="{{ size }}" fill="{{ fill }}" stroke="{{ stroke }}" stroke-width="{{ strokeWidth }}" viewBox="0 0 24 24" class="hc-icon hc-icon-{{ name }}">
+    <svg width="{{ size }}" height="{{ size }}" fill="{{ fill }}" stroke="{{ stroke }}" stroke-width="{{ strokeWidth }}" viewBox="0 0 24 24" class="hc-icon hc-icon-{{ name }}" aria-hidden="true" focusable="false">
         {% if name == 'folder' %}
             <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/>
         {% elseif name == 'cloud' %}
