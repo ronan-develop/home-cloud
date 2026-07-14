@@ -39,9 +39,11 @@
               <div class="hc-item-name">{{ row.resourceName }}</div>
               <div class="hc-item-meta">
                 Partagé par {{ row.share.owner.displayName }} ·
-                {{ row.share.permission == 'write' ? 'lecture/écriture' : 'lecture seule' }}
+                {{ row.share.permission == 'write' ? 'lecture/écriture' : 'lecture seule' }} ·
                 {% if row.share.expiresAt %}
-                  · {{ row.share.isActive ? 'expire le ' ~ row.share.expiresAt|date('d/m/Y') : 'expiré' }}
+                  {{ row.share.isActive ? 'expire le ' ~ row.share.expiresAt|date('d/m/Y') : 'expiré le ' ~ row.share.expiresAt|date('d/m/Y') }}
+                {% else %}
+                  permanent
                 {% endif %}
               </div>
             </div>
@@ -70,9 +72,11 @@
               <div class="hc-item-name">{{ row.resourceName }}</div>
               <div class="hc-item-meta">
                 Partagé avec {{ row.share.guest.displayName }} ·
-                {{ row.share.permission == 'write' ? 'lecture/écriture' : 'lecture seule' }}
+                {{ row.share.permission == 'write' ? 'lecture/écriture' : 'lecture seule' }} ·
                 {% if row.share.expiresAt %}
-                  · {{ row.share.isActive ? 'expire le ' ~ row.share.expiresAt|date('d/m/Y') : 'expiré' }}
+                  {{ row.share.isActive ? 'expire le ' ~ row.share.expiresAt|date('d/m/Y') : 'expiré le ' ~ row.share.expiresAt|date('d/m/Y') }}
+                {% else %}
+                  permanent
                 {% endif %}
               </div>
             </div>

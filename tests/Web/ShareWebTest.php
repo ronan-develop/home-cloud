@@ -80,6 +80,52 @@ final class ShareWebTest extends WebTestCase
         $this->assertStringContainsString('partage-sortant.jpg', $crawler->filter('body')->text());
     }
 
+    public function testSharesPageListsOutgoingFolderShareWithNameGuestAndPermission(): void
+    {
+        $owner  = $this->createUser();
+        $guest  = $this->createUser('guest-folder@example.com');
+        $folder = new Folder('Documents partagés', $owner);
+        $this->em->persist($folder);
+        $this->em->flush();
+
+        $share = new Share($owner, $guest, Share::RESOURCE_FOLDER, $folder->getId(), Share::PERMISSION_WRITE);
+        $this->em->persist($share);
+        $this->em->flush();
+
+        $this->login();
+
+        $crawler = $this->client->request('GET', '/partages');
+        $this->assertResponseIsSuccessful();
+
+        $row = $crawler->filter('[data-testid="share-row-outgoing"]')->text();
+        $this->assertStringContainsString('Documents partagés', $row);
+        $this->assertStringContainsString($guest->getDisplayName(), $row);
+        $this->assertStringContainsString('lecture/écriture', $row);
+        $this->assertStringContainsString('permanent', $row);
+    }
+
+    public function testSharesPageShowsExpirationDateWhenSet(): void
+    {
+        $owner  = $this->createUser();
+        $guest  = $this->createUser('guest-expiry@example.com');
+        $folder = new Folder('Dossier temporaire', $owner);
+        $this->em->persist($folder);
+        $this->em->flush();
+
+        $expiresAt = new \DateTimeImmutable('+7 days');
+        $share = new Share($owner, $guest, Share::RESOURCE_FOLDER, $folder->getId(), Share::PERMISSION_READ, $expiresAt);
+        $this->em->persist($share);
+        $this->em->flush();
+
+        $this->login();
+
+        $crawler = $this->client->request('GET', '/partages');
+        $this->assertResponseIsSuccessful();
+
+        $row = $crawler->filter('[data-testid="share-row-outgoing"]')->text();
+        $this->assertStringContainsString($expiresAt->format('d/m/Y'), $row);
+    }
+
     public function testSharesPageListsIncomingShares(): void
     {
         $owner = $this->createUser('owner-in@example.com');
