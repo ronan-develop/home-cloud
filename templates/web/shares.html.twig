@@ -1,0 +1,87 @@
+{% extends 'web/layout.html.twig' %}
+{% import 'macros/icon.html.twig' as icons %}
+
+{% block title %}Partages — HomeCloud{% endblock %}
+
+{% block content %}
+
+{% set shareIcon %}<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 22a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>{% endset %}
+
+<div class="flex flex-col gap-7 max-w-[1100px] mx-auto h-full">
+
+  {# En-tête de page #}
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-black tracking-tight mb-1 flex items-center gap-2">
+        {{ shareIcon }}
+        Partages
+      </h1>
+      <p class="hc-page-sub">{{ incoming|length }} reçu{{ incoming|length != 1 ? 's' : '' }} · {{ outgoing|length }} envoyé{{ outgoing|length != 1 ? 's' : '' }}</p>
+    </div>
+  </div>
+
+  {# === Partagés avec moi (entrants) === #}
+  <div>
+    <h2 class="text-sm font-semibold uppercase tracking-wide mb-3" style="color:var(--hc-text-2);">Partagés avec moi</h2>
+    {% if incoming is empty %}
+      <div data-testid="shares-incoming-empty">
+        <twig:EmptyState
+          title="Aucun partage reçu"
+          subtitle="Les ressources qu'on partage avec vous apparaîtront ici."
+          icon="<svg width='64' height='64' fill='none' stroke='currentColor' stroke-width='1.5' viewBox='0 0 24 24' class='hc-icon'><path d='M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 22a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8.6 13.5l6.8 4M15.4 6.5l-6.8 4'/></svg>"
+        />
+      </div>
+    {% else %}
+      <div class="hc-item-card" style="display:flex; flex-direction:column; gap:0; padding:0;" data-testid="shares-incoming-list">
+        {% for row in incoming %}
+          <div class="flex items-center justify-between px-4 py-3" style="border-bottom:1px solid var(--hc-border);" data-testid="share-row-incoming">
+            <div>
+              <div class="hc-item-name">{{ row.resourceName }}</div>
+              <div class="hc-item-meta">
+                Partagé par {{ row.share.owner.displayName }} ·
+                {{ row.share.permission == 'write' ? 'lecture/écriture' : 'lecture seule' }}
+                {% if row.share.expiresAt %}
+                  · {{ row.share.isActive ? 'expire le ' ~ row.share.expiresAt|date('d/m/Y') : 'expiré' }}
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+
+  {# === Mes partages (sortants) === #}
+  <div>
+    <h2 class="text-sm font-semibold uppercase tracking-wide mb-3" style="color:var(--hc-text-2);">Mes partages</h2>
+    {% if outgoing is empty %}
+      <div data-testid="shares-outgoing-empty">
+        <twig:EmptyState
+          title="Vous n'avez encore rien partagé"
+          subtitle="Partagez un fichier, un dossier ou un album depuis sa page de détail."
+          icon="<svg width='64' height='64' fill='none' stroke='currentColor' stroke-width='1.5' viewBox='0 0 24 24' class='hc-icon'><path d='M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 22a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8.6 13.5l6.8 4M15.4 6.5l-6.8 4'/></svg>"
+        />
+      </div>
+    {% else %}
+      <div class="hc-item-card" style="display:flex; flex-direction:column; gap:0; padding:0;" data-testid="shares-outgoing-list">
+        {% for row in outgoing %}
+          <div class="flex items-center justify-between px-4 py-3" style="border-bottom:1px solid var(--hc-border);" data-testid="share-row-outgoing">
+            <div>
+              <div class="hc-item-name">{{ row.resourceName }}</div>
+              <div class="hc-item-meta">
+                Partagé avec {{ row.share.guest.displayName }} ·
+                {{ row.share.permission == 'write' ? 'lecture/écriture' : 'lecture seule' }}
+                {% if row.share.expiresAt %}
+                  · {{ row.share.isActive ? 'expire le ' ~ row.share.expiresAt|date('d/m/Y') : 'expiré' }}
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+{% endblock %}
