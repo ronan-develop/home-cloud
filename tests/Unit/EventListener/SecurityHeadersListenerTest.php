@@ -102,8 +102,26 @@ final class SecurityHeadersListenerTest extends TestCase
         (new SecurityHeadersListener('test'))($event);
 
         $csp = $event->getResponse()->headers->get('Content-Security-Policy');
-        $this->assertStringContainsString("script-src 'self' 'unsafe-inline'", $csp);
+        $this->assertStringContainsString("script-src 'self' 'unsafe-inline' data:", $csp);
         $this->assertStringContainsString("style-src 'self' 'unsafe-inline'", $csp);
+    }
+
+    /**
+     * AssetMapper mappe les imports CSS des modules JS (import './styles/app.css')
+     * vers un faux module data:application/javascript, — sans data: dans
+     * script-src, ce faux module est bloqué par la CSP, ce qui interrompt toute
+     * la chaîne d'imports du module JS principal (app.js et tout ce qu'il importe :
+     * modal.js, move-modal.js, etc.). Régression constatée : la recherche live
+     * (dépend de openMoveElementModal, définie dans move-modal.js) ne fonctionnait
+     * plus du tout après l'introduction de la CSP stricte (commit 6b494cd).
+     */
+    public function testCspAllowsDataUriInScriptSrcForAssetMapperCssModules(): void
+    {
+        $event = $this->buildEvent('/explorer');
+        (new SecurityHeadersListener('test'))($event);
+
+        $csp = $event->getResponse()->headers->get('Content-Security-Policy');
+        $this->assertStringContainsString('data:', $csp);
     }
 
     public function testCspHeaderIsStrictOnApiRoutesNotHtmlPolicy(): void
