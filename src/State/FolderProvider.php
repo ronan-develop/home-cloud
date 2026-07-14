@@ -10,8 +10,11 @@ use ApiPlatform\State\Pagination\TraversablePaginator;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\FolderOutput;
 use App\Entity\Folder;
+use App\Entity\Share;
 use App\Repository\FolderRepository;
 use App\Security\AuthenticationResolver;
+use App\Security\ResourceAccessChecker;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 /**
  * Fournit les données lues pour les opérations GET sur la ressource Folder.
@@ -31,6 +34,7 @@ final class FolderProvider implements ProviderInterface
         private readonly FolderRepository $repository,
         private readonly Pagination $pagination,
         private readonly AuthenticationResolver $authResolver,
+        private readonly ResourceAccessChecker $resourceAccessChecker,
     ) {}
 
     /**
@@ -41,9 +45,18 @@ final class FolderProvider implements ProviderInterface
     {
         if (isset($uriVariables['id'])) {
             $folder = $this->repository->find($uriVariables['id']);
+            if ($folder === null) {
+                // null → API Platform répond automatiquement 404
+                return null;
+            }
 
-            // null → API Platform répond automatiquement 404
-            return $folder ? $this->toOutput($folder) : null;
+            $currentUser = $this->authResolver->getAuthenticatedUser();
+            if ($currentUser === null
+                || !$this->resourceAccessChecker->canRead($currentUser, Share::RESOURCE_FOLDER, $folder->getId(), $folder->getOwner())) {
+                throw new AccessDeniedHttpException();
+            }
+
+            return $this->toOutput($folder);
         }
 
         [$page, $offset, $limit] = $this->pagination->getPagination($operation, $context);

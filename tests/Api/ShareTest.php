@@ -483,4 +483,51 @@ final class ShareTest extends AuthenticatedApiTestCase
 
         $this->assertResponseStatusCodeSame(403);
     }
+
+    // ─── Accès guest sur Folder ──────────────────────────────────────────────
+
+    public function testGuestCanAccessSharedFolder(): void
+    {
+        $owner  = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
+        $guest  = $this->createGuest();
+        $folder = $this->createFolder('Shared Folder', $owner, null, $this->em);
+        $share  = new Share($owner, $guest, 'folder', $folder->getId(), 'read');
+        $this->em->persist($share);
+        $this->em->flush();
+
+        $response = $this->createAuthenticatedClient('bob@example.com')->request('GET', '/api/v1/folders/' . $folder->getId()->toRfc4122(), [
+            'headers' => ['Accept' => 'application/json'],
+        ]);
+
+        $this->assertResponseStatusCodeSame(200);
+    }
+
+    public function testGuestCannotAccessFolderWithoutShare(): void
+    {
+        $owner  = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
+        $this->createGuest();
+        $folder = $this->createFolder('Private Folder', $owner, null, $this->em);
+
+        $response = $this->createAuthenticatedClient('bob@example.com')->request('GET', '/api/v1/folders/' . $folder->getId()->toRfc4122(), [
+            'headers' => ['Accept' => 'application/json'],
+        ]);
+
+        $this->assertResponseStatusCodeSame(403);
+    }
+
+    public function testExpiredFolderShareDeniesAccess(): void
+    {
+        $owner  = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
+        $guest  = $this->createGuest();
+        $folder = $this->createFolder('Shared Folder', $owner, null, $this->em);
+        $share  = new Share($owner, $guest, 'folder', $folder->getId(), 'read', new \DateTimeImmutable('-1 day'));
+        $this->em->persist($share);
+        $this->em->flush();
+
+        $response = $this->createAuthenticatedClient('bob@example.com')->request('GET', '/api/v1/folders/' . $folder->getId()->toRfc4122(), [
+            'headers' => ['Accept' => 'application/json'],
+        ]);
+
+        $this->assertResponseStatusCodeSame(403);
+    }
 }
