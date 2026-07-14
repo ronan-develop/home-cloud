@@ -44,6 +44,31 @@ final class ExplorerPageTest extends WebTestCase
         return $user;
     }
 
+    /**
+     * Récupère un token CSRF valide en le lisant depuis /explorer, comme le
+     * ferait le navigateur. Les intentions "file-upload" (ImportCard) et
+     * "delete-file" (FileCard) génèrent des tokens distincts et non
+     * interchangeables : il faut cibler le bon formulaire.
+     */
+    private function uploadCsrfToken(): string
+    {
+        $crawler = $this->client->request('GET', '/explorer');
+
+        return $crawler->filter('#main-upload-form input[name="_token"]')->attr('value');
+    }
+
+    /**
+     * FileCard (et son token "delete-file") n'est rendu que dans la vue d'un
+     * dossier précis : ExplorerController::index() laisse $files vide à la
+     * racine (aucun $currentFolder). Il faut donc naviguer vers le dossier.
+     */
+    private function deleteCsrfToken(string $folderId): string
+    {
+        $crawler = $this->client->request('GET', '/explorer?folder=' . $folderId);
+
+        return $crawler->filter('.file-actions input[name="_token"]')->first()->attr('value');
+    }
+
     private function login(string $email = 'explorer@example.com', string $password = 'secret123'): void
     {
         $crawler = $this->client->request('GET', '/login');
@@ -103,7 +128,7 @@ final class ExplorerPageTest extends WebTestCase
         file_put_contents($tmpFile, 'Hello HomeCloud');
         $uploaded = new UploadedFile($tmpFile, 'test.txt', 'text/plain', null, true);
 
-        $this->client->request('POST', '/files/upload', [], ['file' => $uploaded]);
+        $this->client->request('POST', '/files/upload', ['_token' => $this->uploadCsrfToken()], ['file' => $uploaded]);
         $this->assertResponseRedirects('/explorer');
     }
 
@@ -122,11 +147,24 @@ final class ExplorerPageTest extends WebTestCase
         file_put_contents($tmpFile, 'Hello HomeCloud');
         $uploaded = new UploadedFile($tmpFile, 'test-visible.txt', 'text/plain', null, true);
 
-        $this->client->request('POST', '/files/upload', ['folder_id' => $folderId], ['file' => $uploaded]);
+        $this->client->request('POST', '/files/upload', ['folder_id' => $folderId, '_token' => $this->uploadCsrfToken()], ['file' => $uploaded]);
         $this->client->followRedirect();
 
         $this->assertResponseIsSuccessful();
         $this->assertSelectorTextContains('[data-testid="file-list"]', 'test-visible.txt');
+    }
+
+    public function testUploadWithoutCsrfTokenThrows403(): void
+    {
+        $this->createUser();
+        $this->login();
+
+        $tmpFile = tempnam(sys_get_temp_dir(), 'hc_test_') . '.txt';
+        file_put_contents($tmpFile, 'Hello HomeCloud');
+        $uploaded = new UploadedFile($tmpFile, 'test.txt', 'text/plain', null, true);
+
+        $this->client->request('POST', '/files/upload', [], ['file' => $uploaded]);
+        $this->assertResponseStatusCodeSame(403);
     }
 
     // --- Delete redirects to /explorer ---
@@ -145,9 +183,26 @@ final class ExplorerPageTest extends WebTestCase
         $fileId = $file->getId()->toRfc4122();
 
         $this->login();
+        $token = $this->deleteCsrfToken($folder->getId()->toRfc4122());
 
-        $this->client->request('POST', "/files/{$fileId}/delete");
+        $this->client->request('POST', "/files/{$fileId}/delete", ['_token' => $token]);
         $this->assertResponseRedirects('/explorer');
+    }
+
+    public function testDeleteWithoutCsrfTokenThrows403(): void
+    {
+        $user = $this->createUser();
+
+        $folder = new Folder('Uploads', $user);
+        $this->em->persist($folder);
+        $file = new \App\Entity\File('delete-me.txt', 'text/plain', 10, 'test/path.txt', $folder, $user);
+        $this->em->persist($file);
+        $this->em->flush();
+
+        $this->login();
+
+        $this->client->request('POST', "/files/{$file->getId()->toRfc4122()}/delete");
+        $this->assertResponseStatusCodeSame(403);
     }
 
     public function testDeleteFileNotOwnedReturns403(): void
@@ -162,7 +217,26 @@ final class ExplorerPageTest extends WebTestCase
 
         $this->createUser('attacker@example.com', 'secret123');
         $this->login('attacker@example.com');
-        $this->client->request('POST', "/files/{$file->getId()->toRfc4122()}/delete");
+
+        // Un token CSRF n'est pas lié à une ressource précise : n'importe quel
+        // token "delete-file" valide de la session de l'attaquant suffit pour
+        // atteindre le contrôle d'ownership visé par ce test. Il faut donc que
+        // l'attaquant ait au moins un fichier à lui pour que /explorer rende
+        // le formulaire FileCard porteur de ce token.
+        //
+        // Recharge l'utilisateur : login() a fait plusieurs requêtes HTTP qui
+        // ont rebooté le kernel et détaché l'EntityManager du test — persister
+        // avec un $attacker créé avant le login provoquerait une réinsertion
+        // en doublon (UniqueConstraintViolationException sur l'ID).
+        $attacker = $this->em->getRepository(User::class)->findOneBy(['email' => 'attacker@example.com']);
+        $attackerFolder = new Folder('Uploads-Attacker', $attacker);
+        $this->em->persist($attackerFolder);
+        $this->em->persist(new \App\Entity\File('decoy.txt', 'text/plain', 1, 'test/decoy.txt', $attackerFolder, $attacker));
+        $this->em->flush();
+
+        $token = $this->deleteCsrfToken($attackerFolder->getId()->toRfc4122());
+
+        $this->client->request('POST', "/files/{$file->getId()->toRfc4122()}/delete", ['_token' => $token]);
         $this->assertResponseStatusCodeSame(403);
     }
 

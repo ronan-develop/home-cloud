@@ -51,6 +51,7 @@
 			</a>
 			<form method="post" action="{{ path('app_file_delete', { id: item.id }) }}"
 			      onsubmit="return confirm('Supprimer « {{ item.originalName|e('js') }} » ?')">
+				<input type="hidden" name="_token" value="{{ csrf_token('delete-file') }}">
 				<input type="hidden" name="folder_id" value="{{ item.folderId ?? '' }}">
 				<button type="submit"
 					class="delete-btn hc-item-action hc-item-action--danger"

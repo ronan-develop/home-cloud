@@ -70,6 +70,10 @@ final class FileWebController extends AbstractController
     #[Route('/files/upload', name: 'app_file_upload', methods: ['POST'])]
     public function upload(Request $request): Response
     {
+        if (!$this->isCsrfTokenValid('file-upload', (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
+
         $folderId = $request->request->get('folder_id');
         $uploadedFile = $request->files->get('file');
 
@@ -128,6 +132,10 @@ final class FileWebController extends AbstractController
     #[Route('/files/{id}/delete', name: 'app_file_delete', methods: ['POST'])]
     public function delete(string $id, Request $request): Response
     {
+        if (!$this->isCsrfTokenValid('delete-file', (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
+
         $file = $this->fileRepository->find(\Symfony\Component\Uid\Uuid::fromString($id));
 
         if ($file === null) {
