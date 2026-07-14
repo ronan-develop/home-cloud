@@ -55,7 +55,11 @@ final class MediaTest extends AuthenticatedApiTestCase
 
     public function testGetMediaReturns200WithCorrectStructure(): void
     {
-        $media = $this->createMedia();
+        // withFakeJwt() n'envoie pas de X-User-Email : TestJwtAuthenticator retombe
+        // sur test@homecloud.local. Le média doit donc appartenir à cet utilisateur
+        // pour que le contrôle d'ownership (MediaProvider) laisse passer la requête.
+        $owner = $this->createUser('test@homecloud.local', 'password123', 'Test');
+        $media = $this->createMedia(owner: $owner);
 
         $client = $this->createAuthenticatedClient();
         \App\Tests\Api\ApiTestHelper::withFakeJwt($client);
@@ -91,7 +95,8 @@ final class MediaTest extends AuthenticatedApiTestCase
 
     public function testGetMediaCollectionReturnsMedias(): void
     {
-        $this->createMedia('photo');
+        $owner = $this->createUser('test@homecloud.local', 'password123', 'Test');
+        $this->createMedia('photo', owner: $owner);
 
         $client = $this->createAuthenticatedClient();
         \App\Tests\Api\ApiTestHelper::withFakeJwt($client);
