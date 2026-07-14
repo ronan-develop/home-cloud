@@ -60,6 +60,7 @@ final class ShareProvider implements ProviderInterface
         $output->id = $share->getId()->toRfc4122();
         $output->ownerId = $share->getOwner()->getId()->toRfc4122();
         $output->guestId = $share->getGuest()->getId()->toRfc4122();
+        $output->guestEmail = $share->getGuest()->getEmail();
         $output->resourceType = $share->getResourceType();
         $output->resourceId = $share->getResourceId()->toRfc4122();
         $output->permission = $share->getPermission();

@@ -73,6 +73,7 @@ final class ShareOutput
     public string $id = '';
     public string $ownerId = '';
     public string $guestId = '';
+    public ?string $guestEmail = null;
     public string $resourceType = '';
     public string $resourceId = '';
     public string $permission = '';
