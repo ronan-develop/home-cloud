@@ -277,6 +277,31 @@ final class ExplorerPageTest extends WebTestCase
         $this->assertCount(1, $sectionTitles, 'Il ne doit avoir qu\'une seule section-title "Dossiers"');
     }
 
+    /**
+     * ImportCard::$currentFolder est typé `string` mais explorer.html.twig lui
+     * passait l'objet Folder entier (:current-folder="currentFolder") — le
+     * hidden input folder_id restait vide même en naviguant dans un sous-dossier,
+     * donc les uploads (drag & drop ou bouton Parcourir) atterrissaient toujours
+     * dans le dossier par défaut au lieu du dossier affiché à l'écran.
+     */
+    public function testImportCardFolderIdReflectsCurrentFolderWhenBrowsingSubfolder(): void
+    {
+        $user = $this->createUser();
+
+        $folder = new Folder('Sous-dossier', $user);
+        $this->em->persist($folder);
+        $this->em->flush();
+        $folderId = $folder->getId()->toRfc4122();
+
+        $this->login();
+
+        $crawler = $this->client->request('GET', '/explorer?folder=' . $folderId);
+
+        $this->assertResponseIsSuccessful();
+        $hiddenInput = $crawler->filter('#main-upload-form input[name="folder_id"]');
+        $this->assertSame($folderId, $hiddenInput->attr('value'));
+    }
+
     public function testImportCardUsesCloudIcon(): void
     {
         $this->createUser();
