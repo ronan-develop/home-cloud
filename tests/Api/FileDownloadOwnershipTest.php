@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Api;
 
 use App\Entity\File;
+use App\Entity\Share;
 use App\Tests\AuthenticatedApiTestCase;
 
 /**
@@ -13,6 +14,11 @@ use App\Tests\AuthenticatedApiTestCase;
  * FileDownloadController chargeait le fichier par ID et le streamait sans
  * aucun contrôle d'ownership : un utilisateur authentifié pouvait télécharger
  * le fichier de n'importe quel autre utilisateur.
+ *
+ * Le modèle réel de l'application : une instance sert un seul propriétaire,
+ * qui peut explicitement partager des ressources avec d'autres comptes
+ * (Share). Le contrôle doit donc être ownership OU partage actif, pas
+ * ownership strict.
  */
 final class FileDownloadOwnershipTest extends AuthenticatedApiTestCase
 {
@@ -74,5 +80,36 @@ final class FileDownloadOwnershipTest extends AuthenticatedApiTestCase
         $browser->request('GET', '/api/v1/files/' . $fileId . '/download');
 
         $this->assertSame(200, $browser->getResponse()->getStatusCode());
+    }
+
+    public function testGuestWithActiveShareCanDownloadFile(): void
+    {
+        $file = $this->makeStoredFile('owner4@example.com');
+        $fileId = (string) $file->getId();
+        $owner = $this->em->getRepository(\App\Entity\User::class)->findOneBy(['email' => 'owner4@example.com']);
+        $guest = $this->createUser('guest4@example.com', 'password123', 'Guest');
+
+        $share = new Share($owner, $guest, Share::RESOURCE_FILE, $file->getId(), Share::PERMISSION_READ);
+        $this->em->persist($share);
+        $this->em->flush();
+        $this->em->clear();
+
+        $browser = $this->createAuthenticatedKernelBrowser('guest4@example.com');
+        $browser->request('GET', '/api/v1/files/' . $fileId . '/download');
+
+        $this->assertSame(200, $browser->getResponse()->getStatusCode());
+    }
+
+    public function testGuestWithoutShareCannotDownloadFile(): void
+    {
+        $file = $this->makeStoredFile('owner5@example.com');
+        $fileId = (string) $file->getId();
+        $this->createUser('guest5@example.com', 'password123', 'Guest');
+        $this->em->clear();
+
+        $browser = $this->createAuthenticatedKernelBrowser('guest5@example.com');
+        $browser->request('GET', '/api/v1/files/' . $fileId . '/download');
+
+        $this->assertSame(403, $browser->getResponse()->getStatusCode());
     }
 }
