@@ -36,6 +36,10 @@ final class FolderWebController extends AbstractController
     #[Route('/folders/{id}/delete', name: 'app_folder_delete', methods: ['POST'])]
     public function delete(string $id, Request $request): Response
     {
+        if (!$this->isCsrfTokenValid('delete-folder', (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
+
         $folder = $this->folderRepository->find(Uuid::fromString($id));
 
         if ($folder === null) {

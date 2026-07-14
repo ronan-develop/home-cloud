@@ -16,6 +16,7 @@
     </p>
 
     <form id="delete-folder-form" method="POST" action="">
+      <input type="hidden" name="_token" value="{{ csrf_token('delete-folder') }}">
       <input type="hidden" name="delete_contents" id="delete-folder-contents-input" value="1">
       <input type="hidden" name="redirect_folder_id" id="delete-folder-redirect-input" value="">
 
