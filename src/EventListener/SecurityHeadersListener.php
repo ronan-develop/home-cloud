@@ -22,6 +22,13 @@ use Symfony\Component\HttpKernel\KernelEvents;
  * - Sur le front HTML : policy permissive (scripts/styles inline autorisés,
  *   faute de nonces sur chaque <script> existant) mais qui bloque les
  *   sources EXTERNES, l'embedding en iframe et les plugins (object-src)
+ * - script-src autorise `data:` : AssetMapper mappe les imports CSS des
+ *   modules JS (`import './styles/app.css'`) vers un faux module
+ *   `data:application/javascript,` — sans ce `data:`, la CSP bloque ce
+ *   faux module et interrompt toute la chaîne d'imports du module JS
+ *   principal (app.js et tout ce qu'il importe). Risque limité : `data:`
+ *   n'autorise que du contenu inline déjà rendu par le serveur, comme
+ *   `'unsafe-inline'` déjà présent.
  */
 #[AsEventListener(event: KernelEvents::RESPONSE)]
 final class SecurityHeadersListener
@@ -65,7 +72,7 @@ final class SecurityHeadersListener
         // les scripts/styles inline existants faute de nonces sur chacun.
         $headers->set(
             'Content-Security-Policy',
-            "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
+            "default-src 'self'; script-src 'self' 'unsafe-inline' data:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
         );
     }
 }
