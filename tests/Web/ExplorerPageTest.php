@@ -359,4 +359,23 @@ final class ExplorerPageTest extends WebTestCase
             );
         }
     }
+
+    // --- Partage de dossier ---
+
+    public function testFolderCardHasShareButtonAndModal(): void
+    {
+        $user = $this->createUser();
+
+        $folder = new Folder('Documents partagés', $user);
+        $this->em->persist($folder);
+        $this->em->flush();
+
+        $this->login();
+
+        $crawler = $this->client->request('GET', '/explorer');
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorExists('[data-testid="share-folder-btn-' . $folder->getId()->toRfc4122() . '"]');
+        $this->assertSelectorExists('form[action*="/share-create"] input[value="' . $folder->getId()->toRfc4122() . '"]');
+    }
 }
