@@ -11,9 +11,11 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\ShareOutput;
 use App\Entity\Share;
+use App\Entity\User;
 use App\Interface\ShareRepositoryInterface;
 use App\Interface\UserRepositoryInterface;
 use App\Security\OwnershipChecker;
+use App\Security\ResourceLocator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -41,6 +43,7 @@ final class ShareProcessor implements ProcessorInterface
         private readonly ShareProvider $provider,
         private readonly Security $security,
         private readonly OwnershipChecker $ownershipChecker,
+        private readonly ResourceLocator $resourceLocator,
     ) {}
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): mixed
@@ -81,6 +84,13 @@ final class ShareProcessor implements ProcessorInterface
         if (!in_array($permission, self::VALID_PERMISSIONS, true)) {
             throw new BadRequestHttpException('permission invalide. Valeurs acceptées : read, write.');
         }
+
+        if ($guest->getId()->equals($owner->getId())) {
+            throw new BadRequestHttpException('Vous ne pouvez pas partager une ressource avec vous-même.');
+        }
+
+        $resource = $this->resourceLocator->locate($resourceType, Uuid::fromString($resourceId));
+        $this->ownershipChecker->denyUnlessOwner($resource);
 
         $expiresAt = null;
         if (!empty($data->expiresAt)) {
