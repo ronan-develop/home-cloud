@@ -1,5 +1,14 @@
 import { apiFetch } from './api.js';
 
+function escapeHtml(str) {
+	return String(str)
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#39;');
+}
+
 const ICON_FILE   = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>';
 const ICON_IMAGE  = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
 const ICON_VIDEO  = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>';
@@ -33,10 +42,11 @@ data.items.forEach(item => {
 const icon        = item.isFolder ? ICON_FOLDER : mimeToIcon(item.mimeType);
 const moveModalId = `move-modal-${item.isFolder ? 'folder' : 'file'}-${item.id}`;
 const btnClass    = item.isFolder ? 'move-folder-btn' : 'move-file-btn';
+const safeName     = escapeHtml(item.name);
 html += `
 <div class="folder-card">
 <div class="${item.isFolder ? 'folder-icon' : 'file-icon'}">${icon}</div>
-<div class="${item.isFolder ? 'folder-name' : 'file-name'}">${item.name}</div>
+<div class="${item.isFolder ? 'folder-name' : 'file-name'}">${safeName}</div>
 ${!item.isFolder ? `<div class="file-meta">${item.size ? (item.size / 1024).toFixed(2) + ' KB' : ''} · ${item.createdAt || ''}</div>` : ''}
 <div class="folder-actions flex justify-end items-center mt-2 gap-2">
 ${item.isFolder ? `
