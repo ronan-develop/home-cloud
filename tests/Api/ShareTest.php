@@ -202,6 +202,93 @@ final class ShareTest extends AuthenticatedApiTestCase
         $this->assertResponseStatusCodeSame(400);
     }
 
+    public function testCreateShareFailsIfNotResourceOwner(): void
+    {
+        // Alice (JWT courant) tente de partager un fichier qui appartient à Bob.
+        $bob  = $this->createGuest();
+        $file = $this->createFile($bob);
+        $stranger = $this->createUser('stranger@example.com', 'password123', 'Stranger');
+        $this->em->flush();
+
+        $this->createAuthenticatedClient()->request('POST', '/api/v1/shares', [
+            'json' => [
+                'guestId'      => $stranger->getId()->toRfc4122(),
+                'resourceType' => 'file',
+                'resourceId'   => $file->getId()->toRfc4122(),
+                'permission'   => 'read',
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(403);
+    }
+
+    public function testCreateShareFailsIfNotFolderOwner(): void
+    {
+        $bob    = $this->createGuest();
+        $folder = $this->createFolder('Bob Folder', $bob, null, $this->em);
+
+        $this->createAuthenticatedClient()->request('POST', '/api/v1/shares', [
+            'json' => [
+                'guestId'      => $bob->getId()->toRfc4122(),
+                'resourceType' => 'folder',
+                'resourceId'   => $folder->getId()->toRfc4122(),
+                'permission'   => 'read',
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(403);
+    }
+
+    public function testCreateShareFailsIfNotAlbumOwner(): void
+    {
+        $bob   = $this->createGuest();
+        $album = $this->createAlbum($bob);
+
+        $this->createAuthenticatedClient()->request('POST', '/api/v1/shares', [
+            'json' => [
+                'guestId'      => $bob->getId()->toRfc4122(),
+                'resourceType' => 'album',
+                'resourceId'   => $album->getId()->toRfc4122(),
+                'permission'   => 'read',
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(403);
+    }
+
+    public function testCreateShareFailsIfResourceNotFound(): void
+    {
+        $guest = $this->createGuest();
+
+        $this->createAuthenticatedClient()->request('POST', '/api/v1/shares', [
+            'json' => [
+                'guestId'      => $guest->getId()->toRfc4122(),
+                'resourceType' => 'file',
+                'resourceId'   => Uuid::v7()->toRfc4122(),
+                'permission'   => 'read',
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(404);
+    }
+
+    public function testCreateShareFailsIfGuestIsSelf(): void
+    {
+        $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
+        $file  = $this->createFile($owner);
+
+        $this->createAuthenticatedClient()->request('POST', '/api/v1/shares', [
+            'json' => [
+                'guestId'      => $owner->getId()->toRfc4122(),
+                'resourceType' => 'file',
+                'resourceId'   => $file->getId()->toRfc4122(),
+                'permission'   => 'read',
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(400);
+    }
+
     // ─── GET /api/v1/shares ─────────────────────────────────────────────────
 
     public function testGetCollectionAsOwner(): void
