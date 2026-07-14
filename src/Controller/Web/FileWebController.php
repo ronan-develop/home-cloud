@@ -93,7 +93,10 @@ final class FileWebController extends AbstractController
         $user = $this->getUser();
         $folder = $this->folderService->resolve($folderId, null, $user);
 
-        $originalName = preg_replace('/[\x00-\x1F\x7F]/u', '', $uploadedFile->getClientOriginalName());
+        // Retire les caractères de contrôle ET < > (neutralise le XSS stocké si ce nom
+        // est un jour affiché sans échappement côté client — défense en profondeur, cf.
+        // FilenameValidator qui rejette ces mêmes caractères sur les autres chemins).
+        $originalName = preg_replace('/[\x00-\x1F\x7F<>]/u', '', $uploadedFile->getClientOriginalName());
         $mimeType = $uploadedFile->getClientMimeType();
         $size = $uploadedFile->getSize();  // Avant store() qui déplace le fichier
 

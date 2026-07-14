@@ -136,8 +136,9 @@ final class CreateFileService implements CreateFileServiceInterface
     {
         $originalName = $file->getClientOriginalName() ?? 'unnamed';
 
-        // Sanitize: remove null bytes, control characters
-        $sanitized = preg_replace('/[\x00-\x1F\x7F]/u', '', $originalName) ?: 'unnamed';
+        // Sanitize: remove null bytes, control characters, and < > (défense en
+        // profondeur contre le XSS stocké si ce nom est affiché sans échappement).
+        $sanitized = preg_replace('/[\x00-\x1F\x7F<>]/u', '', $originalName) ?: 'unnamed';
 
         return [
             'name' => $sanitized,

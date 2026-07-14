@@ -92,12 +92,14 @@ class CreateFileServiceTest extends TestCase
 
     public function testCreateFromUploadSanitizesFileName(): void
     {
-        // Setup: filename with null bytes + control chars
+        // Setup: filename with null bytes + control chars + < > (XSS stocké, F9 de
+        // l'audit sécurité — un nom affiché sans échappement côté client exécuterait
+        // une balise <img onerror=...> injectée via le nom de fichier uploadé).
         $tmpFile = tempnam(sys_get_temp_dir(), 'test');
         file_put_contents($tmpFile, 'content');
         $uploadedFile = new UploadedFile(
             $tmpFile,
-            "file\x00with\x1Fcontrol.txt",
+            "file\x00with\x1Fcontrol<img onerror=alert(1)>.txt",
             'text/plain',
             null,
             true
@@ -133,6 +135,8 @@ class CreateFileServiceTest extends TestCase
         // Assert: sanitized
         $this->assertStringNotContainsString("\x00", $file->getOriginalName());
         $this->assertStringNotContainsString("\x1F", $file->getOriginalName());
+        $this->assertStringNotContainsString('<', $file->getOriginalName());
+        $this->assertStringNotContainsString('>', $file->getOriginalName());
     }
 
     public function testCreateFromUploadWithFolderId(): void
