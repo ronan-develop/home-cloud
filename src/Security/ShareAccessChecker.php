@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace App\Security;
 
 use App\Entity\User;
+use App\Interface\ShareAccessCheckerInterface;
 use App\Repository\ShareRepository;
 use Symfony\Component\Uid\Uuid;
 
 /**
  * Vérifie si un utilisateur a accès à une ressource via un partage actif.
  */
-final class ShareAccessChecker
+final class ShareAccessChecker implements ShareAccessCheckerInterface
 {
     public function __construct(
         private readonly ShareRepository $shareRepository,

@@ -8,7 +8,7 @@ use App\Entity\Share;
 use App\Entity\User;
 use App\Repository\FileRepository;
 use App\Interface\StorageServiceInterface;
-use App\Security\ShareAccessChecker;
+use App\Security\ResourceAccessChecker;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
@@ -25,9 +25,8 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
  *
  * Sécurité :
  * - Le propriétaire du fichier peut toujours le télécharger ; un autre utilisateur
- *   ne le peut que s'il bénéficie d'un partage actif (ShareAccessChecker), sur le
- *   même modèle que FileProvider (item GET) — même logique, même contrôleur qui
- *   n'y était pas encore aligné.
+ *   ne le peut que s'il bénéficie d'un partage actif (ResourceAccessChecker), sur le
+ *   même modèle que FileProvider (item GET).
  * - Les fichiers ordinaires sont stockés en clair ; les fichiers neutralisés sont stockés
  *   en .bin avec leur contenu d'origine intact. Dans les deux cas, le fichier est streamé
  *   directement — aucun déchiffrement nécessaire.
@@ -43,7 +42,7 @@ final class FileDownloadController extends AbstractController
     public function __construct(
         private readonly FileRepository $fileRepository,
         private readonly StorageServiceInterface $storageService,
-        private readonly ShareAccessChecker $shareAccessChecker,
+        private readonly ResourceAccessChecker $resourceAccessChecker,
     ) {}
 
     #[Route('/api/v1/files/{id}/download', name: 'file_download', methods: ['GET'])]
@@ -54,8 +53,7 @@ final class FileDownloadController extends AbstractController
 
         /** @var User $user */
         $user = $this->getUser();
-        if (!$file->getOwner()->getId()->equals($user->getId())
-            && !$this->shareAccessChecker->canAccess($user, Share::RESOURCE_FILE, $file->getId())) {
+        if (!$this->resourceAccessChecker->canRead($user, Share::RESOURCE_FILE, $file->getId(), $file->getOwner())) {
             throw $this->createAccessDeniedException('Vous ne pouvez pas télécharger ce fichier.');
         }
 
