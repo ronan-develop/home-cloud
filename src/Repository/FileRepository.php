@@ -28,14 +28,16 @@ class FileRepository extends ServiceEntityRepository implements FileRepositoryIn
     }
 
     /**
-     * Retourne les fichiers filtrés + triés + paginés.
+     * Retourne les fichiers filtrés + triés + paginés, appartenant à $owner.
      *
      * @param array<string, string> $orderBy  ex: ['originalName' => 'ASC']
      * @return File[]
      */
-    public function findFiltered(?string $search, ?string $folderId, array $orderBy, int $limit, int $offset): array
+    public function findFiltered(User $owner, ?string $search, ?string $folderId, array $orderBy, int $limit, int $offset): array
     {
         $qb = $this->createQueryBuilder('f')
+            ->andWhere('IDENTITY(f.owner) = :ownerId')
+            ->setParameter('ownerId', $owner->getId()->toBinary())
             ->setMaxResults($limit)
             ->setFirstResult($offset);
 
@@ -58,10 +60,13 @@ class FileRepository extends ServiceEntityRepository implements FileRepositoryIn
         return $qb->getQuery()->getResult();
     }
 
-    /** Compte les fichiers avec filtres optionnels. */
-    public function countFiltered(?string $search, ?string $folderId): int
+    /** Compte les fichiers de $owner avec filtres optionnels. */
+    public function countFiltered(User $owner, ?string $search, ?string $folderId): int
     {
-        $qb = $this->createQueryBuilder('f')->select('COUNT(f.id)');
+        $qb = $this->createQueryBuilder('f')
+            ->select('COUNT(f.id)')
+            ->andWhere('IDENTITY(f.owner) = :ownerId')
+            ->setParameter('ownerId', $owner->getId()->toBinary());
 
         if ($folderId !== null) {
             $qb->andWhere('IDENTITY(f.folder) = :folderId')
