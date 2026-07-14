@@ -75,4 +75,42 @@ final class SecurityHeadersListenerTest extends TestCase
 
         $this->assertNull($event->getResponse()->headers->get('Strict-Transport-Security'));
     }
+
+    /**
+     * F7 de l'audit sécurité : le front HTML n'avait aucune CSP, alors qu'il
+     * rend du contenu utilisateur (noms de fichiers/albums). La CSP reste
+     * permissive sur les scripts inline existants (pas de refonte en nonces),
+     * mais bloque l'injection de sources EXTERNES — le vecteur XSS le plus
+     * dangereux (ex: <script src="https://evil.com">).
+     */
+    public function testCspHeaderIsSetOnHtmlFrontRoutes(): void
+    {
+        $event = $this->buildEvent('/explorer');
+        (new SecurityHeadersListener('test'))($event);
+
+        $csp = $event->getResponse()->headers->get('Content-Security-Policy');
+        $this->assertNotNull($csp);
+        $this->assertStringContainsString("default-src 'self'", $csp);
+        $this->assertStringContainsString("object-src 'none'", $csp);
+        $this->assertStringContainsString("frame-ancestors 'none'", $csp);
+        $this->assertStringContainsString("base-uri 'self'", $csp);
+    }
+
+    public function testCspHeaderOnHtmlFrontAllowsInlineScriptsAndStyles(): void
+    {
+        $event = $this->buildEvent('/gallery');
+        (new SecurityHeadersListener('test'))($event);
+
+        $csp = $event->getResponse()->headers->get('Content-Security-Policy');
+        $this->assertStringContainsString("script-src 'self' 'unsafe-inline'", $csp);
+        $this->assertStringContainsString("style-src 'self' 'unsafe-inline'", $csp);
+    }
+
+    public function testCspHeaderIsStrictOnApiRoutesNotHtmlPolicy(): void
+    {
+        $event = $this->buildEvent('/api/v1/users');
+        (new SecurityHeadersListener('test'))($event);
+
+        $this->assertSame("default-src 'none'", $event->getResponse()->headers->get('Content-Security-Policy'));
+    }
 }
