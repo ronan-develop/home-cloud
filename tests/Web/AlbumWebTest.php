@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Web;
 
 use App\Entity\Album;
+use App\Entity\Share;
 use App\Entity\User;
 use App\Tests\Web\Fixtures\WebFixturesTrait;
 use Doctrine\ORM\EntityManagerInterface;
@@ -725,5 +726,66 @@ final class AlbumWebTest extends WebTestCase
 
         $this->client->request('GET', '/albums/' . $album->getId()->toRfc4122());
         $this->assertSelectorExists('[data-testid="lightbox-slideshow-toggle"]');
+    }
+
+    // --- Partage ---
+
+    public function testGuestWithActiveShareCanViewAlbumDetail(): void
+    {
+        $owner = $this->createUser('owner@example.com');
+        $guest = $this->createUser('guest@example.com');
+        $album = $this->createAlbum($owner, 'Vacances partagées');
+        $share = new Share($owner, $guest, 'album', $album->getId(), 'read');
+        $this->em->persist($share);
+        $this->em->flush();
+
+        $this->login('guest@example.com');
+
+        $this->client->request('GET', '/albums/' . $album->getId()->toRfc4122());
+        $this->assertResponseIsSuccessful();
+    }
+
+    public function testGuestWithoutShareCannotViewAlbumDetail(): void
+    {
+        $owner = $this->createUser('owner@example.com');
+        $this->createUser('guest@example.com');
+        $album = $this->createAlbum($owner, 'Album privé');
+        $this->em->flush();
+
+        $this->login('guest@example.com');
+
+        $this->client->request('GET', '/albums/' . $album->getId()->toRfc4122());
+        $this->assertResponseStatusCodeSame(403);
+    }
+
+    public function testGuestWithExpiredShareCannotViewAlbumDetail(): void
+    {
+        $owner = $this->createUser('owner@example.com');
+        $guest = $this->createUser('guest@example.com');
+        $album = $this->createAlbum($owner, 'Album expiré');
+        $share = new Share($owner, $guest, 'album', $album->getId(), 'read', new \DateTimeImmutable('-1 day'));
+        $this->em->persist($share);
+        $this->em->flush();
+
+        $this->login('guest@example.com');
+
+        $this->client->request('GET', '/albums/' . $album->getId()->toRfc4122());
+        $this->assertResponseStatusCodeSame(403);
+    }
+
+    public function testGuestWithWriteShareCannotDeleteAlbum(): void
+    {
+        $owner = $this->createUser('owner@example.com');
+        $guest = $this->createUser('guest@example.com');
+        $album = $this->createAlbum($owner, 'Album protégé');
+        $share = new Share($owner, $guest, 'album', $album->getId(), 'write');
+        $this->em->persist($share);
+        $this->em->flush();
+
+        $this->login('guest@example.com');
+        $token = $this->csrfTokenFrom('/albums/' . $album->getId()->toRfc4122(), 'form[action*="/delete"] input[name="_token"]');
+
+        $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/delete', ['_token' => $token]);
+        $this->assertResponseStatusCodeSame(403);
     }
 }
