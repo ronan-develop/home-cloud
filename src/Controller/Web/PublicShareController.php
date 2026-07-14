@@ -7,12 +7,20 @@ namespace App\Controller\Web;
 use App\Entity\Album;
 use App\Entity\File;
 use App\Entity\Folder;
+use App\Interface\FileRepositoryInterface;
 use App\Interface\ShareLinkAccessCheckerInterface;
+use App\Interface\StorageServiceInterface;
 use App\Security\ResourceLocator;
+use App\Security\SharedFileScopeChecker;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\HeaderUtils;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * Consultation d'une ressource via un lien de partage public — sans compte,
@@ -27,21 +35,15 @@ final class PublicShareController extends AbstractController
     public function __construct(
         private readonly ShareLinkAccessCheckerInterface $shareLinkAccessChecker,
         private readonly ResourceLocator $resourceLocator,
+        private readonly FileRepositoryInterface $fileRepository,
+        private readonly SharedFileScopeChecker $sharedFileScopeChecker,
+        private readonly StorageServiceInterface $storageService,
     ) {}
 
     #[Route('/p/{selector}/{token}', name: 'app_public_share', methods: ['GET'])]
     public function show(string $selector, string $token): Response
     {
-        $link = $this->shareLinkAccessChecker->resolve($selector, $token);
-
-        if ($link === null) {
-            throw new NotFoundHttpException();
-        }
-
-        // ResourceLocator::locate() lève déjà NotFoundHttpException si la
-        // ressource a été supprimée depuis la création du lien — pas de
-        // traitement supplémentaire nécessaire, la 404 se propage telle quelle.
-        $resource = $this->resourceLocator->locate($link->getResourceType(), $link->getResourceId());
+        [$link, $resource] = $this->resolveLinkOrFail($selector, $token);
 
         $response = $this->render('web/public_share.html.twig', [
             'resource'     => $resource,
@@ -55,6 +57,43 @@ final class PublicShareController extends AbstractController
         return $response;
     }
 
+    #[Route('/p/{selector}/{token}/download/{fileId}', name: 'app_public_share_download', methods: ['GET'])]
+    public function download(string $selector, string $token, string $fileId): StreamedResponse
+    {
+        [$link, $linkResource] = $this->resolveLinkOrFail($selector, $token);
+
+        $file = $this->fileRepository->findById(Uuid::fromString($fileId))
+            ?? throw new NotFoundHttpException();
+
+        if (!$this->sharedFileScopeChecker->isInScope($file, $link->getResourceType(), $link->getResourceId(), $linkResource)) {
+            throw new AccessDeniedHttpException('Ce fichier ne fait pas partie du partage.');
+        }
+
+        $absolutePath = $this->storageService->getAbsolutePath($file->getPath());
+
+        if (!file_exists($absolutePath)) {
+            throw new NotFoundHttpException();
+        }
+
+        $detectedMime = (new \finfo(FILEINFO_MIME_TYPE))->file($absolutePath) ?: 'application/octet-stream';
+
+        $disposition = HeaderUtils::makeDisposition(
+            ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+            $file->getOriginalName(),
+        );
+
+        $response = new StreamedResponse(function () use ($absolutePath): void {
+            readfile($absolutePath);
+        });
+
+        $response->headers->set('Content-Type', $detectedMime);
+        $response->headers->set('Content-Disposition', $disposition);
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
+
+        return $response;
+    }
+
     private function resourceName(File|Folder|Album $resource): string
     {
         return match (true) {
@@ -62,5 +101,24 @@ final class PublicShareController extends AbstractController
             $resource instanceof Folder => $resource->getName(),
             $resource instanceof Album  => $resource->getName(),
         };
+    }
+
+    /**
+     * @return array{0: \App\Entity\ShareLink, 1: File|Folder|Album}
+     */
+    private function resolveLinkOrFail(string $selector, string $token): array
+    {
+        $link = $this->shareLinkAccessChecker->resolve($selector, $token);
+
+        if ($link === null) {
+            throw new NotFoundHttpException();
+        }
+
+        // ResourceLocator::locate() lève déjà NotFoundHttpException si la
+        // ressource a été supprimée depuis la création du lien — pas de
+        // traitement supplémentaire nécessaire, la 404 se propage telle quelle.
+        $resource = $this->resourceLocator->locate($link->getResourceType(), $link->getResourceId());
+
+        return [$link, $resource];
     }
 }
