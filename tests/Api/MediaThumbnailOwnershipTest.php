@@ -6,6 +6,7 @@ namespace App\Tests\Api;
 
 use App\Entity\File;
 use App\Entity\Media;
+use App\Entity\Share;
 use App\Tests\AuthenticatedApiTestCase;
 
 /**
@@ -14,6 +15,10 @@ use App\Tests\AuthenticatedApiTestCase;
  * MediaThumbnailController chargeait le média par ID et le streamait sans
  * aucun contrôle d'ownership : un utilisateur authentifié pouvait afficher
  * la vignette d'un média appartenant à n'importe quel autre utilisateur.
+ *
+ * Un partage actif sur le File sous-jacent (Share::RESOURCE_FILE) donne
+ * accès à la vignette de son Media — pas de RESOURCE_MEDIA distinct, la
+ * vignette est une simple représentation dérivée du fichier partagé.
  */
 final class MediaThumbnailOwnershipTest extends AuthenticatedApiTestCase
 {
@@ -79,5 +84,36 @@ final class MediaThumbnailOwnershipTest extends AuthenticatedApiTestCase
         $browser->request('GET', '/api/v1/medias/' . $mediaId . '/thumbnail');
 
         $this->assertSame(200, $browser->getResponse()->getStatusCode());
+    }
+
+    public function testGuestWithActiveShareOnFileCanViewThumbnail(): void
+    {
+        $media = $this->makeStoredMedia('owner4@example.com');
+        $mediaId = (string) $media->getId();
+        $owner = $this->em->getRepository(\App\Entity\User::class)->findOneBy(['email' => 'owner4@example.com']);
+        $guest = $this->createUser('guest4@example.com', 'password123', 'Guest');
+
+        $share = new Share($owner, $guest, Share::RESOURCE_FILE, $media->getFile()->getId(), Share::PERMISSION_READ);
+        $this->em->persist($share);
+        $this->em->flush();
+        $this->em->clear();
+
+        $browser = $this->createAuthenticatedKernelBrowser('guest4@example.com');
+        $browser->request('GET', '/api/v1/medias/' . $mediaId . '/thumbnail');
+
+        $this->assertSame(200, $browser->getResponse()->getStatusCode());
+    }
+
+    public function testGuestWithoutShareCannotViewThumbnail(): void
+    {
+        $media = $this->makeStoredMedia('owner5@example.com');
+        $mediaId = (string) $media->getId();
+        $this->createUser('guest5@example.com', 'password123', 'Guest');
+        $this->em->clear();
+
+        $browser = $this->createAuthenticatedKernelBrowser('guest5@example.com');
+        $browser->request('GET', '/api/v1/medias/' . $mediaId . '/thumbnail');
+
+        $this->assertSame(403, $browser->getResponse()->getStatusCode());
     }
 }

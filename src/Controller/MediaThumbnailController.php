@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Entity\Share;
 use App\Entity\User;
 use App\Repository\MediaRepository;
 use App\Interface\StorageServiceInterface;
+use App\Security\ShareAccessChecker;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -19,8 +21,10 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
  * Rôle : streamer le thumbnail depuis le disque avec le Content-Type approprié.
  *
  * Sécurité :
- * - Seul le propriétaire du média peut voir sa vignette (pas de partage entre
- *   utilisateurs implémenté à ce jour).
+ * - Le propriétaire du média peut toujours voir sa vignette ; un autre
+ *   utilisateur ne le peut que s'il bénéficie d'un partage actif sur le File
+ *   sous-jacent (pas de Share::RESOURCE_MEDIA distinct — la vignette est une
+ *   représentation dérivée du fichier).
  * - Les thumbnails sont stockés en clair — streaming direct sans déchiffrement.
  * - X-Content-Type-Options: nosniff empêche le MIME sniffing navigateur.
  * - Content-Type forcé à image/jpeg (les thumbnails sont toujours des JPEG — ThumbnailService).
@@ -39,6 +43,7 @@ final class MediaThumbnailController extends AbstractController
     public function __construct(
         private readonly MediaRepository $mediaRepository,
         private readonly StorageServiceInterface $storageService,
+        private readonly ShareAccessChecker $shareAccessChecker,
     ) {}
 
     #[Route('/api/v1/medias/{id}/thumbnail', name: 'media_thumbnail', methods: ['GET'])]
@@ -49,7 +54,8 @@ final class MediaThumbnailController extends AbstractController
 
         /** @var User $user */
         $user = $this->getUser();
-        if (!$media->isOwnedBy($user)) {
+        if (!$media->isOwnedBy($user)
+            && !$this->shareAccessChecker->canAccess($user, Share::RESOURCE_FILE, $media->getFile()->getId())) {
             throw $this->createAccessDeniedException('Vous ne pouvez pas voir ce média.');
         }
 
