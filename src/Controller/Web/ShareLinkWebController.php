@@ -6,6 +6,7 @@ namespace App\Controller\Web;
 
 use App\Entity\Share;
 use App\Entity\User;
+use App\Exception\ResourceNotPubliclyShareableException;
 use App\Security\ShareLinkFactory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -51,11 +52,22 @@ final class ShareLinkWebController extends AbstractController
         /** @var User $owner */
         $owner = $this->getUser();
 
-        $created = $this->shareLinkFactory->create(
-            $owner,
-            $resourceType,
-            Uuid::fromString($resourceId),
-        );
+        try {
+            $created = $this->shareLinkFactory->create(
+                $owner,
+                $resourceType,
+                Uuid::fromString($resourceId),
+            );
+        } catch (ResourceNotPubliclyShareableException) {
+            // Erreur légitime côté owner (ressource pas encore en link_allowed) :
+            // redirection avec explication, pas une page d'exception brute.
+            $this->addFlash('error', 'Cette ressource est privée : basculez-la en partage par lien avant de créer un lien.');
+
+            return $this->redirect($redirectUrl);
+        }
+        // Non-owner ou ressource introuvable restent des 403/404 francs
+        // (cf. ShareWebController::create, même comportement) : ce ne sont
+        // pas des erreurs qu'un propriétaire légitime peut rencontrer.
 
         $publicUrl = $this->generateUrl('app_public_share', [
             'selector' => $created->link->getSelector(),

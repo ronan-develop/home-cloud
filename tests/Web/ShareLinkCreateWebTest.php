@@ -82,8 +82,11 @@ final class ShareLinkCreateWebTest extends WebTestCase
         $this->assertNotNull($link);
     }
 
-    public function testCreateShareLinkOnPrivateFileReturns403(): void
+    public function testCreateShareLinkOnPrivateFileRedirectsWithErrorFlash(): void
     {
+        // Le verrou de visibilité doit tenir (comportement de sécurité
+        // inchangé), mais l'échec doit être une redirection avec message
+        // explicite plutôt qu'une page d'exception Symfony brute.
         $owner = $this->createOwner();
         $file = $this->createFile($owner, File::VISIBILITY_PRIVATE);
         $this->loginAs('sharelink-owner@example.com');
@@ -96,7 +99,9 @@ final class ShareLinkCreateWebTest extends WebTestCase
             'resourceId'   => $file->getId()->toRfc4122(),
         ]);
 
-        $this->assertResponseStatusCodeSame(403);
+        $this->assertResponseRedirects();
+        $this->client->followRedirect();
+        $this->assertSelectorTextContains('.flash-error', 'privée');
 
         $link = $this->em->getRepository(ShareLink::class)->findOneBy(['resourceId' => $file->getId()]);
         $this->assertNull($link);
