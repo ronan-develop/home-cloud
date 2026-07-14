@@ -39,6 +39,7 @@ final readonly class GuestAccountCreator
         $displayName = ucfirst(explode('@', $email)[0]);
 
         $user = new User($email, $displayName);
+        $user->markAsGuest();
         $this->em->persist($user);
         $this->em->flush();
 

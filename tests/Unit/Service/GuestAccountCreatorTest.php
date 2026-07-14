@@ -62,6 +62,7 @@ final class GuestAccountCreatorTest extends TestCase
         $this->assertSame('nouvel-invite@example.com', $user->getEmail());
         $this->assertSame('', $user->getPassword());
         $this->assertSame('Nouvel-invite', $user->getDisplayName());
+        $this->assertTrue($user->isGuest(), 'Le compte créé par GuestAccountCreator doit être marqué invité (statut permanent)');
     }
 
     public function testSendsAnEmailToTheGuestWithTheActivationLink(): void
