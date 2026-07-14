@@ -67,11 +67,14 @@ final class FileUploadFilenameXssTest extends WebTestCase
         $this->em->clear();
         $this->login();
 
+        $crawler = $this->client->request('GET', '/explorer');
+        $token = $crawler->filter('#main-upload-form input[name="_token"]')->attr('value');
+
         $tmp = tempnam(sys_get_temp_dir(), 'xss');
         file_put_contents($tmp, 'contenu');
         $upload = new UploadedFile($tmp, '<img src=x onerror=alert(1)>.txt', 'text/plain', null, true);
 
-        $this->client->request('POST', '/files/upload', [], ['file' => $upload]);
+        $this->client->request('POST', '/files/upload', ['_token' => $token], ['file' => $upload]);
         @unlink($tmp);
 
         $stored = $this->em->getRepository(File::class)->findOneBy([]);

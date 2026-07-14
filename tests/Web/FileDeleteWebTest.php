@@ -75,6 +75,13 @@ final class FileDeleteWebTest extends WebTestCase
         return $file;
     }
 
+    private function csrfToken(string $folderId): string
+    {
+        $crawler = $this->client->request('GET', '/explorer?folder=' . $folderId);
+
+        return $crawler->filter('.file-actions input[name="_token"]')->first()->attr('value');
+    }
+
     public function testDeleteFileFlashesSuccessMessage(): void
     {
         $user = $this->createUser();
@@ -84,8 +91,9 @@ final class FileDeleteWebTest extends WebTestCase
         $this->em->clear();
 
         $this->login();
+        $token = $this->csrfToken($folder->getId()->toRfc4122());
 
-        $this->client->request('POST', '/files/' . $fileId . '/delete');
+        $this->client->request('POST', '/files/' . $fileId . '/delete', ['_token' => $token]);
         $this->client->followRedirect();
 
         $this->assertSelectorTextContains('.flash-success', 'supprimé');
@@ -101,6 +109,7 @@ final class FileDeleteWebTest extends WebTestCase
 
         $this->client->disableReboot();
         $this->login();
+        $token = $this->csrfToken($folder->getId()->toRfc4122());
 
         $failingStorage = new class implements StorageServiceInterface {
             public function store(\Symfony\Component\HttpFoundation\File\UploadedFile $file): array
@@ -120,7 +129,7 @@ final class FileDeleteWebTest extends WebTestCase
         };
         static::getContainer()->set(\App\Service\StorageService::class, $failingStorage);
 
-        $this->client->request('POST', '/files/' . $fileId . '/delete');
+        $this->client->request('POST', '/files/' . $fileId . '/delete', ['_token' => $token]);
         $this->client->followRedirect();
 
         $this->assertSelectorTextContains('.flash-error', 'suppression');
