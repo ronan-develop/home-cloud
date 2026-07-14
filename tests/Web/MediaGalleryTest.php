@@ -122,6 +122,16 @@ final class MediaGalleryTest extends WebTestCase
         $this->assertSelectorExists('[data-lightbox]');
     }
 
+    public function testVideoThumbnailHasMediaTypeAttribute(): void
+    {
+        $user = $this->createUser();
+        $this->createMediaFile($user, 'clip.mp4', 'video');
+        $this->login();
+
+        $crawler = $this->client->request('GET', '/gallery');
+        $this->assertSelectorExists('[data-lightbox][data-media-type="video"]');
+    }
+
     // --- Filtrage ---
 
     public function testGalleryFilterByPhoto(): void

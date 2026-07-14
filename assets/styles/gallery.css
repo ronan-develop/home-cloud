@@ -274,7 +274,8 @@
   cursor: zoom-out;
 }
 
-.hc-lightbox-img {
+.hc-lightbox-img,
+.hc-lightbox-video {
   max-width: 90vw;
   max-height: 90vh;
   border-radius: 6px;

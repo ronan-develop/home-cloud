@@ -700,6 +700,20 @@ final class AlbumWebTest extends WebTestCase
         $this->assertSelectorExists('[data-lightbox][data-full-src]');
     }
 
+    public function testAlbumDetailVideoThumbnailHasMediaTypeAttribute(): void
+    {
+        $user  = $this->createUser();
+        $album = $this->createAlbum($user, 'Vacances');
+        $media = $this->createMediaFile($user, 'clip.mp4', 'video');
+        $album->addMedia($media);
+        $this->em->flush();
+        $this->login();
+
+        $crawler = $this->client->request('GET', '/albums/' . $album->getId()->toRfc4122());
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorExists('[data-lightbox][data-media-type="video"]');
+    }
+
     public function testAlbumDetailHasSlideshowToggle(): void
     {
         $user  = $this->createUser();
