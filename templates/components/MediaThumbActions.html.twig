@@ -20,6 +20,7 @@
     <form method="post" action="{{ removeUrl }}"
           class="hc-media-thumb-action-form" data-controller="confirm-submit"
           data-confirm-submit-message-value="Retirer « {{ media.file.originalName }} » de l'album ?">
+      <input type="hidden" name="_token" value="{{ csrf_token('album-remove-media') }}">
       <button type="submit" class="hc-media-thumb-action hc-media-thumb-action--remove"
               data-testid="remove-media-from-album" title="Retirer de l'album" aria-label="Retirer de l'album"
               draggable="true" data-action="dragstart->album-reorder#preventDrag">

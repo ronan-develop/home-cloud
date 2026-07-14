@@ -47,6 +47,10 @@ final class AlbumWebController extends AbstractController
     #[Route('/albums/create', name: 'app_album_create', methods: ['POST'])]
     public function create(Request $request): Response
     {
+        if (!$this->isCsrfTokenValid('album-create', (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
+
         $name     = (string) $request->request->get('name', '');
         $mediaIds = $request->request->all('mediaIds');
 
@@ -65,6 +69,10 @@ final class AlbumWebController extends AbstractController
     #[Route('/albums/{id}/add-media', name: 'app_album_add_media', methods: ['POST'], requirements: ['id' => '[0-9a-f\-]+'])]
     public function addMedia(string $id, Request $request): Response
     {
+        if (!$this->isCsrfTokenValid('album-add-media', (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
+
         $album = $this->albumRepository->findById(Uuid::fromString($id))
             ?? throw $this->createNotFoundException('Album introuvable.');
 
@@ -80,8 +88,12 @@ final class AlbumWebController extends AbstractController
     }
 
     #[Route('/albums/{id}/medias/{mediaId}/remove', name: 'app_album_remove_media', methods: ['POST'], requirements: ['id' => '[0-9a-f\-]+', 'mediaId' => '[0-9a-f\-]+'])]
-    public function removeMedia(string $id, string $mediaId): Response
+    public function removeMedia(string $id, string $mediaId, Request $request): Response
     {
+        if (!$this->isCsrfTokenValid('album-remove-media', (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
+
         $album = $this->albumRepository->findById(Uuid::fromString($id))
             ?? throw $this->createNotFoundException('Album introuvable.');
 
@@ -98,6 +110,10 @@ final class AlbumWebController extends AbstractController
     #[Route('/albums/{id}/reorder', name: 'app_album_reorder', methods: ['POST'], requirements: ['id' => '[0-9a-f\-]+'])]
     public function reorder(string $id, Request $request): Response
     {
+        if (!$this->isCsrfTokenValid('album-reorder', (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
+
         $album = $this->albumRepository->findById(Uuid::fromString($id))
             ?? throw $this->createNotFoundException('Album introuvable.');
 
@@ -112,6 +128,10 @@ final class AlbumWebController extends AbstractController
     #[Route('/albums/{id}/import', name: 'app_album_import', methods: ['POST'], requirements: ['id' => '[0-9a-f\-]+'])]
     public function import(string $id, Request $request): Response
     {
+        if (!$this->isCsrfTokenValid('album-import', (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
+
         $album = $this->albumRepository->findById(Uuid::fromString($id))
             ?? throw $this->createNotFoundException('Album introuvable.');
 
@@ -138,8 +158,12 @@ final class AlbumWebController extends AbstractController
     }
 
     #[Route('/albums/{id}/delete', name: 'app_album_delete', methods: ['POST'], requirements: ['id' => '[0-9a-f\-]+'])]
-    public function delete(string $id): Response
+    public function delete(string $id, Request $request): Response
     {
+        if (!$this->isCsrfTokenValid('album-delete', (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
+
         $album = $this->albumRepository->findById(Uuid::fromString($id))
             ?? throw $this->createNotFoundException('Album introuvable.');
 

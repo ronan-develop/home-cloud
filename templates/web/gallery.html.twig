@@ -116,6 +116,7 @@
         {# Barre d'action flottante — ajout direct à l'album ciblé par ?album= #}
         <form id="gallery-add-to-album-form" method="post" action="{{ path('app_album_add_media', {id: targetAlbum.id}) }}"
               class="hc-selection-bar hidden" data-gallery-selection-target="bar">
+          <input type="hidden" name="_token" value="{{ csrf_token('album-add-media') }}">
           <span class="hc-selection-count" data-gallery-selection-target="count">0 sélectionné</span>
           <div class="hc-selection-actions">
             <button type="submit" class="hc-selection-confirm" data-testid="gallery-add-to-current-album" data-album-id="{{ targetAlbum.id }}">

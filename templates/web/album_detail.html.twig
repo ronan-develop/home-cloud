@@ -30,6 +30,7 @@
       </a>
       <form method="post" action="{{ path('app_album_import', {id: album.id}) }}"
             enctype="multipart/form-data" data-controller="album-import">
+        <input type="hidden" name="_token" value="{{ csrf_token('album-import') }}">
         <input type="file" name="files[]" multiple accept="image/*,video/*"
                class="hidden" data-album-import-target="input"
                data-action="change->album-import#submit">
@@ -43,6 +44,7 @@
       <div style="width:1px; align-self:stretch; background:var(--hc-border-strong); margin:0 2px;" aria-hidden="true"></div>
       <form method="post" action="{{ path('app_album_delete', {id: album.id}) }}"
             onsubmit="return confirm('Supprimer l\'album « {{ album.name|e('js') }} » ?')">
+        <input type="hidden" name="_token" value="{{ csrf_token('album-delete') }}">
         <button type="submit" class="hc-item-action hc-item-action--danger flex items-center justify-center w-11 h-11 rounded-md"
                 style="border:1px solid var(--hc-border); color: var(--hc-err);"
                 title="Supprimer l'album" aria-label="Supprimer l'album">
@@ -64,7 +66,8 @@
     <p class="hc-page-sub" data-testid="album-reorder-hint">Glissez-déposez une photo pour changer son ordre.</p>
 
     <div class="hc-media-grid" data-controller="album-reorder"
-         data-album-reorder-url-value="{{ path('app_album_reorder', {id: album.id}) }}">
+         data-album-reorder-url-value="{{ path('app_album_reorder', {id: album.id}) }}"
+         data-album-reorder-csrf-token-value="{{ csrf_token('album-reorder') }}">
       {% for media in album.medias %}
         <div class="hc-media-thumb" draggable="true"
              data-album-reorder-target="item"
