@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Web;
 
+use App\Entity\Album;
 use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\Share;
@@ -107,5 +108,98 @@ final class ShareWebTest extends WebTestCase
         $link = $crawler->filter('a:contains("Partages")');
         $this->assertGreaterThan(0, $link->count());
         $this->assertSame('/partages', $link->attr('href'));
+    }
+
+    // ─── Création d'un partage depuis un album (formulaire ShareModal) ──────
+
+    private function createAlbum(User $owner, string $name = 'Vacances'): Album
+    {
+        $album = new Album($name, $owner);
+        $this->em->persist($album);
+        $this->em->flush();
+
+        return $album;
+    }
+
+    private function shareCreateToken(string $resourceId): string
+    {
+        $crawler = $this->client->request('GET', '/albums/' . $resourceId);
+
+        return $crawler->filter('form[action*="/share-create"] input[name="_token"]')->attr('value');
+    }
+
+    public function testCreateShareFromAlbumRedirectsWithSuccessFlash(): void
+    {
+        $owner = $this->createUser();
+        $this->createUser('invite@example.com');
+        $album = $this->createAlbum($owner);
+
+        $this->login();
+        $token = $this->shareCreateToken($album->getId()->toRfc4122());
+
+        $this->client->request('POST', '/share-create', [
+            '_token'       => $token,
+            'guestEmail'   => 'invite@example.com',
+            'resourceType' => 'album',
+            'resourceId'   => $album->getId()->toRfc4122(),
+            'permission'   => 'read',
+        ]);
+
+        $this->assertResponseRedirects('/albums/' . $album->getId()->toRfc4122());
+        $this->client->followRedirect();
+        $this->assertSelectorTextContains('.flash-success', 'partagé');
+    }
+
+    public function testCreateShareWithUnknownEmailShowsErrorFlash(): void
+    {
+        $owner = $this->createUser();
+        $album = $this->createAlbum($owner);
+
+        $this->login();
+        $token = $this->shareCreateToken($album->getId()->toRfc4122());
+
+        $this->client->request('POST', '/share-create', [
+            '_token'       => $token,
+            'guestEmail'   => 'inconnu@example.com',
+            'resourceType' => 'album',
+            'resourceId'   => $album->getId()->toRfc4122(),
+            'permission'   => 'read',
+        ]);
+
+        $this->assertResponseRedirects('/albums/' . $album->getId()->toRfc4122());
+        $this->client->followRedirect();
+        $this->assertSelectorTextContains('.flash-error', 'Aucun compte HomeCloud');
+    }
+
+    public function testCreateShareWithoutCsrfTokenReturns403(): void
+    {
+        $owner = $this->createUser();
+        $this->createUser('invite2@example.com');
+        $album = $this->createAlbum($owner);
+
+        $this->login();
+
+        $this->client->request('POST', '/share-create', [
+            'guestEmail'   => 'invite2@example.com',
+            'resourceType' => 'album',
+            'resourceId'   => $album->getId()->toRfc4122(),
+            'permission'   => 'read',
+        ]);
+
+        $this->assertResponseStatusCodeSame(403);
+    }
+
+    public function testAlbumDetailHasShareButtonAndModal(): void
+    {
+        $owner = $this->createUser();
+        $album = $this->createAlbum($owner);
+
+        $this->login();
+
+        $crawler = $this->client->request('GET', '/albums/' . $album->getId()->toRfc4122());
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorExists('[data-testid="share-open-btn"]');
+        $this->assertSelectorExists('form[action*="/share-create"]');
     }
 }
