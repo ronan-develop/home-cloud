@@ -66,7 +66,8 @@
     {% endif %}
 
     <div data-testid="media-gallery" class="hc-media-grid" data-controller="gallery-selection"
-         data-gallery-selection-bulk-delete-url-value="{{ path('app_media_bulk_delete') }}">
+         data-gallery-selection-bulk-delete-url-value="{{ path('app_media_bulk_delete') }}"
+         data-gallery-selection-csrf-token-value="{{ csrf_token('gallery-bulk-delete') }}">
       {% for media in medias %}
         <div data-testid="media-thumbnail" class="hc-media-thumb" data-gallery-selection-target="thumb"
              data-controller="rename-media"

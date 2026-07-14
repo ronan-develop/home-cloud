@@ -5,7 +5,7 @@ import { Controller } from '@hotwired/stimulus';
  * Affiche la barre d'action flottante dès qu'au moins un média est coché. */
 export default class extends Controller {
     static targets = ['thumb', 'checkbox', 'bar', 'count'];
-    static values = { bulkDeleteUrl: String };
+    static values = { bulkDeleteUrl: String, csrfToken: String };
 
     update() {
         const checked = this.checkboxTargets.filter((cb) => cb.checked);
@@ -29,6 +29,7 @@ export default class extends Controller {
         }
 
         const body = new URLSearchParams();
+        body.append('_token', this.csrfTokenValue);
         checked.forEach((cb) => body.append('mediaIds[]', cb.value));
 
         const response = await fetch(this.bulkDeleteUrlValue, { method: 'POST', body });
