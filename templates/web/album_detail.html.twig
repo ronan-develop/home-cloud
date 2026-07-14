@@ -83,6 +83,7 @@
           />
           <a href="{{ path('app_media_view', {id: media.id}) }}"
              data-lightbox
+             data-media-type="{{ media.mediaType }}"
              data-full-src="{{ path('app_media_full', {id: media.id}) }}"
              class="hc-media-thumb-link">
             {% if media.thumbnailPath %}
