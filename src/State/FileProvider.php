@@ -61,6 +61,12 @@ final class FileProvider implements ProviderInterface
             return $this->toOutput($file);
         }
 
+        /** @var User|null $currentUser */
+        $currentUser = $this->security->getUser();
+        if ($currentUser === null) {
+            throw new AccessDeniedHttpException();
+        }
+
         $req      = $this->requestStack->getCurrentRequest();
         $folderId = $req?->query->get('folderId');
         $search   = $req?->query->get('originalName');
@@ -76,8 +82,8 @@ final class FileProvider implements ProviderInterface
             }
         }
 
-        $total = $this->repository->countFiltered($search ?: null, $folderId);
-        $items = array_map($this->toOutput(...), $this->repository->findFiltered($search ?: null, $folderId, $order, $limit, $offset));
+        $total = $this->repository->countFiltered($currentUser, $search ?: null, $folderId);
+        $items = array_map($this->toOutput(...), $this->repository->findFiltered($currentUser, $search ?: null, $folderId, $order, $limit, $offset));
 
         return new TraversablePaginator(new \ArrayIterator($items), $page, $limit, $total);
     }
