@@ -10,8 +10,12 @@ use App\Entity\Folder;
 use App\Entity\Share;
 use App\Entity\User;
 use App\Interface\ShareRepositoryInterface;
+use App\Interface\UserRepositoryInterface;
+use App\Security\OwnershipChecker;
 use App\Security\ResourceLocator;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
@@ -24,9 +28,15 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_USER')]
 final class ShareWebController extends AbstractController
 {
+    private const VALID_TYPES = [Share::RESOURCE_FILE, Share::RESOURCE_FOLDER, Share::RESOURCE_ALBUM];
+    private const VALID_PERMISSIONS = [Share::PERMISSION_READ, Share::PERMISSION_WRITE];
+
     public function __construct(
         private readonly ShareRepositoryInterface $shareRepository,
         private readonly ResourceLocator $resourceLocator,
+        private readonly UserRepositoryInterface $userRepository,
+        private readonly OwnershipChecker $ownershipChecker,
+        private readonly EntityManagerInterface $em,
     ) {}
 
     #[Route('/partages', name: 'app_shares')]
@@ -57,6 +67,80 @@ final class ShareWebController extends AbstractController
             'outgoing' => $outgoing,
             'incoming' => $incoming,
         ]);
+    }
+
+    #[Route('/share-create', name: 'app_share_create', methods: ['POST'])]
+    public function create(Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('share-create', (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
+
+        $resourceType = (string) $request->request->get('resourceType', '');
+        $resourceId   = (string) $request->request->get('resourceId', '');
+        $redirectUrl  = $this->redirectUrlFor($resourceType, $resourceId);
+
+        if (!in_array($resourceType, self::VALID_TYPES, true)) {
+            $this->addFlash('error', 'Type de ressource invalide.');
+
+            return $this->redirect($redirectUrl);
+        }
+
+        $permission = (string) $request->request->get('permission', Share::PERMISSION_READ);
+        if (!in_array($permission, self::VALID_PERMISSIONS, true)) {
+            $permission = Share::PERMISSION_READ;
+        }
+
+        $guestEmail = trim((string) $request->request->get('guestEmail', ''));
+        $guest = $guestEmail !== '' ? $this->userRepository->findOneBy(['email' => $guestEmail]) : null;
+
+        if ($guest === null) {
+            $this->addFlash('error', 'Aucun compte HomeCloud n\'est associé à cet email.');
+
+            return $this->redirect($redirectUrl);
+        }
+
+        /** @var User $owner */
+        $owner = $this->getUser();
+
+        if ($guest->getId()->equals($owner->getId())) {
+            $this->addFlash('error', 'Vous ne pouvez pas partager une ressource avec vous-même.');
+
+            return $this->redirect($redirectUrl);
+        }
+
+        try {
+            $resource = $this->resourceLocator->locate($resourceType, \Symfony\Component\Uid\Uuid::fromString($resourceId));
+            $this->ownershipChecker->denyUnlessOwner($resource);
+        } catch (NotFoundHttpException) {
+            $this->addFlash('error', 'Ressource introuvable.');
+
+            return $this->redirect($redirectUrl);
+        }
+
+        $share = new Share($owner, $guest, $resourceType, \Symfony\Component\Uid\Uuid::fromString($resourceId), $permission);
+        $this->em->persist($share);
+
+        try {
+            $this->em->flush();
+        } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException) {
+            $this->addFlash('error', 'Un partage identique existe déjà pour cet utilisateur.');
+
+            return $this->redirect($redirectUrl);
+        }
+
+        $this->addFlash('success', sprintf('Ressource partagée avec %s.', $guest->getDisplayName()));
+
+        return $this->redirect($redirectUrl);
+    }
+
+    private function redirectUrlFor(string $resourceType, string $resourceId): string
+    {
+        return match ($resourceType) {
+            Share::RESOURCE_ALBUM  => '/albums/' . $resourceId,
+            Share::RESOURCE_FOLDER => '/explorer?folder=' . $resourceId,
+            default => '/explorer',
+        };
     }
 
     private function resolveResourceName(Share $share): string
