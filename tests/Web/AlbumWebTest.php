@@ -61,6 +61,49 @@ final class AlbumWebTest extends WebTestCase
         return $this->createMediaFile($user, $name, 'photo');
     }
 
+    /**
+     * Récupère un token CSRF valide en le lisant depuis une page réellement
+     * rendue par le client, comme le ferait un navigateur.
+     */
+    private function csrfTokenFrom(string $url, string $selector): string
+    {
+        $crawler = $this->client->request('GET', $url);
+
+        return $crawler->filter($selector)->first()->attr('value');
+    }
+
+    private function albumCreateToken(): string
+    {
+        return $this->csrfTokenFrom('/albums', '#new-album-modal input[name="_token"]');
+    }
+
+    private function albumAddMediaToken(string $albumId): string
+    {
+        return $this->csrfTokenFrom('/gallery?album=' . $albumId, '#gallery-add-to-album-form input[name="_token"]');
+    }
+
+    private function albumRemoveMediaToken(string $albumId): string
+    {
+        return $this->csrfTokenFrom('/albums/' . $albumId, '.hc-media-thumb-action-form input[name="_token"]');
+    }
+
+    private function albumReorderToken(string $albumId): string
+    {
+        $crawler = $this->client->request('GET', '/albums/' . $albumId);
+
+        return $crawler->filter('[data-controller="album-reorder"]')->attr('data-album-reorder-csrf-token-value');
+    }
+
+    private function albumImportToken(string $albumId): string
+    {
+        return $this->csrfTokenFrom('/albums/' . $albumId, 'form[action*="import"] input[name="_token"]');
+    }
+
+    private function albumDeleteToken(string $albumId): string
+    {
+        return $this->csrfTokenFrom('/albums/' . $albumId, 'form[action*="delete"] input[name="_token"]');
+    }
+
     // --- Accès ---
 
     public function testAlbumsPageRequiresLogin(): void
@@ -122,19 +165,30 @@ final class AlbumWebTest extends WebTestCase
     {
         $this->createUser();
         $this->login();
+        $token = $this->albumCreateToken();
 
-        $this->client->request('POST', '/albums/create', ['name' => 'Nouvel Album']);
+        $this->client->request('POST', '/albums/create', ['name' => 'Nouvel Album', '_token' => $token]);
         $response = $this->client->getResponse();
         $this->assertTrue($response->isRedirect());
         $this->assertStringContainsString('/albums/', $response->headers->get('Location'));
+    }
+
+    public function testCreateAlbumWithoutCsrfTokenThrows403(): void
+    {
+        $this->createUser();
+        $this->login();
+
+        $this->client->request('POST', '/albums/create', ['name' => 'Nouvel Album']);
+        $this->assertResponseStatusCodeSame(403);
     }
 
     public function testCreateAlbumWithEmptyNameReturns400(): void
     {
         $this->createUser();
         $this->login();
+        $token = $this->albumCreateToken();
 
-        $this->client->request('POST', '/albums/create', ['name' => '']);
+        $this->client->request('POST', '/albums/create', ['name' => '', '_token' => $token]);
         $this->assertResponseStatusCodeSame(400);
     }
 
@@ -144,10 +198,12 @@ final class AlbumWebTest extends WebTestCase
         $media1 = $this->createMedia($user, 'photo1.jpg');
         $media2 = $this->createMedia($user, 'photo2.jpg');
         $this->login();
+        $token = $this->albumCreateToken();
 
         $this->client->request('POST', '/albums/create', [
             'name'     => 'Vacances',
             'mediaIds' => [$media1->getId()->toRfc4122(), $media2->getId()->toRfc4122()],
+            '_token'   => $token,
         ]);
 
         $response = $this->client->getResponse();
@@ -164,9 +220,11 @@ final class AlbumWebTest extends WebTestCase
         $bobsMedia  = $this->createMedia($bob, 'secret.jpg');
 
         $this->login('alice@example.com');
+        $token = $this->albumCreateToken();
         $this->client->request('POST', '/albums/create', [
             'name'     => 'Vacances',
             'mediaIds' => [$bobsMedia->getId()->toRfc4122()],
+            '_token'   => $token,
         ]);
 
         $this->client->followRedirect();
@@ -218,14 +276,30 @@ final class AlbumWebTest extends WebTestCase
         $album  = $this->createAlbum($user, 'Vacances');
         $media  = $this->createMedia($user, 'photo.jpg');
         $this->login();
+        $token = $this->albumAddMediaToken($album->getId()->toRfc4122());
 
         $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/add-media', [
             'mediaIds' => [$media->getId()->toRfc4122()],
+            '_token'   => $token,
         ]);
 
         $this->assertResponseRedirects('/albums/' . $album->getId()->toRfc4122());
         $this->client->followRedirect();
         $this->assertSelectorTextContains('[data-testid="album-media-count"]', '1');
+    }
+
+    public function testAddMediaToAlbumWithoutCsrfTokenThrows403(): void
+    {
+        $user   = $this->createUser();
+        $album  = $this->createAlbum($user, 'Vacances');
+        $media  = $this->createMedia($user, 'photo.jpg');
+        $this->login();
+
+        $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/add-media', [
+            'mediaIds' => [$media->getId()->toRfc4122()],
+        ]);
+
+        $this->assertResponseStatusCodeSame(403);
     }
 
     public function testAddMediaToAlbumIgnoresMediaNotOwnedByUser(): void
@@ -234,10 +308,15 @@ final class AlbumWebTest extends WebTestCase
         $bob       = $this->createUser('bob@example.com');
         $album     = $this->createAlbum($alice, 'Vacances');
         $bobsMedia = $this->createMedia($bob, 'secret.jpg');
+        // Alice a besoin d'un média à elle pour que /gallery?album= rende le
+        // formulaire porteur du token CSRF.
+        $this->createMedia($alice, 'own.jpg');
 
         $this->login('alice@example.com');
+        $token = $this->albumAddMediaToken($album->getId()->toRfc4122());
         $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/add-media', [
             'mediaIds' => [$bobsMedia->getId()->toRfc4122()],
+            '_token'   => $token,
         ]);
 
         $this->client->followRedirect();
@@ -250,10 +329,15 @@ final class AlbumWebTest extends WebTestCase
         $bob   = $this->createUser('bob@example.com');
         $album = $this->createAlbum($alice, 'Album Alice');
         $media = $this->createMedia($bob, 'photo.jpg');
+        // Bob a besoin d'un album à lui pour que /gallery?album= rende le
+        // formulaire porteur du token CSRF (il n'a pas accès à celui d'Alice).
+        $bobAlbum = $this->createAlbum($bob, 'Album Bob');
 
         $this->login('bob@example.com');
+        $token = $this->albumAddMediaToken($bobAlbum->getId()->toRfc4122());
         $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/add-media', [
             'mediaIds' => [$media->getId()->toRfc4122()],
+            '_token'   => $token,
         ]);
 
         $this->assertResponseStatusCodeSame(403);
@@ -269,12 +353,27 @@ final class AlbumWebTest extends WebTestCase
         $album->addMedia($media);
         $this->em->flush();
         $this->login();
+        $token = $this->albumRemoveMediaToken($album->getId()->toRfc4122());
 
-        $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/medias/' . $media->getId()->toRfc4122() . '/remove');
+        $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/medias/' . $media->getId()->toRfc4122() . '/remove', ['_token' => $token]);
 
         $this->assertResponseRedirects('/albums/' . $album->getId()->toRfc4122());
         $this->client->followRedirect();
         $this->assertSelectorTextContains('[data-testid="album-media-count"]', '0');
+    }
+
+    public function testRemoveMediaFromAlbumWithoutCsrfTokenThrows403(): void
+    {
+        $user  = $this->createUser();
+        $album = $this->createAlbum($user, 'Vacances');
+        $media = $this->createMedia($user, 'photo.jpg');
+        $album->addMedia($media);
+        $this->em->flush();
+        $this->login();
+
+        $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/medias/' . $media->getId()->toRfc4122() . '/remove');
+
+        $this->assertResponseStatusCodeSame(403);
     }
 
     public function testRemoveMediaFromAlbumForbiddenForOtherUser(): void
@@ -285,9 +384,16 @@ final class AlbumWebTest extends WebTestCase
         $media = $this->createMedia($alice, 'photo.jpg');
         $album->addMedia($media);
         $this->em->flush();
+        // Bob a besoin d'un album à lui pour que /albums/{id} rende le
+        // formulaire porteur du token CSRF "album-remove-media".
+        $bobAlbum = $this->createAlbum($bob, 'Album Bob');
+        $bobMedia = $this->createMedia($bob, 'bob.jpg');
+        $bobAlbum->addMedia($bobMedia);
+        $this->em->flush();
 
         $this->login('bob@example.com');
-        $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/medias/' . $media->getId()->toRfc4122() . '/remove');
+        $token = $this->albumRemoveMediaToken($bobAlbum->getId()->toRfc4122());
+        $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/medias/' . $media->getId()->toRfc4122() . '/remove', ['_token' => $token]);
 
         $this->assertResponseStatusCodeSame(403);
     }
@@ -300,8 +406,9 @@ final class AlbumWebTest extends WebTestCase
         $album->addMedia($media);
         $this->em->flush();
         $this->login();
+        $token = $this->albumRemoveMediaToken($album->getId()->toRfc4122());
 
-        $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/medias/' . $media->getId()->toRfc4122() . '/remove');
+        $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/medias/' . $media->getId()->toRfc4122() . '/remove', ['_token' => $token]);
 
         $this->client->request('GET', '/gallery');
         $this->assertStringContainsString('photo.jpg', $this->client->getResponse()->getContent());
@@ -319,12 +426,30 @@ final class AlbumWebTest extends WebTestCase
         $album->addMedia($m2);
         $this->em->flush();
         $this->login();
+        $token = $this->albumReorderToken($album->getId()->toRfc4122());
 
         $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/reorder', [
             'mediaIds' => [$m2->getId()->toRfc4122(), $m1->getId()->toRfc4122()],
+            '_token'   => $token,
         ]);
 
         $this->assertResponseRedirects('/albums/' . $album->getId()->toRfc4122());
+    }
+
+    public function testReorderAlbumMediaWithoutCsrfTokenThrows403(): void
+    {
+        $user  = $this->createUser();
+        $album = $this->createAlbum($user, 'Vacances');
+        $m1 = $this->createMedia($user, 'a.jpg');
+        $album->addMedia($m1);
+        $this->em->flush();
+        $this->login();
+
+        $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/reorder', [
+            'mediaIds' => [$m1->getId()->toRfc4122()],
+        ]);
+
+        $this->assertResponseStatusCodeSame(403);
     }
 
     public function testReorderAlbumMediaPersistsNewOrder(): void
@@ -338,9 +463,11 @@ final class AlbumWebTest extends WebTestCase
         $this->em->flush();
         $albumId = $album->getId()->toRfc4122();
         $this->login();
+        $token = $this->albumReorderToken($albumId);
 
         $this->client->request('POST', '/albums/' . $albumId . '/reorder', [
             'mediaIds' => [$m2->getId()->toRfc4122(), $m1->getId()->toRfc4122()],
+            '_token'   => $token,
         ]);
 
         $this->em->clear();
@@ -358,10 +485,18 @@ final class AlbumWebTest extends WebTestCase
         $media = $this->createMedia($alice, 'photo.jpg');
         $album->addMedia($media);
         $this->em->flush();
+        // Bob a besoin d'un album à lui, avec un média, pour que
+        // /albums/{id} rende le formulaire porteur du token CSRF "album-reorder".
+        $bobAlbum = $this->createAlbum($bob, 'Album Bob');
+        $bobMedia = $this->createMedia($bob, 'bob.jpg');
+        $bobAlbum->addMedia($bobMedia);
+        $this->em->flush();
 
         $this->login('bob@example.com');
+        $token = $this->albumReorderToken($bobAlbum->getId()->toRfc4122());
         $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/reorder', [
             'mediaIds' => [$media->getId()->toRfc4122()],
+            '_token'   => $token,
         ]);
 
         $this->assertResponseStatusCodeSame(403);
@@ -389,13 +524,14 @@ final class AlbumWebTest extends WebTestCase
         $user  = $this->createUser();
         $album = $this->createAlbum($user, 'Vacances');
         $this->login();
+        $token = $this->albumImportToken($album->getId()->toRfc4122());
 
         $uploadedFile = $this->sampleUploadedPhoto();
 
         $this->client->request(
             'POST',
             '/albums/' . $album->getId()->toRfc4122() . '/import',
-            [],
+            ['_token' => $token],
             ['files' => [$uploadedFile]],
         );
 
@@ -404,13 +540,11 @@ final class AlbumWebTest extends WebTestCase
         $this->assertSelectorTextContains('[data-testid="album-media-count"]', '1');
     }
 
-    public function testImportPhotoToAlbumForbiddenForOtherUser(): void
+    public function testImportPhotoToAlbumWithoutCsrfTokenThrows403(): void
     {
-        $alice = $this->createUser('alice@example.com');
-        $bob   = $this->createUser('bob@example.com');
-        $album = $this->createAlbum($alice, 'Album Alice');
-
-        $this->login('bob@example.com');
+        $user  = $this->createUser();
+        $album = $this->createAlbum($user, 'Vacances');
+        $this->login();
 
         $uploadedFile = $this->sampleUploadedPhoto();
 
@@ -424,6 +558,30 @@ final class AlbumWebTest extends WebTestCase
         $this->assertResponseStatusCodeSame(403);
     }
 
+    public function testImportPhotoToAlbumForbiddenForOtherUser(): void
+    {
+        $alice = $this->createUser('alice@example.com');
+        $bob   = $this->createUser('bob@example.com');
+        $album = $this->createAlbum($alice, 'Album Alice');
+        // Bob a besoin d'un album à lui pour que /albums/{id} rende le
+        // formulaire porteur du token CSRF "album-import".
+        $bobAlbum = $this->createAlbum($bob, 'Album Bob');
+
+        $this->login('bob@example.com');
+        $token = $this->albumImportToken($bobAlbum->getId()->toRfc4122());
+
+        $uploadedFile = $this->sampleUploadedPhoto();
+
+        $this->client->request(
+            'POST',
+            '/albums/' . $album->getId()->toRfc4122() . '/import',
+            ['_token' => $token],
+            ['files' => [$uploadedFile]],
+        );
+
+        $this->assertResponseStatusCodeSame(403);
+    }
+
     // --- Suppression ---
 
     public function testDeleteAlbumRedirectsToList(): void
@@ -431,9 +589,20 @@ final class AlbumWebTest extends WebTestCase
         $user  = $this->createUser();
         $album = $this->createAlbum($user, 'À Supprimer');
         $this->login();
+        $token = $this->albumDeleteToken($album->getId()->toRfc4122());
+
+        $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/delete', ['_token' => $token]);
+        $this->assertResponseRedirects('/albums');
+    }
+
+    public function testDeleteAlbumWithoutCsrfTokenThrows403(): void
+    {
+        $user  = $this->createUser();
+        $album = $this->createAlbum($user, 'À Supprimer');
+        $this->login();
 
         $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/delete');
-        $this->assertResponseRedirects('/albums');
+        $this->assertResponseStatusCodeSame(403);
     }
 
     public function testDeleteAlbumForbiddenForOtherUser(): void
@@ -441,9 +610,13 @@ final class AlbumWebTest extends WebTestCase
         $alice = $this->createUser('alice@example.com');
         $bob   = $this->createUser('bob@example.com');
         $album = $this->createAlbum($alice, 'Album Alice');
+        // Bob a besoin d'un album à lui pour que /albums/{id} rende le
+        // formulaire porteur du token CSRF "album-delete".
+        $bobAlbum = $this->createAlbum($bob, 'Album Bob');
 
         $this->login('bob@example.com');
-        $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/delete');
+        $token = $this->albumDeleteToken($bobAlbum->getId()->toRfc4122());
+        $this->client->request('POST', '/albums/' . $album->getId()->toRfc4122() . '/delete', ['_token' => $token]);
         $this->assertResponseStatusCodeSame(403);
     }
 

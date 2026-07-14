@@ -5,7 +5,7 @@ import { Controller } from '@hotwired/stimulus';
  * à l'URL de la valeur "url" après chaque dépôt. */
 export default class extends Controller {
     static targets = ['item'];
-    static values = { url: String };
+    static values = { url: String, csrfToken: String };
 
     dragStart(event) {
         this.dragged = event.currentTarget;
@@ -51,6 +51,7 @@ export default class extends Controller {
     async submitNewOrder() {
         const mediaIds = this.itemTargets.map((el) => el.dataset.mediaId);
         const body = new URLSearchParams();
+        body.append('_token', this.csrfTokenValue);
         mediaIds.forEach((id) => body.append('mediaIds[]', id));
 
         await fetch(this.urlValue, {
