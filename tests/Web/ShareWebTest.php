@@ -196,8 +196,12 @@ final class ShareWebTest extends WebTestCase
         $this->assertSelectorTextContains('.flash-success', 'partagé');
     }
 
-    public function testCreateShareWithUnknownEmailShowsErrorFlash(): void
+    public function testCreateShareWithUnknownEmailCreatesGuestAccountAndShares(): void
     {
+        // Depuis l'introduction de GuestAccountCreator, un email inconnu ne
+        // fait plus échouer le partage : un compte sans mot de passe est créé
+        // et un email d'activation part (intercepté en test, jamais envoyé
+        // réellement — MAILER_DSN=null://null).
         $owner = $this->createUser();
         $album = $this->createAlbum($owner);
 
@@ -206,15 +210,27 @@ final class ShareWebTest extends WebTestCase
 
         $this->client->request('POST', '/share-create', [
             '_token'       => $token,
-            'guestEmail'   => 'inconnu@example.com',
+            'guestEmail'   => 'nouvel-invite@example.com',
             'resourceType' => 'album',
             'resourceId'   => $album->getId()->toRfc4122(),
             'permission'   => 'read',
         ]);
 
         $this->assertResponseRedirects('/albums/' . $album->getId()->toRfc4122());
+        // Vérifié AVANT followRedirect() : la seconde requête HTTP déclenchée
+        // par followRedirect() réinitialise le collecteur d'événements mailer.
+        self::assertEmailCount(1);
+
         $this->client->followRedirect();
-        $this->assertSelectorTextContains('.flash-error', 'Aucun compte HomeCloud');
+        $this->assertSelectorTextContains('.flash-success', 'nouvel-invite@example.com');
+
+        $guest = $this->em->getRepository(User::class)->findOneBy(['email' => 'nouvel-invite@example.com']);
+        $this->assertNotNull($guest, 'Le compte invité doit avoir été créé');
+        $this->assertSame('', $guest->getPassword(), 'Le compte invité ne doit pas avoir de mot de passe utilisable');
+
+        $share = $this->em->getRepository(Share::class)->findOneBy(['resourceId' => $album->getId()]);
+        $this->assertNotNull($share);
+        $this->assertTrue($share->getGuest()->getId()->equals($guest->getId()));
     }
 
     public function testCreateShareWithoutCsrfTokenReturns403(): void
@@ -278,8 +294,10 @@ final class ShareWebTest extends WebTestCase
         $this->assertCount(2, $shares);
     }
 
-    public function testCreateShareWithMixOfValidAndUnknownEmailsSharesWithValidAndListsUnknown(): void
+    public function testCreateShareWithMixOfExistingAndUnknownEmailsSharesWithBoth(): void
     {
+        // Un email inconnu crée désormais un compte invité (GuestAccountCreator)
+        // au lieu d'échouer : les deux emails de la liste reçoivent un Share.
         $owner = $this->createUser();
         $this->createUser('valid-multi@example.com');
         $album = $this->createAlbum($owner);
@@ -298,10 +316,10 @@ final class ShareWebTest extends WebTestCase
         $this->assertResponseRedirects('/albums/' . $album->getId()->toRfc4122());
         $this->client->followRedirect();
         $this->assertSelectorTextContains('.flash-success', 'valid-multi@example.com');
-        $this->assertSelectorTextContains('.flash-error', 'inconnu-multi@example.com');
+        $this->assertSelectorTextContains('.flash-success', 'inconnu-multi@example.com');
 
         $shares = $this->em->getRepository(Share::class)->findBy(['resourceId' => $album->getId()]);
-        $this->assertCount(1, $shares);
+        $this->assertCount(2, $shares);
     }
 
     public function testCreateShareWithMultipleEmailsIgnoresEmptyEntries(): void
@@ -327,5 +345,32 @@ final class ShareWebTest extends WebTestCase
 
         $shares = $this->em->getRepository(Share::class)->findBy(['resourceId' => $album->getId()]);
         $this->assertCount(1, $shares);
+    }
+
+    public function testCreateShareWithMalformedEmailShowsErrorAndDoesNotCreateAccount(): void
+    {
+        // Une chaîne sans @ ne doit jamais atteindre GuestAccountCreator :
+        // ça créerait un compte avec un email invalide.
+        $owner = $this->createUser();
+        $album = $this->createAlbum($owner);
+
+        $this->login();
+        $token = $this->shareCreateToken($album->getId()->toRfc4122());
+
+        $this->client->request('POST', '/share-create', [
+            '_token'       => $token,
+            'guestEmail'   => 'ronan.lenouvel',
+            'resourceType' => 'album',
+            'resourceId'   => $album->getId()->toRfc4122(),
+            'permission'   => 'read',
+        ]);
+
+        $this->assertResponseRedirects('/albums/' . $album->getId()->toRfc4122());
+        $this->client->followRedirect();
+        $this->assertSelectorTextContains('.flash-error', 'ronan.lenouvel');
+
+        $this->assertNull($this->em->getRepository(User::class)->findOneBy(['email' => 'ronan.lenouvel']));
+        $shares = $this->em->getRepository(Share::class)->findBy(['resourceId' => $album->getId()]);
+        $this->assertCount(0, $shares);
     }
 }

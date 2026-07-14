@@ -14,6 +14,7 @@ use App\Interface\ShareRepositoryInterface;
 use App\Interface\UserRepositoryInterface;
 use App\Security\OwnershipChecker;
 use App\Security\ResourceLocator;
+use App\Service\GuestAccountCreator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -40,6 +41,7 @@ final class ShareWebController extends AbstractController
         private readonly UserRepositoryInterface $userRepository,
         private readonly OwnershipChecker $ownershipChecker,
         private readonly EntityManagerInterface $em,
+        private readonly GuestAccountCreator $guestAccountCreator,
     ) {}
 
     #[Route('/partages', name: 'app_shares')]
@@ -127,15 +129,22 @@ final class ShareWebController extends AbstractController
         }
 
         $shared = [];
-        $unknown = [];
+        $failed = [];
         $selfShareAttempted = false;
 
         foreach ($emails as $email) {
             $guest = $this->userRepository->findOneBy(['email' => $email]);
 
             if ($guest === null) {
-                $unknown[] = $email;
-                continue;
+                if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+                    $failed[] = $email . ' (email invalide)';
+                    continue;
+                }
+
+                // Email inconnu mais valide : plutôt que d'échouer, on crée
+                // un compte invité (sans mot de passe utilisable, cf.
+                // GuestAccountCreator) et on partage avec ce nouveau compte.
+                $guest = $this->guestAccountCreator->create($email);
             }
 
             if ($guest->getId()->equals($owner->getId())) {
@@ -150,7 +159,7 @@ final class ShareWebController extends AbstractController
                 $this->em->flush();
             } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException) {
                 $this->em->detach($share);
-                $unknown[] = $email . ' (partage déjà existant)';
+                $failed[] = $email . ' (partage déjà existant)';
                 continue;
             }
 
@@ -161,14 +170,14 @@ final class ShareWebController extends AbstractController
             $this->addFlash('success', sprintf('Ressource partagée avec %s.', implode(', ', $shared)));
         }
 
-        if ($unknown !== []) {
+        if ($failed !== []) {
             $this->addFlash('error', sprintf(
-                'Aucun compte HomeCloud n\'est associé à : %s.',
-                implode(', ', $unknown),
+                'Échec du partage pour : %s.',
+                implode(', ', $failed),
             ));
         }
 
-        if ($selfShareAttempted && $shared === [] && $unknown === []) {
+        if ($selfShareAttempted && $shared === [] && $failed === []) {
             $this->addFlash('error', 'Vous ne pouvez pas partager une ressource avec vous-même.');
         }
 

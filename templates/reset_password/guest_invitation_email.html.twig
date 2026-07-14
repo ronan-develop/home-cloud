@@ -1,0 +1,13 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Invitation HomeCloud{% endblock %}
+
+{% block body %}
+<p>Bonjour,</p>
+
+<p>Quelqu'un vient de partager une ressource avec vous sur HomeCloud. Un compte a été créé pour vous.</p>
+
+<p><a href="{{ activationUrl }}">Cliquez ici pour définir votre mot de passe et accéder à votre compte</a></p>
+
+<p>Si vous ne vous attendiez pas à cette invitation, vous pouvez ignorer cet email.</p>
+{% endblock %}
