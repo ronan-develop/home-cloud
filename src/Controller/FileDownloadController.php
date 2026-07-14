@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Entity\Share;
 use App\Entity\User;
 use App\Repository\FileRepository;
 use App\Interface\StorageServiceInterface;
+use App\Security\ShareAccessChecker;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
@@ -22,8 +24,10 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
  * (Content-Type, Content-Disposition).
  *
  * Sécurité :
- * - Seul le propriétaire du fichier peut le télécharger (pas de partage entre
- *   utilisateurs implémenté à ce jour).
+ * - Le propriétaire du fichier peut toujours le télécharger ; un autre utilisateur
+ *   ne le peut que s'il bénéficie d'un partage actif (ShareAccessChecker), sur le
+ *   même modèle que FileProvider (item GET) — même logique, même contrôleur qui
+ *   n'y était pas encore aligné.
  * - Les fichiers ordinaires sont stockés en clair ; les fichiers neutralisés sont stockés
  *   en .bin avec leur contenu d'origine intact. Dans les deux cas, le fichier est streamé
  *   directement — aucun déchiffrement nécessaire.
@@ -39,6 +43,7 @@ final class FileDownloadController extends AbstractController
     public function __construct(
         private readonly FileRepository $fileRepository,
         private readonly StorageServiceInterface $storageService,
+        private readonly ShareAccessChecker $shareAccessChecker,
     ) {}
 
     #[Route('/api/v1/files/{id}/download', name: 'file_download', methods: ['GET'])]
@@ -49,7 +54,8 @@ final class FileDownloadController extends AbstractController
 
         /** @var User $user */
         $user = $this->getUser();
-        if (!$file->getOwner()->getId()->equals($user->getId())) {
+        if (!$file->getOwner()->getId()->equals($user->getId())
+            && !$this->shareAccessChecker->canAccess($user, Share::RESOURCE_FILE, $file->getId())) {
             throw $this->createAccessDeniedException('Vous ne pouvez pas télécharger ce fichier.');
         }
 
