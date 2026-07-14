@@ -10,7 +10,7 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model;
-use App\Controller\FileUploadController;
+use App\Controller\Api\FileUploadController;
 use App\State\FileProcessor;
 use App\State\FileProvider;
 use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
