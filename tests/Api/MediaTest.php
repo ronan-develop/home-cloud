@@ -31,10 +31,12 @@ final class MediaTest extends AuthenticatedApiTestCase
         $this->createUser();
     }
 
-    private function createMedia(string $type = 'photo'): Media
+    private function createMedia(string $type = 'photo', ?User $owner = null): Media
     {
-        $user = new User('media@example.com', 'Owner');
-        $this->em->persist($user);
+        $user = $owner ?? new User('media@example.com', 'Owner');
+        if ($owner === null) {
+            $this->em->persist($user);
+        }
         $folder = new Folder('Photos', $user);
         $this->em->persist($folder);
         $file = new File('photo.jpg', 'image/jpeg', 1024, '2026/02/test.jpg', $folder, $user);
@@ -130,11 +132,15 @@ final class MediaTest extends AuthenticatedApiTestCase
 
     public function testGetThumbnailReturns404WhenNoThumbnail(): void
     {
-        $media = $this->createMedia(); // thumbnailPath est null
+        // Le média doit appartenir à l'utilisateur authentifié (testUserEmail) :
+        // MediaThumbnailController exige désormais l'ownership (F4 de l'audit sécurité).
+        $owner = $this->em->getRepository(User::class)->findOneBy(['email' => $this->testUserEmail]);
+        $media = $this->createMedia(owner: $owner); // thumbnailPath est null
 
-        $this->createAuthenticatedClient()->request('GET', '/api/v1/medias/' . $media->getId() . '/thumbnail');
+        $browser = $this->createAuthenticatedKernelBrowser($this->testUserEmail);
+        $browser->request('GET', '/api/v1/medias/' . $media->getId() . '/thumbnail');
 
-        $this->assertResponseStatusCodeSame(404);
+        $this->assertSame(404, $browser->getResponse()->getStatusCode());
     }
 
     public function testGetThumbnailReturns404WhenMediaNotFound(): void
