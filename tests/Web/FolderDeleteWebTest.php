@@ -74,6 +74,20 @@ final class FolderDeleteWebTest extends WebTestCase
         return $file;
     }
 
+    /**
+     * Récupère un token CSRF valide en le lisant depuis une page réellement
+     * rendue par le client (comme le ferait un navigateur) : appeler
+     * security.csrf.token_manager directement échoue hors requête active
+     * (SessionNotFoundException), le client de test n'ayant pas de session
+     * HTTP ouverte entre deux requêtes simulées.
+     */
+    private function csrfToken(): string
+    {
+        $crawler = $this->client->request('GET', '/explorer');
+
+        return $crawler->filter('#delete-folder-form input[name="_token"]')->attr('value');
+    }
+
     // ── Suppression deleteContents=true ─────────────────────────────────────
 
     public function testDeleteFolderWithDeleteContentsTrueDeletesFolder(): void
@@ -87,6 +101,7 @@ final class FolderDeleteWebTest extends WebTestCase
 
         $this->client->request('POST', '/folders/' . $folderId . '/delete', [
             'delete_contents' => '1',
+            '_token' => $this->csrfToken(),
         ]);
 
         $this->assertResponseRedirects();
@@ -114,6 +129,7 @@ final class FolderDeleteWebTest extends WebTestCase
 
         $this->client->request('POST', '/folders/' . $parentId . '/delete', [
             'delete_contents' => '0',
+            '_token' => $this->csrfToken(),
         ]);
 
         $this->assertResponseRedirects();
@@ -152,6 +168,7 @@ final class FolderDeleteWebTest extends WebTestCase
         $this->client->request('POST', '/folders/' . $folderId . '/delete', [
             'delete_contents' => '1',
             'redirect_folder_id' => (string) $parentId,
+            '_token' => $this->csrfToken(),
         ]);
 
         $this->assertResponseRedirects('/explorer?folder=' . $parentId);
@@ -168,6 +185,7 @@ final class FolderDeleteWebTest extends WebTestCase
 
         $this->client->request('POST', '/folders/' . $folderId . '/delete', [
             'delete_contents' => '1',
+            '_token' => $this->csrfToken(),
         ]);
 
         $this->assertResponseRedirects('/explorer');
@@ -204,6 +222,24 @@ final class FolderDeleteWebTest extends WebTestCase
 
         $this->client->request('POST', '/folders/' . $folderId . '/delete', [
             'delete_contents' => '1',
+            '_token' => $this->csrfToken(),
+        ]);
+
+        $this->assertResponseStatusCodeSame(403);
+    }
+
+    public function testDeleteFolderWithoutCsrfTokenThrows403(): void
+    {
+        $user = $this->createUser();
+        $folder = $this->createFolder('ToDelete', $user);
+        $folderId = $folder->getId();
+        $this->em->clear();
+
+        $this->login();
+
+        $this->client->request('POST', '/folders/' . $folderId . '/delete', [
+            'delete_contents' => '1',
+            // pas de _token
         ]);
 
         $this->assertResponseStatusCodeSame(403);
