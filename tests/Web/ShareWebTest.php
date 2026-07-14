@@ -248,4 +248,84 @@ final class ShareWebTest extends WebTestCase
         $this->assertSelectorExists('[data-testid="share-open-btn"]');
         $this->assertSelectorExists('form[action*="/share-create"]');
     }
+
+    // ─── Partage multi-emails (séparés par virgule) ─────────────────────────
+
+    public function testCreateShareWithMultipleValidEmailsSharesWithAll(): void
+    {
+        $owner = $this->createUser();
+        $this->createUser('multi1@example.com');
+        $this->createUser('multi2@example.com');
+        $album = $this->createAlbum($owner);
+
+        $this->login();
+        $token = $this->shareCreateToken($album->getId()->toRfc4122());
+
+        $this->client->request('POST', '/share-create', [
+            '_token'       => $token,
+            'guestEmail'   => 'multi1@example.com, multi2@example.com',
+            'resourceType' => 'album',
+            'resourceId'   => $album->getId()->toRfc4122(),
+            'permission'   => 'read',
+        ]);
+
+        $this->assertResponseRedirects('/albums/' . $album->getId()->toRfc4122());
+        $this->client->followRedirect();
+        $this->assertSelectorTextContains('.flash-success', 'multi1@example.com');
+        $this->assertSelectorTextContains('.flash-success', 'multi2@example.com');
+
+        $shares = $this->em->getRepository(Share::class)->findBy(['resourceId' => $album->getId()]);
+        $this->assertCount(2, $shares);
+    }
+
+    public function testCreateShareWithMixOfValidAndUnknownEmailsSharesWithValidAndListsUnknown(): void
+    {
+        $owner = $this->createUser();
+        $this->createUser('valid-multi@example.com');
+        $album = $this->createAlbum($owner);
+
+        $this->login();
+        $token = $this->shareCreateToken($album->getId()->toRfc4122());
+
+        $this->client->request('POST', '/share-create', [
+            '_token'       => $token,
+            'guestEmail'   => 'valid-multi@example.com, inconnu-multi@example.com',
+            'resourceType' => 'album',
+            'resourceId'   => $album->getId()->toRfc4122(),
+            'permission'   => 'read',
+        ]);
+
+        $this->assertResponseRedirects('/albums/' . $album->getId()->toRfc4122());
+        $this->client->followRedirect();
+        $this->assertSelectorTextContains('.flash-success', 'valid-multi@example.com');
+        $this->assertSelectorTextContains('.flash-error', 'inconnu-multi@example.com');
+
+        $shares = $this->em->getRepository(Share::class)->findBy(['resourceId' => $album->getId()]);
+        $this->assertCount(1, $shares);
+    }
+
+    public function testCreateShareWithMultipleEmailsIgnoresEmptyEntries(): void
+    {
+        $owner = $this->createUser();
+        $this->createUser('spaced@example.com');
+        $album = $this->createAlbum($owner);
+
+        $this->login();
+        $token = $this->shareCreateToken($album->getId()->toRfc4122());
+
+        $this->client->request('POST', '/share-create', [
+            '_token'       => $token,
+            'guestEmail'   => ' spaced@example.com ,, ',
+            'resourceType' => 'album',
+            'resourceId'   => $album->getId()->toRfc4122(),
+            'permission'   => 'read',
+        ]);
+
+        $this->assertResponseRedirects('/albums/' . $album->getId()->toRfc4122());
+        $this->client->followRedirect();
+        $this->assertSelectorTextContains('.flash-success', 'spaced@example.com');
+
+        $shares = $this->em->getRepository(Share::class)->findBy(['resourceId' => $album->getId()]);
+        $this->assertCount(1, $shares);
+    }
 }

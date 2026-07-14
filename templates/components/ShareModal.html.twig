@@ -45,10 +45,10 @@
 
       <div class="px-6 pt-4">
         <label class="block text-xs font-semibold uppercase tracking-wide mb-1.5" style="color: var(--hc-text-3);">
-          Email de l'invité
+          Email(s) de l'invité — séparés par une virgule
         </label>
-        <input type="email" name="guestEmail" data-testid="share-guest-email"
-               placeholder="ami@example.com" required
+        <input type="email" name="guestEmail" data-testid="share-guest-email" multiple
+               placeholder="ami@example.com, autre@example.com" required
                class="w-full px-3 py-2 rounded-md text-sm"
                style="border: 1px solid var(--hc-border); background: var(--hc-bg); color: var(--hc-text);">
       </div>

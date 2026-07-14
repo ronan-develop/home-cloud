@@ -103,23 +103,19 @@ final class ShareWebController extends AbstractController
             $permission = Share::PERMISSION_READ;
         }
 
-        $guestEmail = trim((string) $request->request->get('guestEmail', ''));
-        $guest = $guestEmail !== '' ? $this->userRepository->findOneBy(['email' => $guestEmail]) : null;
+        $emails = array_values(array_unique(array_filter(array_map(
+            'trim',
+            explode(',', (string) $request->request->get('guestEmail', '')),
+        ), fn (string $email) => $email !== '')));
 
-        if ($guest === null) {
-            $this->addFlash('error', 'Aucun compte HomeCloud n\'est associé à cet email.');
+        if ($emails === []) {
+            $this->addFlash('error', 'Veuillez saisir au moins un email.');
 
             return $this->redirect($redirectUrl);
         }
 
         /** @var User $owner */
         $owner = $this->getUser();
-
-        if ($guest->getId()->equals($owner->getId())) {
-            $this->addFlash('error', 'Vous ne pouvez pas partager une ressource avec vous-même.');
-
-            return $this->redirect($redirectUrl);
-        }
 
         try {
             $resource = $this->resourceLocator->locate($resourceType, \Symfony\Component\Uid\Uuid::fromString($resourceId));
@@ -130,18 +126,51 @@ final class ShareWebController extends AbstractController
             return $this->redirect($redirectUrl);
         }
 
-        $share = new Share($owner, $guest, $resourceType, \Symfony\Component\Uid\Uuid::fromString($resourceId), $permission);
-        $this->em->persist($share);
+        $shared = [];
+        $unknown = [];
+        $selfShareAttempted = false;
 
-        try {
-            $this->em->flush();
-        } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException) {
-            $this->addFlash('error', 'Un partage identique existe déjà pour cet utilisateur.');
+        foreach ($emails as $email) {
+            $guest = $this->userRepository->findOneBy(['email' => $email]);
 
-            return $this->redirect($redirectUrl);
+            if ($guest === null) {
+                $unknown[] = $email;
+                continue;
+            }
+
+            if ($guest->getId()->equals($owner->getId())) {
+                $selfShareAttempted = true;
+                continue;
+            }
+
+            $share = new Share($owner, $guest, $resourceType, \Symfony\Component\Uid\Uuid::fromString($resourceId), $permission);
+            $this->em->persist($share);
+
+            try {
+                $this->em->flush();
+            } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException) {
+                $this->em->detach($share);
+                $unknown[] = $email . ' (partage déjà existant)';
+                continue;
+            }
+
+            $shared[] = $email;
         }
 
-        $this->addFlash('success', sprintf('Ressource partagée avec %s.', $guest->getDisplayName()));
+        if ($shared !== []) {
+            $this->addFlash('success', sprintf('Ressource partagée avec %s.', implode(', ', $shared)));
+        }
+
+        if ($unknown !== []) {
+            $this->addFlash('error', sprintf(
+                'Aucun compte HomeCloud n\'est associé à : %s.',
+                implode(', ', $unknown),
+            ));
+        }
+
+        if ($selfShareAttempted && $shared === [] && $unknown === []) {
+            $this->addFlash('error', 'Vous ne pouvez pas partager une ressource avec vous-même.');
+        }
 
         return $this->redirect($redirectUrl);
     }
