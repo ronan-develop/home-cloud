@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\Folder;
+use App\Entity\Share;
 use App\Entity\User;
 use App\Enum\FolderMediaType;
 use App\Interface\AuthenticationResolverInterface;
@@ -12,6 +13,7 @@ use App\Interface\DefaultFolderServiceInterface;
 use App\Interface\FilenameValidatorInterface;
 use App\Interface\FolderRepositoryInterface;
 use App\Interface\OwnershipCheckerInterface;
+use App\Interface\ShareRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -42,6 +44,7 @@ final class FolderService
         private readonly EntityManagerInterface $em,
         private readonly LoggerInterface $logger,
         private readonly Stopwatch $stopwatch,
+        private readonly ShareRepositoryInterface $shareRepository,
     ) {}
 
     /**
@@ -191,13 +194,16 @@ final class FolderService
                 $desc = $this->folderRepository->find($descId);
                 if ($desc !== null) {
                     $this->em->refresh($desc);
+                    $this->shareRepository->deleteByResource(Share::RESOURCE_FOLDER, $desc->getId());
                     $this->em->remove($desc);
                 }
             }
             $this->em->refresh($folder);
+            $this->shareRepository->deleteByResource(Share::RESOURCE_FOLDER, $folder->getId());
             $this->em->remove($folder);
             $this->em->flush();
         } else {
+            $this->shareRepository->deleteByResource(Share::RESOURCE_FOLDER, $folder->getId());
             $this->em->remove($folder);
             $this->em->flush();
         }

@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Controller\Web;
 
 use App\Entity\File;
+use App\Entity\Share;
 use App\Interface\StorageServiceInterface;
+use App\Interface\ShareRepositoryInterface;
 use App\Repository\FileRepository;
 use App\Interface\DefaultFolderServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -40,6 +42,7 @@ final class FileWebController extends AbstractController
         private readonly DefaultFolderServiceInterface $folderService,
         private readonly FileRepository $fileRepository,
         private readonly EntityManagerInterface $em,
+        private readonly ShareRepositoryInterface $shareRepository,
     ) {}
 
     #[Route('/files/{id}/download', name: 'app_file_download', methods: ['GET'])]
@@ -158,6 +161,7 @@ final class FileWebController extends AbstractController
             return $this->redirect($folderId ? '/explorer?folder=' . $folderId : '/explorer');
         }
 
+        $this->shareRepository->deleteByResource(Share::RESOURCE_FILE, $file->getId());
         $this->em->remove($file);
         $this->em->flush();
 

@@ -75,6 +75,19 @@ class ShareRepository extends ServiceEntityRepository implements ShareRepository
         return $qb->getQuery()->getOneOrNullResult();
     }
 
+    /** Supprime tous les shares pointant vers cette ressource (nettoyage à la suppression). */
+    public function deleteByResource(string $resourceType, Uuid $resourceId): void
+    {
+        $this->createQueryBuilder('s')
+            ->delete()
+            ->where('s.resourceType = :type')
+            ->andWhere('s.resourceId = :rid')
+            ->setParameter('type', $resourceType)
+            ->setParameter('rid', $resourceId, 'uuid')
+            ->getQuery()
+            ->execute();
+    }
+
     /** Compte les shares actifs (non expirés) d'un owner. */
     public function countActiveByOwner(User $owner): int
     {

@@ -6,10 +6,12 @@ namespace App\Service;
 
 use App\Entity\Album;
 use App\Entity\Media;
+use App\Entity\Share;
 use App\Entity\User;
 use App\Interface\AlbumRepositoryInterface;
 use App\Interface\AlbumServiceInterface;
 use App\Interface\MediaRepositoryInterface;
+use App\Interface\ShareRepositoryInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Uid\Uuid;
 
@@ -25,6 +27,7 @@ final class AlbumService implements AlbumServiceInterface
     public function __construct(
         private readonly AlbumRepositoryInterface $repository,
         private readonly MediaRepositoryInterface $mediaRepository,
+        private readonly ShareRepositoryInterface $shareRepository,
     ) {}
 
     /**
@@ -96,6 +99,7 @@ final class AlbumService implements AlbumServiceInterface
      */
     public function delete(Album $album): void
     {
+        $this->shareRepository->deleteByResource(Share::RESOURCE_ALBUM, $album->getId());
         $this->repository->remove($album);
     }
 

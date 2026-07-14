@@ -11,6 +11,7 @@ use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\FileOutput;
 use App\Entity\Share;
 use App\Interface\DefaultFolderServiceInterface;
+use App\Interface\ShareRepositoryInterface;
 use App\Repository\FileRepository;
 use App\Repository\MediaRepository;
 use App\Security\AuthenticationResolver;
@@ -49,6 +50,7 @@ final class FileProcessor implements ProcessorInterface
         private readonly FileActionService $fileActionService,
         private readonly RequestStack $requestStack,
         private readonly IriExtractor $iriExtractor,
+        private readonly ShareRepositoryInterface $shareRepository,
     ) {}
 
     /**
@@ -83,6 +85,7 @@ final class FileProcessor implements ProcessorInterface
         }
 
         $this->storageService->delete($file->getPath());
+        $this->shareRepository->deleteByResource(Share::RESOURCE_FILE, $file->getId());
         $this->em->remove($file);
         $this->em->flush();
 

@@ -13,6 +13,7 @@ use App\Interface\DefaultFolderServiceInterface;
 use App\Interface\FilenameValidatorInterface;
 use App\Interface\FolderRepositoryInterface;
 use App\Interface\OwnershipCheckerInterface;
+use App\Interface\ShareRepositoryInterface;
 use App\Service\FolderService;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -41,6 +42,9 @@ final class FolderServiceTest extends TestCase
     /** @var EntityManagerInterface&MockObject */
     private EntityManagerInterface $em;
 
+    /** @var ShareRepositoryInterface&MockObject */
+    private ShareRepositoryInterface $shareRepository;
+
     private FolderService $service;
 
     protected function setUp(): void
@@ -51,6 +55,7 @@ final class FolderServiceTest extends TestCase
         $this->authResolver        = $this->createMock(AuthenticationResolverInterface::class);
         $this->defaultFolderService = $this->createMock(DefaultFolderServiceInterface::class);
         $this->em                  = $this->createMock(EntityManagerInterface::class);
+        $this->shareRepository     = $this->createMock(ShareRepositoryInterface::class);
 
         $this->service = new FolderService(
             folderRepository:     $this->folderRepository,
@@ -61,6 +66,7 @@ final class FolderServiceTest extends TestCase
             em:                   $this->em,
             logger:               $this->createMock(LoggerInterface::class),
             stopwatch:            new Stopwatch(),
+            shareRepository:      $this->shareRepository,
         );
     }
 
