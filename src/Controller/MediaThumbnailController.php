@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Entity\User;
 use App\Repository\MediaRepository;
 use App\Interface\StorageServiceInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
  * Controller dédié au téléchargement des thumbnails média.
@@ -17,6 +19,8 @@ use Symfony\Component\Routing\Attribute\Route;
  * Rôle : streamer le thumbnail depuis le disque avec le Content-Type approprié.
  *
  * Sécurité :
+ * - Seul le propriétaire du média peut voir sa vignette (pas de partage entre
+ *   utilisateurs implémenté à ce jour).
  * - Les thumbnails sont stockés en clair — streaming direct sans déchiffrement.
  * - X-Content-Type-Options: nosniff empêche le MIME sniffing navigateur.
  * - Content-Type forcé à image/jpeg (les thumbnails sont toujours des JPEG — ThumbnailService).
@@ -29,6 +33,7 @@ use Symfony\Component\Routing\Attribute\Route;
  *
  * ⚠️ Tests : StreamedResponse retourne un body vide dans PHPUnit — tests sur status + headers uniquement.
  */
+#[IsGranted('ROLE_USER')]
 final class MediaThumbnailController extends AbstractController
 {
     public function __construct(
@@ -41,6 +46,12 @@ final class MediaThumbnailController extends AbstractController
     {
         $media = $this->mediaRepository->find($id)
             ?? throw new NotFoundHttpException('Media not found');
+
+        /** @var User $user */
+        $user = $this->getUser();
+        if (!$media->isOwnedBy($user)) {
+            throw $this->createAccessDeniedException('Vous ne pouvez pas voir ce média.');
+        }
 
         if ($media->getThumbnailPath() === null) {
             throw new NotFoundHttpException('No thumbnail available for this media');
