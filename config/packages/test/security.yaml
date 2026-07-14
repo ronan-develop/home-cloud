@@ -55,4 +55,7 @@ security:
         - { path: ^/api, roles: ROLE_USER }
         - { path: ^/login$, roles: PUBLIC_ACCESS }
         - { path: ^/web/token$, roles: ROLE_USER }
+        # Partage par lien public : accessible sans compte, le secret est
+        # dans (selector, token). Doit précéder la règle catch-all ^/.
+        - { path: ^/p/, roles: PUBLIC_ACCESS }
         - { path: ^/, roles: ROLE_USER }

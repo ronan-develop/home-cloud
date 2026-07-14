@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>{{ resourceName }} — Partagé via HomeCloud</title>
+    <link rel="stylesheet" href="{{ asset('styles/layout.css') }}">
+</head>
+<body class="hc-bg" style="min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;">
+
+<div class="hc-item-card" style="max-width:560px; width:100%; padding:32px;">
+    <p class="hc-item-meta" style="margin-bottom:8px;">Ressource partagée en lecture seule</p>
+    <h1 class="text-2xl font-black tracking-tight mb-4">{{ resourceName }}</h1>
+
+    {% if resourceType == 'file' %}
+        <p class="hc-item-meta">{{ resource.mimeType }} · {{ (resource.size / 1024)|round }} Ko</p>
+    {% elseif resourceType == 'folder' %}
+        <div class="hc-item-meta">{{ resource.files|length }} fichier{{ resource.files|length != 1 ? 's' : '' }}</div>
+        <ul>
+            {% for file in resource.files %}
+                <li class="hc-item-name">{{ file.originalName }}</li>
+            {% endfor %}
+        </ul>
+    {% elseif resourceType == 'album' %}
+        <div class="hc-item-meta">{{ resource.medias|length }} média{{ resource.medias|length != 1 ? 's' : '' }}</div>
+    {% endif %}
+
+    <p class="hc-item-meta" style="margin-top:24px;">Lien valable jusqu'au {{ link.expiresAt|date('d/m/Y') }}.</p>
+</div>
+
+</body>
+</html>
