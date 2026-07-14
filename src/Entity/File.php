@@ -26,6 +26,9 @@ use Symfony\Component\Uid\Uuid;
  */
 class File
 {
+    public const VISIBILITY_PRIVATE = 'private';
+    public const VISIBILITY_LINK_ALLOWED = 'link_allowed';
+
     #[ORM\Id]
     #[ORM\Column(type: 'uuid', unique: true)]
     private Uuid $id;
@@ -53,6 +56,13 @@ class File
      */
     #[ORM\Column(options: ['default' => false])]
     private bool $neutralized = false;
+
+    /**
+     * private par défaut : le serveur refuse de créer un lien public tant que
+     * l'owner n'a pas explicitement basculé la ressource en link_allowed.
+     */
+    #[ORM\Column(type: 'string', length: 12, options: ['default' => self::VISIBILITY_PRIVATE])]
+    private string $visibility = self::VISIBILITY_PRIVATE;
 
     #[ORM\ManyToOne(targetEntity: Folder::class)]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
@@ -148,6 +158,16 @@ class File
     public function isNeutralized(): bool
     {
         return $this->neutralized;
+    }
+
+    public function getVisibility(): string
+    {
+        return $this->visibility;
+    }
+
+    public function setVisibility(string $visibility): void
+    {
+        $this->visibility = $visibility;
     }
 
     /**
