@@ -5,13 +5,13 @@ import { Controller } from '@hotwired/stimulus';
  * envoie la requête en arrière-plan et met à jour le nom affiché au succès. */
 export default class extends Controller {
     static targets = ['caption'];
-    static values = { url: String, currentName: String };
+    static values = { url: String, currentName: String, csrfToken: String };
 
     async prompt() {
         const name = window.prompt('Nouveau nom du fichier', this.currentNameValue);
         if (!name || name === this.currentNameValue) return;
 
-        const body = new URLSearchParams({ name });
+        const body = new URLSearchParams({ name, _token: this.csrfTokenValue });
         const response = await fetch(this.urlValue, {
             method: 'POST',
             headers: {

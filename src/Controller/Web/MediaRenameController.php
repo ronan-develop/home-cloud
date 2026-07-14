@@ -31,6 +31,10 @@ final class MediaRenameController extends AbstractController
     #[Route('/gallery/{id}/rename', name: 'app_media_rename', requirements: ['id' => '[0-9a-f\-]+'], methods: ['POST'])]
     public function __invoke(string $id, Request $request): JsonResponse
     {
+        if (!$this->isCsrfTokenValid('media-rename', (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
+
         $media = $this->mediaRepository->findById(Uuid::fromString($id));
 
         if ($media === null || !$media->isOwnedBy($this->getUser())) {

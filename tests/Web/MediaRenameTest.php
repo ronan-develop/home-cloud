@@ -45,6 +45,17 @@ final class MediaRenameTest extends WebTestCase
         $this->loginAs($email);
     }
 
+    /**
+     * Récupère un token CSRF valide en le lisant depuis /gallery (data-rename-
+     * media-csrf-token-value), comme le ferait le navigateur.
+     */
+    private function csrfToken(): string
+    {
+        $crawler = $this->client->request('GET', '/gallery');
+
+        return $crawler->filter('[data-testid="media-thumbnail"]')->first()->attr('data-rename-media-csrf-token-value');
+    }
+
     public function testRenameMediaReturnsJsonWithNewName(): void
     {
         $user  = $this->createUser();
@@ -54,7 +65,7 @@ final class MediaRenameTest extends WebTestCase
         $this->client->request(
             'POST',
             '/gallery/' . $media->getId()->toRfc4122() . '/rename',
-            ['name' => 'nouveau-nom.jpg'],
+            ['name' => 'nouveau-nom.jpg', '_token' => $this->csrfToken()],
             [],
             ['HTTP_ACCEPT' => 'application/json'],
         );
@@ -73,7 +84,7 @@ final class MediaRenameTest extends WebTestCase
         $this->client->request(
             'POST',
             '/gallery/' . $media->getId()->toRfc4122() . '/rename',
-            ['name' => 'nouveau-nom.jpg'],
+            ['name' => 'nouveau-nom.jpg', '_token' => $this->csrfToken()],
             [],
             ['HTTP_ACCEPT' => 'application/json'],
         );
@@ -87,12 +98,16 @@ final class MediaRenameTest extends WebTestCase
         $alice = $this->createUser('alice@example.com');
         $bob   = $this->createUser('bob@example.com');
         $media = $this->createMediaFile($alice, 'photo.jpg', 'photo');
+        // Bob a besoin d'un média à lui pour que /gallery affiche le formulaire
+        // porteur du token CSRF (sinon EmptyState est rendu à la place).
+        $this->createMediaFile($bob, 'placeholder.jpg', 'photo');
 
         $this->login('bob@example.com');
+        $token = $this->csrfToken();
         $this->client->request(
             'POST',
             '/gallery/' . $media->getId()->toRfc4122() . '/rename',
-            ['name' => 'hack.jpg'],
+            ['name' => 'hack.jpg', '_token' => $token],
             [],
             ['HTTP_ACCEPT' => 'application/json'],
         );
@@ -109,7 +124,7 @@ final class MediaRenameTest extends WebTestCase
         $this->client->request(
             'POST',
             '/gallery/' . $media->getId()->toRfc4122() . '/rename',
-            ['name' => ''],
+            ['name' => '', '_token' => $this->csrfToken()],
             [],
             ['HTTP_ACCEPT' => 'application/json'],
         );
@@ -126,11 +141,28 @@ final class MediaRenameTest extends WebTestCase
         $this->client->request(
             'POST',
             '/gallery/' . $media->getId()->toRfc4122() . '/rename',
-            ['name' => 'inva/lid.jpg'],
+            ['name' => 'inva/lid.jpg', '_token' => $this->csrfToken()],
             [],
             ['HTTP_ACCEPT' => 'application/json'],
         );
 
         $this->assertResponseStatusCodeSame(400);
+    }
+
+    public function testRenameMediaWithoutCsrfTokenThrows403(): void
+    {
+        $user  = $this->createUser();
+        $media = $this->createMediaFile($user, 'photo.jpg', 'photo');
+        $this->login();
+
+        $this->client->request(
+            'POST',
+            '/gallery/' . $media->getId()->toRfc4122() . '/rename',
+            ['name' => 'nouveau-nom.jpg'],
+            [],
+            ['HTTP_ACCEPT' => 'application/json'],
+        );
+
+        $this->assertResponseStatusCodeSame(403);
     }
 }
