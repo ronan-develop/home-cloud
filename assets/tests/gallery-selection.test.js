@@ -7,7 +7,7 @@ describe('gallery-selection controller', () => {
 
     beforeEach(() => {
         document.body.innerHTML = `
-            <div data-controller="gallery-selection" data-gallery-selection-bulk-delete-url-value="/gallery/bulk-delete">
+            <div data-controller="gallery-selection" data-gallery-selection-bulk-delete-url-value="/gallery/bulk-delete" data-gallery-selection-csrf-token-value="fake-csrf-token">
                 <div data-gallery-selection-target="thumb">
                     <input type="checkbox" data-gallery-selection-target="checkbox" value="media-1" data-action="change->gallery-selection#update">
                 </div>
@@ -61,6 +61,7 @@ describe('gallery-selection controller', () => {
         expect(global.fetch).toHaveBeenCalledWith('/gallery/bulk-delete', expect.objectContaining({ method: 'POST' }));
         const body = global.fetch.mock.calls[0][1].body;
         expect(body.getAll('mediaIds[]')).toEqual(['media-1']);
+        expect(body.get('_token')).toBe('fake-csrf-token');
         expect(document.querySelectorAll('[data-gallery-selection-target="thumb"]').length).toBe(1);
     });
 

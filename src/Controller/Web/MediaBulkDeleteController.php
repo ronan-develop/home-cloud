@@ -34,6 +34,10 @@ final class MediaBulkDeleteController extends AbstractController
     #[Route('/gallery/bulk-delete', name: 'app_media_bulk_delete', methods: ['POST'])]
     public function __invoke(Request $request): JsonResponse
     {
+        if (!$this->isCsrfTokenValid('gallery-bulk-delete', (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
+
         $mediaIds = $request->request->all('mediaIds');
         $user = $this->getUser();
         $deletedCount = 0;

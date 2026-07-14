@@ -46,15 +46,28 @@ final class MediaBulkDeleteTest extends WebTestCase
         $this->loginAs($email);
     }
 
+    /**
+     * Récupère un token CSRF valide en le lisant depuis /gallery, comme le
+     * ferait le navigateur (data-gallery-selection-csrf-token-value).
+     */
+    private function csrfToken(): string
+    {
+        $crawler = $this->client->request('GET', '/gallery');
+
+        return $crawler->filter('[data-testid="media-gallery"]')->attr('data-gallery-selection-csrf-token-value');
+    }
+
     public function testBulkDeleteRemovesAllSelectedMedias(): void
     {
         $user   = $this->createUser();
         $mediaA = $this->createMediaFile($user, 'photo-a.jpg', 'photo');
         $mediaB = $this->createMediaFile($user, 'photo-b.jpg', 'photo');
         $this->login();
+        $token = $this->csrfToken();
 
         $this->client->request('POST', '/gallery/bulk-delete', [
             'mediaIds' => [$mediaA->getId()->toRfc4122(), $mediaB->getId()->toRfc4122()],
+            '_token' => $token,
         ]);
 
         $this->assertResponseIsSuccessful();
@@ -75,8 +88,10 @@ final class MediaBulkDeleteTest extends WebTestCase
         $bobMedia   = $this->createMediaFile($bob, 'photo-bob.jpg', 'photo');
 
         $this->login('bob@example.com');
+        $token = $this->csrfToken();
         $this->client->request('POST', '/gallery/bulk-delete', [
             'mediaIds' => [$aliceMedia->getId()->toRfc4122(), $bobMedia->getId()->toRfc4122()],
+            '_token' => $token,
         ]);
 
         $this->assertResponseIsSuccessful();
@@ -92,14 +107,31 @@ final class MediaBulkDeleteTest extends WebTestCase
 
     public function testBulkDeleteWithEmptySelectionReturnsZero(): void
     {
-        $this->createUser();
+        $user = $this->createUser();
+        // Un média doit exister pour que /gallery rende la div porteuse du
+        // token CSRF (sinon EmptyState est affiché à la place).
+        $this->createMediaFile($user, 'placeholder.jpg', 'photo');
         $this->login();
+        $token = $this->csrfToken();
 
-        $this->client->request('POST', '/gallery/bulk-delete', ['mediaIds' => []]);
+        $this->client->request('POST', '/gallery/bulk-delete', ['mediaIds' => [], '_token' => $token]);
 
         $this->assertResponseIsSuccessful();
         $data = json_decode($this->client->getResponse()->getContent(), true);
         $this->assertSame(0, $data['deletedCount']);
+    }
+
+    public function testBulkDeleteWithoutCsrfTokenThrows403(): void
+    {
+        $user  = $this->createUser();
+        $media = $this->createMediaFile($user, 'photo.jpg', 'photo');
+        $this->login();
+
+        $this->client->request('POST', '/gallery/bulk-delete', [
+            'mediaIds' => [$media->getId()->toRfc4122()],
+        ]);
+
+        $this->assertResponseStatusCodeSame(403);
     }
 
     public function testBulkDeleteRequiresAuthentication(): void
