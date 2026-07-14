@@ -12,6 +12,7 @@ use App\Entity\User;
 use App\Interface\AlbumRepositoryInterface;
 use App\Interface\MediaRepositoryInterface;
 use App\Interface\SharedResourceCleanerInterface;
+use App\Security\GuestRestrictionChecker;
 use App\Service\AlbumService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -35,7 +36,12 @@ final class AlbumServiceTest extends TestCase
         $this->repository = $this->createMock(AlbumRepositoryInterface::class);
         $this->mediaRepository = $this->createMock(MediaRepositoryInterface::class);
         $this->sharedResourceCleaner = $this->createMock(SharedResourceCleanerInterface::class);
-        $this->service = new AlbumService($this->repository, $this->mediaRepository, $this->sharedResourceCleaner);
+        $this->service = new AlbumService(
+            $this->repository,
+            $this->mediaRepository,
+            $this->sharedResourceCleaner,
+            new GuestRestrictionChecker(),
+        );
     }
 
     private function makeUser(): User
@@ -168,6 +174,15 @@ final class AlbumServiceTest extends TestCase
         $album = $this->service->create('Vacances', $user);
 
         $this->assertCount(0, $album->getMedias());
+    }
+
+    public function testCreateThrowsForGuestAccount(): void
+    {
+        $guest = new User('guest@example.com', 'Guest');
+        $guest->markAsGuest();
+
+        $this->expectException(\App\Exception\GuestNotAllowedException::class);
+        $this->service->create('Vacances', $guest);
     }
 
     // --- delete() ---

@@ -12,6 +12,7 @@ use App\Interface\AlbumRepositoryInterface;
 use App\Interface\AlbumServiceInterface;
 use App\Interface\MediaRepositoryInterface;
 use App\Interface\SharedResourceCleanerInterface;
+use App\Security\GuestRestrictionChecker;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Uid\Uuid;
 
@@ -28,6 +29,7 @@ final class AlbumService implements AlbumServiceInterface
         private readonly AlbumRepositoryInterface $repository,
         private readonly MediaRepositoryInterface $mediaRepository,
         private readonly SharedResourceCleanerInterface $sharedResourceCleaner,
+        private readonly GuestRestrictionChecker $guestRestrictionChecker,
     ) {}
 
     /**
@@ -42,6 +44,8 @@ final class AlbumService implements AlbumServiceInterface
      */
     public function create(string $name, User $owner, array $mediaIds = []): Album
     {
+        $this->guestRestrictionChecker->denyUnlessFullAccount($owner);
+
         $album = new Album($name, $owner);
         $this->addOwnedMediasTo($album, $mediaIds, $owner);
         $this->repository->save($album);

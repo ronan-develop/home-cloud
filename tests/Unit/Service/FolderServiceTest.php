@@ -14,6 +14,7 @@ use App\Interface\FilenameValidatorInterface;
 use App\Interface\FolderRepositoryInterface;
 use App\Interface\OwnershipCheckerInterface;
 use App\Interface\SharedResourceCleanerInterface;
+use App\Security\GuestRestrictionChecker;
 use App\Service\FolderService;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -67,6 +68,7 @@ final class FolderServiceTest extends TestCase
             logger:                $this->createMock(LoggerInterface::class),
             stopwatch:             new Stopwatch(),
             sharedResourceCleaner: $this->sharedResourceCleaner,
+            guestRestrictionChecker: new GuestRestrictionChecker(),
         );
     }
 
@@ -91,6 +93,15 @@ final class FolderServiceTest extends TestCase
 
         $this->expectException(BadRequestHttpException::class);
         $this->service->createFolder($owner, 'mon-dossier', $parent, FolderMediaType::General);
+    }
+
+    public function testCreateFolderThrowsForGuestAccount(): void
+    {
+        $guest = new User('guest@example.com', 'Guest');
+        $guest->markAsGuest();
+
+        $this->expectException(\App\Exception\GuestNotAllowedException::class);
+        $this->service->createFolder($guest, 'mon-dossier', null, FolderMediaType::General);
     }
 
     public function testCreateFolderPersistsAndReturnsFolder(): void

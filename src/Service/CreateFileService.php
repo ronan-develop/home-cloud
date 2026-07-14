@@ -9,6 +9,7 @@ use App\Interface\CreateFileServiceInterface;
 use App\Interface\DefaultFolderServiceInterface;
 use App\Interface\StorageServiceInterface;
 use App\Repository\UserRepository;
+use App\Security\GuestRestrictionChecker;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -47,6 +48,7 @@ final class CreateFileService implements CreateFileServiceInterface
         private readonly DefaultFolderServiceInterface $defaultFolderService,
         private readonly EntityManagerInterface $em,
         private readonly UserRepository $userRepository,
+        private readonly GuestRestrictionChecker $guestRestrictionChecker,
     ) {}
 
     /**
@@ -73,6 +75,8 @@ final class CreateFileService implements CreateFileServiceInterface
         // 2. Auth: fetch user
         $owner = $this->userRepository->find($ownerId)
             ?? throw new NotFoundHttpException('User not found');
+
+        $this->guestRestrictionChecker->denyUnlessFullAccount($owner);
 
         // 3. Folder resolution: folderId > newFolderName > Uploads
         $folder = $this->defaultFolderService->resolve($folderId, $newFolderName, $owner);
