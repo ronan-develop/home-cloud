@@ -17,8 +17,11 @@ use Symfony\Component\HttpKernel\KernelEvents;
  * - Referrer-Policy: no-referrer             → ne transmet pas l'URL de la page précédente
  * - Strict-Transport-Security (prod only)    → force HTTPS, bloque le SSL-stripping
  *
- * Header ajouté uniquement sur les routes /api/* (hors /api/docs) :
- * - Content-Security-Policy: default-src 'none' → l'API ne sert que du JSON
+ * Content-Security-Policy :
+ * - Sur /api/* (hors /api/docs) : "default-src 'none'" → l'API ne sert que du JSON
+ * - Sur le front HTML : policy permissive (scripts/styles inline autorisés,
+ *   faute de nonces sur chaque <script> existant) mais qui bloque les
+ *   sources EXTERNES, l'embedding en iframe et les plugins (object-src)
  */
 #[AsEventListener(event: KernelEvents::RESPONSE)]
 final class SecurityHeadersListener
@@ -45,10 +48,24 @@ final class SecurityHeadersListener
 
         $path = $event->getRequest()->getPathInfo();
 
-        // CSP strict uniquement sur l'API (JSON) — pas sur le frontend HTML.
+        // CSP strict sur l'API (JSON) — pas de script, style, image, etc.
         // La Swagger UI est exclue car elle charge des scripts et styles externes.
-        if (str_starts_with($path, '/api/') && !str_starts_with($path, '/api/docs')) {
-            $headers->set('Content-Security-Policy', "default-src 'none'");
+        if (str_starts_with($path, '/api/docs')) {
+            return;
         }
+
+        if (str_starts_with($path, '/api/')) {
+            $headers->set('Content-Security-Policy', "default-src 'none'");
+
+            return;
+        }
+
+        // CSP permissive sur le front HTML : bloque l'injection de sources
+        // EXTERNES (le vecteur XSS le plus dangereux), mais autorise encore
+        // les scripts/styles inline existants faute de nonces sur chacun.
+        $headers->set(
+            'Content-Security-Policy',
+            "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
+        );
     }
 }
