@@ -149,10 +149,13 @@
   background: var(--hc-accent);
 }
 
-/* ── Badge d'appartenance à un album (sous les boutons d'action) ── */
+/* ── Badge d'appartenance à un album (juste au-dessus de la légende du bas,
+   zone neutre non concernée par la checkbox en haut-gauche ni par les
+   actions flottantes en haut-droite qui n'apparaissent qu'au survol —
+   évite le vide visuel qu'un positionnement lié aux actions provoquait) ── */
 .hc-media-thumb-badge {
   position: absolute;
-  top: 36px;
+  bottom: 30px;
   right: 6px;
   z-index: 2;
   padding: 3px 8px;
@@ -163,7 +166,7 @@
   font-size: 0.6875rem;
   font-weight: 600;
   white-space: nowrap;
-  max-width: calc(100% - 12px);
+  max-width: 65%;
   overflow: hidden;
   text-overflow: ellipsis;
 }
