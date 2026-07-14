@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Api;
 
 use App\Entity\Album;
+use App\Entity\Share;
 use App\Tests\AuthenticatedApiTestCase;
 
 /**
@@ -12,6 +13,10 @@ use App\Tests\AuthenticatedApiTestCase;
  *
  * AlbumProvider ne filtrait jamais par propriétaire, ni sur GET /api/v1/albums/{id}
  * ni sur GET /api/v1/albums.
+ *
+ * La collection reste ownership-only (même logique que Media/File : un invité
+ * ne doit pas lister tous les albums qui lui sont partagés), mais l'item doit
+ * accepter un partage actif (Share::RESOURCE_ALBUM).
  */
 final class AlbumCollectionOwnershipTest extends AuthenticatedApiTestCase
 {
@@ -61,6 +66,24 @@ final class AlbumCollectionOwnershipTest extends AuthenticatedApiTestCase
         $this->em->clear();
 
         $browser = $this->createAuthenticatedKernelBrowser('owner9@example.com');
+        $browser->request('GET', '/api/v1/albums/' . $albumId, server: ['HTTP_ACCEPT' => 'application/json']);
+
+        $this->assertSame(200, $browser->getResponse()->getStatusCode());
+    }
+
+    public function testGuestWithActiveShareCanReadItem(): void
+    {
+        $album = $this->makeAlbum('owner10@example.com', 'album-partage');
+        $albumId = (string) $album->getId();
+        $owner = $this->em->getRepository(\App\Entity\User::class)->findOneBy(['email' => 'owner10@example.com']);
+        $guest = $this->createUser('guest10@example.com', 'password123', 'Guest');
+
+        $share = new Share($owner, $guest, Share::RESOURCE_ALBUM, $album->getId(), Share::PERMISSION_READ);
+        $this->em->persist($share);
+        $this->em->flush();
+        $this->em->clear();
+
+        $browser = $this->createAuthenticatedKernelBrowser('guest10@example.com');
         $browser->request('GET', '/api/v1/albums/' . $albumId, server: ['HTTP_ACCEPT' => 'application/json']);
 
         $this->assertSame(200, $browser->getResponse()->getStatusCode());

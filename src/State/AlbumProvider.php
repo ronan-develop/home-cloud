@@ -10,8 +10,10 @@ use ApiPlatform\State\Pagination\TraversablePaginator;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\AlbumOutput;
 use App\Entity\Album;
+use App\Entity\Share;
 use App\Entity\User;
 use App\Repository\AlbumRepository;
+use App\Security\ShareAccessChecker;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
@@ -28,6 +30,7 @@ final class AlbumProvider implements ProviderInterface
         private readonly AlbumRepository $repository,
         private readonly Pagination $pagination,
         private readonly Security $security,
+        private readonly ShareAccessChecker $shareAccessChecker,
     ) {}
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): object|array|null
@@ -44,7 +47,8 @@ final class AlbumProvider implements ProviderInterface
                 return null;
             }
 
-            if (!$album->isOwnedBy($currentUser)) {
+            if (!$album->isOwnedBy($currentUser)
+                && !$this->shareAccessChecker->canAccess($currentUser, Share::RESOURCE_ALBUM, $album->getId())) {
                 throw new AccessDeniedHttpException();
             }
 
