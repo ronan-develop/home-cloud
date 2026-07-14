@@ -30,10 +30,24 @@ final class StorageService implements StorageServiceInterface
     private const NEUTRALIZED_EXTENSIONS = [
         // Scripts interprétés côté serveur ou shell
         'sh', 'bash', 'zsh', 'fish', 'ksh', 'csh', 'py', 'rb', 'pl', 'cgi',
+        'php', 'php3', 'php4', 'php5', 'php7', 'php8', 'phtml', 'phar', 'phps',
         // Markup/scripts actifs côté navigateur
         'svg', 'svgz', 'html', 'htm', 'xhtml',
         'js', 'mjs', 'css',
         'xml', 'xsl', 'xslt',
+    ];
+
+    /**
+     * MIME types dangereux détectés depuis le CONTENU réel (finfo), pour les
+     * cas où l'extension client ment (ex: script PHP renommé en .jpg) et où
+     * Symfony ne mappe pas ce MIME vers une extension via guessExtension().
+     */
+    private const NEUTRALIZED_MIME_TYPES = [
+        'text/x-php', 'application/x-httpd-php',
+        'text/x-python', 'text/x-shellscript', 'application/x-sh',
+        'text/html', 'application/xhtml+xml',
+        'image/svg+xml',
+        'text/javascript', 'application/javascript', 'text/css',
     ];
 
     public function __construct(
@@ -59,7 +73,16 @@ final class StorageService implements StorageServiceInterface
         // Utilise l'extension client si disponible, sinon détecte depuis le contenu (finfo)
         $originalExt = $clientExt !== '' ? $clientExt : strtolower($file->guessExtension() ?? 'bin');
 
-        $neutralized = in_array($originalExt, self::NEUTRALIZED_EXTENSIONS, true);
+        // L'extension client est manipulable (ex: un script PHP renommé en
+        // .jpg) : on détecte aussi l'extension via le contenu réel (finfo,
+        // via guessExtension()) et le MIME réel, neutralise si l'UN des trois
+        // signaux est dangereux.
+        $detectedExt = strtolower($file->guessExtension() ?? '');
+        $detectedMime = (new \finfo(FILEINFO_MIME_TYPE))->file($file->getPathname()) ?: '';
+
+        $neutralized = in_array($originalExt, self::NEUTRALIZED_EXTENSIONS, true)
+            || in_array($detectedExt, self::NEUTRALIZED_EXTENSIONS, true)
+            || in_array($detectedMime, self::NEUTRALIZED_MIME_TYPES, true);
         $ext = $neutralized ? 'bin' : $originalExt;
 
         $subDir = sprintf('%s/%s', $year, $month);
