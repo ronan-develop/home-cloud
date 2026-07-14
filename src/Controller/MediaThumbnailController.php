@@ -8,7 +8,7 @@ use App\Entity\Share;
 use App\Entity\User;
 use App\Repository\MediaRepository;
 use App\Interface\StorageServiceInterface;
-use App\Security\ShareAccessChecker;
+use App\Security\ResourceAccessChecker;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -43,7 +43,7 @@ final class MediaThumbnailController extends AbstractController
     public function __construct(
         private readonly MediaRepository $mediaRepository,
         private readonly StorageServiceInterface $storageService,
-        private readonly ShareAccessChecker $shareAccessChecker,
+        private readonly ResourceAccessChecker $resourceAccessChecker,
     ) {}
 
     #[Route('/api/v1/medias/{id}/thumbnail', name: 'media_thumbnail', methods: ['GET'])]
@@ -54,8 +54,7 @@ final class MediaThumbnailController extends AbstractController
 
         /** @var User $user */
         $user = $this->getUser();
-        if (!$media->isOwnedBy($user)
-            && !$this->shareAccessChecker->canAccess($user, Share::RESOURCE_FILE, $media->getFile()->getId())) {
+        if (!$this->resourceAccessChecker->canRead($user, Share::RESOURCE_FILE, $media->getFile()->getId(), $media->getFile()->getOwner())) {
             throw $this->createAccessDeniedException('Vous ne pouvez pas voir ce média.');
         }
 

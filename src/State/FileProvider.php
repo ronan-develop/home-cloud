@@ -14,7 +14,7 @@ use App\Entity\File;
 use App\Entity\User;
 use App\Repository\FileRepository;
 use App\Repository\FolderRepository;
-use App\Security\ShareAccessChecker;
+use App\Security\ResourceAccessChecker;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -39,7 +39,7 @@ final class FileProvider implements ProviderInterface
         private readonly RequestStack $requestStack,
         private readonly Pagination $pagination,
         private readonly Security $security,
-        private readonly ShareAccessChecker $shareAccessChecker,
+        private readonly ResourceAccessChecker $resourceAccessChecker,
     ) {}
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): object|array|null
@@ -52,10 +52,9 @@ final class FileProvider implements ProviderInterface
 
             /** @var User|null $currentUser */
             $currentUser = $this->security->getUser();
-            if ($operation instanceof Get && $currentUser !== null && $currentUser->getId() != $file->getOwner()->getId()) {
-                if (!$this->shareAccessChecker->canAccess($currentUser, 'file', $file->getId())) {
-                    throw new AccessDeniedHttpException();
-                }
+            if ($operation instanceof Get && $currentUser !== null
+                && !$this->resourceAccessChecker->canRead($currentUser, 'file', $file->getId(), $file->getOwner())) {
+                throw new AccessDeniedHttpException();
             }
 
             return $this->toOutput($file);
