@@ -1,0 +1,36 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Choisir un nouveau mot de passe{% endblock %}
+
+{% block body %}
+<div class="max-w-md mx-auto mt-16 p-8 bg-white/10 backdrop-blur-2xl rounded-2xl shadow-lg">
+    <h2 class="text-2xl font-bold mb-4 text-center">Choisir un nouveau mot de passe</h2>
+    <form id="reset-password-confirm-form" class="flex flex-col gap-4">
+        <input type="password" name="password" id="password" required placeholder="Nouveau mot de passe" class="px-4 py-2 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-400/50" />
+        <button type="submit" class="bg-blue-500 text-white rounded-xl py-2 font-semibold hover:bg-blue-600 transition-all">Réinitialiser</button>
+    </form>
+    <div id="reset-password-confirm-message" class="mt-4"></div>
+</div>
+<script>
+const token = {{ token|json_encode|raw }};
+const form = document.getElementById('reset-password-confirm-form');
+const msg = document.getElementById('reset-password-confirm-message');
+form.onsubmit = async (e) => {
+    e.preventDefault();
+    msg.innerHTML = '';
+    const password = form.password.value;
+    const res = await fetch('/api/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, password })
+    });
+    const data = await res.json();
+    if (res.ok) {
+        msg.innerHTML = `<div class='flash-success'>${data.message || 'Mot de passe réinitialisé.'}</div>`;
+        form.reset();
+    } else {
+        msg.innerHTML = `<div class='flash-error'>${data.error || 'Erreur lors de la réinitialisation.'}</div>`;
+    }
+};
+</script>
+{% endblock %}

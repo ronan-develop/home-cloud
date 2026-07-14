@@ -69,10 +69,76 @@ class ResetPasswordControllerTest extends WebTestCase
         $data = json_decode($this->client->getResponse()->getContent(), true);
         self::assertArrayHasKey('message', $data);
 
-        // On ne vérifie plus l'envoi d'email ni le contenu du mail
-
         // On ne teste plus le lien reçu par email ni la page de confirmation
 
         // Ici on ne teste que la demande de reset password (pas la soumission du nouveau mot de passe)
+    }
+
+    /**
+     * F6 de l'audit sécurité : le mail de réinitialisation envoyait le token
+     * brut en texte simple, avec un expéditeur non routable. Doit désormais
+     * être un email HTML contenant un LIEN (pas le token nu) vers une page
+     * de confirmation, avec un expéditeur réel configuré via variable d'env.
+     */
+    public function testRequestResetPasswordSendsHtmlEmailWithLinkNotRawToken(): void
+    {
+        $user = new User('linktest@example.com', 'Link Test');
+        $user->setPassword('irrelevant');
+        $this->em->persist($user);
+        $this->em->flush();
+
+        $this->client->request('POST', '/api/request-reset-password', [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode(['email' => 'linktest@example.com']));
+
+        self::assertResponseIsSuccessful();
+        self::assertEmailCount(1);
+
+        $email = self::getMailerMessage(0);
+        self::assertNotNull($email);
+
+        $htmlBody = $email->getHtmlBody();
+        self::assertNotNull($htmlBody, 'Le mail doit avoir un corps HTML (pas seulement texte brut).');
+
+        // Un lien de confirmation doit être présent...
+        self::assertStringContainsString('/reset-password/', $htmlBody);
+        // ...et le corps ne doit jamais afficher un token nu hors contexte de lien
+        // (on vérifie l'absence du texte legacy "utilisez ce token :").
+        self::assertStringNotContainsString('utilisez ce token', $htmlBody);
+    }
+
+    /**
+     * L'expéditeur doit être configurable, pas codé en dur avec un domaine
+     * non routable (no-reply@homecloud.local).
+     */
+    public function testRequestResetPasswordDoesNotUseHardcodedUnroutableSender(): void
+    {
+        $user = new User('sender-test@example.com', 'Sender Test');
+        $user->setPassword('irrelevant');
+        $this->em->persist($user);
+        $this->em->flush();
+
+        $this->client->request('POST', '/api/request-reset-password', [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode(['email' => 'sender-test@example.com']));
+
+        self::assertResponseIsSuccessful();
+        self::assertEmailCount(1);
+
+        $email = self::getMailerMessage(0);
+        $from = $email->getFrom();
+        self::assertNotEmpty($from);
+        self::assertNotSame('no-reply@homecloud.local', $from[0]->getAddress());
+    }
+
+    /**
+     * La page de confirmation (saisie du nouveau mot de passe) doit exister
+     * et être accessible via le lien envoyé par email.
+     */
+    public function testResetPasswordConfirmPageIsAccessibleWithToken(): void
+    {
+        $this->client->request('GET', '/reset-password/some-fake-token-for-page-rendering-test');
+
+        self::assertResponseIsSuccessful();
     }
 }
