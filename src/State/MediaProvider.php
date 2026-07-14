@@ -8,8 +8,10 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\MediaOutput;
 use App\Entity\Media;
+use App\Entity\Share;
 use App\Entity\User;
 use App\Repository\MediaRepository;
+use App\Security\ShareAccessChecker;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -33,6 +35,7 @@ final class MediaProvider implements ProviderInterface
         private readonly MediaRepository $repository,
         private readonly RequestStack $requestStack,
         private readonly Security $security,
+        private readonly ShareAccessChecker $shareAccessChecker,
     ) {}
 
     /** @return MediaOutput|MediaOutput[]|null */
@@ -48,7 +51,8 @@ final class MediaProvider implements ProviderInterface
             $media = $this->repository->find(Uuid::fromString($uriVariables['id']))
                 ?? throw new NotFoundHttpException('Media not found');
 
-            if (!$media->isOwnedBy($currentUser)) {
+            if (!$media->isOwnedBy($currentUser)
+                && !$this->shareAccessChecker->canAccess($currentUser, Share::RESOURCE_FILE, $media->getFile()->getId())) {
                 throw new AccessDeniedHttpException();
             }
 
