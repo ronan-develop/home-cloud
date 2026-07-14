@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Entity\User;
 use App\Repository\FileRepository;
 use App\Interface\StorageServiceInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -12,6 +13,7 @@ use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
  * Controller dédié au téléchargement des fichiers uploadés.
@@ -20,6 +22,8 @@ use Symfony\Component\Routing\Attribute\Route;
  * (Content-Type, Content-Disposition).
  *
  * Sécurité :
+ * - Seul le propriétaire du fichier peut le télécharger (pas de partage entre
+ *   utilisateurs implémenté à ce jour).
  * - Les fichiers ordinaires sont stockés en clair ; les fichiers neutralisés sont stockés
  *   en .bin avec leur contenu d'origine intact. Dans les deux cas, le fichier est streamé
  *   directement — aucun déchiffrement nécessaire.
@@ -29,6 +33,7 @@ use Symfony\Component\Routing\Attribute\Route;
  * ⚠️ Tests : StreamedResponse retourne un body vide dans le client PHPUnit.
  * Les tests vérifient status + headers uniquement.
  */
+#[IsGranted('ROLE_USER')]
 final class FileDownloadController extends AbstractController
 {
     public function __construct(
@@ -41,6 +46,12 @@ final class FileDownloadController extends AbstractController
     {
         $file = $this->fileRepository->find($id)
             ?? throw new NotFoundHttpException('File not found');
+
+        /** @var User $user */
+        $user = $this->getUser();
+        if (!$file->getOwner()->getId()->equals($user->getId())) {
+            throw $this->createAccessDeniedException('Vous ne pouvez pas télécharger ce fichier.');
+        }
 
         $absolutePath = $this->storageService->getAbsolutePath($file->getPath());
 
