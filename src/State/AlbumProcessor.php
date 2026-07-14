@@ -91,8 +91,7 @@ final class AlbumProcessor implements ProcessorInterface
         $album = $this->albumRepository->findById(Uuid::fromString((string) $uriVariables['id']))
             ?? throw new NotFoundHttpException('Album not found');
         $this->ownershipChecker->denyUnlessOwner($album);
-        $this->em->remove($album);
-        $this->em->flush();
+        $this->albumService->delete($album);
         return null;
     }
 }

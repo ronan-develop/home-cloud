@@ -615,4 +615,59 @@ final class ShareTest extends AuthenticatedApiTestCase
 
         $this->assertResponseStatusCodeSame(403);
     }
+
+    // ─── Nettoyage des shares orphelins à la suppression ────────────────────
+
+    public function testDeletingFileRemovesItsShares(): void
+    {
+        $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
+        $guest = $this->createGuest();
+        $file  = $this->createFile($owner);
+        $share = new Share($owner, $guest, 'file', $file->getId(), 'read');
+        $this->em->persist($share);
+        $this->em->flush();
+        $shareId = $share->getId();
+
+        $this->createAuthenticatedClient()->request('DELETE', '/api/v1/files/' . $file->getId()->toRfc4122());
+        $this->assertResponseStatusCodeSame(204);
+
+        $this->em->clear();
+        $this->assertNull($this->em->getRepository(Share::class)->find($shareId));
+    }
+
+    public function testDeletingAlbumRemovesItsShares(): void
+    {
+        $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
+        $guest = $this->createGuest();
+        $album = $this->createAlbum($owner);
+        $share = new Share($owner, $guest, 'album', $album->getId(), 'read');
+        $this->em->persist($share);
+        $this->em->flush();
+        $shareId = $share->getId();
+
+        $this->createAuthenticatedClient()->request('DELETE', '/api/v1/albums/' . $album->getId()->toRfc4122());
+        $this->assertResponseStatusCodeSame(204);
+
+        $this->em->clear();
+        $this->assertNull($this->em->getRepository(Share::class)->find($shareId));
+    }
+
+    public function testDeletingFolderRemovesItsShares(): void
+    {
+        $owner  = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
+        $guest  = $this->createGuest();
+        $folder = $this->createFolder('To Delete', $owner, null, $this->em);
+        $share  = new Share($owner, $guest, 'folder', $folder->getId(), 'read');
+        $this->em->persist($share);
+        $this->em->flush();
+        $shareId = $share->getId();
+
+        $this->createAuthenticatedClient()->request('DELETE', '/api/v1/folders/' . $folder->getId()->toRfc4122(), [
+            'json' => ['deleteContents' => true],
+        ]);
+        $this->assertResponseStatusCodeSame(204);
+
+        $this->em->clear();
+        $this->assertNull($this->em->getRepository(Share::class)->find($shareId));
+    }
 }
