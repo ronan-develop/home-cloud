@@ -72,7 +72,8 @@
         <div data-testid="media-thumbnail" class="hc-media-thumb" data-gallery-selection-target="thumb"
              data-controller="rename-media"
              data-rename-media-url-value="{{ path('app_media_rename', {id: media.id}) }}"
-             data-rename-media-current-name-value="{{ media.file.originalName }}">
+             data-rename-media-current-name-value="{{ media.file.originalName }}"
+             data-rename-media-csrf-token-value="{{ csrf_token('media-rename') }}">
           <twig:MediaThumbActions :media="media" />
           {% set mediaAlbumNames = albumNamesByMediaId[media.id ~ ''] ?? [] %}
           {% if mediaAlbumNames is not empty %}

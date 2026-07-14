@@ -72,7 +72,8 @@
              data-action="dragstart->album-reorder#dragStart dragover->album-reorder#dragOver drop->album-reorder#drop dragend->album-reorder#dragEnd"
              data-controller="rename-media"
              data-rename-media-url-value="{{ path('app_media_rename', {id: media.id}) }}"
-             data-rename-media-current-name-value="{{ media.file.originalName }}">
+             data-rename-media-current-name-value="{{ media.file.originalName }}"
+             data-rename-media-csrf-token-value="{{ csrf_token('media-rename') }}">
           <twig:MediaThumbActions
             :media="media"
             removeUrl="{{ path('app_album_remove_media', {id: album.id, mediaId: media.id}) }}"

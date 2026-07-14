@@ -10,7 +10,8 @@ describe('rename-media controller', () => {
     document.body.innerHTML = `
       <div id="thumb" data-controller="rename-media"
            data-rename-media-url-value="/gallery/abc/rename"
-           data-rename-media-current-name-value="ancien-nom.jpg">
+           data-rename-media-current-name-value="ancien-nom.jpg"
+           data-rename-media-csrf-token-value="fake-csrf-token">
         <button data-action="click->rename-media#prompt"></button>
         <div data-rename-media-target="caption">ancien-nom.jpg</div>
       </div>
@@ -62,6 +63,8 @@ describe('rename-media controller', () => {
     await Promise.resolve();
 
     expect(global.fetch).toHaveBeenCalledWith('/gallery/abc/rename', expect.objectContaining({ method: 'POST' }));
+    const sentBody = global.fetch.mock.calls[0][1].body;
+    expect(new URLSearchParams(sentBody).get('_token')).toBe('fake-csrf-token');
     expect(document.querySelector('[data-rename-media-target="caption"]').textContent).toBe('nouveau-nom.jpg');
   });
 
