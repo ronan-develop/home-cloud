@@ -530,4 +530,89 @@ final class ShareTest extends AuthenticatedApiTestCase
 
         $this->assertResponseStatusCodeSame(403);
     }
+
+    // ─── Permission write effective sur File ────────────────────────────────
+
+    public function testGuestWithWriteShareCanRenameFile(): void
+    {
+        $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
+        $guest = $this->createGuest();
+        $file  = $this->createFile($owner);
+        $share = new Share($owner, $guest, 'file', $file->getId(), 'write');
+        $this->em->persist($share);
+        $this->em->flush();
+
+        $response = $this->createAuthenticatedClient('bob@example.com')->request('PATCH', '/api/v1/files/' . $file->getId()->toRfc4122(), [
+            'json'    => ['originalName' => 'renamed.jpg'],
+            'headers' => ['Content-Type' => 'application/merge-patch+json'],
+        ]);
+
+        $this->assertResponseStatusCodeSame(200);
+    }
+
+    public function testGuestWithReadShareCannotRenameFile(): void
+    {
+        $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
+        $guest = $this->createGuest();
+        $file  = $this->createFile($owner);
+        $share = new Share($owner, $guest, 'file', $file->getId(), 'read');
+        $this->em->persist($share);
+        $this->em->flush();
+
+        $response = $this->createAuthenticatedClient('bob@example.com')->request('PATCH', '/api/v1/files/' . $file->getId()->toRfc4122(), [
+            'json'    => ['originalName' => 'renamed.jpg'],
+            'headers' => ['Content-Type' => 'application/merge-patch+json'],
+        ]);
+
+        $this->assertResponseStatusCodeSame(403);
+    }
+
+    public function testGuestWithWriteShareCanDeleteFile(): void
+    {
+        $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
+        $guest = $this->createGuest();
+        $file  = $this->createFile($owner);
+        $share = new Share($owner, $guest, 'file', $file->getId(), 'write');
+        $this->em->persist($share);
+        $this->em->flush();
+
+        $this->createAuthenticatedClient('bob@example.com')->request('DELETE', '/api/v1/files/' . $file->getId()->toRfc4122());
+
+        $this->assertResponseStatusCodeSame(204);
+    }
+
+    public function testGuestWithReadShareCannotDeleteFile(): void
+    {
+        $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
+        $guest = $this->createGuest();
+        $file  = $this->createFile($owner);
+        $share = new Share($owner, $guest, 'file', $file->getId(), 'read');
+        $this->em->persist($share);
+        $this->em->flush();
+
+        $this->createAuthenticatedClient('bob@example.com')->request('DELETE', '/api/v1/files/' . $file->getId()->toRfc4122());
+
+        $this->assertResponseStatusCodeSame(403);
+    }
+
+    public function testGuestWithWriteShareCannotMoveFileOutOfScope(): void
+    {
+        // Anti-exfiltration (arbitrage §3.2 de feat-partage.md) : le move reste
+        // owner-only, même avec un partage write — déjà garanti par
+        // FileActionService::move() -> AuthorizationChecker::assertOwns().
+        $owner   = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
+        $guest   = $this->createGuest();
+        $file    = $this->createFile($owner);
+        $share   = new Share($owner, $guest, 'file', $file->getId(), 'write');
+        $this->em->persist($share);
+        $guestFolder = $this->createFolder('Guest Folder', $guest, null, $this->em);
+        $this->em->flush();
+
+        $this->createAuthenticatedClient('bob@example.com')->request('PATCH', '/api/v1/files/' . $file->getId()->toRfc4122(), [
+            'json'    => ['targetFolderId' => $guestFolder->getId()->toRfc4122()],
+            'headers' => ['Content-Type' => 'application/merge-patch+json'],
+        ]);
+
+        $this->assertResponseStatusCodeSame(403);
+    }
 }

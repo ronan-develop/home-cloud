@@ -9,16 +9,18 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\FileOutput;
+use App\Entity\Share;
 use App\Interface\DefaultFolderServiceInterface;
-use App\Interface\OwnershipCheckerInterface;
 use App\Repository\FileRepository;
 use App\Repository\MediaRepository;
 use App\Security\AuthenticationResolver;
+use App\Security\ResourceAccessChecker;
 use App\Service\FileActionService;
 use App\Service\IriExtractor;
 use App\Interface\StorageServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -42,7 +44,7 @@ final class FileProcessor implements ProcessorInterface
         private readonly MediaRepository $mediaRepository,
         private readonly StorageServiceInterface $storageService,
         private readonly AuthenticationResolver $authResolver,
-        private readonly OwnershipCheckerInterface $ownershipChecker,
+        private readonly ResourceAccessChecker $resourceAccessChecker,
         private readonly DefaultFolderServiceInterface $defaultFolderService,
         private readonly FileActionService $fileActionService,
         private readonly RequestStack $requestStack,
@@ -69,7 +71,10 @@ final class FileProcessor implements ProcessorInterface
         $file = $this->fileRepository->find($uriVariables['id'])
             ?? throw new NotFoundHttpException('File not found');
 
-        $this->ownershipChecker->denyUnlessOwner($file);
+        $user = $this->authResolver->requireUser();
+        if (!$this->resourceAccessChecker->canWrite($user, Share::RESOURCE_FILE, $file->getId(), $file->getOwner())) {
+            throw new AccessDeniedHttpException('You are not allowed to delete this File');
+        }
 
         // Supprimer le thumbnail du disque AVANT le cascade DB (onDelete: CASCADE supprime la ligne Media)
         $media = $this->mediaRepository->findOneBy(['file' => $file]);
@@ -93,6 +98,9 @@ final class FileProcessor implements ProcessorInterface
             ?? throw new NotFoundHttpException('File not found');
 
         $user = $this->authResolver->requireUser();
+        if (!$this->resourceAccessChecker->canWrite($user, Share::RESOURCE_FILE, $file->getId(), $file->getOwner())) {
+            throw new AccessDeniedHttpException('You are not allowed to modify this File');
+        }
 
         // Déléguez le renommage à FileActionService (validation)
         if ($data->originalName !== '') {
