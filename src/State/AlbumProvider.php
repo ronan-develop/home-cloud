@@ -10,7 +10,10 @@ use ApiPlatform\State\Pagination\TraversablePaginator;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\AlbumOutput;
 use App\Entity\Album;
+use App\Entity\User;
 use App\Repository\AlbumRepository;
+use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 /**
  * Fournit les données lues pour les opérations GET sur la ressource Album.
@@ -24,19 +27,33 @@ final class AlbumProvider implements ProviderInterface
     public function __construct(
         private readonly AlbumRepository $repository,
         private readonly Pagination $pagination,
+        private readonly Security $security,
     ) {}
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): object|array|null
     {
+        /** @var User|null $currentUser */
+        $currentUser = $this->security->getUser();
+        if ($currentUser === null) {
+            throw new AccessDeniedHttpException();
+        }
+
         if (isset($uriVariables['id'])) {
             $album = $this->repository->find($uriVariables['id']);
+            if ($album === null) {
+                return null;
+            }
 
-            return $album ? $this->toOutput($album) : null;
+            if (!$album->isOwnedBy($currentUser)) {
+                throw new AccessDeniedHttpException();
+            }
+
+            return $this->toOutput($album);
         }
 
         [$page, $offset, $limit] = $this->pagination->getPagination($operation, $context);
-        $total = $this->repository->count([]);
-        $items = array_map($this->toOutput(...), $this->repository->findBy([], [], $limit, $offset));
+        $total = $this->repository->countByOwner($currentUser);
+        $items = array_map($this->toOutput(...), $this->repository->findByOwner($currentUser, $limit, $offset));
 
         return new TraversablePaginator(new \ArrayIterator($items), $page, $limit, $total);
     }

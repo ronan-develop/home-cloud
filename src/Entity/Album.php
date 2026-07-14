@@ -86,6 +86,12 @@ class Album
         return $this->owner;
     }
 
+    /** Vérifie si cet album appartient à l'utilisateur donné. */
+    public function isOwnedBy(User $user): bool
+    {
+        return $this->owner->getId()->equals($user->getId());
+    }
+
     /**
      * @return Collection<int, Media> Médias triés par position croissante.
      */
