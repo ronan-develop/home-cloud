@@ -43,15 +43,34 @@ class AlbumRepository extends ServiceEntityRepository implements AlbumRepository
     }
 
     /** @return Album[] */
-    public function findByOwner(User $user): array
+    public function findByOwner(User $user, ?int $limit = null, ?int $offset = null): array
     {
-        return $this->createQueryBuilder('a')
+        $qb = $this->createQueryBuilder('a')
             ->join('a.owner', 'u')
             ->where('u.id = :userId')
             ->setParameter('userId', $user->getId(), 'uuid')
-            ->orderBy('a.createdAt', 'DESC')
+            ->orderBy('a.createdAt', 'DESC');
+
+        if ($limit !== null) {
+            $qb->setMaxResults($limit);
+        }
+        if ($offset !== null) {
+            $qb->setFirstResult($offset);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /** Compte les albums de $owner. */
+    public function countByOwner(User $user): int
+    {
+        return (int) $this->createQueryBuilder('a')
+            ->select('COUNT(a.id)')
+            ->join('a.owner', 'u')
+            ->where('u.id = :userId')
+            ->setParameter('userId', $user->getId(), 'uuid')
             ->getQuery()
-            ->getResult();
+            ->getSingleScalarResult();
     }
 
     /**

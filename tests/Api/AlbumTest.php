@@ -86,6 +86,7 @@ final class AlbumTest extends AuthenticatedApiTestCase
         $client = static::createClient([], [
             'headers' => [
                 'Authorization' => 'Bearer FAKE_JWT_TOKEN',
+                'X-User-Email'  => 'alice@example.com',
             ],
         ]);
         $response = $client->request('GET', '/api/v1/albums', [
@@ -106,7 +107,7 @@ final class AlbumTest extends AuthenticatedApiTestCase
         $this->em->flush();
 
         $client = static::createClient();
-        $response = ApiTestHelper::requestWithJwt($client, 'GET', '/api/v1/albums/' . $album->getId());
+        $response = ApiTestHelper::requestWithJwt($client, 'GET', '/api/v1/albums/' . $album->getId(), [], 'alice@example.com');
 
         Assert::assertSame(200, $response->getStatusCode());
         $data = $response->toArray();
