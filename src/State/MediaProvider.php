@@ -8,8 +8,11 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\MediaOutput;
 use App\Entity\Media;
+use App\Entity\User;
 use App\Repository\MediaRepository;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Uid\Uuid;
@@ -29,14 +32,25 @@ final class MediaProvider implements ProviderInterface
     public function __construct(
         private readonly MediaRepository $repository,
         private readonly RequestStack $requestStack,
+        private readonly Security $security,
     ) {}
 
     /** @return MediaOutput|MediaOutput[]|null */
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): object|array|null
     {
+        /** @var User|null $currentUser */
+        $currentUser = $this->security->getUser();
+        if ($currentUser === null) {
+            throw new AccessDeniedHttpException();
+        }
+
         if (isset($uriVariables['id'])) {
             $media = $this->repository->find(Uuid::fromString($uriVariables['id']))
                 ?? throw new NotFoundHttpException('Media not found');
+
+            if (!$media->isOwnedBy($currentUser)) {
+                throw new AccessDeniedHttpException();
+            }
 
             return $this->toOutput($media);
         }
@@ -52,11 +66,9 @@ final class MediaProvider implements ProviderInterface
             }
         }
 
-        $criteria = $type !== null ? ['mediaType' => $type] : [];
-
         return array_map(
             fn (Media $m) => $this->toOutput($m),
-            $this->repository->findBy($criteria, ['createdAt' => 'DESC']),
+            $this->repository->findByOwner($currentUser, $type),
         );
     }
 
