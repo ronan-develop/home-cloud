@@ -86,6 +86,43 @@
     {% endif %}
   </div>
 
+  {# === Liens publics === #}
+  <div>
+    <h2 class="text-sm font-semibold uppercase tracking-wide mb-3" style="color:var(--hc-text-2);">Liens publics</h2>
+    {% if shareLinks is empty %}
+      <div data-testid="share-links-empty">
+        <twig:EmptyState
+          title="Aucun lien de partage créé"
+          subtitle="Créez un lien depuis l'onglet « Lien » de la modale de partage pour donner accès sans compte."
+          icon="<svg width='64' height='64' fill='none' stroke='currentColor' stroke-width='1.5' viewBox='0 0 24 24' class='hc-icon'><path d='M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 22a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8.6 13.5l6.8 4M15.4 6.5l-6.8 4'/></svg>"
+        />
+      </div>
+    {% else %}
+      <div class="hc-item-card" style="display:flex; flex-direction:column; gap:0; padding:0;" data-testid="share-links-list">
+        {% for row in shareLinks %}
+          <div class="flex items-center justify-between px-4 py-3" style="border-bottom:1px solid var(--hc-border);" data-testid="share-link-row">
+            <div>
+              <div class="hc-item-name">{{ row.resourceName }}</div>
+              <div class="hc-item-meta">
+                Lien public · lecture seule ·
+                {{ row.link.isActive ? 'expire le ' ~ row.link.expiresAt|date('d/m/Y') : 'révoqué/expiré le ' ~ row.link.expiresAt|date('d/m/Y') }}
+              </div>
+            </div>
+            {% if row.link.isActive %}
+              <form method="post" action="{{ path('app_share_link_revoke') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('share-link-revoke') }}">
+                <input type="hidden" name="linkId" value="{{ row.link.id }}">
+                <button type="submit" class="hc-item-action hc-item-action--danger" style="background:none; border:none; cursor:pointer; font-size:0.8125rem; font-weight:600;">
+                  Révoquer
+                </button>
+              </form>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+
 </div>
 
 {% endblock %}

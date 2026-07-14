@@ -9,6 +9,7 @@ use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\Share;
 use App\Entity\User;
+use App\Interface\ShareLinkRepositoryInterface;
 use App\Interface\ShareRepositoryInterface;
 use App\Interface\UserRepositoryInterface;
 use App\Security\OwnershipChecker;
@@ -20,6 +21,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * Page web « Partages » — liste les partages sortants (créés par
@@ -33,6 +35,7 @@ final class ShareWebController extends AbstractController
 
     public function __construct(
         private readonly ShareRepositoryInterface $shareRepository,
+        private readonly ShareLinkRepositoryInterface $shareLinkRepository,
         private readonly ResourceLocator $resourceLocator,
         private readonly UserRepositoryInterface $userRepository,
         private readonly OwnershipChecker $ownershipChecker,
@@ -63,9 +66,18 @@ final class ShareWebController extends AbstractController
             }
         }
 
+        $shareLinks = array_map(
+            fn ($link) => [
+                'link'         => $link,
+                'resourceName' => $this->resolveResourceNameForLink($link),
+            ],
+            $this->shareLinkRepository->findByOwner($user, limit: 100),
+        );
+
         return $this->render('web/shares.html.twig', [
-            'outgoing' => $outgoing,
-            'incoming' => $incoming,
+            'outgoing'   => $outgoing,
+            'incoming'   => $incoming,
+            'shareLinks' => $shareLinks,
         ]);
     }
 
@@ -132,6 +144,46 @@ final class ShareWebController extends AbstractController
         $this->addFlash('success', sprintf('Ressource partagée avec %s.', $guest->getDisplayName()));
 
         return $this->redirect($redirectUrl);
+    }
+
+    #[Route('/share-link-revoke', name: 'app_share_link_revoke', methods: ['POST'])]
+    public function revokeLink(Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('share-link-revoke', (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
+
+        $linkId = (string) $request->request->get('linkId', '');
+        $link = $this->shareLinkRepository->find(Uuid::fromString($linkId))
+            ?? throw $this->createNotFoundException('Lien introuvable.');
+
+        /** @var User $user */
+        $user = $this->getUser();
+        if (!$link->getOwner()->getId()->equals($user->getId())) {
+            throw $this->createAccessDeniedException('Vous n\'êtes pas le propriétaire de ce lien.');
+        }
+
+        $link->revoke();
+        $this->em->flush();
+
+        $this->addFlash('success', 'Lien de partage révoqué.');
+
+        return $this->redirect('/partages');
+    }
+
+    private function resolveResourceNameForLink(\App\Entity\ShareLink $link): string
+    {
+        try {
+            $resource = $this->resourceLocator->locate($link->getResourceType(), $link->getResourceId());
+        } catch (NotFoundHttpException) {
+            return 'Ressource supprimée';
+        }
+
+        return match (true) {
+            $resource instanceof File   => $resource->getOriginalName(),
+            $resource instanceof Folder => $resource->getName(),
+            $resource instanceof Album  => $resource->getName(),
+        };
     }
 
     private function redirectUrlFor(string $resourceType, string $resourceId): string

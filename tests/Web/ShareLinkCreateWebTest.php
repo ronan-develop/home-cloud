@@ -121,16 +121,16 @@ final class ShareLinkCreateWebTest extends WebTestCase
     {
         $owner = $this->createOwner();
         $file = $this->createFile($owner, File::VISIBILITY_LINK_ALLOWED);
-        $this->createWebUser('sharelink-attacker@example.com', 'secret123', 'Attacker');
+        $attacker = $this->createWebUser('sharelink-attacker@example.com', 'secret123', 'Attacker');
+        // Le token CSRF est lié à la session : l'attaquant doit le récupérer
+        // dans SA propre session, via sa propre ressource partageable.
+        $attackerFolder = new Folder('AttackerDocs', $attacker);
+        $attackerFolder->setVisibility(Folder::VISIBILITY_LINK_ALLOWED);
+        $this->em->persist($attackerFolder);
+        $this->em->flush();
 
-        // Le token CSRF nommé "share-link-create" n'est pas lié à une ressource
-        // ni à un utilisateur précis : le récupérer en tant qu'owner (qui a un
-        // dossier visible sur /explorer) est valide pour n'importe quel compte.
-        $this->loginAs('sharelink-owner@example.com');
-        $token = $this->shareLinkCreateToken();
-
-        $this->client->request('GET', '/logout');
         $this->loginAs('sharelink-attacker@example.com');
+        $token = $this->shareLinkCreateToken();
 
         $this->client->request('POST', '/share-link-create', [
             '_token'       => $token,

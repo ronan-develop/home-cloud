@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\ShareLink;
+use App\Entity\User;
 use App\Interface\ShareLinkRepositoryInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\LockMode;
@@ -34,6 +35,32 @@ class ShareLinkRepository extends ServiceEntityRepository implements ShareLinkRe
     public function findBySelector(string $selector): ?ShareLink
     {
         return $this->findOneBy(['selector' => $selector]);
+    }
+
+    public function findByOwner(User $owner, int $limit = 100): array
+    {
+        return $this->createQueryBuilder('sl')
+            ->where('sl.owner = :owner')
+            ->setParameter('owner', $owner->getId(), 'uuid')
+            ->orderBy('sl.createdAt', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** @return ShareLink[] */
+    public function findActiveByResource(string $resourceType, Uuid $resourceId): array
+    {
+        return $this->createQueryBuilder('sl')
+            ->where('sl.resourceType = :type')
+            ->andWhere('sl.resourceId = :rid')
+            ->andWhere('sl.revokedAt IS NULL')
+            ->andWhere('sl.expiresAt > :now')
+            ->setParameter('type', $resourceType)
+            ->setParameter('rid', $resourceId, 'uuid')
+            ->setParameter('now', new \DateTimeImmutable())
+            ->getQuery()
+            ->getResult();
     }
 
     /** Supprime tous les liens pointant vers cette ressource (nettoyage à la suppression). */

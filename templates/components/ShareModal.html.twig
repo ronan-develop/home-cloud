@@ -108,6 +108,18 @@
       </div>
     </form>
 
+    {# Bouton d'arrêt d'urgence — repasse la ressource en private, révoque
+       en cascade tous les liens publics actifs (visibility déjà link_allowed
+       si un lien a été créé). Formulaire caché : présent sur toutes les
+       ressources pour fournir le token CSRF, l'action reste toujours possible
+       même si aucun lien n'a jamais été créé (no-op silencieux côté serveur). #}
+    <form method="post" action="{{ path('app_resource_visibility_update') }}" class="hidden" data-testid="resource-visibility-private-form">
+      <input type="hidden" name="_token" value="{{ csrf_token('resource-visibility-update') }}">
+      <input type="hidden" name="resourceType" value="{{ resourceType }}">
+      <input type="hidden" name="resourceId" value="{{ resourceId }}">
+      <input type="hidden" name="visibility" value="private">
+    </form>
+
   </div>
 </div>
 
