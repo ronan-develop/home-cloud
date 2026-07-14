@@ -670,4 +670,128 @@ final class ShareTest extends AuthenticatedApiTestCase
         $this->em->clear();
         $this->assertNull($this->em->getRepository(Share::class)->find($shareId));
     }
+
+    // ─── Invitation par email ────────────────────────────────────────────────
+
+    public function testCreateShareWithGuestEmailOfRegisteredUser(): void
+    {
+        $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
+        $guest = $this->createGuest(); // bob@example.com
+        $file  = $this->createFile($owner);
+
+        $response = $this->createAuthenticatedClient()->request('POST', '/api/v1/shares', [
+            'json' => [
+                'guestEmail'   => 'bob@example.com',
+                'resourceType' => 'file',
+                'resourceId'   => $file->getId()->toRfc4122(),
+                'permission'   => 'read',
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(201);
+        $data = $response->toArray();
+        $this->assertSame($guest->getId()->toRfc4122(), $data['guestId']);
+    }
+
+    public function testCreateShareWithGuestEmailNotFoundReturns404WithClearMessage(): void
+    {
+        $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
+        $file  = $this->createFile($owner);
+
+        $response = $this->createAuthenticatedClient()->request('POST', '/api/v1/shares', [
+            'json' => [
+                'guestEmail'   => 'inconnu@example.com',
+                'resourceType' => 'file',
+                'resourceId'   => $file->getId()->toRfc4122(),
+                'permission'   => 'read',
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(404);
+        $this->assertStringContainsString(
+            'Aucun compte HomeCloud',
+            $response->getContent(false)
+        );
+    }
+
+    public function testCreateShareStillWorksWithGuestIdForBackwardCompatibility(): void
+    {
+        $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
+        $guest = $this->createGuest();
+        $file  = $this->createFile($owner);
+
+        $response = $this->createAuthenticatedClient()->request('POST', '/api/v1/shares', [
+            'json' => [
+                'guestId'      => $guest->getId()->toRfc4122(),
+                'resourceType' => 'file',
+                'resourceId'   => $file->getId()->toRfc4122(),
+                'permission'   => 'read',
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(201);
+    }
+
+    public function testCreateShareFailsIfNeitherGuestIdNorGuestEmailProvided(): void
+    {
+        $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
+        $file  = $this->createFile($owner);
+
+        $this->createAuthenticatedClient()->request('POST', '/api/v1/shares', [
+            'json' => [
+                'resourceType' => 'file',
+                'resourceId'   => $file->getId()->toRfc4122(),
+                'permission'   => 'read',
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(400);
+    }
+
+    // ─── Doublon → 409 ───────────────────────────────────────────────────────
+
+    public function testDuplicateShareReturns409(): void
+    {
+        $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
+        $guest = $this->createGuest();
+        $file  = $this->createFile($owner);
+
+        $payload = [
+            'guestId'      => $guest->getId()->toRfc4122(),
+            'resourceType' => 'file',
+            'resourceId'   => $file->getId()->toRfc4122(),
+            'permission'   => 'read',
+        ];
+
+        $this->createAuthenticatedClient()->request('POST', '/api/v1/shares', ['json' => $payload]);
+        $this->assertResponseStatusCodeSame(201);
+
+        $this->createAuthenticatedClient()->request('POST', '/api/v1/shares', ['json' => $payload]);
+        $this->assertResponseStatusCodeSame(409);
+    }
+
+    // ─── Rate limiting ───────────────────────────────────────────────────────
+
+    public function testCreateShareIsRateLimitedAfterTooManyAttempts(): void
+    {
+        $lastStatus = null;
+        for ($i = 0; $i < 25; $i++) {
+            $this->em->clear();
+            $owner = $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
+            $guest = $this->createUser("guest{$i}@example.com", 'password123', "Guest {$i}");
+            $file  = $this->createFile($owner);
+
+            $response = $this->createAuthenticatedClient()->request('POST', '/api/v1/shares', [
+                'json' => [
+                    'guestId'      => $guest->getId()->toRfc4122(),
+                    'resourceType' => 'file',
+                    'resourceId'   => $file->getId()->toRfc4122(),
+                    'permission'   => 'read',
+                ],
+            ]);
+            $lastStatus = $response->getStatusCode();
+        }
+
+        $this->assertSame(429, $lastStatus);
+    }
 }

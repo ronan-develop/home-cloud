@@ -16,10 +16,14 @@ use App\Interface\ShareRepositoryInterface;
 use App\Interface\UserRepositoryInterface;
 use App\Security\OwnershipChecker;
 use App\Security\ResourceLocator;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Uid\Uuid;
 
 /**
@@ -44,6 +48,7 @@ final class ShareProcessor implements ProcessorInterface
         private readonly Security $security,
         private readonly OwnershipChecker $ownershipChecker,
         private readonly ResourceLocator $resourceLocator,
+        private readonly RateLimiterFactory $shareCreationLimiter,
     ) {}
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): mixed
@@ -61,14 +66,12 @@ final class ShareProcessor implements ProcessorInterface
         /** @var User $owner */
         $owner = $this->security->getUser();
 
-        $guestId = $data->guestId ?? '';
-        if (!Uuid::isValid($guestId)) {
-            throw new BadRequestHttpException('guestId invalide.');
+        $limiter = $this->shareCreationLimiter->create((string) $owner->getId());
+        if (!$limiter->consume(1)->isAccepted()) {
+            throw new TooManyRequestsHttpException(null, 'Trop de partages créés récemment. Réessayez plus tard.');
         }
-        $guest = $this->userRepository->find(Uuid::fromString($guestId));
-        if ($guest === null) {
-            throw new NotFoundHttpException('Utilisateur invité introuvable.');
-        }
+
+        $guest = $this->resolveGuest($data);
 
         $resourceType = $data->resourceType ?? '';
         if (!in_array($resourceType, self::VALID_TYPES, true)) {
@@ -107,9 +110,41 @@ final class ShareProcessor implements ProcessorInterface
         );
 
         $this->em->persist($share);
-        $this->em->flush();
+        try {
+            $this->em->flush();
+        } catch (UniqueConstraintViolationException) {
+            throw new ConflictHttpException('Un partage identique existe déjà pour cet utilisateur et cette ressource.');
+        }
 
         return $this->provider->toOutput($share);
+    }
+
+    private function resolveGuest(ShareOutput $data): User
+    {
+        $guestId = $data->guestId ?? '';
+        if ($guestId !== '') {
+            if (!Uuid::isValid($guestId)) {
+                throw new BadRequestHttpException('guestId invalide.');
+            }
+            $guest = $this->userRepository->find(Uuid::fromString($guestId));
+            if ($guest === null) {
+                throw new NotFoundHttpException('Utilisateur invité introuvable.');
+            }
+
+            return $guest;
+        }
+
+        $guestEmail = $data->guestEmail ?? '';
+        if ($guestEmail !== '') {
+            $guest = $this->userRepository->findOneBy(['email' => $guestEmail]);
+            if ($guest === null) {
+                throw new NotFoundHttpException('Aucun compte HomeCloud n\'est associé à cet email.');
+            }
+
+            return $guest;
+        }
+
+        throw new BadRequestHttpException('guestId ou guestEmail requis.');
     }
 
     private function handlePatch(ShareOutput $data, array $uriVariables): ShareOutput

@@ -134,12 +134,14 @@ final class DashboardTest extends WebTestCase
 
         $folder = new Folder('Shared Folder', $user, null);
         $this->em->persist($folder);
+        $expiredFolder = new Folder('Expired Shared Folder', $user, null);
+        $this->em->persist($expiredFolder);
         $this->em->flush();
 
         $activeShare = new Share($user, $guest, Share::RESOURCE_FOLDER, $folder->getId(), Share::PERMISSION_READ);
         $this->em->persist($activeShare);
 
-        $expiredShare = new Share($user, $guest, Share::RESOURCE_FOLDER, $folder->getId(), Share::PERMISSION_READ, new \DateTimeImmutable('-1 day'));
+        $expiredShare = new Share($user, $guest, Share::RESOURCE_FOLDER, $expiredFolder->getId(), Share::PERMISSION_READ, new \DateTimeImmutable('-1 day'));
         $this->em->persist($expiredShare);
 
         $this->em->flush();

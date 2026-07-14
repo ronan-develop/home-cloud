@@ -23,6 +23,8 @@ use Symfony\Component\Uid\Uuid;
  */
 #[ORM\Entity(repositoryClass: ShareRepository::class)]
 #[ORM\Table(name: 'shares')]
+#[ORM\Index(name: 'idx_share_lookup', columns: ['guest_id', 'resource_type', 'resource_id'])]
+#[ORM\UniqueConstraint(name: 'uniq_share', columns: ['owner_id', 'guest_id', 'resource_type', 'resource_id'])]
 class Share
 {
     public const PERMISSION_READ = 'read';

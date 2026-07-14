@@ -1,0 +1,6 @@
+framework:
+    rate_limiter:
+        share_creation:
+            policy: 'sliding_window'
+            limit: 20
+            interval: '15 minutes'
