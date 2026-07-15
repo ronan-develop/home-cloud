@@ -68,11 +68,16 @@
       <div class="hc-item-card" style="display:flex; flex-direction:column; gap:0; padding:0;" data-testid="share-links-list">
         {% for row in shareLinks %}
           <div class="flex items-center justify-between px-4 py-3" style="border-bottom:1px solid var(--hc-border);" data-testid="share-link-row">
-            <div>
-              <div class="hc-item-name">{{ row.resourceName }}</div>
-              <div class="hc-item-meta">
-                Lien public · lecture seule ·
-                {{ row.link.isActive ? 'expire le ' ~ row.link.expiresAt|date('d/m/Y') : 'révoqué/expiré le ' ~ row.link.expiresAt|date('d/m/Y') }}
+            <div class="flex items-center gap-3">
+              {% if row.thumbnailUrl %}
+                <img src="{{ row.thumbnailUrl }}" alt="" style="width:40px; height:40px; object-fit:cover; border-radius:0.5rem; flex-shrink:0;">
+              {% endif %}
+              <div>
+                <div class="hc-item-name">{{ row.resourceName }}</div>
+                <div class="hc-item-meta">
+                  Lien public · lecture seule ·
+                  {{ row.link.isActive ? 'expire le ' ~ row.link.expiresAt|date('d/m/Y') : 'révoqué/expiré le ' ~ row.link.expiresAt|date('d/m/Y') }}
+                </div>
               </div>
             </div>
             {% if row.link.isActive %}

@@ -126,4 +126,42 @@ final class ShareLinkRevokeWebTest extends WebTestCase
         $this->assertStringContainsString($link->getExpiresAt()->format('d/m/Y'), $row);
         $this->assertSelectorExists('form[action*="/share-link-revoke"] button[type="submit"]');
     }
+
+    public function testSharesPageShowsThumbnailForLinkOnAlbumWithMedia(): void
+    {
+        $owner = $this->createOwner();
+
+        $folder = new Folder('Photos', $owner);
+        $folder->setVisibility(Folder::VISIBILITY_LINK_ALLOWED);
+        $this->em->persist($folder);
+        $file = new File('photo.jpg', 'image/jpeg', 1024, 'test/photo.jpg', $folder, $owner);
+        $this->em->persist($file);
+        $media = new \App\Entity\Media($file, 'photo');
+        $media->setThumbnailPath('thumbs/photo.thumb.jpg');
+        $this->em->persist($media);
+
+        $album = new \App\Entity\Album('Vacances', $owner);
+        $album->setVisibility(\App\Entity\Album::VISIBILITY_LINK_ALLOWED);
+        $this->em->persist($album);
+        $album->addMedia($media);
+        $this->em->flush();
+
+        $link = new ShareLink(
+            $owner,
+            Share::RESOURCE_ALBUM,
+            $album->getId(),
+            bin2hex(random_bytes(16)),
+            hash('sha256', 'valid-plain-token'),
+            new \DateTimeImmutable('+7 days'),
+        );
+        $this->em->persist($link);
+        $this->em->flush();
+
+        $this->loginAs('revoke-owner@example.com');
+
+        $crawler = $this->client->request('GET', '/partages');
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorExists('[data-testid="share-link-row"] img[src*="/thumbnail"]');
+    }
 }

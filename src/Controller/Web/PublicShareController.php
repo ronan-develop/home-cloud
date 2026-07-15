@@ -8,11 +8,13 @@ use App\Entity\Album;
 use App\Entity\File;
 use App\Entity\Folder;
 use App\Interface\FileRepositoryInterface;
+use App\Interface\MediaRepositoryInterface;
 use App\Interface\ShareLinkAccessCheckerInterface;
 use App\Interface\StorageServiceInterface;
 use App\Security\ResourceLocator;
 use App\Security\SharedFileScopeChecker;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\Response;
@@ -36,6 +38,7 @@ final class PublicShareController extends AbstractController
         private readonly ShareLinkAccessCheckerInterface $shareLinkAccessChecker,
         private readonly ResourceLocator $resourceLocator,
         private readonly FileRepositoryInterface $fileRepository,
+        private readonly MediaRepositoryInterface $mediaRepository,
         private readonly SharedFileScopeChecker $sharedFileScopeChecker,
         private readonly StorageServiceInterface $storageService,
     ) {}
@@ -50,6 +53,7 @@ final class PublicShareController extends AbstractController
             'resourceType' => $link->getResourceType(),
             'resourceName' => $this->resourceName($resource),
             'link'         => $link,
+            'token'        => $token,
         ]);
 
         $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
@@ -92,6 +96,73 @@ final class PublicShareController extends AbstractController
         $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
 
         return $response;
+    }
+
+    /**
+     * Sert le thumbnail d'un média pour la grille de vignettes de la page
+     * publique — équivalent de MediaGalleryController::thumbnail() mais sans
+     * compte, le contrôle passe par le lien plutôt que par la session.
+     */
+    #[Route('/p/{selector}/{token}/media/{mediaId}/thumbnail', name: 'app_public_share_media_thumbnail', methods: ['GET'])]
+    public function mediaThumbnail(string $selector, string $token, string $mediaId): Response
+    {
+        [$link, $linkResource] = $this->resolveLinkOrFail($selector, $token);
+        $media = $this->mediaInScopeOrFail($mediaId, $link, $linkResource);
+
+        if ($media->getThumbnailPath() === null) {
+            throw new NotFoundHttpException();
+        }
+
+        $absolutePath = $this->storageService->getAbsolutePath($media->getThumbnailPath());
+
+        if (!file_exists($absolutePath)) {
+            throw new NotFoundHttpException();
+        }
+
+        $response = new BinaryFileResponse($absolutePath);
+        $response->headers->set('Content-Type', 'image/jpeg');
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
+
+        return $response;
+    }
+
+    /**
+     * Sert le fichier original en affichage inline pour la lightbox de la
+     * page publique — équivalent de MediaGalleryController::full().
+     */
+    #[Route('/p/{selector}/{token}/media/{mediaId}/full', name: 'app_public_share_media_full', methods: ['GET'])]
+    public function mediaFull(string $selector, string $token, string $mediaId): Response
+    {
+        [$link, $linkResource] = $this->resolveLinkOrFail($selector, $token);
+        $media = $this->mediaInScopeOrFail($mediaId, $link, $linkResource);
+
+        $file = $media->getFile();
+        $absolutePath = $this->storageService->getAbsolutePath($file->getPath());
+
+        if (!file_exists($absolutePath)) {
+            throw new NotFoundHttpException();
+        }
+
+        $response = new BinaryFileResponse($absolutePath);
+        $response->headers->set('Content-Type', $file->getMimeType());
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
+        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_INLINE);
+
+        return $response;
+    }
+
+    private function mediaInScopeOrFail(string $mediaId, \App\Entity\ShareLink $link, File|Folder|Album $linkResource): \App\Entity\Media
+    {
+        $media = $this->mediaRepository->findById(Uuid::fromString($mediaId))
+            ?? throw new NotFoundHttpException();
+
+        if (!$this->sharedFileScopeChecker->isInScope($media->getFile(), $link->getResourceType(), $link->getResourceId(), $linkResource)) {
+            throw new AccessDeniedHttpException('Ce média ne fait pas partie du partage.');
+        }
+
+        return $media;
     }
 
     private function resourceName(File|Folder|Album $resource): string

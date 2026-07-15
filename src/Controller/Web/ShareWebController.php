@@ -9,6 +9,7 @@ use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\Share;
 use App\Entity\User;
+use App\Interface\MediaRepositoryInterface;
 use App\Interface\ShareLinkRepositoryInterface;
 use App\Interface\ShareRepositoryInterface;
 use App\Interface\UserRepositoryInterface;
@@ -42,6 +43,7 @@ final class ShareWebController extends AbstractController
         private readonly OwnershipChecker $ownershipChecker,
         private readonly EntityManagerInterface $em,
         private readonly GuestAccountCreator $guestAccountCreator,
+        private readonly MediaRepositoryInterface $mediaRepository,
     ) {}
 
     #[Route('/partages', name: 'app_shares')]
@@ -64,8 +66,9 @@ final class ShareWebController extends AbstractController
 
         $shareLinks = array_map(
             fn ($link) => [
-                'link'         => $link,
-                'resourceName' => $this->resolveResourceNameForLink($link),
+                'link'          => $link,
+                'resourceName'  => $this->resolveResourceNameForLink($link),
+                'thumbnailUrl'  => $this->resolveThumbnailUrlForLink($link),
             ],
             $this->shareLinkRepository->findByOwner($user, limit: 100),
         );
@@ -215,6 +218,33 @@ final class ShareWebController extends AbstractController
             $resource instanceof Folder => $resource->getName(),
             $resource instanceof Album  => $resource->getName(),
         };
+    }
+
+    /**
+     * Vignette du premier média pour un lien pointant vers un album (ou un
+     * dossier contenant des images) — simple aperçu visuel dans la liste,
+     * pas une vraie visionneuse. Réutilise app_media_thumbnail (authentifiée) :
+     * c'est le owner connecté qui consulte /partages, pas un visiteur anonyme.
+     */
+    private function resolveThumbnailUrlForLink(\App\Entity\ShareLink $link): ?string
+    {
+        try {
+            $resource = $this->resourceLocator->locate($link->getResourceType(), $link->getResourceId());
+        } catch (NotFoundHttpException) {
+            return null;
+        }
+
+        if (!$resource instanceof Album) {
+            return null;
+        }
+
+        $firstMedia = $resource->getMedias()->first();
+
+        if ($firstMedia === false || $firstMedia->getThumbnailPath() === null) {
+            return null;
+        }
+
+        return $this->generateUrl('app_media_thumbnail', ['id' => $firstMedia->getId()]);
     }
 
     private function redirectUrlFor(string $resourceType, string $resourceId): string
