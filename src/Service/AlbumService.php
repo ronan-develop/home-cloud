@@ -99,6 +99,17 @@ final class AlbumService implements AlbumServiceInterface
     }
 
     /**
+     * Définit le média servant de couverture (vignette) pour l'album.
+     *
+     * @throws \InvalidArgumentException si le média ne fait pas partie de l'album.
+     */
+    public function setCoverMedia(Album $album, Media $media): void
+    {
+        $album->setCoverMedia($media);
+        $this->repository->save($album);
+    }
+
+    /**
      * Supprime un album (et ses associations album_media — pas les médias eux-mêmes).
      */
     public function delete(Album $album): void

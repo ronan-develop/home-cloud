@@ -37,8 +37,16 @@
   {% else %}
     <div class="hc-album-grid">
       {% for album in albums %}
+        {% set coverMedia = album.resolveCoverMedia() %}
         <a href="{{ path('app_album_detail', {id: album.id}) }}" data-testid="album-card" class="hc-item-card hc-album-card">
-          <div class="hc-item-icon hc-item-icon--folder mb-2">{{ icons.icon('album', 16) }}</div>
+          {% if coverMedia %}
+            <img src="{{ path('app_media_thumbnail', {id: coverMedia.id}) }}"
+                 alt="" loading="lazy"
+                 class="hc-album-card-thumb mb-2"
+                 data-testid="album-card-thumbnail">
+          {% else %}
+            <div class="hc-item-icon hc-item-icon--folder mb-2">{{ icons.icon('album', 16) }}</div>
+          {% endif %}
           <div class="hc-item-name">{{ album.name }}</div>
           <div class="hc-item-meta">
             {{ album.medias|length }} média{{ album.medias|length != 1 ? 's' : '' }}

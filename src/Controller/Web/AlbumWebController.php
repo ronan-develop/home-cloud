@@ -107,6 +107,30 @@ final class AlbumWebController extends AbstractController
         return $this->redirectToRoute('app_album_detail', ['id' => $album->getId()->toRfc4122()]);
     }
 
+    #[Route('/albums/{id}/set-cover', name: 'app_album_set_cover', methods: ['POST'], requirements: ['id' => '[0-9a-f\-]+'])]
+    public function setCover(string $id, Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('album-set-cover', (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
+
+        $album = $this->albumRepository->findById(Uuid::fromString($id))
+            ?? throw $this->createNotFoundException('Album introuvable.');
+
+        $this->denyAccessUnlessGranted(AlbumVoter::VIEW, $album);
+
+        $media = $this->mediaRepository->findById(Uuid::fromString((string) $request->request->get('mediaId', '')))
+            ?? throw $this->createNotFoundException('Média introuvable.');
+
+        try {
+            $this->albumService->setCoverMedia($album, $media);
+        } catch (\InvalidArgumentException $e) {
+            throw new BadRequestHttpException($e->getMessage());
+        }
+
+        return $this->redirectToRoute('app_album_detail', ['id' => $album->getId()->toRfc4122()]);
+    }
+
     #[Route('/albums/{id}/reorder', name: 'app_album_reorder', methods: ['POST'], requirements: ['id' => '[0-9a-f\-]+'])]
     public function reorder(string $id, Request $request): Response
     {

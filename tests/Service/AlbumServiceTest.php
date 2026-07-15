@@ -185,6 +185,38 @@ final class AlbumServiceTest extends TestCase
         $this->service->create('Vacances', $guest);
     }
 
+    // --- setCoverMedia() ---
+
+    public function testSetCoverMediaSetsCoverAndSaves(): void
+    {
+        $user  = $this->makeUser();
+        $album = new Album('Vacances', $user);
+        $media = $this->makeMedia($user);
+        $album->addMedia($media);
+
+        $this->repository
+            ->expects($this->once())
+            ->method('save')
+            ->with($album);
+
+        $this->service->setCoverMedia($album, $media);
+
+        $this->assertSame($media, $album->getCoverMedia());
+    }
+
+    public function testSetCoverMediaThrowsWhenMediaNotInAlbum(): void
+    {
+        $user         = $this->makeUser();
+        $album        = new Album('Vacances', $user);
+        $foreignMedia = $this->makeMedia($user);
+
+        $this->repository->expects($this->never())->method('save');
+
+        $this->expectException(\InvalidArgumentException::class);
+
+        $this->service->setCoverMedia($album, $foreignMedia);
+    }
+
     // --- delete() ---
 
     public function testDeleteCallsRepositoryRemove(): void

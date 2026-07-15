@@ -17,3 +17,11 @@
   text-decoration: none;
   cursor: pointer;
 }
+
+.hc-album-card-thumb {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  display: block;
+}

@@ -1,8 +1,10 @@
-{# Actions flottantes sur une vignette média (visibles au survol) : renommer
-   et retirer. Réutilisé par gallery.html.twig et album_detail.html.twig.
-   Props attendues : media, renameUrl, removeUrl (null pour masquer le
-   bouton de retrait — ex. dans la galerie, "retirer" n'a pas de sens hors
-   contexte d'un album). La suppression définitive se fait désormais via la
+{# Actions flottantes sur une vignette média (visibles au survol) : renommer,
+   définir comme couverture et retirer. Réutilisé par gallery.html.twig et
+   album_detail.html.twig. Props attendues : media, renameUrl, removeUrl
+   (null pour masquer le bouton de retrait — ex. dans la galerie, "retirer"
+   n'a pas de sens hors contexte d'un album), setCoverUrl (null hors contexte
+   d'un album), isCover (booléen, masque le bouton si le média est déjà la
+   couverture actuelle). La suppression définitive se fait désormais via la
    sélection multiple (case à cocher + barre "Supprimer la sélection"), pas
    par vignette — voir gallery_selection_controller.js. Le renommage se fait
    en place (fetch), sans navigation — voir rename_media_controller.js. Le
@@ -15,6 +17,18 @@
           title="Renommer" aria-label="Renommer">
     <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
   </button>
+
+  {% if setCoverUrl is defined and setCoverUrl and not isCover %}
+    <form method="post" action="{{ setCoverUrl }}" class="hc-media-thumb-action-form-cover">
+      <input type="hidden" name="_token" value="{{ csrf_token('album-set-cover') }}">
+      <input type="hidden" name="mediaId" value="{{ media.id }}">
+      <button type="submit" class="hc-media-thumb-action hc-media-thumb-action--cover"
+              data-testid="set-album-cover" title="Définir comme couverture" aria-label="Définir comme couverture"
+              draggable="true" data-action="dragstart->album-reorder#preventDrag">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 17.75l-6.16 3.24 1.18-6.88L2 9.24l6.92-1L12 2l3.08 6.24 6.92 1-5.02 4.87 1.18 6.88z"/></svg>
+      </button>
+    </form>
+  {% endif %}
 
   {% if removeUrl is defined and removeUrl %}
     <form method="post" action="{{ removeUrl }}"
