@@ -1,8 +1,21 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-07-12
+> Dernière mise à jour : 2026-07-15
 
-> **Status git :** branche `feat/gallery-sort` — 383 tests ✅
+> **Status git :** branche `feat/album-explicit-cover` — 677 tests ✅
+
+---
+
+## ✨ Couverture explicite d'album (2026-07-15)
+
+Après le merge de la fonctionnalité de partage par lien public (PR #216), ajout du choix explicite de la vignette de couverture d'un album — jusqu'ici uniquement un fallback automatique (premier média avec thumbnail).
+
+- `Album::coverMedia` (ManyToOne nullable vers `Media`, `ON DELETE SET NULL`) — migration `Version20260715110348`
+- `Album::setCoverMedia()` valide que le média appartient à l'album (`InvalidArgumentException` sinon) ; `removeMedia()` réinitialise la couverture si le média retiré était la couverture actuelle
+- `Album::resolveCoverMedia()` centralise la logique d'affichage : couverture explicite si elle a un thumbnail, sinon fallback sur le premier média par position qui en a un — réutilisable partout où une vignette d'album est nécessaire
+- Route `POST /albums/{id}/set-cover` (CSRF + `AlbumVoter::VIEW`, 400 si le média n'appartient pas à l'album), suit le pattern des routes POST dédiées déjà en place (`reorder`, `remove-media`)
+- Bouton "définir comme couverture" sur chaque vignette de `album_detail.html.twig` (masqué si déjà couverture) + badge visuel sur la couverture actuelle — design du badge volontairement minimal pour l'instant, à retravailler
+- Cartes de `/albums` affichent désormais une vraie vignette (`resolveCoverMedia()`) au lieu de systématiquement l'icône générique
 
 ---
 
