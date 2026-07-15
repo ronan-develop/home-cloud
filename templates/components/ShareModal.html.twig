@@ -38,7 +38,8 @@
     </div>
 
     {# Onglet "Compte" — partage entre comptes HomeCloud (Share) #}
-    <form method="post" action="{{ path('app_share_create') }}" class="share-tab-panel flex flex-col" data-tab-panel="account">
+    <form method="post" action="{{ path('app_share_create') }}" class="share-tab-panel flex flex-col"
+          data-tab-panel="account" data-controller="share-guest-picker">
       <input type="hidden" name="_token" value="{{ csrf_token('share-create') }}">
       <input type="hidden" name="resourceType" value="{{ resourceType }}">
       <input type="hidden" name="resourceId" value="{{ resourceId }}">
@@ -48,9 +49,34 @@
           Email(s) de l'invité — séparés par une virgule
         </label>
         <input type="email" name="guestEmail" data-testid="share-guest-email" multiple
+               data-share-guest-picker-target="input"
                placeholder="ami@example.com, autre@example.com" required
                class="w-full px-3 py-2 rounded-md text-sm"
                style="border: 1px solid var(--hc-border); background: var(--hc-bg); color: var(--hc-text);">
+      </div>
+
+      {# Sélection directe d'un invité déjà créé — ajoute son email au champ
+         ci-dessus au clic, évite de le ressaisir à chaque partage. #}
+      <div class="px-6 pt-3">
+        <label class="block text-xs font-semibold uppercase tracking-wide mb-1.5" style="color: var(--hc-text-3);">
+          Ou choisir un invité existant
+        </label>
+        {% if userGuests is defined and userGuests is not empty %}
+          <div class="flex flex-wrap gap-1.5">
+            {% for guest in userGuests %}
+              <button type="button" data-testid="share-guest-option" data-guest-email="{{ guest.email }}"
+                      data-action="click->share-guest-picker#add"
+                      class="px-2.5 py-1 rounded-full text-xs font-medium"
+                      style="border: 1px solid var(--hc-border); background: var(--hc-surface-2); color: var(--hc-text); cursor: pointer;">
+                {{ guest.displayName }}
+              </button>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-xs" data-testid="share-no-guests-hint" style="color: var(--hc-text-3);">
+            Aucun invité pour l'instant — saisissez un email ci-dessus pour en créer un.
+          </p>
+        {% endif %}
       </div>
 
       <div class="px-6 pt-4">
