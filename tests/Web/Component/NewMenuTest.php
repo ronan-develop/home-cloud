@@ -39,15 +39,9 @@ class NewMenuTest extends KernelTestCase
         $this->assertCount(1, $this->crawl()->filter('[data-testid="new-menu-import-folder"]'));
     }
 
-    public function testMenuIsHiddenByDefault(): void
+    public function testHasNewMenuController(): void
     {
-        $node = $this->crawl()->filter('[data-testid="new-menu"]');
-        $this->assertStringContainsString('display:none', $node->attr('style') ?? '');
-    }
-
-    public function testHasInlineScript(): void
-    {
-        $html = (string) $this->renderTwigComponent('NewMenu');
-        $this->assertStringContainsString('<script>', $html);
+        $node = $this->crawl()->filter('[data-controller="new-menu"]');
+        $this->assertCount(1, $node);
     }
 }
