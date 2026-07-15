@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>{{ resourceName }} — Partagé via HomeCloud</title>
+    {{ importmap('app') }}
+</head>
+<body class="hc-bg" style="min-height:100vh; padding:24px;">
+
+<div style="max-width:1100px; margin:0 auto;">
+    <p class="hc-item-meta" style="margin-bottom:4px;">Ressource partagée en lecture seule</p>
+    <h1 class="text-2xl font-black tracking-tight mb-2">{{ resourceName }}</h1>
+
+    {% if link.expiresAt is not null %}
+        <div style="display:inline-block; padding:6px 14px; border-radius:999px; background:var(--hc-surface-2); border:1px solid var(--hc-border); font-size:0.8125rem; font-weight:600; margin-bottom:20px;">
+            Lien valable jusqu'au {{ link.expiresAt|date('d/m/Y') }}
+        </div>
+    {% else %}
+        <div style="display:inline-block; padding:6px 14px; border-radius:999px; background:var(--hc-surface-2); border:1px solid var(--hc-border); font-size:0.8125rem; font-weight:600; margin-bottom:20px;">
+            Lien permanent
+        </div>
+    {% endif %}
+
+    {% if resourceType == 'file' %}
+        <div class="hc-item-card" style="max-width:480px; padding:24px;">
+            <p class="hc-item-meta">{{ resource.mimeType }} · {{ (resource.size / 1024)|round }} Ko</p>
+            <a href="{{ path('app_public_share_download', { selector: link.selector, token: token, fileId: resource.id }) }}"
+               class="hc-item-action" style="display:inline-block; margin-top:12px;">
+                Télécharger
+            </a>
+        </div>
+    {% elseif resourceType == 'folder' %}
+        <p class="hc-item-meta" style="margin-bottom:12px;">{{ resource.files|length }} fichier{{ resource.files|length != 1 ? 's' : '' }}</p>
+        <div class="hc-item-card" style="display:flex; flex-direction:column; gap:0; padding:0;">
+            {% for file in resource.files %}
+                <div class="flex items-center justify-between px-4 py-3" style="border-bottom:1px solid var(--hc-border);">
+                    <span class="hc-item-name">{{ file.originalName }}</span>
+                    <a href="{{ path('app_public_share_download', { selector: link.selector, token: token, fileId: file.id }) }}"
+                       class="hc-item-action">Télécharger</a>
+                </div>
+            {% endfor %}
+        </div>
+    {% elseif resourceType == 'album' %}
+        <p class="hc-item-meta" style="margin-bottom:12px;">{{ resource.medias|length }} média{{ resource.medias|length != 1 ? 's' : '' }}</p>
+
+        {% if resource.medias is not empty %}
+            <div class="hc-media-grid">
+                {% for media in resource.medias %}
+                    <div class="hc-media-thumb">
+                        <a href="#"
+                           data-lightbox
+                           data-media-type="{{ media.mediaType }}"
+                           data-full-src="{{ path('app_public_share_media_full', { selector: link.selector, token: token, mediaId: media.id }) }}"
+                           class="hc-media-thumb-link">
+                            {% if media.thumbnailPath %}
+                                <img src="{{ path('app_public_share_media_thumbnail', { selector: link.selector, token: token, mediaId: media.id }) }}"
+                                     alt="{{ media.file.originalName }}"
+                                     loading="lazy"
+                                     class="hc-media-thumb-img">
+                            {% else %}
+                                <div class="hc-media-thumb-fallback">
+                                    {% if media.mediaType == 'video' %}
+                                        <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-video"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                                    {% else %}
+                                        <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-images"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </a>
+                        <div class="hc-media-thumb-caption">{{ media.file.originalName }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <twig:GalleryLightbox />
+        {% endif %}
+    {% endif %}
+</div>
+
+</body>
+</html>

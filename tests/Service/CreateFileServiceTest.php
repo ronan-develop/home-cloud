@@ -8,6 +8,7 @@ use App\Entity\User;
 use App\Interface\DefaultFolderServiceInterface;
 use App\Interface\StorageServiceInterface;
 use App\Repository\UserRepository;
+use App\Security\GuestRestrictionChecker;
 use App\Service\CreateFileService;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
@@ -35,6 +36,7 @@ class CreateFileServiceTest extends TestCase
             $this->defaultFolderService,
             $this->em,
             $this->userRepository,
+            new GuestRestrictionChecker(),
         );
     }
 
@@ -314,5 +316,20 @@ class CreateFileServiceTest extends TestCase
 
         // Assert
         $this->assertTrue($file->isNeutralized());
+    }
+
+    public function testCreateFromUploadThrowsForGuestAccount(): void
+    {
+        $tmpFile = tempnam(sys_get_temp_dir(), 'test');
+        file_put_contents($tmpFile, 'contenu');
+        $uploadedFile = new UploadedFile($tmpFile, 'doc.txt', 'text/plain', null, true);
+
+        $guest = new User('guest@example.com', 'Guest');
+        $guest->markAsGuest();
+
+        $this->userRepository->method('find')->willReturn($guest);
+
+        $this->expectException(\App\Exception\GuestNotAllowedException::class);
+        $this->service->createFromUpload($uploadedFile, (string) $guest->getId());
     }
 }

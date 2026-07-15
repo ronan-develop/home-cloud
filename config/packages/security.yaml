@@ -69,6 +69,9 @@ when@dev: &access_control
             - { path: ^/api/request-reset-password, roles: PUBLIC_ACCESS }
             - { path: ^/api/docs, roles: PUBLIC_ACCESS }
             - { path: ^/api, roles: ROLE_USER }
+            # Partage par lien public : accessible sans compte, le secret est
+            # dans (selector, token). Doit précéder toute règle catch-all ^/.
+            - { path: ^/p/, roles: PUBLIC_ACCESS }
 
 when@prod: *access_control
 

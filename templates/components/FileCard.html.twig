@@ -41,6 +41,11 @@
 			<a href="{{ path('app_file_download', { id: item.id }) }}"
 			   class="hc-item-action hc-item-action--move"
 			   title="Télécharger {{ item.originalName ?? item.name|e('html') }}"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></a>
+			<button type="button"
+			        id="share-open-btn-{{ item.id }}"
+			        data-testid="share-file-btn-{{ item.id }}"
+			        class="share-btn hc-item-action"
+			        title="Partager {{ (item.originalName ?? item.name)|e('html') }}"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon"><path d="M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 22a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></button>
 			<a href="#"
 			   role="button"
 			   data-testid="move-file-btn-{{ item.id }}"
@@ -60,4 +65,8 @@
 		{% endif %}
 	</div>
 </div>
+
+{% if item.id is defined %}
+<twig:ShareModal resourceType="file" resourceId="{{ item.id }}" />
+{% endif %}
 {# Props attendues : item (entité File) #}

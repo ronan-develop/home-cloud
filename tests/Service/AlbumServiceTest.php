@@ -11,7 +11,8 @@ use App\Entity\Media;
 use App\Entity\User;
 use App\Interface\AlbumRepositoryInterface;
 use App\Interface\MediaRepositoryInterface;
-use App\Interface\ShareRepositoryInterface;
+use App\Interface\SharedResourceCleanerInterface;
+use App\Security\GuestRestrictionChecker;
 use App\Service\AlbumService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -27,15 +28,20 @@ final class AlbumServiceTest extends TestCase
     private AlbumRepositoryInterface $repository;
     /** @var MediaRepositoryInterface&MockObject */
     private MediaRepositoryInterface $mediaRepository;
-    /** @var ShareRepositoryInterface&MockObject */
-    private ShareRepositoryInterface $shareRepository;
+    /** @var SharedResourceCleanerInterface&MockObject */
+    private SharedResourceCleanerInterface $sharedResourceCleaner;
 
     protected function setUp(): void
     {
         $this->repository = $this->createMock(AlbumRepositoryInterface::class);
         $this->mediaRepository = $this->createMock(MediaRepositoryInterface::class);
-        $this->shareRepository = $this->createMock(ShareRepositoryInterface::class);
-        $this->service = new AlbumService($this->repository, $this->mediaRepository, $this->shareRepository);
+        $this->sharedResourceCleaner = $this->createMock(SharedResourceCleanerInterface::class);
+        $this->service = new AlbumService(
+            $this->repository,
+            $this->mediaRepository,
+            $this->sharedResourceCleaner,
+            new GuestRestrictionChecker(),
+        );
     }
 
     private function makeUser(): User
@@ -168,6 +174,15 @@ final class AlbumServiceTest extends TestCase
         $album = $this->service->create('Vacances', $user);
 
         $this->assertCount(0, $album->getMedias());
+    }
+
+    public function testCreateThrowsForGuestAccount(): void
+    {
+        $guest = new User('guest@example.com', 'Guest');
+        $guest->markAsGuest();
+
+        $this->expectException(\App\Exception\GuestNotAllowedException::class);
+        $this->service->create('Vacances', $guest);
     }
 
     // --- delete() ---

@@ -11,6 +11,7 @@ use App\Entity\Share;
 use App\Interface\AlbumRepositoryInterface;
 use App\Interface\FileRepositoryInterface;
 use App\Interface\FolderRepositoryInterface;
+use App\Interface\ResourceLocatorInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Uid\Uuid;
 
@@ -20,7 +21,7 @@ use Symfony\Component\Uid\Uuid;
  * Point d'entrée unique pour traduire la paire (type, id) stockée sur `Share`
  * en File|Folder|Album, sans dupliquer un `match` dans chaque appelant.
  */
-final readonly class ResourceLocator
+final readonly class ResourceLocator implements ResourceLocatorInterface
 {
     public function __construct(
         private FileRepositoryInterface $fileRepository,

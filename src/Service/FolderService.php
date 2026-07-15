@@ -13,7 +13,8 @@ use App\Interface\DefaultFolderServiceInterface;
 use App\Interface\FilenameValidatorInterface;
 use App\Interface\FolderRepositoryInterface;
 use App\Interface\OwnershipCheckerInterface;
-use App\Interface\ShareRepositoryInterface;
+use App\Interface\SharedResourceCleanerInterface;
+use App\Security\GuestRestrictionChecker;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -44,7 +45,8 @@ final class FolderService
         private readonly EntityManagerInterface $em,
         private readonly LoggerInterface $logger,
         private readonly Stopwatch $stopwatch,
-        private readonly ShareRepositoryInterface $shareRepository,
+        private readonly SharedResourceCleanerInterface $sharedResourceCleaner,
+        private readonly GuestRestrictionChecker $guestRestrictionChecker,
     ) {}
 
     /**
@@ -52,6 +54,8 @@ final class FolderService
      */
     public function createFolder(User $owner, string $name, ?Folder $parent, FolderMediaType $mediaType): Folder
     {
+        $this->guestRestrictionChecker->denyUnlessFullAccount($owner);
+
         $event = $this->stopwatch->start('folder.create');
 
         $this->filenameValidator->validate($name);
@@ -194,16 +198,16 @@ final class FolderService
                 $desc = $this->folderRepository->find($descId);
                 if ($desc !== null) {
                     $this->em->refresh($desc);
-                    $this->shareRepository->deleteByResource(Share::RESOURCE_FOLDER, $desc->getId());
+                    $this->sharedResourceCleaner->deleteByResource(Share::RESOURCE_FOLDER, $desc->getId());
                     $this->em->remove($desc);
                 }
             }
             $this->em->refresh($folder);
-            $this->shareRepository->deleteByResource(Share::RESOURCE_FOLDER, $folder->getId());
+            $this->sharedResourceCleaner->deleteByResource(Share::RESOURCE_FOLDER, $folder->getId());
             $this->em->remove($folder);
             $this->em->flush();
         } else {
-            $this->shareRepository->deleteByResource(Share::RESOURCE_FOLDER, $folder->getId());
+            $this->sharedResourceCleaner->deleteByResource(Share::RESOURCE_FOLDER, $folder->getId());
             $this->em->remove($folder);
             $this->em->flush();
         }

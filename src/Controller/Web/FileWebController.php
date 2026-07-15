@@ -7,9 +7,10 @@ namespace App\Controller\Web;
 use App\Entity\File;
 use App\Entity\Share;
 use App\Interface\StorageServiceInterface;
-use App\Interface\ShareRepositoryInterface;
 use App\Repository\FileRepository;
 use App\Interface\DefaultFolderServiceInterface;
+use App\Interface\SharedResourceCleanerInterface;
+use App\Security\GuestRestrictionChecker;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -42,7 +43,8 @@ final class FileWebController extends AbstractController
         private readonly DefaultFolderServiceInterface $folderService,
         private readonly FileRepository $fileRepository,
         private readonly EntityManagerInterface $em,
-        private readonly ShareRepositoryInterface $shareRepository,
+        private readonly SharedResourceCleanerInterface $sharedResourceCleaner,
+        private readonly GuestRestrictionChecker $guestRestrictionChecker,
     ) {}
 
     #[Route('/files/{id}/download', name: 'app_file_download', methods: ['GET'])]
@@ -77,6 +79,10 @@ final class FileWebController extends AbstractController
             throw $this->createAccessDeniedException('Jeton CSRF invalide.');
         }
 
+        /** @var \App\Entity\User $user */
+        $user = $this->getUser();
+        $this->guestRestrictionChecker->denyUnlessFullAccount($user);
+
         $folderId = $request->request->get('folder_id');
         $uploadedFile = $request->files->get('file');
 
@@ -96,8 +102,6 @@ final class FileWebController extends AbstractController
             );
         }
 
-        /** @var \App\Entity\User $user */
-        $user = $this->getUser();
         $folder = $this->folderService->resolve($folderId, null, $user);
 
         // Retire les caractères de contrôle ET < > (neutralise le XSS stocké si ce nom
@@ -161,7 +165,7 @@ final class FileWebController extends AbstractController
             return $this->redirect($folderId ? '/explorer?folder=' . $folderId : '/explorer');
         }
 
-        $this->shareRepository->deleteByResource(Share::RESOURCE_FILE, $file->getId());
+        $this->sharedResourceCleaner->deleteByResource(Share::RESOURCE_FILE, $file->getId());
         $this->em->remove($file);
         $this->em->flush();
 

@@ -9,10 +9,12 @@ use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\Share;
 use App\Entity\User;
+use App\Interface\ShareLinkRepositoryInterface;
 use App\Interface\ShareRepositoryInterface;
 use App\Interface\UserRepositoryInterface;
 use App\Security\OwnershipChecker;
 use App\Security\ResourceLocator;
+use App\Service\GuestAccountCreator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -20,6 +22,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * Page web « Partages » — liste les partages sortants (créés par
@@ -33,10 +36,12 @@ final class ShareWebController extends AbstractController
 
     public function __construct(
         private readonly ShareRepositoryInterface $shareRepository,
+        private readonly ShareLinkRepositoryInterface $shareLinkRepository,
         private readonly ResourceLocator $resourceLocator,
         private readonly UserRepositoryInterface $userRepository,
         private readonly OwnershipChecker $ownershipChecker,
         private readonly EntityManagerInterface $em,
+        private readonly GuestAccountCreator $guestAccountCreator,
     ) {}
 
     #[Route('/partages', name: 'app_shares')]
@@ -45,27 +50,30 @@ final class ShareWebController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
-        $shares = $this->shareRepository->findByUser($user, limit: 100);
-
-        $outgoing = [];
-        $incoming = [];
-
-        foreach ($shares as $share) {
-            $row = [
+        // findByUser retourne owner OU guest, mais HomeCloud est mono-owner
+        // par instance : l'utilisateur connecté ici est toujours l'owner, il
+        // n'y a donc jamais de partage "reçu" à distinguer (cf. GuestRestrictionChecker,
+        // les invités n'ont pas accès à cette page).
+        $outgoing = array_map(
+            fn ($share) => [
                 'share'        => $share,
                 'resourceName' => $this->resolveResourceName($share),
-            ];
+            ],
+            $this->shareRepository->findByUser($user, limit: 100),
+        );
 
-            if ($share->getOwner()->getId()->equals($user->getId())) {
-                $outgoing[] = $row;
-            } else {
-                $incoming[] = $row;
-            }
-        }
+        $shareLinks = array_map(
+            fn ($link) => [
+                'link'          => $link,
+                'resourceName'  => $this->resolveResourceNameForLink($link),
+                'thumbnailUrl'  => $this->resolveThumbnailUrlForLink($link),
+            ],
+            $this->shareLinkRepository->findByOwner($user, limit: 100),
+        );
 
         return $this->render('web/shares.html.twig', [
-            'outgoing' => $outgoing,
-            'incoming' => $incoming,
+            'outgoing'   => $outgoing,
+            'shareLinks' => $shareLinks,
         ]);
     }
 
@@ -91,23 +99,19 @@ final class ShareWebController extends AbstractController
             $permission = Share::PERMISSION_READ;
         }
 
-        $guestEmail = trim((string) $request->request->get('guestEmail', ''));
-        $guest = $guestEmail !== '' ? $this->userRepository->findOneBy(['email' => $guestEmail]) : null;
+        $emails = array_values(array_unique(array_filter(array_map(
+            'trim',
+            explode(',', (string) $request->request->get('guestEmail', '')),
+        ), fn (string $email) => $email !== '')));
 
-        if ($guest === null) {
-            $this->addFlash('error', 'Aucun compte HomeCloud n\'est associé à cet email.');
+        if ($emails === []) {
+            $this->addFlash('error', 'Veuillez saisir au moins un email.');
 
             return $this->redirect($redirectUrl);
         }
 
         /** @var User $owner */
         $owner = $this->getUser();
-
-        if ($guest->getId()->equals($owner->getId())) {
-            $this->addFlash('error', 'Vous ne pouvez pas partager une ressource avec vous-même.');
-
-            return $this->redirect($redirectUrl);
-        }
 
         try {
             $resource = $this->resourceLocator->locate($resourceType, \Symfony\Component\Uid\Uuid::fromString($resourceId));
@@ -118,20 +122,132 @@ final class ShareWebController extends AbstractController
             return $this->redirect($redirectUrl);
         }
 
-        $share = new Share($owner, $guest, $resourceType, \Symfony\Component\Uid\Uuid::fromString($resourceId), $permission);
-        $this->em->persist($share);
+        $shared = [];
+        $failed = [];
+        $selfShareAttempted = false;
 
-        try {
-            $this->em->flush();
-        } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException) {
-            $this->addFlash('error', 'Un partage identique existe déjà pour cet utilisateur.');
+        foreach ($emails as $email) {
+            $guest = $this->userRepository->findOneBy(['email' => $email]);
 
-            return $this->redirect($redirectUrl);
+            if ($guest === null) {
+                if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+                    $failed[] = $email . ' (email invalide)';
+                    continue;
+                }
+
+                // Email inconnu mais valide : plutôt que d'échouer, on crée
+                // un compte invité (sans mot de passe utilisable, cf.
+                // GuestAccountCreator) et on partage avec ce nouveau compte.
+                $guest = $this->guestAccountCreator->create($email);
+            }
+
+            if ($guest->getId()->equals($owner->getId())) {
+                $selfShareAttempted = true;
+                continue;
+            }
+
+            $share = new Share($owner, $guest, $resourceType, \Symfony\Component\Uid\Uuid::fromString($resourceId), $permission);
+            $this->em->persist($share);
+
+            try {
+                $this->em->flush();
+            } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException) {
+                $this->em->detach($share);
+                $failed[] = $email . ' (partage déjà existant)';
+                continue;
+            }
+
+            $shared[] = $email;
         }
 
-        $this->addFlash('success', sprintf('Ressource partagée avec %s.', $guest->getDisplayName()));
+        if ($shared !== []) {
+            $this->addFlash('success', sprintf('Ressource partagée avec %s.', implode(', ', $shared)));
+        }
+
+        if ($failed !== []) {
+            $this->addFlash('error', sprintf(
+                'Échec du partage pour : %s.',
+                implode(', ', $failed),
+            ));
+        }
+
+        if ($selfShareAttempted && $shared === [] && $failed === []) {
+            $this->addFlash('error', 'Vous ne pouvez pas partager une ressource avec vous-même.');
+        }
 
         return $this->redirect($redirectUrl);
+    }
+
+    #[Route('/share-link-revoke', name: 'app_share_link_revoke', methods: ['POST'])]
+    public function revokeLink(Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('share-link-revoke', (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
+
+        $linkId = (string) $request->request->get('linkId', '');
+        $link = $this->shareLinkRepository->find(Uuid::fromString($linkId))
+            ?? throw $this->createNotFoundException('Lien introuvable.');
+
+        /** @var User $user */
+        $user = $this->getUser();
+        if (!$link->getOwner()->getId()->equals($user->getId())) {
+            throw $this->createAccessDeniedException('Vous n\'êtes pas le propriétaire de ce lien.');
+        }
+
+        $link->revoke();
+        $this->em->flush();
+
+        $this->addFlash('success', 'Lien de partage révoqué.');
+
+        return $this->redirect('/partages');
+    }
+
+    private function resolveResourceNameForLink(\App\Entity\ShareLink $link): string
+    {
+        try {
+            $resource = $this->resourceLocator->locate($link->getResourceType(), $link->getResourceId());
+        } catch (NotFoundHttpException) {
+            return 'Ressource supprimée';
+        }
+
+        return match (true) {
+            $resource instanceof File   => $resource->getOriginalName(),
+            $resource instanceof Folder => $resource->getName(),
+            $resource instanceof Album  => $resource->getName(),
+        };
+    }
+
+    /**
+     * Vignette du premier média AYANT UN THUMBNAIL pour un lien pointant vers
+     * un album — simple aperçu visuel dans la liste, pas une vraie
+     * visionneuse. Réutilise app_media_thumbnail (authentifiée) : c'est le
+     * owner connecté qui consulte /partages, pas un visiteur anonyme.
+     *
+     * Le premier média PAR POSITION n'a pas toujours de thumbnail (traitement
+     * async pas terminé, échec de génération...) : prendre systématiquement
+     * ->first() affichait une vignette vide alors qu'un autre média de
+     * l'album en avait une — bug capturé en usage réel.
+     */
+    private function resolveThumbnailUrlForLink(\App\Entity\ShareLink $link): ?string
+    {
+        try {
+            $resource = $this->resourceLocator->locate($link->getResourceType(), $link->getResourceId());
+        } catch (NotFoundHttpException) {
+            return null;
+        }
+
+        if (!$resource instanceof Album) {
+            return null;
+        }
+
+        foreach ($resource->getMedias() as $media) {
+            if ($media->getThumbnailPath() !== null) {
+                return $this->generateUrl('app_media_thumbnail', ['id' => $media->getId()]);
+            }
+        }
+
+        return null;
     }
 
     private function redirectUrlFor(string $resourceType, string $resourceId): string

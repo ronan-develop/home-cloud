@@ -14,6 +14,9 @@ use Symfony\Component\Uid\Uuid;
 #[ORM\Table(name: 'users')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
+    public const ACCOUNT_TYPE_FULL = 'full';
+    public const ACCOUNT_TYPE_GUEST = 'guest';
+
     #[ORM\Id]
     #[ORM\Column(type: 'uuid', unique: true)]
     private Uuid $id;
@@ -29,6 +32,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
+
+    /**
+     * full | guest — fixé à la création, ne change jamais automatiquement.
+     * Un invité reste un invité même après avoir défini son mot de passe :
+     * ce n'est pas un état transitoire comme un password vide, mais un
+     * statut permanent qui restreint ses droits (pas d'upload, pas
+     * d'espace personnel — cf. la restriction fonctionnelle du chantier).
+     */
+    #[ORM\Column(type: 'string', length: 10, options: ['default' => self::ACCOUNT_TYPE_FULL])]
+    private string $accountType = self::ACCOUNT_TYPE_FULL;
 
     public function __construct(string $email, string $displayName)
     {
@@ -92,5 +105,20 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPassword(string $password): void
     {
         $this->password = $password;
+    }
+
+    public function getAccountType(): string
+    {
+        return $this->accountType;
+    }
+
+    public function markAsGuest(): void
+    {
+        $this->accountType = self::ACCOUNT_TYPE_GUEST;
+    }
+
+    public function isGuest(): bool
+    {
+        return $this->accountType === self::ACCOUNT_TYPE_GUEST;
     }
 }

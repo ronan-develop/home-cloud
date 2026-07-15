@@ -11,7 +11,8 @@ use App\Entity\User;
 use App\Interface\AlbumRepositoryInterface;
 use App\Interface\AlbumServiceInterface;
 use App\Interface\MediaRepositoryInterface;
-use App\Interface\ShareRepositoryInterface;
+use App\Interface\SharedResourceCleanerInterface;
+use App\Security\GuestRestrictionChecker;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Uid\Uuid;
 
@@ -27,7 +28,8 @@ final class AlbumService implements AlbumServiceInterface
     public function __construct(
         private readonly AlbumRepositoryInterface $repository,
         private readonly MediaRepositoryInterface $mediaRepository,
-        private readonly ShareRepositoryInterface $shareRepository,
+        private readonly SharedResourceCleanerInterface $sharedResourceCleaner,
+        private readonly GuestRestrictionChecker $guestRestrictionChecker,
     ) {}
 
     /**
@@ -42,6 +44,8 @@ final class AlbumService implements AlbumServiceInterface
      */
     public function create(string $name, User $owner, array $mediaIds = []): Album
     {
+        $this->guestRestrictionChecker->denyUnlessFullAccount($owner);
+
         $album = new Album($name, $owner);
         $this->addOwnedMediasTo($album, $mediaIds, $owner);
         $this->repository->save($album);
@@ -99,7 +103,7 @@ final class AlbumService implements AlbumServiceInterface
      */
     public function delete(Album $album): void
     {
-        $this->shareRepository->deleteByResource(Share::RESOURCE_ALBUM, $album->getId());
+        $this->sharedResourceCleaner->deleteByResource(Share::RESOURCE_ALBUM, $album->getId());
         $this->repository->remove($album);
     }
 
