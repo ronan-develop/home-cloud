@@ -124,7 +124,7 @@
                 </button>
 
                 <a href="{{ path('app_settings') }}" class="hc-user-avatar" title="Paramètres du compte — {{ app.user.displayName }}" aria-label="Compte : {{ app.user.displayName }}">
-                    {{ app.user.displayName|first|upper }}
+                    {{ app.user.displayName|slice(0, 2)|upper }}
                 </a>
 
                 <a href="{{ path('app_logout') }}" class="hc-logout-btn" title="Déconnexion" aria-label="Déconnexion">

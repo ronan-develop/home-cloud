@@ -18,6 +18,25 @@
     </div>
   </div>
 
+  {# Création directe d'un invité, sans passer par un partage. #}
+  <form method="post" action="{{ path('app_guest_create') }}" class="hc-item-card flex items-end gap-2" style="padding: 1rem;">
+    <input type="hidden" name="_token" value="{{ csrf_token('guest-create') }}">
+    <div class="flex-1">
+      <label class="block text-xs font-semibold uppercase tracking-wide mb-1.5" style="color: var(--hc-text-3);">
+        Créer un invité
+      </label>
+      <input type="email" name="email" data-testid="guest-create-email" required
+             placeholder="ami@example.com"
+             class="w-full px-3 py-2 rounded-md text-sm"
+             style="border: 1px solid var(--hc-border); background: var(--hc-bg); color: var(--hc-text);">
+    </div>
+    <button type="submit" data-testid="guest-create-submit"
+            class="px-4 py-2 rounded-md text-sm font-semibold"
+            style="background: var(--hc-accent); color: var(--hc-accent-contrast, #fff); border: none; cursor: pointer;">
+      Créer
+    </button>
+  </form>
+
   {% if guests is empty %}
     <div data-testid="guests-empty">
       <twig:EmptyState
