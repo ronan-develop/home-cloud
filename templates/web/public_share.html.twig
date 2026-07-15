@@ -11,7 +11,17 @@
 
 <div style="max-width:1100px; margin:0 auto;">
     <p class="hc-item-meta" style="margin-bottom:4px;">Ressource partagée en lecture seule</p>
-    <h1 class="text-2xl font-black tracking-tight mb-4">{{ resourceName }}</h1>
+    <h1 class="text-2xl font-black tracking-tight mb-2">{{ resourceName }}</h1>
+
+    {% if link.expiresAt is not null %}
+        <div style="display:inline-block; padding:6px 14px; border-radius:999px; background:var(--hc-surface-2); border:1px solid var(--hc-border); font-size:0.8125rem; font-weight:600; margin-bottom:20px;">
+            Lien valable jusqu'au {{ link.expiresAt|date('d/m/Y') }}
+        </div>
+    {% else %}
+        <div style="display:inline-block; padding:6px 14px; border-radius:999px; background:var(--hc-surface-2); border:1px solid var(--hc-border); font-size:0.8125rem; font-weight:600; margin-bottom:20px;">
+            Lien permanent
+        </div>
+    {% endif %}
 
     {% if resourceType == 'file' %}
         <div class="hc-item-card" style="max-width:480px; padding:24px;">
@@ -67,8 +77,6 @@
             <twig:GalleryLightbox />
         {% endif %}
     {% endif %}
-
-    <p class="hc-item-meta" style="margin-top:24px;">Lien valable jusqu'au {{ link.expiresAt|date('d/m/Y') }}.</p>
 </div>
 
 </body>

@@ -52,11 +52,14 @@ final class ShareLinkWebController extends AbstractController
         /** @var User $owner */
         $owner = $this->getUser();
 
+        $duration = (string) $request->request->get('duration', '7d');
+
         try {
             $created = $this->shareLinkFactory->create(
                 $owner,
                 $resourceType,
                 Uuid::fromString($resourceId),
+                $duration,
             );
         } catch (ResourceNotPubliclyShareableException) {
             // Erreur légitime côté owner (ressource pas encore en link_allowed) :

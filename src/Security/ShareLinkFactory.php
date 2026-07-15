@@ -18,13 +18,22 @@ use Symfony\Component\Uid\Uuid;
  *   fait exister le verrou posé à l'étape 0. Sans cet appel, `visibility`
  *   ne serait qu'un champ décoratif — c'est ICI qu'il devient une garantie.
  *
- * expiresAt : obligatoire côté modèle (ShareLink ne l'accepte jamais null),
- * défaut 7 jours si absent, ramené à 30 jours si demandé au-delà.
+ * $duration : choix explicite de l'owner à la création, pas un champ libre.
+ * '1d'|'7d'|'30d' bornent une durée fixe ; 'permanent' laisse expiresAt à
+ * null (cf. ShareLink — usage type livraison d'album à un client, où la
+ * révocation manuelle reste le seul moyen de couper l'accès). Une valeur
+ * absente ou non reconnue retombe sur le défaut 7 jours plutôt que d'échouer :
+ * ce n'est pas une donnée de sécurité critique, une erreur de saisie ne doit
+ * pas bloquer la création du lien.
  */
 final readonly class ShareLinkFactory
 {
-    private const DEFAULT_EXPIRATION_DAYS = 7;
-    private const MAX_EXPIRATION_DAYS = 30;
+    private const DURATIONS = [
+        '1d'  => 1,
+        '7d'  => 7,
+        '30d' => 30,
+    ];
+    private const DEFAULT_DURATION = '7d';
 
     public function __construct(
         private ResourceLocatorInterface $resourceLocator,
@@ -38,14 +47,14 @@ final readonly class ShareLinkFactory
         User $owner,
         string $resourceType,
         Uuid $resourceId,
-        ?\DateTimeImmutable $requestedExpiresAt = null,
+        string $duration = self::DEFAULT_DURATION,
     ): CreatedShareLink {
         $resource = $this->resourceLocator->locate($resourceType, $resourceId);
 
         $this->ownershipChecker->denyUnlessOwner($resource);
         $this->visibilityChecker->denyUnlessPubliclyShareable($resource);
 
-        $expiresAt = $this->clampExpiration($requestedExpiresAt);
+        $expiresAt = $this->resolveExpiration($duration);
 
         $generated = $this->tokenGenerator->generate();
 
@@ -64,14 +73,14 @@ final readonly class ShareLinkFactory
         return new CreatedShareLink($link, $generated->token);
     }
 
-    private function clampExpiration(?\DateTimeImmutable $requested): \DateTimeImmutable
+    private function resolveExpiration(string $duration): ?\DateTimeImmutable
     {
-        $max = new \DateTimeImmutable(sprintf('+%d days', self::MAX_EXPIRATION_DAYS));
-
-        if ($requested === null) {
-            return new \DateTimeImmutable(sprintf('+%d days', self::DEFAULT_EXPIRATION_DAYS));
+        if ($duration === 'permanent') {
+            return null;
         }
 
-        return $requested > $max ? $max : $requested;
+        $days = self::DURATIONS[$duration] ?? self::DURATIONS[self::DEFAULT_DURATION];
+
+        return new \DateTimeImmutable(sprintf('+%d days', $days));
     }
 }

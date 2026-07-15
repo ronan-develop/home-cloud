@@ -15,8 +15,11 @@ use Symfony\Component\Uid\Uuid;
  * Choix, distincts de Share (partage entre comptes, cf. src/Entity/Share.php) :
  * - lecture seule uniquement : pas de champ `permission`, le lien n'autorise
  *   jamais l'écriture.
- * - expiresAt NON nullable : un lien qui n'expire jamais est une fuite qui
- *   n'expire jamais (inverse du défaut permanent de Share).
+ * - expiresAt nullable = permanent, choisi explicitement par l'owner à la
+ *   création (cf. ShareLinkFactory) — pour un usage type livraison d'album
+ *   à un client, où la révocation manuelle reste le seul moyen de couper
+ *   l'accès. Ce n'est plus un défaut implicite comme pour Share : l'owner
+ *   choisit une durée bornée (1/7/30 jours) ou "permanent" à chaque lien.
  * - selector (clair, indexé) + hashedToken (hash du secret) : si la base
  *   fuite, les liens ne sont pas rejouables. Le token en clair n'existe que
  *   dans l'URL envoyée, jamais en base (cf. ShareLinkTokenGenerator).
@@ -46,8 +49,8 @@ class ShareLink
     #[ORM\Column(type: 'string', length: 64)]
     private string $hashedToken;
 
-    #[ORM\Column(type: 'datetime_immutable')]
-    private \DateTimeImmutable $expiresAt;
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $expiresAt;
 
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $createdAt;
@@ -61,7 +64,7 @@ class ShareLink
         Uuid $resourceId,
         string $selector,
         string $hashedToken,
-        \DateTimeImmutable $expiresAt,
+        ?\DateTimeImmutable $expiresAt,
     ) {
         $this->id = Uuid::v7();
         $this->owner = $owner;
@@ -98,7 +101,7 @@ class ShareLink
         return $this->selector;
     }
 
-    public function getExpiresAt(): \DateTimeImmutable
+    public function getExpiresAt(): ?\DateTimeImmutable
     {
         return $this->expiresAt;
     }
@@ -120,7 +123,7 @@ class ShareLink
 
     public function isExpired(): bool
     {
-        return $this->expiresAt < new \DateTimeImmutable();
+        return $this->expiresAt !== null && $this->expiresAt < new \DateTimeImmutable();
     }
 
     public function isActive(): bool

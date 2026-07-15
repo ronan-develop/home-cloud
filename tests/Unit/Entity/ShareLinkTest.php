@@ -88,4 +88,39 @@ final class ShareLinkTest extends TestCase
 
         $this->assertFalse($link->verifyToken('plain-tokeX'));
     }
+
+    public function testPermanentLinkWithNullExpiresAtIsNeverExpired(): void
+    {
+        // Cas d'usage : livraison d'un album à un client (photographe), qui
+        // ne veut pas surveiller/renouveler un lien qui expirerait tout seul.
+        // La révocation manuelle reste le seul moyen de couper l'accès.
+        $link = new ShareLink(
+            $this->makeOwner(),
+            Share::RESOURCE_ALBUM,
+            Uuid::v7(),
+            'selector0000000000000000000000',
+            hash('sha256', 'plain-token'),
+            null,
+        );
+
+        $this->assertNull($link->getExpiresAt());
+        $this->assertFalse($link->isExpired());
+        $this->assertTrue($link->isActive());
+    }
+
+    public function testPermanentLinkIsNotActiveOnceRevoked(): void
+    {
+        $link = new ShareLink(
+            $this->makeOwner(),
+            Share::RESOURCE_ALBUM,
+            Uuid::v7(),
+            'selector0000000000000000000000',
+            hash('sha256', 'plain-token'),
+            null,
+        );
+
+        $link->revoke();
+
+        $this->assertFalse($link->isActive());
+    }
 }

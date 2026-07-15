@@ -129,6 +129,53 @@ final class ShareLinkCreateWebTest extends WebTestCase
         $this->assertResponseStatusCodeSame(403);
     }
 
+    public function testCreateShareLinkWithOneDayDuration(): void
+    {
+        $owner = $this->createOwner();
+        $file = $this->createFile($owner, File::VISIBILITY_LINK_ALLOWED);
+        $this->loginAs('sharelink-owner@example.com');
+
+        $token = $this->shareLinkCreateToken();
+
+        $this->client->request('POST', '/share-link-create', [
+            '_token'       => $token,
+            'resourceType' => 'file',
+            'resourceId'   => $file->getId()->toRfc4122(),
+            'duration'     => '1d',
+        ]);
+
+        $this->assertResponseRedirects();
+
+        $link = $this->em->getRepository(ShareLink::class)->findOneBy(['resourceId' => $file->getId()]);
+        $this->assertNotNull($link);
+        $expected = new \DateTimeImmutable('+1 day');
+        $this->assertEqualsWithDelta($expected->getTimestamp(), $link->getExpiresAt()->getTimestamp(), 5);
+    }
+
+    public function testCreateShareLinkWithPermanentDurationHasNoExpiration(): void
+    {
+        $owner = $this->createOwner();
+        $file = $this->createFile($owner, File::VISIBILITY_LINK_ALLOWED);
+        $this->loginAs('sharelink-owner@example.com');
+
+        $token = $this->shareLinkCreateToken();
+
+        $this->client->request('POST', '/share-link-create', [
+            '_token'       => $token,
+            'resourceType' => 'file',
+            'resourceId'   => $file->getId()->toRfc4122(),
+            'duration'     => 'permanent',
+        ]);
+
+        $this->assertResponseRedirects();
+        $this->client->followRedirect();
+        $this->assertSelectorTextContains('.flash-success', '/p/');
+
+        $link = $this->em->getRepository(ShareLink::class)->findOneBy(['resourceId' => $file->getId()]);
+        $this->assertNotNull($link);
+        $this->assertNull($link->getExpiresAt());
+    }
+
     public function testCreateShareLinkByNonOwnerReturns403(): void
     {
         $owner = $this->createOwner();

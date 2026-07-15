@@ -121,8 +121,22 @@
         <div class="px-6 pt-4">
           <p class="text-sm" style="color: var(--hc-text-2);">
             Toute personne recevant ce lien pourra consulter cette ressource sans
-            créer de compte, en lecture seule, jusqu'à expiration.
+            créer de compte, en lecture seule.
           </p>
+        </div>
+
+        <div class="px-6 pt-4">
+          <label class="block text-xs font-semibold uppercase tracking-wide mb-1.5" style="color: var(--hc-text-3);">
+            Durée de validité
+          </label>
+          <select name="duration" data-testid="share-link-duration"
+                  class="w-full px-3 py-2 rounded-md text-sm"
+                  style="border: 1px solid var(--hc-border); background: var(--hc-bg); color: var(--hc-text);">
+            <option value="1d">1 jour</option>
+            <option value="7d" selected>7 jours</option>
+            <option value="30d">30 jours</option>
+            <option value="permanent">Permanent — jusqu'à révocation manuelle</option>
+          </select>
         </div>
 
         <div class="flex gap-2 justify-end px-6 py-4 mt-2" style="border-top: 1px solid var(--hc-border);">

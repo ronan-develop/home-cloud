@@ -76,7 +76,11 @@
                 <div class="hc-item-name">{{ row.resourceName }}</div>
                 <div class="hc-item-meta">
                   Lien public · lecture seule ·
-                  {{ row.link.isActive ? 'expire le ' ~ row.link.expiresAt|date('d/m/Y') : 'révoqué/expiré le ' ~ row.link.expiresAt|date('d/m/Y') }}
+                  {% if row.link.expiresAt is null %}
+                    {{ row.link.isActive ? 'permanent' : 'révoqué' }}
+                  {% else %}
+                    {{ row.link.isActive ? 'expire le ' ~ row.link.expiresAt|date('d/m/Y') : 'révoqué/expiré le ' ~ row.link.expiresAt|date('d/m/Y') }}
+                  {% endif %}
                 </div>
               </div>
             </div>

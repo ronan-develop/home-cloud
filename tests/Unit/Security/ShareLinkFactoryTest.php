@@ -128,7 +128,7 @@ final class ShareLinkFactoryTest extends TestCase
         $factory->create($owner, Share::RESOURCE_FILE, $file->getId());
     }
 
-    public function testDefaultsExpirationToSevenDays(): void
+    public function testDefaultsExpirationToSevenDaysWhenDurationOmitted(): void
     {
         $file = $this->makeFile(File::VISIBILITY_LINK_ALLOWED);
         $owner = $this->createMock(User::class);
@@ -140,29 +140,50 @@ final class ShareLinkFactoryTest extends TestCase
         $this->assertEqualsWithDelta($expected->getTimestamp(), $created->link->getExpiresAt()->getTimestamp(), 5);
     }
 
-    public function testClampsExpirationBeyondThirtyDaysToThirty(): void
+    public function testDurationOneDay(): void
     {
         $file = $this->makeFile(File::VISIBILITY_LINK_ALLOWED);
         $owner = $this->createMock(User::class);
         $factory = $this->makeFactory($file);
 
-        $requested = new \DateTimeImmutable('+90 days');
-        $created = $factory->create($owner, Share::RESOURCE_FILE, $file->getId(), $requested);
+        $created = $factory->create($owner, Share::RESOURCE_FILE, $file->getId(), '1d');
+
+        $expected = new \DateTimeImmutable('+1 day');
+        $this->assertEqualsWithDelta($expected->getTimestamp(), $created->link->getExpiresAt()->getTimestamp(), 5);
+    }
+
+    public function testDurationThirtyDays(): void
+    {
+        $file = $this->makeFile(File::VISIBILITY_LINK_ALLOWED);
+        $owner = $this->createMock(User::class);
+        $factory = $this->makeFactory($file);
+
+        $created = $factory->create($owner, Share::RESOURCE_FILE, $file->getId(), '30d');
 
         $expected = new \DateTimeImmutable('+30 days');
         $this->assertEqualsWithDelta($expected->getTimestamp(), $created->link->getExpiresAt()->getTimestamp(), 5);
     }
 
-    public function testAcceptsExpirationWithinThirtyDays(): void
+    public function testDurationPermanentLeavesExpiresAtNull(): void
     {
         $file = $this->makeFile(File::VISIBILITY_LINK_ALLOWED);
         $owner = $this->createMock(User::class);
         $factory = $this->makeFactory($file);
 
-        $requested = new \DateTimeImmutable('+15 days');
-        $created = $factory->create($owner, Share::RESOURCE_FILE, $file->getId(), $requested);
+        $created = $factory->create($owner, Share::RESOURCE_FILE, $file->getId(), 'permanent');
 
-        $expected = new \DateTimeImmutable('+15 days');
+        $this->assertNull($created->link->getExpiresAt());
+    }
+
+    public function testUnknownDurationFallsBackToSevenDays(): void
+    {
+        $file = $this->makeFile(File::VISIBILITY_LINK_ALLOWED);
+        $owner = $this->createMock(User::class);
+        $factory = $this->makeFactory($file);
+
+        $created = $factory->create($owner, Share::RESOURCE_FILE, $file->getId(), 'not-a-real-duration');
+
+        $expected = new \DateTimeImmutable('+7 days');
         $this->assertEqualsWithDelta($expected->getTimestamp(), $created->link->getExpiresAt()->getTimestamp(), 5);
     }
 }
