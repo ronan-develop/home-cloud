@@ -1,45 +1,45 @@
 {# === NewFolderModal component === #}
 {% import 'macros/icon.html.twig' as icons %}
 <div data-testid="new-folder-modal"
-     style="display:none; position:fixed; inset:0; z-index:9998; background:rgba(0,0,0,0.45);
-            align-items:center; justify-content:center;">
+     class="hc-new-folder-overlay hidden"
+     data-controller="new-folder-modal"
+     data-new-folder-modal-create-url-value="{{ path('_api_/v1/folders_post') }}"
+     data-new-folder-modal-owner-id-value="{{ app.user ? app.user.id : '' }}"
+     data-action="click->new-folder-modal#closeOnOverlayClick">
 
-    <div style="background:var(--hc-surface); color:var(--hc-text); border-radius:1rem;
-                box-shadow:var(--hc-shadow-lg); width:100%; max-width:440px;
-                margin:1rem; padding:1.5rem; border:1px solid var(--hc-border);">
+    <div class="hc-new-folder-card">
 
         {# Header #}
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem;">
-            <h2 style="font-size:1rem; font-weight:600; margin:0;">Nouveau dossier</h2>
+        <div class="hc-new-folder-header">
+            <h2>Nouveau dossier</h2>
             <button id="new-folder-modal-close"
                     type="button"
-                    style="background:none; border:none; color:var(--hc-text-3); cursor:pointer;
-                           display:inline-flex; align-items:center; justify-content:center; padding:0;">
+                    class="hc-new-folder-close"
+                    data-action="click->new-folder-modal#close">
                 {{ icons.icon('x', 18) }}
             </button>
         </div>
 
         {# Nom #}
-        <div style="margin-bottom:1.1rem;">
-            <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--hc-text-2); margin-bottom:0.4rem; text-transform:uppercase; letter-spacing:0.05em;">
+        <div class="hc-new-folder-field">
+            <label class="hc-new-folder-label">
                 Nom du dossier
             </label>
             <input type="text"
                    id="new-folder-name-input"
                    data-testid="new-folder-name"
+                   data-new-folder-modal-target="nameInput"
+                   data-action="keydown->new-folder-modal#handleNameKeydown"
                    placeholder="Mon dossier…"
-                   style="width:100%; box-sizing:border-box; padding:0.55rem 0.85rem; border:1px solid var(--hc-border);
-                          border-radius:0.6rem; font-size:0.875rem; color:var(--hc-text); background:var(--hc-surface);
-                          outline:none; transition:border-color 0.15s;"
-                   onfocus="this.style.borderColor='var(--hc-accent)'" onblur="this.style.borderColor='var(--hc-border)'">
+                   class="hc-new-folder-input">
         </div>
 
         {# Type de contenu #}
-        <div style="margin-bottom:1.1rem;">
-            <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--hc-text-2); margin-bottom:0.6rem; text-transform:uppercase; letter-spacing:0.05em;">
+        <div class="hc-new-folder-field">
+            <label class="hc-new-folder-label">
                 Type de contenu
             </label>
-            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:0.5rem;">
+            <div class="hc-new-folder-media-types">
                 {% set media_types = [
                     { value: 'general',  icon: 'folder', label: 'Général'   },
                     { value: 'photo',    icon: 'images', label: 'Photos'    },
@@ -50,19 +50,15 @@
                 ] %}
                 {% for mt in media_types %}
                     <label data-testid="media-type-{{ mt.value }}"
-                           style="display:flex; flex-direction:column; align-items:center; gap:0.25rem;
-                                  padding:0.5rem 0.25rem; border:1.5px solid var(--hc-border); border-radius:0.6rem;
-                                  cursor:pointer; font-size:0.75rem; color:var(--hc-text-2); transition:all 0.15s;
-                                  {% if mt.value == 'general' %}background:var(--hc-accent-soft); border-color:var(--hc-accent);{% endif %}"
-                           onmouseover="if(!this.querySelector('input').checked){this.style.background='var(--hc-surface-2)'}"
-                           onmouseout="if(!this.querySelector('input').checked){this.style.background=''; this.style.borderColor='var(--hc-border)';}">
+                           data-new-folder-modal-target="mediaTypeLabel"
+                           class="hc-new-folder-media-type{{ mt.value == 'general' ? ' hc-new-folder-media-type--active' : '' }}">
                         <input type="radio"
                                name="folder-media-type"
                                value="{{ mt.value }}"
                                {% if mt.value == 'general' %}checked{% endif %}
-                               style="display:none;"
-                               onchange="updateMediaTypeStyle()">
-                        <span style="font-size:1.3rem; display:inline-flex; align-items:center; justify-content:center;">{{ icons.icon(mt.icon, 20) }}</span>
+                               data-new-folder-modal-target="mediaTypeRadio"
+                               data-action="change->new-folder-modal#selectMediaType">
+                        <span class="hc-new-folder-media-type-icon">{{ icons.icon(mt.icon, 20) }}</span>
                         {{ mt.label }}
                     </label>
                 {% endfor %}
@@ -70,16 +66,15 @@
         </div>
 
         {# Emplacement #}
-        <div style="margin-bottom:1.25rem;">
-            <label style="display:block; font-size:0.8rem; font-weight:500; color:var(--hc-text-2); margin-bottom:0.4rem; text-transform:uppercase; letter-spacing:0.05em;">
+        <div class="hc-new-folder-field">
+            <label class="hc-new-folder-label">
                 Emplacement
             </label>
             <select id="new-folder-parent-select"
                     data-testid="parent-folder-select"
                     data-root-label="root"
-                    style="width:100%; padding:0.55rem 0.85rem; border:1px solid var(--hc-border);
-                           border-radius:0.6rem; font-size:0.875rem; color:var(--hc-text); background:var(--hc-surface);
-                           outline:none; cursor:pointer;">
+                    data-new-folder-modal-target="parentSelect"
+                    class="hc-new-folder-select">
                 <option value="">Racine (mes fichiers)</option>
                 {% for folder in folders %}
                     <option value="{{ folder.id }}">→ {{ folder.name }}</option>
@@ -88,115 +83,22 @@
         </div>
 
         {# Actions #}
-        <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+        <div class="hc-new-folder-actions">
             <button id="new-folder-modal-cancel"
                     type="button"
-                    style="padding:0.5rem 1rem; border:none; background:none; font-size:0.875rem;
-                           color:var(--hc-text-2); cursor:pointer; border-radius:0.6rem; transition:background 0.15s;"
-                    onmouseover="this.style.background='var(--hc-surface-2)'" onmouseout="this.style.background='none'">
+                    class="hc-new-folder-cancel"
+                    data-action="click->new-folder-modal#close">
                 Annuler
             </button>
             <button id="new-folder-submit-btn"
                     data-testid="new-folder-submit"
                     type="button"
-                    style="padding:0.5rem 1.25rem; background:var(--hc-accent); color:#fff; border:none;
-                           border-radius:0.6rem; font-size:0.875rem; font-weight:600; cursor:pointer;
-                           transition:background 0.15s; display:inline-flex; align-items:center; gap:0.4rem;"
-                    onmouseover="this.style.background='var(--hc-accent-2)'" onmouseout="this.style.background='var(--hc-accent)'">
+                    class="hc-new-folder-submit"
+                    data-new-folder-modal-target="submitButton"
+                    data-action="click->new-folder-modal#submit">
                 {{ icons.icon('check', 16) }}
-                <span id="new-folder-submit-label">Créer</span>
+                <span id="new-folder-submit-label" data-new-folder-modal-target="submitLabel">Créer</span>
             </button>
         </div>
     </div>
 </div>
-
-<script>
-(function () {
-    var modal      = document.querySelector('[data-testid="new-folder-modal"]');
-    var nameInput  = document.getElementById('new-folder-name-input');
-    var parentSel  = document.getElementById('new-folder-parent-select');
-    var submitBtn  = document.getElementById('new-folder-submit-btn');
-    var submitLabel = document.getElementById('new-folder-submit-label');
-    var closeBtn   = document.getElementById('new-folder-modal-close');
-    var cancelBtn  = document.getElementById('new-folder-modal-cancel');
-
-    function openModal() {
-        nameInput.value = '';
-        if (parentSel) parentSel.value = '';
-        var radios = document.querySelectorAll('[name="folder-media-type"]');
-        radios.forEach(function(r){ r.checked = r.value === 'general'; });
-        updateMediaTypeStyle();
-        modal.style.display = 'flex';
-        setTimeout(function(){ nameInput.focus(); }, 50);
-    }
-
-    function closeModal() {
-        modal.style.display = 'none';
-    }
-
-    window.updateMediaTypeStyle = function () {
-        document.querySelectorAll('[data-testid^="media-type-"]').forEach(function (lbl) {
-            var radio = lbl.querySelector('input[type="radio"]');
-            if (radio && radio.checked) {
-                lbl.style.background = 'var(--hc-accent-soft)';
-                lbl.style.borderColor = 'var(--hc-accent)';
-            } else {
-                lbl.style.background = '';
-                lbl.style.borderColor = 'var(--hc-border)';
-            }
-        });
-    };
-
-    closeBtn.addEventListener('click', closeModal);
-    cancelBtn.addEventListener('click', closeModal);
-    modal.addEventListener('click', function (e) {
-        if (e.target === modal) closeModal();
-    });
-
-    nameInput.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter')  submitBtn.click();
-        if (e.key === 'Escape') closeModal();
-    });
-
-    submitBtn.addEventListener('click', async function () {
-        var name = nameInput.value.trim();
-        if (!name) { nameInput.focus(); return; }
-
-        var mediaType = 'general';
-        var checked = document.querySelector('[name="folder-media-type"]:checked');
-        if (checked) mediaType = checked.value;
-
-        var parentId = parentSel ? (parentSel.value || null) : null;
-
-        submitBtn.disabled = true;
-        submitLabel.textContent = '…';
-
-        var token = await window.HC.getToken();
-        var res = await fetch('{{ path('_api_/v1/folders_post') }}', {
-            method: 'POST',
-            headers: {
-                'Authorization': 'Bearer ' + token,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                name:      name,
-                ownerId:   '{{ app.user ? app.user.id : '' }}',
-                mediaType: mediaType,
-                parentId:  parentId,
-            }),
-        });
-
-        if (res.ok) {
-            closeModal();
-            window.location.reload();
-        } else {
-            submitBtn.disabled = false;
-            submitLabel.textContent = 'Créer';
-            alert('Erreur lors de la création du dossier.');
-        }
-    });
-
-    // Écoute l'event du NewMenu
-    document.addEventListener('new-menu:open-folder-modal', openModal);
-}());
-</script>
