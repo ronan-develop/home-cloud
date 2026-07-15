@@ -23,7 +23,7 @@ class NewFolderModalTest extends KernelTestCase
     {
         $node = $this->crawl()->filter('[data-testid="new-folder-modal"]');
         $this->assertCount(1, $node);
-        $this->assertStringContainsString('display:none', $node->attr('style') ?? '');
+        $this->assertStringContainsString('hidden', $node->attr('class') ?? '');
     }
 
     public function testHasNameInput(): void
@@ -90,9 +90,9 @@ class NewFolderModalTest extends KernelTestCase
         $this->assertCount(1, $this->crawl()->filter('[data-testid="new-folder-submit"]'));
     }
 
-    public function testHasInlineScript(): void
+    public function testHasNewFolderModalController(): void
     {
-        $html = (string) $this->renderTwigComponent('NewFolderModal');
-        $this->assertStringContainsString('<script>', $html);
+        $node = $this->crawl()->filter('[data-testid="new-folder-modal"]');
+        $this->assertStringContainsString('new-folder-modal', $node->attr('data-controller') ?? '');
     }
 }
