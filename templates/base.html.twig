@@ -10,7 +10,8 @@
         {% block stylesheets %}{% endblock %}
         <script>
             (function () {
-                var t = localStorage.getItem('hc-theme') || 'light';
+                var stored = localStorage.getItem('hc-theme');
+                var t = stored || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
                 document.documentElement.setAttribute('data-theme', t);
             })();
         </script>
