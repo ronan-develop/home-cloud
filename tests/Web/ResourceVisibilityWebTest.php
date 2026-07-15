@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Web;
 
+use App\Entity\Album;
 use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\Share;
@@ -129,6 +130,33 @@ final class ResourceVisibilityWebTest extends WebTestCase
         $this->em->clear();
         $reloaded = $this->em->getRepository(File::class)->find($file->getId());
         $this->assertSame(File::VISIBILITY_LINK_ALLOWED, $reloaded->getVisibility());
+    }
+
+    public function testAllowingLinkSharingOnAnAlbumRedirectsBackToTheAlbumPage(): void
+    {
+        // Referrer-Policy: no-referrer (posé pour protéger les tokens de
+        // ShareLink) fait que le navigateur n'envoie jamais l'en-tête Referer :
+        // le contrôleur ne peut donc PAS s'appuyer dessus pour revenir à la
+        // bonne page, il doit dériver l'URL depuis resourceType/resourceId.
+        $owner = $this->createOwner();
+        $album = new Album('Vacances', $owner);
+        $this->em->persist($album);
+        $this->em->flush();
+
+        $this->loginAs('visibility-owner@example.com');
+
+        $crawler = $this->client->request('GET', '/albums/' . $album->getId()->toRfc4122());
+        $csrfToken = $crawler->filter('form[action*="/resource-visibility-update"] input[name="_token"]')
+            ->first()->attr('value');
+
+        $this->client->request('POST', '/resource-visibility-update', [
+            '_token'       => $csrfToken,
+            'resourceType' => 'album',
+            'resourceId'   => $album->getId()->toRfc4122(),
+            'visibility'   => 'link_allowed',
+        ]);
+
+        $this->assertResponseRedirects('/albums/' . $album->getId()->toRfc4122());
     }
 
     public function testNonOwnerCannotChangeVisibility(): void

@@ -71,6 +71,23 @@ final class ResourceVisibilityWebController extends AbstractController
             $this->addFlash('success', 'Partage par lien autorisé pour cette ressource.');
         }
 
-        return $this->redirect($request->headers->get('referer') ?? '/explorer');
+        return $this->redirect($this->redirectUrlFor($resourceType, $resourceId, $resource));
+    }
+
+    /**
+     * Dérive l'URL de retour depuis (resourceType, resourceId) plutôt que
+     * l'en-tête Referer : Referrer-Policy: no-referrer (posé pour protéger
+     * les tokens de ShareLink) fait que le navigateur ne l'envoie jamais,
+     * donc s'appuyer dessus renvoyait systématiquement vers /explorer.
+     */
+    private function redirectUrlFor(string $resourceType, string $resourceId, File|Folder|Album $resource): string
+    {
+        return match ($resourceType) {
+            Share::RESOURCE_ALBUM  => '/albums/' . $resourceId,
+            Share::RESOURCE_FOLDER => '/explorer?folder=' . $resourceId,
+            // Un fichier isolé n'a pas sa propre page : revenir au dossier qui le contient.
+            Share::RESOURCE_FILE   => '/explorer?folder=' . $resource->getFolder()->getId(),
+            default => '/explorer',
+        };
     }
 }
