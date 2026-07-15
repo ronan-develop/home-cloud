@@ -36,6 +36,7 @@ final readonly class ShareNotificationMailer
             ->context([
                 'resourceName' => $resourceName,
                 'accessUrl'    => $accessUrl,
+                'ownerName'    => $share->getOwner()->getDisplayName(),
             ]);
 
         $this->mailer->send($email);
