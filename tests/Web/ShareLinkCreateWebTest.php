@@ -87,8 +87,15 @@ final class ShareLinkCreateWebTest extends WebTestCase
         // Le verrou de visibilité doit tenir (comportement de sécurité
         // inchangé), mais l'échec doit être une redirection avec message
         // explicite plutôt qu'une page d'exception Symfony brute.
+        // Dossier ET fichier private : depuis le passage à la règle OU, un
+        // fichier private hérite de l'autorisation d'un dossier link_allowed
+        // — pour tester le refus, aucun des deux ne doit être autorisé.
         $owner = $this->createOwner();
-        $file = $this->createFile($owner, File::VISIBILITY_PRIVATE);
+        $folder = new Folder('DocsPrivate', $owner);
+        $this->em->persist($folder);
+        $file = new File('photo.jpg', 'image/jpeg', 1024, 'test/photo.jpg', $folder, $owner);
+        $this->em->persist($file);
+        $this->em->flush();
         $this->loginAs('sharelink-owner@example.com');
 
         $token = $this->shareLinkCreateToken();

@@ -27,7 +27,7 @@ final class ShareLinkFactoryTest extends TestCase
         $file = $this->createMock(File::class);
         $file->method('getId')->willReturn(Uuid::v7());
         $file->method('getVisibility')->willReturn($visibility);
-        $file->method('getFolder')->willReturn($folder ?? $this->makeFolder(Folder::VISIBILITY_LINK_ALLOWED));
+        $file->method('getFolder')->willReturn($folder ?? $this->makeFolder(Folder::VISIBILITY_PRIVATE));
 
         return $file;
     }
@@ -93,10 +93,24 @@ final class ShareLinkFactoryTest extends TestCase
         $factory->create($owner, Share::RESOURCE_FILE, $file->getId());
     }
 
-    public function testThrowsWhenParentFolderIsPrivate(): void
+    public function testCreatesLinkForPrivateFileWhenParentFolderIsLinkAllowed(): void
+    {
+        // Partage de dossier (cascade) : un fichier private hérite de
+        // l'autorisation de son dossier parent.
+        $linkAllowedFolder = $this->makeFolder(Folder::VISIBILITY_LINK_ALLOWED);
+        $file = $this->makeFile(File::VISIBILITY_PRIVATE, $linkAllowedFolder);
+        $owner = $this->createMock(User::class);
+        $factory = $this->makeFactory($file);
+
+        $created = $factory->create($owner, Share::RESOURCE_FILE, $file->getId());
+
+        $this->assertInstanceOf(ShareLink::class, $created->link);
+    }
+
+    public function testThrowsWhenNeitherResourceNorAnyAncestorIsLinkAllowed(): void
     {
         $privateFolder = $this->makeFolder(Folder::VISIBILITY_PRIVATE);
-        $file = $this->makeFile(File::VISIBILITY_LINK_ALLOWED, $privateFolder);
+        $file = $this->makeFile(File::VISIBILITY_PRIVATE, $privateFolder);
         $owner = $this->createMock(User::class);
         $factory = $this->makeFactory($file);
 

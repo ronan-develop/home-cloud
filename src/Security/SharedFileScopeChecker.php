@@ -16,7 +16,11 @@ use Symfony\Component\Uid\Uuid;
  * de l'owner en changeant simplement l'id de fichier dans l'URL.
  *
  * - lien sur un File   : seul ce fichier
- * - lien sur un Folder : tout fichier directement dans ce dossier
+ * - lien sur un Folder : tout fichier dans ce dossier OU l'un de ses
+ *   sous-dossiers, à n'importe quelle profondeur — cohérent avec
+ *   VisibilityChecker, qui autorise déjà ces fichiers par remontée des
+ *   ancêtres (partager Docs/ doit aussi permettre de télécharger
+ *   Docs/Sous/fichier.txt, pas seulement de le voir listé).
  * - lien sur un Album  : tout fichier qui est le support d'un Media de l'album
  */
 final readonly class SharedFileScopeChecker
@@ -25,10 +29,23 @@ final readonly class SharedFileScopeChecker
     {
         return match ($linkResourceType) {
             Share::RESOURCE_FILE   => $file->getId()->equals($linkResourceId),
-            Share::RESOURCE_FOLDER => $file->getFolder()->getId()->equals($linkResourceId),
+            Share::RESOURCE_FOLDER => $this->isFileUnderFolder($file, $linkResourceId),
             Share::RESOURCE_ALBUM  => $this->isFileInAlbum($file, $linkResource),
             default => false,
         };
+    }
+
+    private function isFileUnderFolder(File $file, Uuid $linkedFolderId): bool
+    {
+        $folder = $file->getFolder();
+        while ($folder !== null) {
+            if ($folder->getId()->equals($linkedFolderId)) {
+                return true;
+            }
+            $folder = $folder->getParent();
+        }
+
+        return false;
     }
 
     private function isFileInAlbum(File $file, File|Folder|Album $linkResource): bool

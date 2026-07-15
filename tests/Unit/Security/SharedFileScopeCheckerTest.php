@@ -64,6 +64,47 @@ final class SharedFileScopeCheckerTest extends TestCase
         $this->assertFalse($checker->isInScope($file, Share::RESOURCE_FOLDER, $linkedFolder->getId(), $linkedFolder));
     }
 
+    public function testFolderLinkAllowsAFileInASubfolder(): void
+    {
+        // Partager Docs/ doit couvrir Docs/Sous/fichier.txt, pas seulement
+        // les fichiers directement dans Docs/ — cohérent avec VisibilityChecker
+        // qui autorise déjà ce fichier par remontée des ancêtres.
+        $linkedFolder = $this->createMock(Folder::class);
+        $linkedFolder->method('getId')->willReturn(Uuid::v7());
+
+        $subfolder = $this->createMock(Folder::class);
+        $subfolder->method('getId')->willReturn(Uuid::v7());
+        $subfolder->method('getParent')->willReturn($linkedFolder);
+
+        $file = $this->createMock(File::class);
+        $file->method('getFolder')->willReturn($subfolder);
+
+        $checker = new SharedFileScopeChecker();
+
+        $this->assertTrue($checker->isInScope($file, Share::RESOURCE_FOLDER, $linkedFolder->getId(), $linkedFolder));
+    }
+
+    public function testFolderLinkDeniesAFileInAnUnrelatedFolderHierarchy(): void
+    {
+        $linkedFolder = $this->createMock(Folder::class);
+        $linkedFolder->method('getId')->willReturn(Uuid::v7());
+
+        $unrelatedGrandParent = $this->createMock(Folder::class);
+        $unrelatedGrandParent->method('getId')->willReturn(Uuid::v7());
+        $unrelatedGrandParent->method('getParent')->willReturn(null);
+
+        $unrelatedFolder = $this->createMock(Folder::class);
+        $unrelatedFolder->method('getId')->willReturn(Uuid::v7());
+        $unrelatedFolder->method('getParent')->willReturn($unrelatedGrandParent);
+
+        $file = $this->createMock(File::class);
+        $file->method('getFolder')->willReturn($unrelatedFolder);
+
+        $checker = new SharedFileScopeChecker();
+
+        $this->assertFalse($checker->isInScope($file, Share::RESOURCE_FOLDER, $linkedFolder->getId(), $linkedFolder));
+    }
+
     public function testAlbumLinkAllowsAFileThatIsAMediaOfThatAlbum(): void
     {
         $file = $this->createMock(File::class);
