@@ -58,6 +58,7 @@ final readonly class GuestAccountCreator
             ->context([
                 'activationUrl' => $activationUrl,
                 'ownerName'     => $owner?->getDisplayName(),
+                'accentColor'   => EmailBranding::ACCENT_COLOR,
             ]);
 
         $this->mailer->send($invitationEmail);

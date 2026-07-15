@@ -37,6 +37,7 @@ final readonly class ShareNotificationMailer
                 'resourceName' => $resourceName,
                 'accessUrl'    => $accessUrl,
                 'ownerName'    => $share->getOwner()->getDisplayName(),
+                'accentColor'  => EmailBranding::ACCENT_COLOR,
             ]);
 
         $this->mailer->send($email);
