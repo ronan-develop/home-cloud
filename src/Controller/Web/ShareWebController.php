@@ -9,7 +9,6 @@ use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\Share;
 use App\Entity\User;
-use App\Interface\MediaRepositoryInterface;
 use App\Interface\ShareLinkRepositoryInterface;
 use App\Interface\ShareRepositoryInterface;
 use App\Interface\UserRepositoryInterface;
@@ -43,7 +42,6 @@ final class ShareWebController extends AbstractController
         private readonly OwnershipChecker $ownershipChecker,
         private readonly EntityManagerInterface $em,
         private readonly GuestAccountCreator $guestAccountCreator,
-        private readonly MediaRepositoryInterface $mediaRepository,
     ) {}
 
     #[Route('/partages', name: 'app_shares')]
@@ -221,10 +219,15 @@ final class ShareWebController extends AbstractController
     }
 
     /**
-     * Vignette du premier média pour un lien pointant vers un album (ou un
-     * dossier contenant des images) — simple aperçu visuel dans la liste,
-     * pas une vraie visionneuse. Réutilise app_media_thumbnail (authentifiée) :
-     * c'est le owner connecté qui consulte /partages, pas un visiteur anonyme.
+     * Vignette du premier média AYANT UN THUMBNAIL pour un lien pointant vers
+     * un album — simple aperçu visuel dans la liste, pas une vraie
+     * visionneuse. Réutilise app_media_thumbnail (authentifiée) : c'est le
+     * owner connecté qui consulte /partages, pas un visiteur anonyme.
+     *
+     * Le premier média PAR POSITION n'a pas toujours de thumbnail (traitement
+     * async pas terminé, échec de génération...) : prendre systématiquement
+     * ->first() affichait une vignette vide alors qu'un autre média de
+     * l'album en avait une — bug capturé en usage réel.
      */
     private function resolveThumbnailUrlForLink(\App\Entity\ShareLink $link): ?string
     {
@@ -238,13 +241,13 @@ final class ShareWebController extends AbstractController
             return null;
         }
 
-        $firstMedia = $resource->getMedias()->first();
-
-        if ($firstMedia === false || $firstMedia->getThumbnailPath() === null) {
-            return null;
+        foreach ($resource->getMedias() as $media) {
+            if ($media->getThumbnailPath() !== null) {
+                return $this->generateUrl('app_media_thumbnail', ['id' => $media->getId()]);
+            }
         }
 
-        return $this->generateUrl('app_media_thumbnail', ['id' => $firstMedia->getId()]);
+        return null;
     }
 
     private function redirectUrlFor(string $resourceType, string $resourceId): string

@@ -164,4 +164,55 @@ final class ShareLinkRevokeWebTest extends WebTestCase
         $this->assertResponseIsSuccessful();
         $this->assertSelectorExists('[data-testid="share-link-row"] img[src*="/thumbnail"]');
     }
+
+    public function testSharesPageShowsThumbnailOfFirstMediaThatActuallyHasOne(): void
+    {
+        // Bug réel : le premier média par position n'a pas toujours de
+        // thumbnail (traitement async pas encore terminé, échec, etc.).
+        // Il faut afficher la vignette du premier média QUI EN A UNE,
+        // pas planter/rien afficher juste parce que le tout premier n'en a pas.
+        $owner = $this->createOwner();
+
+        $folder = new Folder('Photos', $owner);
+        $folder->setVisibility(Folder::VISIBILITY_LINK_ALLOWED);
+        $this->em->persist($folder);
+
+        $fileWithoutThumb = new File('sans-vignette.jpg', 'image/jpeg', 1024, 'test/a.jpg', $folder, $owner);
+        $this->em->persist($fileWithoutThumb);
+        $mediaWithoutThumb = new \App\Entity\Media($fileWithoutThumb, 'photo');
+        $this->em->persist($mediaWithoutThumb);
+
+        $fileWithThumb = new File('avec-vignette.jpg', 'image/jpeg', 1024, 'test/b.jpg', $folder, $owner);
+        $this->em->persist($fileWithThumb);
+        $mediaWithThumb = new \App\Entity\Media($fileWithThumb, 'photo');
+        $mediaWithThumb->setThumbnailPath('thumbs/b.thumb.jpg');
+        $this->em->persist($mediaWithThumb);
+
+        $album = new \App\Entity\Album('Vacances', $owner);
+        $album->setVisibility(\App\Entity\Album::VISIBILITY_LINK_ALLOWED);
+        $this->em->persist($album);
+        $album->addMedia($mediaWithoutThumb);
+        $album->addMedia($mediaWithThumb);
+        $this->em->flush();
+
+        $link = new ShareLink(
+            $owner,
+            Share::RESOURCE_ALBUM,
+            $album->getId(),
+            bin2hex(random_bytes(16)),
+            hash('sha256', 'valid-plain-token'),
+            new \DateTimeImmutable('+7 days'),
+        );
+        $this->em->persist($link);
+        $this->em->flush();
+
+        $this->loginAs('revoke-owner@example.com');
+
+        $crawler = $this->client->request('GET', '/partages');
+
+        $this->assertResponseIsSuccessful();
+        $img = $crawler->filter('[data-testid="share-link-row"] img[src*="/thumbnail"]');
+        $this->assertGreaterThan(0, $img->count());
+        $this->assertStringContainsString((string) $mediaWithThumb->getId(), $img->attr('src'));
+    }
 }
