@@ -171,6 +171,27 @@
   text-overflow: ellipsis;
 }
 
+/* ── Badge de couverture d'album (haut-gauche, seule zone encore libre :
+   les actions flottantes occupent le haut-droite, le badge d'appartenance
+   le bas-droite au-dessus de la légende) ── */
+.hc-media-thumb-cover-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--hc-accent);
+  backdrop-filter: blur(2px);
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 /* ── Sélection multiple (toujours visible, pour ajout à un album) ── */
 .hc-media-thumb-select {
   position: absolute;
