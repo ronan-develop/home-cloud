@@ -126,21 +126,21 @@ final class ShareWebTest extends WebTestCase
         $this->assertStringContainsString($expiresAt->format('d/m/Y'), $row);
     }
 
-    public function testSharesPageListsIncomingShares(): void
+    public function testSharesPageDoesNotShowIncomingSection(): void
     {
-        $owner = $this->createUser('owner-in@example.com');
-        $guest = $this->createUser(); // shares@example.com, celui qui se connecte
-        $file  = $this->createFile($owner, 'partage-entrant.jpg');
-        $share = new Share($owner, $guest, Share::RESOURCE_FILE, $file->getId(), Share::PERMISSION_READ);
-        $this->em->persist($share);
-        $this->em->flush();
-
+        // HomeCloud est mono-owner par instance : il n'y a jamais qu'un seul
+        // compte "full" possible, qui ne peut donc jamais recevoir de partage
+        // d'un autre compte "full" (les invités n'ont pas accès à /partages).
+        // La section "Partagés avec moi" n'a donc aucun sens et est retirée.
+        $this->createUser();
         $this->login();
 
         $crawler = $this->client->request('GET', '/partages');
 
         $this->assertResponseIsSuccessful();
-        $this->assertStringContainsString('partage-entrant.jpg', $crawler->filter('body')->text());
+        $this->assertSelectorNotExists('[data-testid="shares-incoming-list"]');
+        $this->assertSelectorNotExists('[data-testid="shares-incoming-empty"]');
+        $this->assertStringNotContainsString('Partagés avec moi', $crawler->filter('body')->text());
     }
 
     public function testSidebarLinkPointsToSharesPage(): void

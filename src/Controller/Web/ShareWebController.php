@@ -50,23 +50,17 @@ final class ShareWebController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
-        $shares = $this->shareRepository->findByUser($user, limit: 100);
-
-        $outgoing = [];
-        $incoming = [];
-
-        foreach ($shares as $share) {
-            $row = [
+        // findByUser retourne owner OU guest, mais HomeCloud est mono-owner
+        // par instance : l'utilisateur connecté ici est toujours l'owner, il
+        // n'y a donc jamais de partage "reçu" à distinguer (cf. GuestRestrictionChecker,
+        // les invités n'ont pas accès à cette page).
+        $outgoing = array_map(
+            fn ($share) => [
                 'share'        => $share,
                 'resourceName' => $this->resolveResourceName($share),
-            ];
-
-            if ($share->getOwner()->getId()->equals($user->getId())) {
-                $outgoing[] = $row;
-            } else {
-                $incoming[] = $row;
-            }
-        }
+            ],
+            $this->shareRepository->findByUser($user, limit: 100),
+        );
 
         $shareLinks = array_map(
             fn ($link) => [
@@ -78,7 +72,6 @@ final class ShareWebController extends AbstractController
 
         return $this->render('web/shares.html.twig', [
             'outgoing'   => $outgoing,
-            'incoming'   => $incoming,
             'shareLinks' => $shareLinks,
         ]);
     }
