@@ -1,0 +1,11 @@
+/*
+ * assets/styles/share-modal.css
+ * Styles pour la modale de partage (templates/components/ShareModal.html.twig)
+ */
+
+.hc-share-guest-option {
+  border: 1px solid transparent;
+  background: var(--hc-accent-soft);
+  color: var(--hc-accent);
+  cursor: pointer;
+}
