@@ -1,99 +1,36 @@
-<div id="new-menu-btn-wrapper" style="position:relative; margin-bottom:0.5rem;">
+<div class="hc-new-menu-btn-wrapper" data-controller="new-menu">
 
-    <button id="new-menu-btn"
-            data-testid="new-btn"
+    <button data-testid="new-btn"
             type="button"
-            class="hc-btn-soft"
-            style="width:100%; display:flex; align-items:center; gap:0.5rem; padding:0.6rem 1rem;
-                   border-radius:6px; background:var(--hc-accent-soft); border:none;
-                   cursor:pointer;
-                   font-size:0.875rem; font-weight:600; color:var(--hc-accent);">
-        <span style="font-size:1.1rem; font-weight:300;">＋</span> Nouveau
+            class="hc-btn-soft hc-new-menu-btn"
+            data-new-menu-target="button"
+            data-action="click->new-menu#toggle">
+        <span class="hc-new-menu-btn-plus">＋</span> Nouveau
     </button>
 
+    {# Menu — absolute sous le bouton, hors stacking context backdrop-filter #}
+    <div data-testid="new-menu" class="hc-new-menu" data-new-menu-target="menu">
+
+        <button data-testid="new-menu-new-folder"
+                type="button"
+                class="hc-new-menu-item"
+                data-new-menu-target="newFolderButton"
+                data-action="click->new-menu#openFolderModal">
+            <span><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-folder"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg></span> Nouveau dossier
+        </button>
+
+        <hr class="hc-new-menu-separator">
+
+        <label data-testid="new-menu-import-file" class="hc-new-menu-item">
+            <span><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-file"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg></span> Importer des fichiers
+            <input type="file" class="hc-new-menu-file-input" multiple
+                   data-new-menu-target="fileInput" data-action="change->new-menu#filesSelected">
+        </label>
+
+        <label data-testid="new-menu-import-folder" class="hc-new-menu-item">
+            <span><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-folder"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg></span> Importer un dossier
+            <input type="file" webkitdirectory multiple class="hc-new-menu-file-input"
+                   data-new-menu-target="folderInput" data-action="change->new-menu#folderSelected">
+        </label>
+    </div>
 </div>
-
-{# Menu — absolute sous le bouton, hors stacking context backdrop-filter #}
-<div id="new-menu"
-     data-testid="new-menu"
-     style="display:none; position:fixed; background:#ffffff; color:#111827;
-            border-radius:0.8rem; box-shadow:0 4px 24px 0 rgba(31,38,135,0.15);
-            border:1px solid #e5e7eb; padding:0.25rem 0; z-index:9999; min-width:200px;">
-
-    <button id="new-menu-new-folder-btn"
-            data-testid="new-menu-new-folder"
-            type="button"
-            style="width:100%; display:flex; align-items:center; gap:0.75rem;
-                   padding:0.65rem 1rem; background:none; border:none;
-                   font-size:0.875rem; color:#111827; text-align:left; cursor:pointer;"
-            onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='none'">
-        <span><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-folder"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg></span> Nouveau dossier
-    </button>
-
-    <hr style="margin:0.25rem 0; border:none; border-top:1px solid #f3f4f6;">
-
-    <label data-testid="new-menu-import-file"
-           style="width:100%; display:flex; align-items:center; gap:0.75rem;
-                  padding:0.65rem 1rem; font-size:0.875rem; color:#111827; cursor:pointer;"
-           onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='none'">
-        <span><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-file"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg></span> Importer des fichiers
-        <input type="file" id="new-menu-file-input" multiple style="display:none;">
-    </label>
-
-    <label data-testid="new-menu-import-folder"
-           style="width:100%; display:flex; align-items:center; gap:0.75rem;
-                  padding:0.65rem 1rem; font-size:0.875rem; color:#111827; cursor:pointer;"
-           onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='none'">
-        <span><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-folder"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg></span> Importer un dossier
-        <input type="file" id="new-menu-folder-input" webkitdirectory multiple style="display:none;">
-    </label>
-</div>
-
-<script>
-(function () {
-    var btn         = document.getElementById('new-menu-btn');
-    var menu        = document.getElementById('new-menu');
-    var folderBtn   = document.getElementById('new-menu-new-folder-btn');
-    var fileInput   = document.getElementById('new-menu-file-input');
-    var folderInput = document.getElementById('new-menu-folder-input');
-
-    function positionMenu() {
-        var rect = btn.getBoundingClientRect();
-        menu.style.top   = (rect.bottom + window.scrollY + 4) + 'px';
-        menu.style.left  = rect.left + 'px';
-        menu.style.width = rect.width + 'px';
-    }
-
-    function openMenu()  { positionMenu(); menu.style.display = 'block'; }
-    function closeMenu() { menu.style.display = 'none'; }
-    function isOpen()    { return menu.style.display !== 'none'; }
-
-    btn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        isOpen() ? closeMenu() : openMenu();
-    });
-
-    folderBtn.addEventListener('click', function () {
-        closeMenu();
-        document.dispatchEvent(new CustomEvent('new-menu:open-folder-modal'));
-    });
-
-    fileInput.addEventListener('change', function () {
-        var files = Array.from(fileInput.files);
-        fileInput.value = '';
-        if (files.length === 0) return;
-        closeMenu();
-        document.dispatchEvent(new CustomEvent('hc:files-selected', { detail: { files: files } }));
-    });
-
-    folderInput.addEventListener('change', function () {
-        folderInput.value = '';
-        closeMenu();
-        alert('Folder import — coming soon.');
-    });
-
-    document.addEventListener('click', function (e) {
-        if (!btn.contains(e.target) && !menu.contains(e.target)) closeMenu();
-    });
-}());
-</script>

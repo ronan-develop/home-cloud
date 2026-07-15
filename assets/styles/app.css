@@ -17,6 +17,7 @@
 @import "./share-modal.css";
 @import "./new-folder-modal.css";
 @import "./new-album-modal.css";
+@import "./new-menu.css";
 @import "./main.css";
 
 nav .navbar-logo .navbar-logo-cloud {

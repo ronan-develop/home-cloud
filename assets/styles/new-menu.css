@@ -1,0 +1,71 @@
+/*
+ * assets/styles/new-menu.css
+ * Styles pour le bouton "Nouveau" et son menu déroulant
+ * (templates/components/NewMenu.html.twig)
+ */
+
+.hc-new-menu-btn-wrapper {
+  position: relative;
+  margin-bottom: 0.5rem;
+}
+
+.hc-new-menu-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  background: var(--hc-accent-soft);
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--hc-accent);
+}
+
+.hc-new-menu-btn-plus {
+  font-size: 1.1rem;
+  font-weight: 300;
+}
+
+.hc-new-menu {
+  display: none;
+  position: fixed;
+  background: var(--hc-surface);
+  color: var(--hc-text);
+  border-radius: 0.8rem;
+  box-shadow: 0 4px 24px 0 rgba(31, 38, 135, 0.15);
+  border: 1px solid var(--hc-border);
+  padding: 0.25rem 0;
+  z-index: 9999;
+  min-width: 200px;
+}
+
+.hc-new-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  background: none;
+  border: none;
+  font-size: 0.875rem;
+  color: var(--hc-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.hc-new-menu-item:hover {
+  background: var(--hc-surface-2);
+}
+
+.hc-new-menu-separator {
+  margin: 0.25rem 0;
+  border: none;
+  border-top: 1px solid var(--hc-border);
+}
+
+.hc-new-menu-file-input {
+  display: none;
+}
