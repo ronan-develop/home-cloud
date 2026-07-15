@@ -58,6 +58,10 @@ class Album
     #[ORM\Column(type: 'string', length: 12, options: ['default' => self::VISIBILITY_PRIVATE])]
     private string $visibility = self::VISIBILITY_PRIVATE;
 
+    #[ORM\ManyToOne(targetEntity: Media::class)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?Media $coverMedia = null;
+
     public function __construct(string $name, User $owner)
     {
         $trimmed = trim($name);
@@ -131,6 +135,48 @@ class Album
         if ($albumMedia !== null) {
             $this->albumMedias->removeElement($albumMedia);
         }
+
+        if ($this->coverMedia === $media) {
+            $this->coverMedia = null;
+        }
+    }
+
+    public function getCoverMedia(): ?Media
+    {
+        return $this->coverMedia;
+    }
+
+    /**
+     * @throws \InvalidArgumentException si le média ne fait pas partie de l'album.
+     */
+    public function setCoverMedia(Media $media): void
+    {
+        if ($this->findAlbumMedia($media) === null) {
+            throw new \InvalidArgumentException('Ce média ne fait pas partie de l\'album.');
+        }
+
+        $this->coverMedia = $media;
+    }
+
+    /**
+     * Couverture effective à afficher : la couverture explicite si définie
+     * (et pourvue d'un thumbnail), sinon le premier média par position ayant
+     * un thumbnail — cf. le premier média n'a pas toujours de thumbnail
+     * (traitement async pas terminé, échec de génération...).
+     */
+    public function resolveCoverMedia(): ?Media
+    {
+        if ($this->coverMedia !== null && $this->coverMedia->getThumbnailPath() !== null) {
+            return $this->coverMedia;
+        }
+
+        foreach ($this->getMedias() as $media) {
+            if ($media->getThumbnailPath() !== null) {
+                return $media;
+            }
+        }
+
+        return null;
     }
 
     /**
