@@ -54,11 +54,15 @@ class ResetPasswordController extends AbstractController
             return $this->json(['error' => 'Token et nouveau mot de passe requis'], Response::HTTP_BAD_REQUEST);
         }
         try {
-            $this->passwordResetService->resetPassword($token, $newPassword);
+            $user = $this->passwordResetService->resetPassword($token, $newPassword);
         } catch (\SymfonyCasts\Bundle\ResetPassword\Exception\ResetPasswordExceptionInterface $e) {
             return $this->json(['error' => 'Token invalide ou expiré'], Response::HTTP_BAD_REQUEST);
         }
-        return $this->json(['message' => 'Votre mot de passe a été réinitialisé avec succès.']);
+
+        return $this->json([
+            'message' => 'Votre mot de passe a été réinitialisé avec succès.',
+            'email'   => $user->getEmail(),
+        ]);
     }
 
     #[Route('/api/request-reset-password', name: 'api_request_reset_password', methods: ['POST'])]
