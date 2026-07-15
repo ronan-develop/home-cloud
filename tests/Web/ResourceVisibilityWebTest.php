@@ -97,6 +97,40 @@ final class ResourceVisibilityWebTest extends WebTestCase
         $this->assertSame(File::VISIBILITY_PRIVATE, $reloadedFile->getVisibility());
     }
 
+    public function testMakingResourceLinkAllowedEnablesPublicShareLinkCreation(): void
+    {
+        // Une ressource est private par défaut : basculer en link_allowed est
+        // le préalable indispensable avant que l'onglet "Lien" de ShareModal
+        // puisse créer un ShareLink (sinon 403 via VisibilityChecker).
+        $owner = $this->createOwner();
+        $folder = new Folder('Docs', $owner);
+        $folder->setVisibility(Folder::VISIBILITY_LINK_ALLOWED);
+        $this->em->persist($folder);
+        $file = new File('photo.jpg', 'image/jpeg', 1024, 'test/photo.jpg', $folder, $owner);
+        $this->em->persist($file);
+        $this->em->flush();
+        $this->assertSame(File::VISIBILITY_PRIVATE, $file->getVisibility(), 'private par défaut');
+
+        $this->loginAs('visibility-owner@example.com');
+
+        $crawler = $this->client->request('GET', '/explorer');
+        $csrfToken = $crawler->filter('form[action*="/resource-visibility-update"] input[name="_token"]')
+            ->first()->attr('value');
+
+        $this->client->request('POST', '/resource-visibility-update', [
+            '_token'       => $csrfToken,
+            'resourceType' => 'file',
+            'resourceId'   => $file->getId()->toRfc4122(),
+            'visibility'   => 'link_allowed',
+        ]);
+
+        $this->assertResponseRedirects();
+
+        $this->em->clear();
+        $reloaded = $this->em->getRepository(File::class)->find($file->getId());
+        $this->assertSame(File::VISIBILITY_LINK_ALLOWED, $reloaded->getVisibility());
+    }
+
     public function testNonOwnerCannotChangeVisibility(): void
     {
         $owner = $this->createOwner();

@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace App\Controller\Web;
 
+use App\Entity\Album;
+use App\Entity\File;
+use App\Entity\Folder;
 use App\Entity\Share;
 use App\Interface\OwnershipCheckerInterface;
 use App\Security\ResourceLocator;
 use App\Security\VisibilityRevoker;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,9 +20,12 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Uid\Uuid;
 
 /**
- * Bascule de visibilité d'une ressource. Seule direction supportée pour
- * l'instant : repasser en `private` (le bouton d'arrêt d'urgence), qui
- * révoque en cascade tous les ShareLink actifs — cf. VisibilityRevoker.
+ * Bascule de visibilité d'une ressource, dans les deux sens :
+ * - vers `private` (bouton d'arrêt d'urgence) : révoque en cascade tous les
+ *   ShareLink actifs — cf. VisibilityRevoker.
+ * - vers `link_allowed` (opt-in explicite) : préalable indispensable avant
+ *   que ShareLink puisse être créé sur cette ressource (VisibilityChecker
+ *   refuse sinon, cf. ShareLinkFactory).
  */
 #[IsGranted('ROLE_USER')]
 final class ResourceVisibilityWebController extends AbstractController
@@ -29,6 +36,7 @@ final class ResourceVisibilityWebController extends AbstractController
         private readonly ResourceLocator $resourceLocator,
         private readonly OwnershipCheckerInterface $ownershipChecker,
         private readonly VisibilityRevoker $visibilityRevoker,
+        private readonly EntityManagerInterface $em,
     ) {}
 
     #[Route('/resource-visibility-update', name: 'app_resource_visibility_update', methods: ['POST'])]
@@ -53,6 +61,14 @@ final class ResourceVisibilityWebController extends AbstractController
         if ($visibility === 'private') {
             $this->visibilityRevoker->makePrivate($resource, $resourceType, $uuid);
             $this->addFlash('success', 'Ressource repassée en privé. Les liens de partage actifs ont été révoqués.');
+        } elseif ($visibility === 'link_allowed') {
+            $resource->setVisibility(match (true) {
+                $resource instanceof File   => File::VISIBILITY_LINK_ALLOWED,
+                $resource instanceof Folder => Folder::VISIBILITY_LINK_ALLOWED,
+                $resource instanceof Album  => Album::VISIBILITY_LINK_ALLOWED,
+            });
+            $this->em->flush();
+            $this->addFlash('success', 'Partage par lien autorisé pour cette ressource.');
         }
 
         return $this->redirect($request->headers->get('referer') ?? '/explorer');

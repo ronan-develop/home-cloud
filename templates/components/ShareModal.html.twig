@@ -83,36 +83,67 @@
     </form>
 
     {# Onglet "Lien" — lien public sans compte (ShareLink) #}
-    <form method="post" action="{{ path('app_share_link_create') }}" class="share-tab-panel flex flex-col hidden" data-tab-panel="link">
-      <input type="hidden" name="_token" value="{{ csrf_token('share-link-create') }}">
-      <input type="hidden" name="resourceType" value="{{ resourceType }}">
-      <input type="hidden" name="resourceId" value="{{ resourceId }}">
+    <div class="share-tab-panel flex flex-col hidden" data-tab-panel="link">
 
-      <div class="px-6 pt-4">
-        <p class="text-sm" style="color: var(--hc-text-2);">
-          Toute personne recevant ce lien pourra consulter cette ressource sans
-          créer de compte, en lecture seule, jusqu'à expiration.
-        </p>
-      </div>
+      {# Étape 1 — autoriser explicitement le partage par lien. Toujours
+         affiché (pas de moyen simple de connaître ici l'état actuel de
+         `visibility` sans requête supplémentaire) : le clic est idempotent,
+         sans effet nuisible si la ressource est déjà link_allowed. #}
+      <form method="post" action="{{ path('app_resource_visibility_update') }}" class="flex flex-col">
+        <input type="hidden" name="_token" value="{{ csrf_token('resource-visibility-update') }}">
+        <input type="hidden" name="resourceType" value="{{ resourceType }}">
+        <input type="hidden" name="resourceId" value="{{ resourceId }}">
+        <input type="hidden" name="visibility" value="link_allowed">
 
-      <div class="flex gap-2 justify-end px-6 py-4 mt-2" style="border-top: 1px solid var(--hc-border);">
-        <button type="button" class="share-modal-cancel"
-                style="background: none; border: none; color: var(--hc-text-2); cursor: pointer; padding: 0.5rem 1rem; border-radius: 0.375rem; font-size: 0.875rem; font-weight: 500;">
-          Annuler
-        </button>
-        <button type="submit" data-testid="share-link-submit"
-                class="px-4 py-2 rounded-md text-sm font-semibold"
-                style="background: var(--hc-accent); color: var(--hc-accent-contrast, #fff); border: none; cursor: pointer;">
-          Créer le lien
-        </button>
-      </div>
-    </form>
+        <div class="px-6 pt-4">
+          <p class="text-sm" style="color: var(--hc-text-2);">
+            Une ressource est privée par défaut. Autorisez le partage par lien
+            avant de pouvoir en créer un.
+          </p>
+        </div>
+
+        <div class="flex justify-end px-6 pt-3">
+          <button type="submit" data-testid="allow-link-sharing-submit"
+                  class="px-4 py-2 rounded-md text-sm font-semibold"
+                  style="background: var(--hc-surface-2); color: var(--hc-text); border: 1px solid var(--hc-border); cursor: pointer;">
+            Autoriser le partage par lien
+          </button>
+        </div>
+      </form>
+
+      {# Étape 2 — créer le lien effectif (échoue en 403 tant que l'étape 1
+         n'a pas été faite, cf. VisibilityChecker côté serveur). #}
+      <form method="post" action="{{ path('app_share_link_create') }}" class="flex flex-col">
+        <input type="hidden" name="_token" value="{{ csrf_token('share-link-create') }}">
+        <input type="hidden" name="resourceType" value="{{ resourceType }}">
+        <input type="hidden" name="resourceId" value="{{ resourceId }}">
+
+        <div class="px-6 pt-4">
+          <p class="text-sm" style="color: var(--hc-text-2);">
+            Toute personne recevant ce lien pourra consulter cette ressource sans
+            créer de compte, en lecture seule, jusqu'à expiration.
+          </p>
+        </div>
+
+        <div class="flex gap-2 justify-end px-6 py-4 mt-2" style="border-top: 1px solid var(--hc-border);">
+          <button type="button" class="share-modal-cancel"
+                  style="background: none; border: none; color: var(--hc-text-2); cursor: pointer; padding: 0.5rem 1rem; border-radius: 0.375rem; font-size: 0.875rem; font-weight: 500;">
+            Annuler
+          </button>
+          <button type="submit" data-testid="share-link-submit"
+                  class="px-4 py-2 rounded-md text-sm font-semibold"
+                  style="background: var(--hc-accent); color: var(--hc-accent-contrast, #fff); border: none; cursor: pointer;">
+            Créer le lien
+          </button>
+        </div>
+      </form>
+    </div>
 
     {# Bouton d'arrêt d'urgence — repasse la ressource en private, révoque
-       en cascade tous les liens publics actifs (visibility déjà link_allowed
-       si un lien a été créé). Formulaire caché : présent sur toutes les
-       ressources pour fournir le token CSRF, l'action reste toujours possible
-       même si aucun lien n'a jamais été créé (no-op silencieux côté serveur). #}
+       en cascade tous les liens publics actifs. Formulaire caché : présent
+       sur toutes les ressources pour fournir le token CSRF, l'action reste
+       toujours possible même si aucun lien n'a jamais été créé (no-op
+       silencieux côté serveur). #}
     <form method="post" action="{{ path('app_resource_visibility_update') }}" class="hidden" data-testid="resource-visibility-private-form">
       <input type="hidden" name="_token" value="{{ csrf_token('resource-visibility-update') }}">
       <input type="hidden" name="resourceType" value="{{ resourceType }}">
