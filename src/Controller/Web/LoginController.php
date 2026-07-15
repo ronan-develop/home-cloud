@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller\Web;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
@@ -16,14 +17,17 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 final class LoginController extends AbstractController
 {
     #[Route('/login', name: 'app_login')]
-    public function login(AuthenticationUtils $authenticationUtils): Response
+    public function login(Request $request, AuthenticationUtils $authenticationUtils): Response
     {
         if ($this->getUser()) {
             return $this->redirectToRoute('app_home');
         }
 
+        // ?email= pré-remplit le champ (ex: après un reset de mot de passe
+        // invité) — pur confort UX, le mot de passe reste toujours requis et
+        // vérifié par form_login, aucun accès n'est accordé par ce paramètre.
         return $this->render('web/login.html.twig', [
-            'last_username' => $authenticationUtils->getLastUsername(),
+            'last_username' => $authenticationUtils->getLastUsername() ?: (string) $request->query->get('email', ''),
             'error'         => $authenticationUtils->getLastAuthenticationError(),
         ]);
     }
