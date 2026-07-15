@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tests\Web;
 
+use App\Entity\ResetPasswordRequest;
 use App\Entity\User;
 use App\Tests\Web\Fixtures\WebFixturesTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
 
 /**
  * Gestion CRUD des comptes invités (créer/éditer/supprimer) — HomeCloud
@@ -27,6 +29,7 @@ final class GuestManagementWebTest extends WebTestCase
         $this->em = static::getContainer()->get(EntityManagerInterface::class);
         $conn = $this->em->getConnection();
         $conn->executeStatement('SET FOREIGN_KEY_CHECKS=0');
+        $conn->executeStatement('DELETE FROM reset_password_request');
         $conn->executeStatement('DELETE FROM share_links');
         $conn->executeStatement('DELETE FROM shares');
         $conn->executeStatement('DELETE FROM users');
@@ -97,6 +100,39 @@ final class GuestManagementWebTest extends WebTestCase
     {
         $this->createOwner();
         $guest = $this->createGuest();
+        $this->loginAs('guest-mgmt-owner@example.com');
+
+        $crawler = $this->client->request('GET', '/invites');
+        $token = $crawler->filter('form[action*="/invites/' . $guest->getId() . '/delete"] input[name="_token"]')
+            ->first()->attr('value');
+
+        $this->client->request('POST', '/invites/' . $guest->getId() . '/delete', [
+            '_token' => $token,
+        ]);
+
+        $this->assertResponseRedirects('/invites');
+
+        $this->em->clear();
+        $this->assertNull($this->em->getRepository(User::class)->find($guest->getId()));
+    }
+
+    public function testDeleteGuestAccountWithPendingActivationRequestSucceeds(): void
+    {
+        // Reproduit le bug réel : un invité créé via GuestAccountCreator a
+        // toujours une ResetPasswordRequest tant que le token d'activation
+        // n'a pas expiré/été utilisé. La supprimer sans nettoyer cette ligne
+        // violait la contrainte FK (500 ForeignKeyConstraintViolationException).
+        $this->createOwner();
+        $guest = $this->createGuest();
+
+        $resetPasswordHelper = static::getContainer()->get(ResetPasswordHelperInterface::class);
+        $resetPasswordHelper->generateResetToken($guest);
+
+        $this->assertNotNull(
+            $this->em->getRepository(ResetPasswordRequest::class)->findOneBy(['user' => $guest]),
+            'précondition : une ResetPasswordRequest doit exister pour ce guest',
+        );
+
         $this->loginAs('guest-mgmt-owner@example.com');
 
         $crawler = $this->client->request('GET', '/invites');
