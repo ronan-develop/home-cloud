@@ -280,6 +280,14 @@ final class ShareWebTest extends WebTestCase
         // par followRedirect() réinitialise le collecteur d'événements mailer.
         self::assertEmailCount(1);
 
+        // L'email d'activation héritait de base.html.twig (layout applicatif
+        // complet : importmap, Stimulus...) — inadapté à un client mail.
+        $activationHtml = self::getMailerMessage()->getHtmlBody();
+        $this->assertStringNotContainsString('data-controller', $activationHtml);
+        $this->assertStringNotContainsString('importmap', $activationHtml);
+        $this->assertStringContainsString('<table', $activationHtml);
+        $this->assertStringContainsString('style=', $activationHtml);
+
         $this->client->followRedirect();
         $this->assertSelectorTextContains('.flash-success', 'nouvel-invite@example.com');
 

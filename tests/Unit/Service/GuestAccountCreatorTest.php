@@ -86,4 +86,5 @@ final class GuestAccountCreatorTest extends TestCase
             $sentEmail->getContext()['activationUrl'],
         );
     }
+
 }

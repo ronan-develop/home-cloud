@@ -1,13 +1,71 @@
-{% extends 'base.html.twig' %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invitation HomeCloud</title>
+</head>
+<body style="margin:0; padding:0; background-color:#FAFAFA; font-family:Arial, Helvetica, sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#FAFAFA;">
+<tr>
+<td align="center" style="padding:32px 16px;">
 
-{% block title %}Invitation HomeCloud{% endblock %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:480px; background-color:#FFFFFF; border-radius:12px; border:1px solid #e5e5e5;">
 
-{% block body %}
-<p>Bonjour,</p>
+<tr>
+<td align="center" style="padding:28px 32px 0 32px;">
+<span style="font-size:20px; font-weight:bold; color:#A34B4B;">HomeCloud</span>
+</td>
+</tr>
 
-<p>Quelqu'un vient de partager une ressource avec vous sur HomeCloud. Un compte a été créé pour vous.</p>
+<tr>
+<td style="padding:24px 32px 8px 32px; color:#0b1220; font-size:15px; line-height:1.5;">
+Bonjour,
+</td>
+</tr>
 
-<p><a href="{{ activationUrl }}">Cliquez ici pour définir votre mot de passe et accéder à votre compte</a></p>
+<tr>
+<td style="padding:0 32px 24px 32px; color:#0b1220; font-size:15px; line-height:1.5;">
+Quelqu'un vient de partager une ressource avec vous sur HomeCloud. Un compte a été créé pour vous.
+</td>
+</tr>
 
-<p>Si vous ne vous attendiez pas à cette invitation, vous pouvez ignorer cet email.</p>
-{% endblock %}
+<tr>
+<td align="center" style="padding:0 32px 32px 32px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td align="center" bgcolor="#A34B4B" style="border-radius:8px;">
+<a href="{{ activationUrl }}" style="display:inline-block; padding:12px 28px; font-size:15px; font-weight:bold; color:#FFFFFF; text-decoration:none; border-radius:8px;">
+Définir mon mot de passe
+</a>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+
+<tr>
+<td style="padding:0 32px 28px 32px; border-top:1px solid #e5e5e5; padding-top:20px;">
+<span style="font-size:12px; color:#8a8f98;">
+Si vous ne vous attendiez pas à cette invitation, vous pouvez ignorer cet email.
+<br>
+Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur&nbsp;: {{ activationUrl }}
+</span>
+</td>
+</tr>
+
+</table>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:480px;">
+<tr>
+<td align="center" style="padding:16px 32px; color:#8a8f98; font-size:12px;">
+HomeCloud — votre cloud personnel
+</td>
+</tr>
+</table>
+
+</td>
+</tr>
+</table>
+</body>
+</html>
