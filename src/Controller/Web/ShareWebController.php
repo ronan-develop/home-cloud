@@ -15,6 +15,7 @@ use App\Interface\UserRepositoryInterface;
 use App\Security\OwnershipChecker;
 use App\Security\ResourceLocator;
 use App\Service\GuestAccountCreator;
+use App\Service\ShareNotificationMailer;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -42,6 +43,7 @@ final class ShareWebController extends AbstractController
         private readonly OwnershipChecker $ownershipChecker,
         private readonly EntityManagerInterface $em,
         private readonly GuestAccountCreator $guestAccountCreator,
+        private readonly ShareNotificationMailer $shareNotificationMailer,
     ) {}
 
     #[Route('/partages', name: 'app_shares')]
@@ -128,6 +130,7 @@ final class ShareWebController extends AbstractController
 
         foreach ($emails as $email) {
             $guest = $this->userRepository->findOneBy(['email' => $email]);
+            $isNewGuestAccount = false;
 
             if ($guest === null) {
                 if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
@@ -139,6 +142,7 @@ final class ShareWebController extends AbstractController
                 // un compte invité (sans mot de passe utilisable, cf.
                 // GuestAccountCreator) et on partage avec ce nouveau compte.
                 $guest = $this->guestAccountCreator->create($email);
+                $isNewGuestAccount = true;
             }
 
             if ($guest->getId()->equals($owner->getId())) {
@@ -155,6 +159,12 @@ final class ShareWebController extends AbstractController
                 $this->em->detach($share);
                 $failed[] = $email . ' (partage déjà existant)';
                 continue;
+            }
+
+            // Un compte tout juste créé a déjà reçu son email d'activation
+            // (GuestAccountCreator) — ne pas doubler la notification.
+            if (!$isNewGuestAccount) {
+                $this->shareNotificationMailer->notify($share, $this->resolveResourceName($share));
             }
 
             $shared[] = $email;

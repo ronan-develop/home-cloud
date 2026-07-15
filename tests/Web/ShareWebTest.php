@@ -196,6 +196,34 @@ final class ShareWebTest extends WebTestCase
         $this->assertSelectorTextContains('.flash-success', 'partagé');
     }
 
+    public function testCreateShareWithExistingGuestSendsNotificationEmail(): void
+    {
+        // Un invité qui a déjà un compte actif (créé lors d'un partage
+        // antérieur) ne recevait jusqu'ici aucun email pour les partages
+        // suivants — seul le tout premier email (activation) était envoyé.
+        $owner = $this->createUser();
+        $this->createUser('invite@example.com');
+        $album = $this->createAlbum($owner, 'Vacances');
+
+        $this->login();
+        $token = $this->shareCreateToken($album->getId()->toRfc4122());
+
+        $this->client->request('POST', '/share-create', [
+            '_token'       => $token,
+            'guestEmail'   => 'invite@example.com',
+            'resourceType' => 'album',
+            'resourceId'   => $album->getId()->toRfc4122(),
+            'permission'   => 'read',
+        ]);
+
+        $this->assertResponseRedirects('/albums/' . $album->getId()->toRfc4122());
+        self::assertEmailCount(1);
+
+        $email = self::getMailerMessage();
+        $this->assertStringContainsString('invite@example.com', $email->getTo()[0]->toString());
+        $this->assertStringContainsString('Vacances', $email->getHtmlBody());
+    }
+
     public function testCreateShareWithUnknownEmailCreatesGuestAccountAndShares(): void
     {
         // Depuis l'introduction de GuestAccountCreator, un email inconnu ne
