@@ -26,7 +26,7 @@ Bonjour,
 
 <tr>
 <td style="padding:0 32px 24px 32px; color:#0b1220; font-size:15px; line-height:1.5;">
-Quelqu'un vient de partager une ressource avec vous sur HomeCloud. Un compte a été créé pour vous.
+{% if ownerName %}<strong>{{ ownerName }}</strong> vient de partager une ressource avec vous sur son stockage personnalisé HomeCloud.{% else %}Quelqu'un vient de partager une ressource avec vous sur son stockage personnalisé HomeCloud.{% endif %} Un compte a été créé pour vous.
 </td>
 </tr>
 

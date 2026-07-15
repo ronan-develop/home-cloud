@@ -141,7 +141,7 @@ final class ShareWebController extends AbstractController
                 // Email inconnu mais valide : plutôt que d'échouer, on crée
                 // un compte invité (sans mot de passe utilisable, cf.
                 // GuestAccountCreator) et on partage avec ce nouveau compte.
-                $guest = $this->guestAccountCreator->create($email);
+                $guest = $this->guestAccountCreator->create($email, $owner);
                 $isNewGuestAccount = true;
             }
 
