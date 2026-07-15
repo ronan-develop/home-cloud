@@ -141,4 +141,19 @@ class ResetPasswordControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
     }
+
+    public function testResetPasswordConfirmPageHasNoInlineScript(): void
+    {
+        // La page utilisait un <script> inline pour poster le nouveau mot de
+        // passe en fetch() — migré vers un contrôleur Stimulus, comme le reste
+        // des composants (ShareModal, NewFolderModal...).
+        $this->client->request('GET', '/reset-password/some-fake-token-for-page-rendering-test');
+
+        self::assertResponseIsSuccessful();
+        $html = (string) $this->client->getResponse()->getContent();
+
+        self::assertStringNotContainsString('reset-password-confirm-form', $html);
+        self::assertStringNotContainsString('fetch(\'/api/reset-password\'', $html);
+        self::assertStringContainsString('data-controller="reset-password-confirm"', $html);
+    }
 }
