@@ -10,14 +10,18 @@
 
 {% block body %}
 
+<div class="hc-layout-root" data-controller="token-bridge prevent-stray-drop drawer-theme"
+     data-token-bridge-user-id-value="{{ app.user ? app.user.id : '' }}"
+     data-token-bridge-token-url-value="{{ path('app_web_token') }}">
+
 {# ── Drawer overlay (mobile) ── #}
-<div id="drawer-overlay" class="drawer-overlay" onclick="HCCloseDrawer()"></div>
+<div id="drawer-overlay" class="drawer-overlay" data-drawer-theme-target="overlay" data-action="click->drawer-theme#closeDrawer"></div>
 
 {# ── App layout ── #}
 <div class="hc-app-grid">
 
     {# ── Sidebar (desktop : sticky | mobile : drawer) ── #}
-    <aside id="hc-sidebar" class="hc-sidebar">
+    <aside id="hc-sidebar" class="hc-sidebar" data-drawer-theme-target="sidebar">
 
         {# En-tête : logo + bouton fermeture (mobile) #}
         <div class="hc-sidebar-header">
@@ -27,7 +31,7 @@
                 </div>
                 <span class="hc-brand-name">HomeCloud</span>
             </a>
-            <button class="btn btn-ghost btn-icon hc-sidebar-close" onclick="HCCloseDrawer()" title="Fermer" aria-label="Fermer le menu">
+            <button class="btn btn-ghost btn-icon hc-sidebar-close" data-action="click->drawer-theme#closeDrawer" title="Fermer" aria-label="Fermer le menu">
                 <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path d="M18 6L6 18M6 6l12 12"/>
                 </svg>
@@ -96,7 +100,7 @@
         <header class="hc-topbar">
             {# Zone gauche : burger #}
             <div class="hc-topbar-left">
-                <button class="btn btn-ghost btn-icon hc-topbar-burger" onclick="HCOpenDrawer()" title="Menu" aria-label="Ouvrir le menu">
+                <button class="btn btn-ghost btn-icon hc-topbar-burger" data-action="click->drawer-theme#openDrawer" title="Menu" aria-label="Ouvrir le menu">
                     <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path d="M3 6h18M3 12h18M3 18h18"/>
                     </svg>
@@ -113,12 +117,12 @@
 
             {# Zone droite : thème + avatar + logout #}
             <div class="hc-topbar-right">
-                <button class="btn btn-soft btn-icon" id="hc-theme-toggle" onclick="HCToggleTheme()" title="Basculer le thème" aria-label="Changer le thème">
-                    <svg id="hc-theme-icon-sun" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <button class="btn btn-soft btn-icon" id="hc-theme-toggle" data-action="click->drawer-theme#toggleTheme" title="Basculer le thème" aria-label="Changer le thème">
+                    <svg data-drawer-theme-target="sunIcon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="5"/>
                         <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
                     </svg>
-                    <svg id="hc-theme-icon-moon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hidden">
+                    <svg data-drawer-theme-target="moonIcon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hidden">
                         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
                     </svg>
                 </button>
@@ -188,296 +192,12 @@
     </a>
 </div>
 
-{# === Modal sélection dossier pour upload === #}
-<div id="upload-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
-        <div class="flex items-center justify-between mb-1">
-            <h2 class="text-base font-semibold text-gray-800 dark:text-gray-100">Importer</h2>
-            <button onclick="closeModal('upload-modal')" class="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
-        </div>
-        <p class="text-sm text-gray-500 mb-4 truncate flex items-center gap-1.5">
-            {{ icons.icon('file', 14) }}
-            <span id="upload-filename"></span>
-        </p>
-
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Destination</p>
-        <div data-testid="upload-folder-list" class="flex flex-col gap-1 max-h-48 overflow-y-auto mb-3">
-            <button type="button" onclick="selectUploadFolder('', this)"
-                    class="folder-opt active-folder flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-left transition-colors">
-                {{ icons.icon('home', 16) }} Mes fichiers (racine)
-            </button>
-            {% for folder in userFolders %}
-                <button type="button" onclick="selectUploadFolder('{{ folder.id }}', this)"
-                        class="folder-opt flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-left
-                               text-gray-600 hover:bg-blue-50 transition-colors">
-                    <span><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-folder"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg></span> {{ folder.name }}
-                </button>
-            {% endfor %}
-        </div>
-
-        <div class="border-t border-gray-100 pt-3 mb-4">
-            <input type="text" id="new-folder-name" placeholder="Ou créer un nouveau dossier…"
-                   oninput="onNewFolderName(this.value)"
-                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-transparent
-                          focus:outline-none focus:ring-2 focus:ring-blue-400/50 dark:border-gray-700
-                          dark:text-white dark:placeholder-gray-500">
-        </div>
-
-        <div id="upload-progress" class="hidden mb-3">
-            <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                <div id="upload-progress-bar" class="h-full bg-blue-500 transition-all duration-300" style="width:0%"></div>
-            </div>
-            <p id="upload-progress-label" class="text-xs text-gray-400 mt-1"></p>
-        </div>
-
-        <div class="flex gap-2 justify-end">
-            <button onclick="closeModal('upload-modal')"
-                    class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 rounded-xl transition-colors">
-                Annuler
-            </button>
-            <button id="upload-submit-btn" onclick="submitUpload()"
-                    class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold
-                           rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2">
-                Uploader {{ icons.icon('upload', 14) }}
-            </button>
-        </div>
-    </div>
-</div>
-
 {# === Modal nouveau dossier === #}
 <twig:NewFolderModal :folders="userFolders" />
 
 {# === Résultats de recherche (barre topbar) === #}
 <twig:MainToolbar />
 
-<script>
-(function () {
-    // ── Token bridge ────────────────────────────────────────────────────
-    var _token = null;
-    var _tokenExp = 0;
-
-    window.HC = {
-        userId: '{{ app.user ? app.user.id : '' }}',
-        getToken: async function () {
-            if (_token && Date.now() < _tokenExp) return _token;
-            var res = await fetch('{{ path('app_web_token') }}');
-            var data = await res.json();
-            _token = data.token;
-            _tokenExp = Date.now() + 14 * 60 * 1000; // 14 min
-            return _token;
-        }
-    };
-
-    // ── new-menu:file-selected → ouvre la modal upload ──────────────────
-    document.addEventListener('new-menu:file-selected', function (e) {
-        var file = e.detail.file;
-        _pendingFile = file;
-        _uploadFolderId = '';
-        document.getElementById('upload-filename').textContent = file.name;
-        document.getElementById('new-folder-name').value = '';
-        document.querySelectorAll('.folder-opt').forEach(function (el) {
-            el.classList.remove('active-folder', 'bg-blue-50', 'text-blue-700');
-            el.classList.add('text-gray-600');
-        });
-        var first = document.querySelector('.folder-opt');
-        if (first) { first.classList.add('active-folder', 'bg-blue-50', 'text-blue-700'); first.classList.remove('text-gray-600'); }
-        document.getElementById('upload-progress').classList.add('hidden');
-        document.getElementById('upload-modal').classList.remove('hidden');
-    });
-
-    window.selectUploadFolder = function (id, btn) {
-        _uploadFolderId = id;
-        document.getElementById('new-folder-name').value = '';
-        document.querySelectorAll('.folder-opt').forEach(function (el) {
-            el.classList.remove('active-folder', 'bg-blue-50', 'text-blue-700');
-            el.classList.add('text-gray-600');
-        });
-        btn.classList.add('active-folder', 'bg-blue-50', 'text-blue-700');
-        btn.classList.remove('text-gray-600');
-    };
-
-    window.onNewFolderName = function (val) {
-        _uploadFolderId = '';
-        document.querySelectorAll('.folder-opt').forEach(function (el) {
-            el.classList.remove('active-folder', 'bg-blue-50', 'text-blue-700');
-            el.classList.add('text-gray-600');
-        });
-    };
-
-    window.submitUpload = async function () {
-        if (!_pendingFile) return;
-        var btn = document.getElementById('upload-submit-btn');
-        btn.disabled = true;
-
-        var token = await HC.getToken();
-        var fd = new FormData();
-        fd.append('file', _pendingFile);
-        fd.append('ownerId', '{{ app.user.id }}');
-
-        var newFolder = document.getElementById('new-folder-name').value.trim();
-        if (newFolder) {
-            fd.append('newFolderName', newFolder);
-        } else if (_uploadFolderId) {
-            fd.append('folderId', _uploadFolderId);
-        }
-
-        var progress = document.getElementById('upload-progress');
-        var bar = document.getElementById('upload-progress-bar');
-        var label = document.getElementById('upload-progress-label');
-        progress.classList.remove('hidden');
-
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', '{{ path('_api_/v1/files_post') }}');
-        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-        xhr.upload.onprogress = function (e) {
-            if (e.lengthComputable) {
-                var pct = Math.round(e.loaded / e.total * 100);
-                bar.style.width = pct + '%';
-                label.textContent = pct + '%';
-            }
-        };
-        xhr.onload = function () {
-            if (xhr.status === 201) {
-                closeModal('upload-modal');
-                window.location.reload();
-            } else {
-                label.textContent = 'Erreur lors de l\'upload.';
-                btn.disabled = false;
-            }
-        };
-        xhr.send(fd);
-    };
-
-    // ── Empêche ouverture browser sur drop hors zone ────────────────────
-    function blockBrowser(e) { e.preventDefault(); }
-    window.addEventListener('dragover', blockBrowser, true);
-    window.addEventListener('drop',     blockBrowser, true);
-
-    // ── Import dossier (stub — feature future) ──────────────────────────
-    window.onFolderSelected = function (input) {
-        input.value = '';
-        alert('Import de dossier — bientôt disponible.');
-    };
-})();
-</script>
-
-<script>
-// Global rename helper: adds rename buttons next to folder names in lists and sidebar
-(function () {
-    function renameFolder(id, currentName) {
-        if (typeof window.openRenameModal === 'function') {
-            window.openRenameModal('folder', id, currentName);
-        }
-    }
-
-    function attachRenameButtons() {
-        // Folder cards and sidebar links
-        document.querySelectorAll('.folder-name').forEach(function (el) {
-            // do not attach rename buttons inside the main sidebar or folder cards (already have their own rename button)
-            if (el.closest('.sidebar')) return;
-            if (el.closest('.folder-card')) return;
-            if (el.dataset.renameAttached) return;
-            el.dataset.renameAttached = '1';
-            var id = null;
-            // attempt to find folder id from nearby elements
-            var link = el.closest('[data-testid]') || el.closest('a') || el;
-            // search for attributes containing id
-            if (link) {
-                var attrs = link.dataset;
-                if (attrs && attrs.testid) {
-                    var m = attrs.testid.match(/folder-(.+)/);
-                    if (m) id = m[1];
-                }
-            }
-            // fallback: try href query param folder
-            if (!id && el.closest('a') && el.closest('a').href) {
-                var href = el.closest('a').href;
-                var match = href.match(/[?&]folder=([0-9a-fA-F\-]+)/);
-                if (match) id = match[1];
-            }
-            // if still no id try data-id attribute
-            if (!id) id = el.getAttribute('data-id') || el.dataset.id || null;
-
-            if (id) {
-                var btn = document.createElement('button');
-                btn.type = 'button';
-                btn.title = 'Renommer';
-                btn.className = 'inline-rename-btn ml-2 text-sm text-gray-400 hover:text-green-600';
-                btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-                btn.style.border = 'none'; btn.style.background = 'none'; btn.style.cursor = 'pointer'; btn.style.display = 'inline-flex'; btn.style.alignItems = 'center';
-                btn.addEventListener('click', function (e) {
-                    e.preventDefault(); e.stopPropagation();
-                    renameFolder(id, el.textContent.trim());
-                });
-                el.parentNode.insertBefore(btn, el.nextSibling);
-            }
-        });
-
-        // For upload modal folder list buttons (.folder-opt)
-        document.querySelectorAll('.folder-opt').forEach(function (btn) {
-            if (btn.dataset.renameAttached) return;
-            btn.dataset.renameAttached = '1';
-            // find id in onclick attribute or dataset
-            var id = btn.getAttribute('onclick')?.match(/selectUploadFolder\('\s*([^']+)\s*'/)?.[1] || btn.dataset.id || null;
-            if (id) {
-                var rbtn = document.createElement('button');
-                rbtn.type = 'button'; rbtn.title = 'Renommer'; rbtn.className = 'ml-2 text-sm'; rbtn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-                rbtn.style.border = 'none'; rbtn.style.background = 'none'; rbtn.style.cursor = 'pointer'; rbtn.style.display = 'inline-flex'; rbtn.style.alignItems = 'center';
-                rbtn.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); renameFolder(id, btn.textContent.trim()); });
-                btn.appendChild(rbtn);
-            }
-        });
-    }
-
-    // initial attach
-    document.addEventListener('DOMContentLoaded', attachRenameButtons);
-    // re-attach on mutations (for dynamic content)
-    var obs = new MutationObserver(function () { attachRenameButtons(); });
-    obs.observe(document.body, { childList: true, subtree: true });
-})();
-</script>
-
-<script>
-// ── Drawer & thème ────────────────────────────────────────────────────────
-(function () {
-    var sidebar  = document.getElementById('hc-sidebar');
-    var overlay  = document.getElementById('drawer-overlay');
-    var sunIcon  = document.getElementById('hc-theme-icon-sun');
-    var moonIcon = document.getElementById('hc-theme-icon-moon');
-
-    function applyThemeIcons() {
-        var theme = document.documentElement.getAttribute('data-theme') || 'light';
-        if (sunIcon && moonIcon) {
-            sunIcon.classList.toggle('hidden', theme === 'dark');
-            moonIcon.classList.toggle('hidden', theme !== 'dark');
-        }
-    }
-
-    window.HCOpenDrawer = function () {
-        if (sidebar) sidebar.classList.add('open');
-        if (overlay) overlay.classList.add('open');
-    };
-
-    window.HCCloseDrawer = function () {
-        if (sidebar) sidebar.classList.remove('open');
-        if (overlay) overlay.classList.remove('open');
-    };
-
-    window.HCToggleTheme = function () {
-        var current = document.documentElement.getAttribute('data-theme') || 'light';
-        var next = current === 'light' ? 'dark' : 'light';
-        document.documentElement.setAttribute('data-theme', next);
-        localStorage.setItem('hc-theme', next);
-        applyThemeIcons();
-    };
-
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') window.HCCloseDrawer();
-    });
-
-    // Icônes au chargement
-    document.addEventListener('DOMContentLoaded', applyThemeIcons);
-})();
-</script>
+</div>{# /data-controller="token-bridge prevent-stray-drop drawer-theme" #}
 
 {% endblock %}

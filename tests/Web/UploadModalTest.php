@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Web;
 
-use App\Entity\Folder;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -96,18 +95,4 @@ final class UploadModalTest extends WebTestCase
         $this->assertSelectorTextContains('[data-testid="new-menu"]', 'Importer des fichiers');
     }
 
-    // --- Dossiers disponibles dans le modal ---
-
-    public function testUploadModalListsUserFolders(): void
-    {
-        $user = $this->createUser();
-
-        $folder = new Folder('Vacances', $user);
-        $this->em->persist($folder);
-        $this->em->flush();
-
-        $this->login();
-
-        $this->assertSelectorTextContains('[data-testid="upload-folder-list"]', 'Vacances');
-    }
 }

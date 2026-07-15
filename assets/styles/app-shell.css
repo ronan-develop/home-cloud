@@ -16,6 +16,12 @@
 	height: 100%;
 }
 
+/* Wrapper Stimulus (token-bridge/drawer-theme/prevent-stray-drop) : ne doit
+   pas casser la chaîne height:100% de html/body vers .hc-app-grid. */
+.hc-layout-root {
+	display: contents;
+}
+
 /* ── Sidebar ── */
 .hc-sidebar {
 	display: flex;
