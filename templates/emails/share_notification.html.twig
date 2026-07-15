@@ -1,0 +1,11 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau partage HomeCloud{% endblock %}
+
+{% block body %}
+<p>Bonjour,</p>
+
+<p>Une nouvelle ressource a été partagée avec vous sur HomeCloud : <strong>{{ resourceName }}</strong>.</p>
+
+<p><a href="{{ accessUrl }}">Cliquez ici pour y accéder</a></p>
+{% endblock %}
