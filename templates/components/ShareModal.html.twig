@@ -79,19 +79,25 @@
       </div>
 
       <div class="px-6 pt-4">
-        <label class="block text-xs font-semibold uppercase tracking-wide mb-1.5" style="color: var(--hc-text-3);">
-          Permission
-        </label>
-        <div class="flex gap-3 text-sm">
-          <label class="flex items-center gap-1.5 cursor-pointer">
-            <input type="radio" name="permission" value="read" checked>
-            Lecture seule
+        {% if resourceType == 'album' %}
+          {# Édition en ligne d'un album abandonnée — un album partagé est
+             toujours en lecture seule, aucun autre choix proposé. #}
+          <input type="hidden" name="permission" value="read">
+        {% else %}
+          <label class="block text-xs font-semibold uppercase tracking-wide mb-1.5" style="color: var(--hc-text-3);">
+            Permission
           </label>
-          <label class="flex items-center gap-1.5 cursor-pointer">
-            <input type="radio" name="permission" value="write">
-            Lecture/écriture
-          </label>
-        </div>
+          <div class="flex gap-3 text-sm">
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input type="radio" name="permission" value="read" checked>
+              Lecture seule
+            </label>
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input type="radio" name="permission" value="write">
+              Lecture/écriture
+            </label>
+          </div>
+        {% endif %}
       </div>
 
       <div class="flex gap-2 justify-end px-6 py-4 mt-2" style="border-top: 1px solid var(--hc-border);">
