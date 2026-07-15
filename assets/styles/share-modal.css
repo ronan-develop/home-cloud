@@ -3,9 +3,95 @@
  * Styles pour la modale de partage (templates/components/ShareModal.html.twig)
  */
 
+.hc-share-modal-card {
+  background: var(--hc-surface);
+  color: var(--hc-text);
+  border: 1px solid var(--hc-border);
+  border-radius: 1rem;
+  box-shadow: var(--hc-shadow-crisp);
+  width: 100%;
+  max-width: 440px;
+  margin: 1rem;
+}
+
+.hc-share-modal-header {
+  border-bottom: 1px solid var(--hc-border);
+}
+
+.hc-share-modal-close {
+  background: var(--hc-surface-2);
+  color: var(--hc-text-2);
+  border: none;
+  cursor: pointer;
+}
+
+.hc-share-tabs {
+  gap: 4px;
+  border-bottom: 1px solid var(--hc-border);
+}
+
+.hc-share-tab-btn {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  color: var(--hc-text-2);
+}
+
+.hc-share-tab-btn--active {
+  border-bottom-color: var(--hc-accent);
+  color: var(--hc-text);
+}
+
+.hc-share-label {
+  color: var(--hc-text-3);
+}
+
+.hc-share-input {
+  border: 1px solid var(--hc-border);
+  background: var(--hc-bg);
+  color: var(--hc-text);
+}
+
 .hc-share-guest-option {
   border: 1px solid transparent;
   background: var(--hc-accent-soft);
   color: var(--hc-accent);
   cursor: pointer;
+}
+
+.hc-share-footer {
+  border-top: 1px solid var(--hc-border);
+}
+
+.hc-share-btn-cancel {
+  background: none;
+  border: none;
+  color: var(--hc-text-2);
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.hc-share-btn-primary {
+  background: var(--hc-accent);
+  color: var(--hc-accent-contrast, #fff);
+  border: none;
+  cursor: pointer;
+}
+
+.hc-share-btn-secondary {
+  background: var(--hc-surface-2);
+  color: var(--hc-text);
+  border: 1px solid var(--hc-border);
+  cursor: pointer;
+}
+
+.hc-share-text-muted {
+  color: var(--hc-text-2);
 }
