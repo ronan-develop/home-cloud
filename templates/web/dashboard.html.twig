@@ -12,16 +12,16 @@
       <h1 class="text-2xl font-black tracking-tight mb-1">Bonjour {{ app.user.displayName }}</h1>
       <p class="text-sm font-medium text-slate-500">{{ 'now'|date('d F Y', false, 'fr_FR') }}</p>
     </div>
-    <button onclick="document.getElementById('upload-modal')?.showModal && document.getElementById('upload-modal').showModal()"
-            class="hc-btn-soft flex items-center gap-2 px-4 py-2 rounded-md font-semibold text-sm cursor-pointer"
-            style="background: var(--hc-accent-soft); color: var(--hc-accent);">
+    <label data-testid="dashboard-import-btn" class="hc-btn-soft hc-dashboard-import-btn">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
         <path d="M17 8l-5-5-5 5"></path>
         <line x1="12" y1="3" x2="12" y2="15"></line>
       </svg>
       Importer
-    </button>
+      <input type="file" multiple class="hc-dashboard-import-input"
+             data-controller="dashboard-import" data-action="change->dashboard-import#filesSelected">
+    </label>
   </div>
 
   <!-- Cartes statistiques -->
