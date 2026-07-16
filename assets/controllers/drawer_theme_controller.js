@@ -1,17 +1,12 @@
 import { Controller } from '@hotwired/stimulus';
 
 /* Drawer mobile (sidebar) + bascule du thème clair/sombre — posé sur le
- * conteneur racine de web/layout.html.twig. Expose HCOpenDrawer/HCCloseDrawer
- * sur window car la tab-bar mobile et d'autres boutons hors du scope de ce
- * contrôleur y font encore référence via onclick="". */
+ * conteneur racine de web/layout.html.twig. Tous les boutons l'appellent via
+ * data-action="click->drawer-theme#..." (aucun onclick="" global). */
 export default class extends Controller {
     static targets = ['sidebar', 'overlay', 'sunIcon', 'moonIcon'];
 
     connect() {
-        window.HCOpenDrawer = () => this.openDrawer();
-        window.HCCloseDrawer = () => this.closeDrawer();
-        window.HCToggleTheme = () => this.toggleTheme();
-
         this._onKeydown = (e) => {
             if (e.key === 'Escape') this.closeDrawer();
         };
