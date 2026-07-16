@@ -6,7 +6,7 @@
 
 {% set guestIcon %}<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>{% endset %}
 
-<div class="flex flex-col gap-7 max-w-[1100px] mx-auto h-full">
+<div class="flex flex-col gap-7 max-w-[1100px] mx-auto h-full" data-controller="guest-management">
 
   <div class="flex items-center justify-between">
     <div>
@@ -19,20 +19,16 @@
   </div>
 
   {# Création directe d'un invité, sans passer par un partage. #}
-  <form method="post" action="{{ path('app_guest_create') }}" class="hc-item-card flex items-end gap-2" style="padding: 1rem;">
+  <form method="post" action="{{ path('app_guest_create') }}" class="hc-item-card hc-guest-create-form"
+        data-guest-management-target="createForm" data-action="submit->guest-management#create">
     <input type="hidden" name="_token" value="{{ csrf_token('guest-create') }}">
     <div class="flex-1">
-      <label class="block text-xs font-semibold uppercase tracking-wide mb-1.5" style="color: var(--hc-text-3);">
-        Créer un invité
-      </label>
+      <label class="hc-guest-create-label">Créer un invité</label>
       <input type="email" name="email" data-testid="guest-create-email" required
-             placeholder="ami@example.com"
-             class="w-full px-3 py-2 rounded-md text-sm"
-             style="border: 1px solid var(--hc-border); background: var(--hc-bg); color: var(--hc-text);">
+             placeholder="ami@example.com" class="hc-guest-create-input"
+             data-guest-management-target="createEmail">
     </div>
-    <button type="submit" data-testid="guest-create-submit"
-            class="px-4 py-2 rounded-md text-sm font-semibold"
-            style="background: var(--hc-accent); color: var(--hc-accent-contrast, #fff); border: none; cursor: pointer;">
+    <button type="submit" data-testid="guest-create-submit" class="hc-guest-create-submit">
       Créer
     </button>
   </form>
@@ -46,28 +42,28 @@
       />
     </div>
   {% else %}
-    <div class="hc-item-card" style="display:flex; flex-direction:column; gap:0; padding:0;" data-testid="guests-list">
+    <div class="hc-item-card hc-guest-list" data-testid="guests-list">
       {% for guest in guests %}
-        <div class="flex items-center justify-between px-4 py-3" style="border-bottom:1px solid var(--hc-border);" data-testid="guest-row-{{ guest.id }}">
+        <div class="hc-guest-row" data-testid="guest-row-{{ guest.id }}" data-guest-management-target="row">
           <div>
             <div class="hc-item-name">{{ guest.displayName }}</div>
             <div class="hc-item-meta">{{ guest.email }} · créé le {{ guest.createdAt|date('d/m/Y') }}</div>
           </div>
-          <div class="flex items-center gap-2">
-            <form method="post" action="{{ path('app_guest_edit', { id: guest.id }) }}" class="flex items-center gap-2">
+          <div class="hc-guest-row-actions">
+            <form method="post" action="{{ path('app_guest_edit', { id: guest.id }) }}" class="flex items-center gap-2"
+                  data-action="submit->guest-management#edit">
               <input type="hidden" name="_token" value="{{ csrf_token('guest-edit') }}">
               <input type="text" name="displayName" value="{{ guest.displayName }}"
-                     data-testid="guest-edit-name-{{ guest.id }}"
-                     class="px-2 py-1 rounded-md text-sm"
-                     style="border:1px solid var(--hc-border); background:var(--hc-bg); color:var(--hc-text); width:140px;">
-              <button type="submit" class="hc-item-action" style="background:none; border:none; cursor:pointer; font-size:0.8125rem; font-weight:600;">
+                     data-testid="guest-edit-name-{{ guest.id }}" class="hc-guest-edit-input">
+              <button type="submit" class="hc-item-action hc-guest-action-btn">
                 Enregistrer
               </button>
             </form>
             <form method="post" action="{{ path('app_guest_delete', { id: guest.id }) }}"
-                  onsubmit="return confirm('Supprimer le compte invité « {{ guest.displayName|e('js') }} » ?')">
+                  data-guest-display-name="{{ guest.displayName|e('html_attr') }}"
+                  data-action="submit->guest-management#delete">
               <input type="hidden" name="_token" value="{{ csrf_token('guest-delete') }}">
-              <button type="submit" class="hc-item-action hc-item-action--danger" style="background:none; border:none; cursor:pointer; font-size:0.8125rem; font-weight:600;">
+              <button type="submit" class="hc-item-action hc-item-action--danger hc-guest-action-btn">
                 Supprimer
               </button>
             </form>
