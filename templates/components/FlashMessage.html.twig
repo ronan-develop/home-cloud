@@ -10,11 +10,4 @@
   {% if icon %}<span class="flash-message-icon">{{ icon|raw }}</span>{% endif %}
   <span class="flash-message-text">{{ message }}</span>
 </div>
-<script>
-document.querySelectorAll('[data-controller="flash-close"]').forEach(function(el) {
-  el.querySelector('[data-action]').onclick = function() {
-    el.style.display = 'none';
-  };
-});
-</script>
 {# Props attendues : type (success, error, info, warning), message, icon (optionnel) #}
