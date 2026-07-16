@@ -74,6 +74,34 @@ final class GuestManagementWebTest extends WebTestCase
         $this->assertStringNotContainsString('full-account@example.com', $crawler->filter('body')->text());
     }
 
+    public function testEditGuestDisplayNameViaAjaxReturnsJsonWithoutRedirect(): void
+    {
+        $this->createOwner();
+        $guest = $this->createGuest();
+        $this->loginAs('guest-mgmt-owner@example.com');
+
+        $crawler = $this->client->request('GET', '/invites');
+        $token = $crawler->filter('form[action*="/invites/' . $guest->getId() . '/edit"] input[name="_token"]')
+            ->first()->attr('value');
+
+        $this->client->request(
+            'POST',
+            '/invites/' . $guest->getId() . '/edit',
+            ['_token' => $token, 'displayName' => 'Nom Ajax'],
+            [],
+            ['HTTP_ACCEPT' => 'application/json'],
+        );
+
+        $this->assertResponseIsSuccessful();
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertSame('Invité mis à jour.', $data['message']);
+        $this->assertSame('Nom Ajax', $data['displayName']);
+
+        $this->em->clear();
+        $reloaded = $this->em->getRepository(User::class)->find($guest->getId());
+        $this->assertSame('Nom Ajax', $reloaded->getDisplayName());
+    }
+
     public function testEditGuestDisplayName(): void
     {
         $this->createOwner();
@@ -116,6 +144,34 @@ final class GuestManagementWebTest extends WebTestCase
         $this->assertNull($this->em->getRepository(User::class)->find($guest->getId()));
     }
 
+    public function testDeleteGuestAccountViaAjaxReturnsJsonWithoutRedirect(): void
+    {
+        // Suppression asynchrone (fetch) : pas de reload complet de page,
+        // réponse JSON directement exploitable par le contrôleur Stimulus.
+        $this->createOwner();
+        $guest = $this->createGuest();
+        $this->loginAs('guest-mgmt-owner@example.com');
+
+        $crawler = $this->client->request('GET', '/invites');
+        $token = $crawler->filter('form[action*="/invites/' . $guest->getId() . '/delete"] input[name="_token"]')
+            ->first()->attr('value');
+
+        $this->client->request(
+            'POST',
+            '/invites/' . $guest->getId() . '/delete',
+            ['_token' => $token],
+            [],
+            ['HTTP_ACCEPT' => 'application/json'],
+        );
+
+        $this->assertResponseIsSuccessful();
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertSame('Invité supprimé.', $data['message']);
+
+        $this->em->clear();
+        $this->assertNull($this->em->getRepository(User::class)->find($guest->getId()));
+    }
+
     public function testDeleteGuestAccountWithPendingActivationRequestSucceeds(): void
     {
         // Reproduit le bug réel : un invité créé via GuestAccountCreator a
@@ -149,6 +205,20 @@ final class GuestManagementWebTest extends WebTestCase
         $this->assertNull($this->em->getRepository(User::class)->find($guest->getId()));
     }
 
+    public function testGuestsPageHasNoInlineStyleOrScript(): void
+    {
+        $this->createOwner();
+        $this->createGuest();
+        $this->loginAs('guest-mgmt-owner@example.com');
+
+        $crawler = $this->client->request('GET', '/invites');
+
+        $this->assertResponseIsSuccessful();
+        $html = (string) $this->client->getResponse()->getContent();
+        $this->assertStringNotContainsString('onsubmit=', $html);
+        $this->assertStringContainsString('data-controller="guest-management"', $html);
+    }
+
     public function testGuestsPageHasCreateGuestForm(): void
     {
         $this->createOwner();
@@ -158,6 +228,79 @@ final class GuestManagementWebTest extends WebTestCase
 
         $this->assertResponseIsSuccessful();
         $this->assertSelectorExists('form[action*="/invites/create"] input[name="email"]');
+    }
+
+    public function testCreateGuestAccountViaAjaxReturnsJsonWithoutRedirect(): void
+    {
+        $this->createOwner();
+        $this->loginAs('guest-mgmt-owner@example.com');
+
+        $crawler = $this->client->request('GET', '/invites');
+        $token = $crawler->filter('form[action*="/invites/create"] input[name="_token"]')
+            ->first()->attr('value');
+
+        $this->client->request(
+            'POST',
+            '/invites/create',
+            ['_token' => $token, 'email' => 'ajax-invite@example.com'],
+            [],
+            ['HTTP_ACCEPT' => 'application/json'],
+        );
+
+        $this->assertResponseIsSuccessful();
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertSame('Invité créé.', $data['message']);
+        $this->assertSame('ajax-invite@example.com', $data['email']);
+        $this->assertArrayHasKey('id', $data);
+        $this->assertArrayHasKey('displayName', $data);
+
+        $created = $this->userRepositoryFindByEmail('ajax-invite@example.com');
+        $this->assertNotNull($created);
+    }
+
+    public function testCreateGuestAccountWithExistingEmailViaAjaxReturns409(): void
+    {
+        $this->createOwner();
+        $this->createGuest('deja-existant-ajax@example.com');
+        $this->loginAs('guest-mgmt-owner@example.com');
+
+        $crawler = $this->client->request('GET', '/invites');
+        $token = $crawler->filter('form[action*="/invites/create"] input[name="_token"]')
+            ->first()->attr('value');
+
+        $this->client->request(
+            'POST',
+            '/invites/create',
+            ['_token' => $token, 'email' => 'deja-existant-ajax@example.com'],
+            [],
+            ['HTTP_ACCEPT' => 'application/json'],
+        );
+
+        $this->assertResponseStatusCodeSame(409);
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertStringContainsString('existe déjà', $data['error']);
+    }
+
+    public function testCreateGuestAccountWithInvalidEmailViaAjaxReturns400(): void
+    {
+        $this->createOwner();
+        $this->loginAs('guest-mgmt-owner@example.com');
+
+        $crawler = $this->client->request('GET', '/invites');
+        $token = $crawler->filter('form[action*="/invites/create"] input[name="_token"]')
+            ->first()->attr('value');
+
+        $this->client->request(
+            'POST',
+            '/invites/create',
+            ['_token' => $token, 'email' => 'pas-un-email'],
+            [],
+            ['HTTP_ACCEPT' => 'application/json'],
+        );
+
+        $this->assertResponseStatusCodeSame(400);
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertStringContainsString('invalide', $data['error']);
     }
 
     public function testCreateGuestAccountSucceeds(): void
