@@ -64,6 +64,16 @@ final class WebAuthTest extends WebTestCase
         $this->assertResponseRedirects('/');
     }
 
+    public function testLoginPagePrefillsEmailFromQueryParam(): void
+    {
+        // Après un reset de mot de passe (invité), on redirige vers
+        // /login?email=... pour éviter de retaper l'adresse.
+        $crawler = $this->client->request('GET', '/login?email=invite@example.com');
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSame('invite@example.com', $crawler->filter('#email')->attr('value'));
+    }
+
     public function testAfterLoginDashboardIsAccessible(): void
     {
         $this->createUser();

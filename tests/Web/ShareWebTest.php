@@ -224,6 +224,37 @@ final class ShareWebTest extends WebTestCase
         $this->assertStringContainsString('Vacances', $email->getHtmlBody());
     }
 
+    public function testShareNotificationEmailHasStyledTemplateWithOwnerNameAndCtaButton(): void
+    {
+        // L'email de notification était jusqu'ici du texte brut hérité de
+        // base.html.twig (layout applicatif, jamais fait pour du HTML email) :
+        // pas de nom d'expéditeur, pas de bouton, juste un lien texte.
+        $owner = $this->createUser();
+        $this->createUser('invite@example.com');
+        $album = $this->createAlbum($owner, 'Vacances');
+
+        $this->login();
+        $token = $this->shareCreateToken($album->getId()->toRfc4122());
+
+        $this->client->request('POST', '/share-create', [
+            '_token'       => $token,
+            'guestEmail'   => 'invite@example.com',
+            'resourceType' => 'album',
+            'resourceId'   => $album->getId()->toRfc4122(),
+            'permission'   => 'read',
+        ]);
+
+        self::assertEmailCount(1);
+        $email = self::getMailerMessage();
+        $html = $email->getHtmlBody();
+
+        $this->assertStringContainsString($owner->getDisplayName(), $html);
+        $this->assertStringContainsString('<table', $html);
+        // CSS inline uniquement : compatibilité clients mail (Outlook ignore <style>/classes)
+        $this->assertStringContainsString('style=', $html);
+        $this->assertStringNotContainsString('data-controller', $html);
+    }
+
     public function testCreateShareWithUnknownEmailCreatesGuestAccountAndShares(): void
     {
         // Depuis l'introduction de GuestAccountCreator, un email inconnu ne
@@ -248,6 +279,14 @@ final class ShareWebTest extends WebTestCase
         // Vérifié AVANT followRedirect() : la seconde requête HTTP déclenchée
         // par followRedirect() réinitialise le collecteur d'événements mailer.
         self::assertEmailCount(1);
+
+        // L'email d'activation héritait de base.html.twig (layout applicatif
+        // complet : importmap, Stimulus...) — inadapté à un client mail.
+        $activationHtml = self::getMailerMessage()->getHtmlBody();
+        $this->assertStringNotContainsString('data-controller', $activationHtml);
+        $this->assertStringNotContainsString('importmap', $activationHtml);
+        $this->assertStringContainsString('<table', $activationHtml);
+        $this->assertStringContainsString('style=', $activationHtml);
 
         $this->client->followRedirect();
         $this->assertSelectorTextContains('.flash-success', 'nouvel-invite@example.com');

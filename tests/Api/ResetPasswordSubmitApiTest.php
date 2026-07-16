@@ -56,5 +56,8 @@ class ResetPasswordSubmitApiTest extends WebTestCase
         $data = json_decode($client->getResponse()->getContent(), true);
         $this->assertArrayHasKey('message', $data);
         $this->assertStringContainsString('mot de passe a été réinitialisé', $data['message']);
+        // L'email permet au frontend de pré-remplir /login juste après (pas
+        // de connexion auto possible ici : ce endpoint est stateless/JWT).
+        $this->assertSame('reset-test@homecloud.local', $data['email']);
     }
 }

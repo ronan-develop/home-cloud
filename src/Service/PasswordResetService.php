@@ -20,11 +20,13 @@ class PasswordResetService implements PasswordResetServiceInterface
      * Valide le token et met à jour le mot de passe de l'utilisateur.
      * @throws ResetPasswordExceptionInterface
      */
-    public function resetPassword(string $token, string $newPassword): void
+    public function resetPassword(string $token, string $newPassword): User
     {
         $user = $this->resetPasswordHelper->validateTokenAndFetchUser($token);
         $user->setPassword(password_hash($newPassword, PASSWORD_BCRYPT));
         $this->entityManager->flush();
         $this->resetPasswordHelper->removeResetRequest($token);
+
+        return $user;
     }
 }

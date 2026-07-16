@@ -62,7 +62,9 @@ final class GuestManagementWebController extends AbstractController
             return $this->redirect('/invites');
         }
 
-        $this->guestAccountCreator->create($email);
+        /** @var User $owner */
+        $owner = $this->getUser();
+        $this->guestAccountCreator->create($email, $owner);
         $this->addFlash('success', 'Invité créé.');
 
         return $this->redirect('/invites');

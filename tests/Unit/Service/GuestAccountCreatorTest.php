@@ -86,4 +86,24 @@ final class GuestAccountCreatorTest extends TestCase
             $sentEmail->getContext()['activationUrl'],
         );
     }
+
+    public function testActivationEmailContainsOwnerDisplayNameWhenProvided(): void
+    {
+        // "Quelqu'un vient de partager..." était trop impersonnel — afficher
+        // le nom du propriétaire à l'origine de l'invitation rassure l'invité.
+        $owner = new User('owner@example.com', 'Marie Dupont');
+
+        $sentEmail = null;
+        $mailer = $this->createMock(MailerInterface::class);
+        $mailer->expects($this->once())->method('send')->willReturnCallback(
+            function ($message) use (&$sentEmail) {
+                $sentEmail = $message;
+            }
+        );
+
+        $creator = $this->makeCreator(mailer: $mailer);
+        $creator->create('nouvel-invite@example.com', $owner);
+
+        $this->assertSame('Marie Dupont', $sentEmail->getContext()['ownerName']);
+    }
 }

@@ -32,7 +32,9 @@ class PasswordResetServiceTest extends TestCase
             ->method('flush');
 
         $service = new PasswordResetService($helper, $em);
-        $service->resetPassword('token', 'newPass');
+        $result = $service->resetPassword('token', 'newPass');
+
+        $this->assertSame($user, $result);
     }
 
     public function testResetPasswordThrowsOnInvalidToken(): void

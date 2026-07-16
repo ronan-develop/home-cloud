@@ -34,7 +34,7 @@ final readonly class GuestAccountCreator
         private UrlGeneratorInterface $urlGenerator,
     ) {}
 
-    public function create(string $email): User
+    public function create(string $email, ?User $owner = null): User
     {
         $displayName = ucfirst(explode('@', $email)[0]);
 
@@ -55,7 +55,11 @@ final readonly class GuestAccountCreator
             ->to($user->getEmail())
             ->subject('Vous avez été invité(e) sur HomeCloud')
             ->htmlTemplate('reset_password/guest_invitation_email.html.twig')
-            ->context(['activationUrl' => $activationUrl]);
+            ->context([
+                'activationUrl' => $activationUrl,
+                'ownerName'     => $owner?->getDisplayName(),
+                'accentColor'   => EmailBranding::ACCENT_COLOR,
+            ]);
 
         $this->mailer->send($invitationEmail);
 
