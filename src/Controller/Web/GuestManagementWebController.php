@@ -49,14 +49,21 @@ final class GuestManagementWebController extends AbstractController
         }
 
         $email = trim((string) $request->request->get('email', ''));
+        $wantsJson = $this->wantsJson($request);
 
         if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            if ($wantsJson) {
+                return $this->json(['error' => 'Email invalide.'], Response::HTTP_BAD_REQUEST);
+            }
             $this->addFlash('error', 'Email invalide.');
 
             return $this->redirect('/invites');
         }
 
         if ($this->userRepository->findOneBy(['email' => $email]) !== null) {
+            if ($wantsJson) {
+                return $this->json(['error' => 'Un compte avec cet email existe déjà.'], Response::HTTP_CONFLICT);
+            }
             $this->addFlash('error', 'Un compte avec cet email existe déjà.');
 
             return $this->redirect('/invites');
@@ -64,7 +71,17 @@ final class GuestManagementWebController extends AbstractController
 
         /** @var User $owner */
         $owner = $this->getUser();
-        $this->guestAccountCreator->create($email, $owner);
+        $guest = $this->guestAccountCreator->create($email, $owner);
+
+        if ($wantsJson) {
+            return $this->json([
+                'message'     => 'Invité créé.',
+                'id'          => (string) $guest->getId(),
+                'email'       => $guest->getEmail(),
+                'displayName' => $guest->getDisplayName(),
+            ]);
+        }
+
         $this->addFlash('success', 'Invité créé.');
 
         return $this->redirect('/invites');
@@ -78,11 +95,17 @@ final class GuestManagementWebController extends AbstractController
         }
 
         $guest = $this->findGuestOrFail($id);
+        $wantsJson = $this->wantsJson($request);
 
         $displayName = trim((string) $request->request->get('displayName', ''));
         if ($displayName !== '') {
             $guest->setDisplayName($displayName);
             $this->em->flush();
+
+            if ($wantsJson) {
+                return $this->json(['message' => 'Invité mis à jour.', 'displayName' => $guest->getDisplayName()]);
+            }
+
             $this->addFlash('success', 'Invité mis à jour.');
         }
 
@@ -101,9 +124,22 @@ final class GuestManagementWebController extends AbstractController
         $this->em->remove($guest);
         $this->em->flush();
 
+        if ($this->wantsJson($request)) {
+            return $this->json(['message' => 'Invité supprimé.']);
+        }
+
         $this->addFlash('success', 'Invité supprimé.');
 
         return $this->redirect('/invites');
+    }
+
+    /**
+     * Détection AJAX : fallback progressif sur le POST/redirect classique si
+     * le client ne demande pas explicitement du JSON (JS désactivé, curl...).
+     */
+    private function wantsJson(Request $request): bool
+    {
+        return str_contains((string) $request->headers->get('Accept'), 'application/json');
     }
 
     private function findGuestOrFail(string $id): User
