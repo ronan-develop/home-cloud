@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6fa82405699402946bec24d2e189a9af",
+    "content-hash": "73b7c484fb63a3b38b2138e2494ef0df",
     "packages": [
         {
             "name": "api-platform/doctrine-common",
@@ -3293,6 +3293,68 @@
                 "source": "https://github.com/php-fig/log/tree/3.0.2"
             },
             "time": "2024-09-11T13:17:53+00:00"
+        },
+        {
+            "name": "ronanlenouvel/raw-preview-extractor",
+            "version": "1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ronan-develop/raw-preview-extractor.git",
+                "reference": "765933a699a0323910cc6b9beb5a6fc7388b68e4"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/ronan-develop/raw-preview-extractor/zipball/765933a699a0323910cc6b9beb5a6fc7388b68e4",
+                "reference": "765933a699a0323910cc6b9beb5a6fc7388b68e4",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.2"
+            },
+            "require-dev": {
+                "ext-gd": "*",
+                "phpunit/phpunit": "^11.0|^12.0",
+                "symfony/framework-bundle": "^6.4|^7.0|^8.0",
+                "symfony/http-kernel": "^6.4|^7.0|^8.0"
+            },
+            "suggest": {
+                "symfony/framework-bundle": "To auto-register the extractor as a service via the bundled RawPreviewExtractorBundle"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "RonanLenouvel\\RawPreviewExtractor\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Ronan Lenouvel",
+                    "email": "ronan.develop@gmail.com"
+                }
+            ],
+            "description": "Extract embedded JPEG previews from camera RAW files (CR2, CR3, NEF, ARW, DNG) in pure PHP, no external binaries.",
+            "keywords": [
+                "arw",
+                "cr2",
+                "cr3",
+                "dng",
+                "exif",
+                "jpeg",
+                "nef",
+                "preview",
+                "raw",
+                "thumbnail",
+                "tiff"
+            ],
+            "support": {
+                "issues": "https://github.com/ronan-develop/raw-preview-extractor/issues",
+                "source": "https://github.com/ronan-develop/raw-preview-extractor/tree/1.1.0"
+            },
+            "time": "2026-07-17T07:36:10+00:00"
         },
         {
             "name": "symfony/asset",
@@ -11524,7 +11586,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
@@ -11532,6 +11594,6 @@
         "ext-ctype": "*",
         "ext-iconv": "*"
     },
-    "platform-dev": [],
+    "platform-dev": {},
     "plugin-api-version": "2.6.0"
 }

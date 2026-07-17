@@ -12,6 +12,7 @@ use App\Service\ExifService;
 use App\Service\MediaProcessor;
 use App\Service\ThumbnailService;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -97,6 +98,87 @@ final class MediaProcessorTest extends TestCase
         $media = $processor->process($file);
 
         $this->assertSame($existingMedia, $media);
+    }
+
+    /**
+     * Les navigateurs n'ont pas de mimeType pour les RAW : un .NEF arrive en
+     * "application/octet-stream", que resolveMediaType() rejetait — aucun Media
+     * n'était créé, donc aucune vignette n'était même tentée. L'extension prend
+     * le relais quand le mimeType ne dit rien.
+     */
+    #[DataProvider('rawFileProvider')]
+    public function testProcessCreatesPhotoMediaForRawFile(string $mimeType, string $filename): void
+    {
+        $file = $this->createMock(File::class);
+        $file->method('getMimeType')->willReturn($mimeType);
+        $file->method('getOriginalName')->willReturn($filename);
+        $file->method('getPath')->willReturn('2026/02/' . $filename);
+
+        $mediaRepo = $this->createMock(MediaRepository::class);
+        $mediaRepo->method('findOneBy')->willReturn(null);
+
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->expects($this->once())->method('persist');
+        $em->expects($this->once())->method('flush');
+
+        $storageService = $this->createMock(StorageServiceInterface::class);
+        $storageService->method('getAbsolutePath')->willReturn('/var/storage/2026/02/' . $filename);
+
+        $exifService = $this->createMock(ExifService::class);
+        $exifService->method('extract')->willReturn([
+            'width' => null, 'height' => null, 'takenAt' => null,
+            'cameraModel' => null, 'gpsLat' => null, 'gpsLon' => null,
+        ]);
+
+        // Le cœur du besoin : la vignette doit être tentée sur un RAW.
+        $thumbnailService = $this->createMock(ThumbnailService::class);
+        $thumbnailService->expects($this->once())->method('generate')->willReturn('thumbs/raw.jpg');
+
+        $processor = new MediaProcessor($mediaRepo, $em, $exifService, $thumbnailService, $storageService);
+        $media = $processor->process($file);
+
+        $this->assertInstanceOf(Media::class, $media);
+        $this->assertSame('photo', $media->getMediaType());
+        $this->assertSame('thumbs/raw.jpg', $media->getThumbnailPath());
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function rawFileProvider(): iterable
+    {
+        // Ce que les navigateurs envoient réellement pour un RAW.
+        yield 'NEF en octet-stream'  => ['application/octet-stream', 'DSC_0001.NEF'];
+        yield 'CR2 en octet-stream'  => ['application/octet-stream', 'IMG_0042.CR2'];
+        yield 'CR3 en octet-stream'  => ['application/octet-stream', 'IMG_0043.CR3'];
+        yield 'ARW en octet-stream'  => ['application/octet-stream', 'DSC01234.ARW'];
+        yield 'DNG en octet-stream'  => ['application/octet-stream', 'shot.dng'];
+        // Certains clients détectent le conteneur TIFF sous-jacent.
+        yield 'NEF vu comme tiff'    => ['image/tiff', 'DSC_0002.NEF'];
+        // Extension en minuscules ou casse mixte.
+        yield 'extension minuscule'  => ['application/octet-stream', 'photo.nef'];
+        yield 'casse mixte'          => ['application/octet-stream', 'photo.Cr2'];
+    }
+
+    public function testProcessStillRejectsNonRawOctetStream(): void
+    {
+        // Garde-fou : élargir la détection ne doit pas transformer n'importe quel
+        // binaire inconnu en photo.
+        $file = $this->createMock(File::class);
+        $file->method('getMimeType')->willReturn('application/octet-stream');
+        $file->method('getOriginalName')->willReturn('archive.zip');
+
+        $mediaRepo = $this->createMock(MediaRepository::class);
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->expects($this->never())->method('persist');
+
+        $exifService = $this->createMock(ExifService::class);
+        $thumbnailService = $this->createMock(ThumbnailService::class);
+        $storageService = $this->createMock(StorageServiceInterface::class);
+
+        $processor = new MediaProcessor($mediaRepo, $em, $exifService, $thumbnailService, $storageService);
+
+        $this->assertNull($processor->process($file));
     }
 
     public function testProcessCreatesVideoMediaWithoutExifOrThumbnail(): void
