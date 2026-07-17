@@ -11,6 +11,7 @@ use App\Interface\FileRepositoryInterface;
 use App\Interface\MediaRepositoryInterface;
 use App\Interface\ShareLinkAccessCheckerInterface;
 use App\Interface\StorageServiceInterface;
+use App\Service\MediaFullResponseFactory;
 use App\Security\ResourceLocator;
 use App\Security\SharedFileScopeChecker;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -41,6 +42,7 @@ final class PublicShareController extends AbstractController
         private readonly MediaRepositoryInterface $mediaRepository,
         private readonly SharedFileScopeChecker $sharedFileScopeChecker,
         private readonly StorageServiceInterface $storageService,
+        private readonly MediaFullResponseFactory $mediaFullResponseFactory,
     ) {}
 
     #[Route('/p/{selector}/{token}', name: 'app_public_share', methods: ['GET'])]
@@ -144,11 +146,11 @@ final class PublicShareController extends AbstractController
             throw new NotFoundHttpException();
         }
 
-        $response = new BinaryFileResponse($absolutePath);
-        $response->headers->set('Content-Type', $file->getMimeType());
-        $response->headers->set('X-Content-Type-Options', 'nosniff');
+        // Un RAW est servi via sa preview JPEG embarquée : le navigateur ne sait
+        // pas décoder le fichier d'origine, et le télécharger coûterait plusieurs
+        // dizaines de Mo pour n'afficher qu'une image cassée.
+        $response = $this->mediaFullResponseFactory->create($absolutePath, $file->getMimeType());
         $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
-        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_INLINE);
 
         return $response;
     }
