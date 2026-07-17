@@ -149,7 +149,7 @@ final class PublicShareController extends AbstractController
         // Un RAW est servi via sa preview JPEG embarquée : le navigateur ne sait
         // pas décoder le fichier d'origine, et le télécharger coûterait plusieurs
         // dizaines de Mo pour n'afficher qu'une image cassée.
-        $response = $this->mediaFullResponseFactory->create($absolutePath, $file->getMimeType());
+        $response = $this->mediaFullResponseFactory->create($absolutePath, $file->getMimeType(), $file->getPath());
         $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
 
         return $response;

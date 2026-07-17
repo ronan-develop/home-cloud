@@ -138,6 +138,6 @@ final class MediaGalleryController extends AbstractController
         // Un RAW est servi via sa preview JPEG embarquée : le navigateur ne sait
         // pas décoder le fichier d'origine, et le télécharger coûterait plusieurs
         // dizaines de Mo pour n'afficher qu'une image cassée.
-        return $this->mediaFullResponseFactory->create($absolutePath, $file->getMimeType());
+        return $this->mediaFullResponseFactory->create($absolutePath, $file->getMimeType(), $file->getPath());
     }
 }
