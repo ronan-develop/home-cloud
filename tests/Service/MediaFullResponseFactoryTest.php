@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use RonanLenouvel\RawPreviewExtractor\Exception\PreviewNotFoundException;
 use RonanLenouvel\RawPreviewExtractor\ExtractedPreview;
 use RonanLenouvel\RawPreviewExtractor\Format\Format;
+use RonanLenouvel\RawPreviewExtractor\Orientation;
 use RonanLenouvel\RawPreviewExtractor\RawPreviewExtractorInterface;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -38,9 +39,9 @@ final class MediaFullResponseFactoryTest extends TestCase
         }
     }
 
-    private function makeJpeg(): string
+    private function makeJpeg(int $width = 60, int $height = 40): string
     {
-        $image = imagecreatetruecolor(60, 40);
+        $image = imagecreatetruecolor($width, $height);
         ob_start();
         imagejpeg($image);
         $data = (string) ob_get_clean();
@@ -67,6 +68,54 @@ final class MediaFullResponseFactoryTest extends TestCase
         // Le corps doit être la preview JPEG, pas les 52 Mo du RAW.
         $this->assertSame('image/jpeg', $response->headers->get('Content-Type'));
         $this->assertSame($previewData, $response->getContent());
+    }
+
+    public function testRedressesPreviewServedForRotatedRaw(): void
+    {
+        // Bug constaté en lightbox : la photo s'affichait couchée sur le côté.
+        // Une preview est stockée telle que le capteur l'a vue — l'appareil se
+        // contente d'enregistrer la rotation à appliquer, il ne l'applique pas.
+        $rawPath = $this->tmpDir . '/portrait.nef';
+        file_put_contents($rawPath, 'raw-bytes');
+
+        $extractor = $this->createMock(RawPreviewExtractorInterface::class);
+        $extractor->method('supports')->willReturn(true);
+        $extractor->method('extract')->willReturn(
+            // Paysage 90x60 à l'horizontale, mais pris en portrait.
+            new ExtractedPreview($this->makeJpeg(90, 60), 90, 60, Format::NEF, Orientation::Rotate90),
+        );
+
+        $factory = new MediaFullResponseFactory($extractor);
+        $response = $factory->create($rawPath, 'application/octet-stream');
+
+        $size = getimagesizefromstring((string) $response->getContent());
+        $this->assertNotFalse($size);
+
+        // Redressée, elle doit ressortir en portrait : les dimensions
+        // s'échangent. Une assertion dimensionnelle plutôt que visuelle, et un
+        // imagerotate() du mauvais signe (180°) ne la trompe pas non plus.
+        $this->assertSame(60, $size[0], 'La largeur doit devenir celle de la hauteur d\'origine');
+        $this->assertSame(90, $size[1], 'La hauteur doit devenir celle de la largeur d\'origine');
+    }
+
+    public function testServesUprightPreviewUntouched(): void
+    {
+        // Cas courant : rien à faire, et surtout pas de réencodage JPEG inutile
+        // qui dégraderait l'image pour rien.
+        $rawPath = $this->tmpDir . '/paysage.nef';
+        file_put_contents($rawPath, 'raw-bytes');
+        $previewData = $this->makeJpeg(90, 60);
+
+        $extractor = $this->createMock(RawPreviewExtractorInterface::class);
+        $extractor->method('supports')->willReturn(true);
+        $extractor->method('extract')->willReturn(
+            new ExtractedPreview($previewData, 90, 60, Format::NEF, Orientation::Normal),
+        );
+
+        $factory = new MediaFullResponseFactory($extractor);
+        $response = $factory->create($rawPath, 'application/octet-stream');
+
+        $this->assertSame($previewData, $response->getContent(), 'Une preview droite doit être servie telle quelle');
     }
 
     public function testServesFileAsIsForRegularImage(): void
