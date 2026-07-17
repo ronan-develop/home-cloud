@@ -8,6 +8,7 @@ use App\Entity\User;
 use App\Interface\AlbumRepositoryInterface;
 use App\Interface\MediaRepositoryInterface;
 use App\Interface\StorageServiceInterface;
+use App\Service\MediaCacheHeaders;
 use App\Service\MediaFullResponseFactory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -29,6 +30,7 @@ final class MediaGalleryController extends AbstractController
         private readonly StorageServiceInterface $storageService,
         private readonly AlbumRepositoryInterface $albumRepository,
         private readonly MediaFullResponseFactory $mediaFullResponseFactory,
+        private readonly MediaCacheHeaders $mediaCacheHeaders,
     ) {}
 
     #[Route('/gallery', name: 'app_gallery')]
@@ -109,6 +111,7 @@ final class MediaGalleryController extends AbstractController
         $response = new BinaryFileResponse($absolutePath);
         $response->headers->set('Content-Type', 'image/jpeg');
         $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $this->mediaCacheHeaders->applyTo($response);
 
         return $response;
     }

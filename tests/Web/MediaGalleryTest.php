@@ -86,6 +86,37 @@ final class MediaGalleryTest extends WebTestCase
         $this->assertSelectorTextContains('[data-testid="media-thumbnail"]', 'sunset.jpg');
     }
 
+    public function testThumbnailResponseIsCacheableByTheBrowser(): void
+    {
+        // Sans en-tête de cache, Symfony répond max-age=0 : chaque scroll dans
+        // la galerie retéléchargeait les vignettes déjà vues.
+        $user = $this->createUser();
+        $media = $this->createMediaFile($user, 'cacheable.jpg', 'photo');
+        $this->login();
+
+        // La fixture pose un thumbnailPath en base sans écrire le fichier : la
+        // route répondrait 404 avant même d'arriver aux en-têtes.
+        $storageDir = static::getContainer()->getParameter('app.storage_dir');
+        $thumbPath = $storageDir . '/' . $media->getThumbnailPath();
+        @mkdir(\dirname($thumbPath), 0755, true);
+        file_put_contents($thumbPath, 'fake-jpeg');
+
+        $this->client->request('GET', '/gallery/' . $media->getId()->toRfc4122() . '/thumbnail');
+
+        @unlink($thumbPath);
+
+        $this->assertResponseIsSuccessful();
+        $cacheControl = (string) $this->client->getResponse()->headers->get('Cache-Control');
+        $this->assertStringContainsString('private', $cacheControl);
+        $this->assertStringContainsString('max-age=3600', $cacheControl);
+        // must-revalidate, que BinaryFileResponse pose d'office, ne joue qu'une
+        // fois le max-age expiré : pendant l'heure, le navigateur sert depuis
+        // son cache sans requête. C'est même souhaitable — un média supprimé
+        // entre-temps ne doit pas être servi périmé.
+        $this->assertNotNull($this->client->getResponse()->getMaxAge());
+        $this->assertSame(3600, $this->client->getResponse()->getMaxAge());
+    }
+
     public function testGalleryShowsEmptyStateWhenNoMedia(): void
     {
         $this->createUser();
