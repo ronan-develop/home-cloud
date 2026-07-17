@@ -42,3 +42,19 @@ php.ini
 /import/*
 # Rapport d'audit sécurité — local uniquement (décrit des failles ouvertes)
 /AUDIT-SECURITE.md
+
+# Fichiers RAW de test — plusieurs dizaines de Mo pièce, jamais dans le repo.
+# Les tests qui en dépendent se skippent d'eux-mêmes quand ils sont absents.
+*.NEF
+*.nef
+*.CR2
+*.cr2
+*.CR3
+*.cr3
+*.ARW
+*.arw
+*.DNG
+*.dng
+
+# Métadonnées de provenance générées par Windows/WSL
+*:Zone.Identifier
