@@ -1,0 +1,183 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* === Tokens HomeCloud (theme.css light) === */
+:root {
+  --hc-accent:       #A34B4B;
+  --hc-accent-2:     #8A3D3D;
+  --hc-accent-soft:  rgba(163, 75, 75, 0.10);
+  --hc-indigo:       #6B5FA8;
+  --hc-indigo-soft:  rgba(107, 95, 168, 0.10);
+  --hc-green:        #3F8F6B;
+  --hc-green-soft:   rgba(63, 143, 107, 0.10);
+  --hc-bg:           #FAFAFA;
+  --hc-surface:      #FFFFFF;
+  --hc-surface-2:    #F7F8FA;
+  --hc-border:       rgba(15, 23, 42, 0.08);
+  --hc-border-strong: rgba(15, 23, 42, 0.14);
+  --hc-text:         #0b1220;
+  --hc-text-2:       #475569;
+  --hc-text-3:       #94a3b8;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--hc-text);
+  background: var(--hc-bg);
+  max-width: 740px;
+  margin: 0 auto;
+}
+
+/* ── Titres ── */
+h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--hc-text);
+  border-bottom: 3px solid var(--hc-accent);
+  padding-bottom: 10px;
+  margin-top: 0;
+  margin-bottom: 4px;
+}
+
+h1::before {
+  content: '';
+}
+
+h2 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--hc-text);
+  margin-top: 32px;
+  margin-bottom: 8px;
+  padding: 6px 12px;
+  background: var(--hc-accent-soft);
+  border-left: 4px solid var(--hc-accent);
+  border-radius: 0 6px 6px 0;
+}
+
+h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hc-indigo);
+  margin-top: 18px;
+  margin-bottom: 4px;
+}
+
+/* ── Paragraphes ── */
+p { margin: 6px 0; }
+
+/* ── Listes ── */
+ul, ol {
+  margin: 6px 0 6px 22px;
+  padding: 0;
+}
+
+li { margin-bottom: 3px; }
+
+/* ── Code inline ── */
+code {
+  background: var(--hc-surface-2);
+  border: 1px solid var(--hc-border-strong);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 11.5px;
+  font-family: 'Courier New', monospace;
+  color: var(--hc-accent);
+}
+
+/* ── Blocs de code ── */
+pre {
+  background: var(--hc-surface-2);
+  border: 1px solid var(--hc-border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 11.5px;
+  overflow-x: auto;
+}
+
+pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--hc-text-2);
+}
+
+/* ── Blockquotes — conseils / avertissements ── */
+blockquote {
+  background: var(--hc-indigo-soft);
+  border-left: 4px solid var(--hc-indigo);
+  border-radius: 0 6px 6px 0;
+  margin: 10px 0;
+  padding: 8px 14px;
+  color: var(--hc-text-2);
+}
+
+blockquote p { margin: 0; }
+
+/* ── Tableaux ── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: 12px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+th {
+  background: var(--hc-accent);
+  color: #fff;
+  text-align: left;
+  padding: 7px 12px;
+  font-weight: 600;
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+}
+
+td {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--hc-border);
+  color: var(--hc-text);
+}
+
+tr:nth-child(even) td {
+  background: var(--hc-surface-2);
+}
+
+/* ── Séparateur ── */
+hr {
+  border: none;
+  border-top: 1px solid var(--hc-border);
+  margin: 20px 0;
+}
+
+/* ── Liens ── */
+a { color: var(--hc-accent); text-decoration: none; }
+
+/* ── Gras ── */
+strong { font-weight: 600; color: var(--hc-text); }
+
+/* ── Page / pagination ── */
+@page {
+  margin: 18mm 18mm 22mm 18mm;
+  @bottom-left {
+    content: "HomeCloud";
+    font-size: 9px;
+    color: var(--hc-text-3);
+    font-family: 'Inter', Arial, sans-serif;
+  }
+  @bottom-right {
+    content: "Page " counter(page) " / " counter(pages);
+    font-size: 9px;
+    color: var(--hc-text-3);
+    font-family: 'Inter', Arial, sans-serif;
+  }
+}
+
+/* ── Sauts de page ── */
+h2 { page-break-after: avoid; }
+h3 { page-break-after: avoid; }
+li, tr { page-break-inside: avoid; }
