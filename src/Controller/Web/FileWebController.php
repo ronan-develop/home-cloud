@@ -7,10 +7,12 @@ namespace App\Controller\Web;
 use App\Entity\File;
 use App\Entity\Share;
 use App\Interface\StorageServiceInterface;
+use App\Message\MediaProcessMessage;
 use App\Repository\FileRepository;
 use App\Interface\DefaultFolderServiceInterface;
 use App\Interface\SharedResourceCleanerInterface;
 use App\Security\GuestRestrictionChecker;
+use App\Service\PendingMediaProcessingCollector;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -18,6 +20,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -45,6 +48,8 @@ final class FileWebController extends AbstractController
         private readonly EntityManagerInterface $em,
         private readonly SharedResourceCleanerInterface $sharedResourceCleaner,
         private readonly GuestRestrictionChecker $guestRestrictionChecker,
+        private readonly MessageBusInterface $bus,
+        private readonly PendingMediaProcessingCollector $pendingMediaProcessingCollector,
     ) {}
 
     #[Route('/files/{id}/download', name: 'app_file_download', methods: ['GET'])]
@@ -125,6 +130,14 @@ final class FileWebController extends AbstractController
 
         $this->em->persist($file);
         $this->em->flush();
+
+        // Dispatch async (filet de sécurité) + traitement immédiat après la
+        // réponse HTTP (kernel.terminate, cf. ProcessPendingMediaListener) —
+        // même mécanisme que FileUploadController (API).
+        if (str_starts_with($mimeType, 'image/') || str_starts_with($mimeType, 'video/')) {
+            $this->bus->dispatch(new MediaProcessMessage((string) $file->getId()));
+            $this->pendingMediaProcessingCollector->add((string) $file->getId());
+        }
 
         $this->addFlash('success', "Fichier « {$originalName} » uploadé avec succès.");
 
