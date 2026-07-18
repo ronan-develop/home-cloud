@@ -13,6 +13,7 @@ use App\Service\FileActionService;
 use App\Service\FilenameValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
@@ -22,6 +23,7 @@ class FileActionServiceTest extends TestCase
     private StorageServiceInterface $storageService;
     private AuthorizationCheckerInterface $authChecker;
     private EntityManagerInterface $em;
+    private LoggerInterface $logger;
 
     protected function setUp(): void
     {
@@ -29,6 +31,7 @@ class FileActionServiceTest extends TestCase
         $this->storageService = $this->createMock(StorageServiceInterface::class);
         $this->authChecker = $this->createMock(AuthorizationCheckerInterface::class);
         $this->em = $this->createMock(EntityManagerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
 
         $this->service = new FileActionService(
             $this->createMock(FileRepositoryInterface::class),
@@ -36,6 +39,7 @@ class FileActionServiceTest extends TestCase
             $this->authChecker,
             $this->em,
             new FilenameValidator(),
+            $this->logger,
         );
     }
 
@@ -207,6 +211,9 @@ class FileActionServiceTest extends TestCase
         $this->em->expects($this->once())
             ->method('flush');
 
+        // Happy path : rien à signaler, pas de log
+        $this->logger->expects($this->never())->method('warning');
+
         // Act
         $this->service->delete($file);
 
@@ -231,6 +238,14 @@ class FileActionServiceTest extends TestCase
             ->with($file);
         $this->em->expects($this->once())
             ->method('flush');
+
+        // L'échec de suppression disque doit être loggé (pas juste avalé silencieusement)
+        $this->logger->expects($this->once())
+            ->method('warning')
+            ->with(
+                $this->stringContains('test.jpg'),
+                $this->callback(fn (array $context) => ($context['path'] ?? null) === '/path/test.jpg'),
+            );
 
         // Act & Assert (no exception thrown, graceful)
         $this->service->delete($file);

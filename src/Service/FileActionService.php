@@ -12,6 +12,7 @@ use App\Interface\FileRepositoryInterface;
 use App\Interface\StorageServiceInterface;
 use App\Service\FilenameValidator;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 /**
@@ -34,6 +35,7 @@ final class FileActionService implements FileActionServiceInterface
         private readonly AuthorizationCheckerInterface $authChecker,
         private readonly EntityManagerInterface $em,
         private readonly FilenameValidator $filenameValidator,
+        private readonly LoggerInterface $logger,
     ) {}
 
     /**
@@ -93,8 +95,17 @@ final class FileActionService implements FileActionServiceInterface
         try {
             $this->storageService->delete($file->getPath());
         } catch (\Exception $e) {
-            // Log: disk file missing is not critical
-            // TODO: Add logger to log this
+            // Non bloquant : l'entité doit rester supprimable même si le
+            // fichier physique a déjà disparu. On logue quand même, pour
+            // distinguer ce cas attendu d'un vrai souci disque récurrent.
+            $this->logger->warning(
+                sprintf('Échec de suppression disque pour le fichier "%s"', $file->getOriginalName()),
+                [
+                    'path' => $file->getPath(),
+                    'fileId' => (string) $file->getId(),
+                    'exception' => $e->getMessage(),
+                ],
+            );
         }
 
         // 2. Remove entity (cascade rules will handle Media cleanup if configured)

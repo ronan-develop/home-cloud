@@ -73,4 +73,88 @@ final class FileUploadTriggersImmediateMediaProcessingTest extends Authenticated
         );
         $this->assertNotNull($media->getThumbnailPath(), 'La vignette doit être générée dans la foulée');
     }
+
+    /**
+     * Les navigateurs n'ont pas de mimeType pour les RAW et envoient
+     * "application/octet-stream" (cf. commentaire de MediaProcessor sur
+     * RAW_EXTENSIONS). Si le dispatch se limite à `image/*`/`video/*`, un
+     * upload RAW via l'API ne crée jamais de Media — la reconnaissance par
+     * extension de MediaProcessor ne sert à rien si le message ne part
+     * jamais.
+     */
+    public function testRawUploadWithOctetStreamMimeTypeStillCreatesMedia(): void
+    {
+        $client = $this->createAuthenticatedKernelBrowser($this->alice);
+
+        $tempFile = tempnam(sys_get_temp_dir(), 'test_raw_');
+        file_put_contents($tempFile, 'not-a-real-raw-file-content');
+
+        $uploadedFile = new UploadedFile($tempFile, 'photo.nef', 'application/octet-stream', null, false);
+
+        $client->request(
+            'POST',
+            '/api/v1/files',
+            [
+                'ownerId'  => (string) $this->alice->getId(),
+                'folderId' => (string) $this->folder->getId(),
+            ],
+            ['file' => $uploadedFile],
+            ['CONTENT_TYPE' => 'multipart/form-data'],
+        );
+
+        $this->assertResponseStatusCodeSame(201);
+        @unlink($tempFile);
+
+        $response = json_decode((string) $client->getResponse()->getContent(), true);
+        $fileId = (string) $response['id'];
+
+        $file = $this->em->getRepository(File::class)->find(Uuid::fromString($fileId));
+        $this->assertNotNull($file);
+
+        $media = $this->em->getRepository(Media::class)->findOneBy(['file' => $file]);
+
+        $this->assertNotNull(
+            $media,
+            'Un RAW envoyé en application/octet-stream doit quand même produire un Media (reconnu par extension)'
+        );
+        $this->assertSame('photo', $media->getMediaType());
+    }
+
+    /**
+     * Symétrique du test PDF côté dispatch (MediaTest::testUploadNonImageDoesNotDispatchMediaMessage) :
+     * ferme la boucle côté traitement immédiat (kernel.terminate) introduit pour #251.
+     */
+    public function testPdfUploadNeverCreatesMedia(): void
+    {
+        $client = $this->createAuthenticatedKernelBrowser($this->alice);
+
+        $tempFile = tempnam(sys_get_temp_dir(), 'test_pdf_');
+        file_put_contents($tempFile, '%PDF-1.4 fake content');
+
+        $uploadedFile = new UploadedFile($tempFile, 'doc.pdf', 'application/pdf', null, false);
+
+        $client->request(
+            'POST',
+            '/api/v1/files',
+            [
+                'ownerId'  => (string) $this->alice->getId(),
+                'folderId' => (string) $this->folder->getId(),
+            ],
+            ['file' => $uploadedFile],
+            ['CONTENT_TYPE' => 'multipart/form-data'],
+        );
+
+        $this->assertResponseStatusCodeSame(201);
+        @unlink($tempFile);
+
+        $response = json_decode((string) $client->getResponse()->getContent(), true);
+        $fileId = (string) $response['id'];
+
+        $file = $this->em->getRepository(File::class)->find(Uuid::fromString($fileId));
+        $this->assertNotNull($file);
+
+        $media = $this->em->getRepository(Media::class)->findOneBy(['file' => $file]);
+
+        $this->assertNull($media, 'Un PDF ne doit jamais produire de Media');
+    }
 }

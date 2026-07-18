@@ -6,6 +6,7 @@ namespace App\Controller\Web;
 
 use App\Entity\File;
 use App\Entity\Share;
+use App\Interface\MediaProcessorInterface;
 use App\Interface\StorageServiceInterface;
 use App\Message\MediaProcessMessage;
 use App\Repository\FileRepository;
@@ -50,6 +51,7 @@ final class FileWebController extends AbstractController
         private readonly GuestRestrictionChecker $guestRestrictionChecker,
         private readonly MessageBusInterface $bus,
         private readonly PendingMediaProcessingCollector $pendingMediaProcessingCollector,
+        private readonly MediaProcessorInterface $mediaProcessor,
     ) {}
 
     #[Route('/files/{id}/download', name: 'app_file_download', methods: ['GET'])]
@@ -133,8 +135,10 @@ final class FileWebController extends AbstractController
 
         // Dispatch async (filet de sécurité) + traitement immédiat après la
         // réponse HTTP (kernel.terminate, cf. ProcessPendingMediaListener) —
-        // même mécanisme que FileUploadController (API).
-        if (str_starts_with($mimeType, 'image/') || str_starts_with($mimeType, 'video/')) {
+        // même mécanisme que FileUploadController (API). supports() couvre
+        // aussi les RAW envoyés en application/octet-stream (reconnus par
+        // extension) — un simple test image/*|video/* les aurait ignorés.
+        if ($this->mediaProcessor->supports($mimeType, $originalName)) {
             $this->bus->dispatch(new MediaProcessMessage((string) $file->getId()));
             $this->pendingMediaProcessingCollector->add((string) $file->getId());
         }

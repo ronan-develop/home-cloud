@@ -36,6 +36,17 @@ Seule la vignette est référencée en base (`Media::$thumbnailPath`). La previe
 upload → CreateFileService → File
                                │
                                ▼
+              mediaProcessor->supports(mimeType, nom) ?
+                               │
+                    ┌──────────┴──────────┐
+                  true                  false
+                    │                      │
+       dispatch async (secours)      rien à faire
+       + PendingMediaProcessingCollector
+                    │
+       kernel.terminate (juste après la réponse HTTP)
+                    │
+                    ▼
                     MediaProcessor::process()
                                │
                     resolveMediaType(mimeType, nom)
@@ -49,7 +60,14 @@ upload → CreateFileService → File
                  Media
 ```
 
-`MediaProcessor` est appelé en asynchrone (Messenger) pour l'upload normal, et en synchrone quand le Media est requis immédiatement (import direct dans un album).
+`supports()` est la **seule source de vérité** pour décider si un fichier mérite un traitement (image/video par mimeType, ou RAW reconnu par extension quand le mimeType ne dit rien) — les deux contrôleurs d'upload (API et web) l'utilisent, pour ne jamais dupliquer cette logique et risquer de l'oublier sur un chemin (déjà arrivé : les RAW en `application/octet-stream` étaient silencieusement ignorés avant).
+
+`MediaProcessor::process()` est appelé :
+- **immédiatement après la réponse HTTP** (`kernel.terminate`, via `PendingMediaProcessingCollector` + `ProcessPendingMediaListener`) — chemin normal depuis #251, latence perçue nulle
+- **en asynchrone** (Messenger, cron) en secours si le traitement immédiat échoue — idempotent, un double traitement ne fait rien de plus qu'un no-op
+- **en synchrone** quand le Media est requis immédiatement pour une autre raison (import direct dans un album, `AlbumImportService`)
+
+`ThumbnailService::generate()` tente d'abord `exif_thumbnail()` (miniature déjà embarquée dans l'IFD1 EXIF de la plupart des JPEG) avant de décoder l'image pleine résolution avec GD — décoder une image haute résolution juste pour en tirer une vignette de 320px peut à lui seul saturer la mémoire du worker.
 
 ---
 
