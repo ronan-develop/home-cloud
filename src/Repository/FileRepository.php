@@ -134,4 +134,13 @@ class FileRepository extends ServiceEntityRepository implements FileRepositoryIn
             ->getQuery()
             ->getResult();
     }
+
+    public function findWithoutMedia(): array
+    {
+        return $this->createQueryBuilder('f')
+            ->leftJoin(\App\Entity\Media::class, 'm', 'WITH', 'm.file = f')
+            ->andWhere('m.id IS NULL')
+            ->getQuery()
+            ->getResult();
+    }
 }
