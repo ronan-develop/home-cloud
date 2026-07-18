@@ -61,7 +61,7 @@ if [[ ! -f "$TARGETS_FILE" ]]; then
     exit 1
 fi
 
-mapfile -t TARGETS < <(grep -v '^\s*#' "$TARGETS_FILE" | grep -v '^\s*$' | tr -d '[:space:]')
+mapfile -t TARGETS < <(grep -v '^\s*#' "$TARGETS_FILE" | grep -v '^\s*$' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 
 if [[ ${#TARGETS[@]} -eq 0 ]]; then
     error "Aucune cible trouvée dans .deploy-targets"
