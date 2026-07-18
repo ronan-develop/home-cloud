@@ -86,6 +86,18 @@ final class MediaProcessor implements MediaProcessorInterface
         return $media;
     }
 
+    /**
+     * Un fichier mérite-t-il un Media (photo/vidéo), sans toucher au disque ?
+     *
+     * Seule source de vérité pour cette décision — les contrôleurs d'upload
+     * l'utilisent pour savoir s'il faut dispatcher/traiter, plutôt que de
+     * dupliquer la logique image/video + extensions RAW à chaque appelant.
+     */
+    public function supports(string $mimeType, string $originalName): bool
+    {
+        return $this->resolveMediaType($mimeType, $originalName) !== null;
+    }
+
     private function resolveMediaType(string $mimeType, string $originalName): ?string
     {
         foreach (self::MEDIA_MIME_TYPES as $prefix => $type) {

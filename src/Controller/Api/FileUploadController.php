@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller\Api;
 
 use App\ApiResource\FileOutput;
+use App\Interface\MediaProcessorInterface;
 use App\Message\MediaProcessMessage;
 use App\Service\CreateFileService;
 use App\Service\PendingMediaProcessingCollector;
@@ -42,6 +43,7 @@ final class FileUploadController extends AbstractController
         private readonly SerializerInterface $serializer,
         private readonly MessageBusInterface $bus,
         private readonly PendingMediaProcessingCollector $pendingMediaProcessingCollector,
+        private readonly MediaProcessorInterface $mediaProcessor,
     ) {}
 
     /**
@@ -78,8 +80,10 @@ final class FileUploadController extends AbstractController
         // Dispatch async (filet de sécurité) + traitement immédiat après la
         // réponse HTTP (kernel.terminate, cf. ProcessPendingMediaListener) :
         // le worker Messenger reste le secours si ce dernier échoue.
-        $mimeType = $file->getMimeType();
-        if (str_starts_with($mimeType, 'image/') || str_starts_with($mimeType, 'video/')) {
+        // supports() couvre aussi les RAW envoyés en application/octet-stream
+        // (mimeType inutile, reconnus par extension) — un simple test
+        // image/*|video/* les aurait ignorés silencieusement.
+        if ($this->mediaProcessor->supports($file->getMimeType(), $file->getOriginalName())) {
             $this->bus->dispatch(new MediaProcessMessage((string) $file->getId()));
             $this->pendingMediaProcessingCollector->add((string) $file->getId());
         }
