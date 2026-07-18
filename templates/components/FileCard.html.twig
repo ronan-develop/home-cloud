@@ -38,6 +38,13 @@
 			   class="rename-btn hc-item-action hc-item-action--edit"
 			   title="Renommer {{ item.originalName ?? item.name|e('html') }}"
 			   data-file-id="{{ item.id }}"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-pencil"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></a>
+			{% if item.mimeType == 'application/pdf' %}
+			<button type="button"
+			        data-testid="view-pdf-btn-{{ item.id }}"
+			        class="hc-item-action hc-item-action--move"
+			        title="Visualiser {{ item.originalName ?? item.name|e('html') }}"
+			        onclick="openPdfViewerModal('{{ path('app_file_view', { id: item.id }) }}', '{{ (item.originalName ?? item.name)|e('js') }}')"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+			{% endif %}
 			<a href="{{ path('app_file_download', { id: item.id }) }}"
 			   class="hc-item-action hc-item-action--move"
 			   title="Télécharger {{ item.originalName ?? item.name|e('html') }}"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></a>
