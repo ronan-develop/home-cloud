@@ -183,6 +183,22 @@ Le serveur tourne sous **LiteSpeed** (`server: o2switch-PowerBoost-v3`), mais LS
 
 ---
 
+## Fichiers PDF
+
+Pas de `Media` créé (`MediaProcessor::resolveMediaType()` retourne `null` pour `application/pdf`) — pas de vignette, pas d'EXIF. Un PDF reste un `File` seul.
+
+### Visualisation (#241)
+
+La plupart des navigateurs affichent nativement un PDF (pagination, zoom, recherche texte) si le serveur répond en `Content-Disposition: inline` plutôt qu'`attachment`. `FileWebController::view()` (route `app_file_view`) sert exactement le même fichier que `download()` (même autorisation, factorisée dans `buildFileResponse()`), seule la disposition change.
+
+**Aucune librairie JS de rendu PDF (pas de PDF.js)** : le bouton "Visualiser" de `FileCard.html.twig` ouvre une modale avec une simple `<iframe src="…/view">` — c'est le lecteur du navigateur qui fait tout le travail.
+
+### Vignette de première page — non fait
+
+Idée explorée mais pas implémentée : rasteriser la page 1 via Ghostscript (`gs`, présent sur o2switch, `Process`/`shell_exec` non bloqués) — même esprit que l'extraction de preview RAW (extraire quelque chose de déjà là plutôt que tout re-décoder). Nécessiterait une dégradation gracieuse identique au pipeline RAW si `gs` est absent/échoue. Voir #241.
+
+---
+
 ## Points ouverts
 
 - **EXIF des RAW** : `exif_read_data()` ne lit pas ces conteneurs. Date de prise de vue, modèle d'appareil et GPS restent vides pour ces photos (la vignette, elle, fonctionne). Deux pistes : lire les EXIF de la preview extraite (simple, métadonnées appauvries), ou exposer les tags TIFF depuis le package (plus riche).
