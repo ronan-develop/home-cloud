@@ -110,6 +110,12 @@ services:
         arguments:
             $storageDir: '%app.storage_dir%'
 
+    App\Service\RawPreviewCache:
+        arguments:
+            $storageDir: '%app.storage_dir%'
+
+    App\Interface\RawPreviewCacheInterface: '@App\Service\RawPreviewCache'
+
     App\Service\ThumbnailService:
         arguments:
             $storageDir: '%app.storage_dir%'

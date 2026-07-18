@@ -9,6 +9,7 @@ use App\Entity\User;
 use App\Repository\MediaRepository;
 use App\Interface\StorageServiceInterface;
 use App\Security\ResourceAccessChecker;
+use App\Service\MediaCacheHeaders;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -44,6 +45,7 @@ final class MediaThumbnailController extends AbstractController
         private readonly MediaRepository $mediaRepository,
         private readonly StorageServiceInterface $storageService,
         private readonly ResourceAccessChecker $resourceAccessChecker,
+        private readonly MediaCacheHeaders $mediaCacheHeaders,
     ) {}
 
     #[Route('/api/v1/medias/{id}/thumbnail', name: 'media_thumbnail', methods: ['GET'])]
@@ -74,6 +76,7 @@ final class MediaThumbnailController extends AbstractController
 
         $response->headers->set('Content-Type', 'image/jpeg');
         $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $this->mediaCacheHeaders->applyTo($response);
 
         return $response;
     }

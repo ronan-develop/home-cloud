@@ -136,7 +136,6 @@ for PRENOM in "${TARGETS[@]}"; do
             mkdir -p ${DEPLOY_PATH}
             cd ${DEPLOY_PATH}
             git clone ${GIT_REPO} .
-            ${COMPOSER_BIN} install --no-interaction --prefer-dist --no-progress --no-dev
             cat > .env.local <<'ENVEOF'
 APP_ENV=prod
 APP_SECRET=${APP_SECRET}
@@ -145,6 +144,7 @@ JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
 JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
 JWT_PASSPHRASE=${JWT_PASSPHRASE}
 ENVEOF
+            ${COMPOSER_BIN} install --no-interaction --prefer-dist --no-progress --no-dev
             ${PHP_BIN} bin/console cache:clear --env=prod
             ${PHP_BIN} bin/console doctrine:migrations:migrate --no-interaction --env=prod
             ${PHP_BIN} bin/console lexik:jwt:generate-keypair --skip-if-exists --env=prod

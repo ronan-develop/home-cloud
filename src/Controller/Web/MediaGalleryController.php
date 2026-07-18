@@ -8,6 +8,8 @@ use App\Entity\User;
 use App\Interface\AlbumRepositoryInterface;
 use App\Interface\MediaRepositoryInterface;
 use App\Interface\StorageServiceInterface;
+use App\Service\MediaCacheHeaders;
+use App\Service\MediaFullResponseFactory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -27,6 +29,8 @@ final class MediaGalleryController extends AbstractController
         private readonly MediaRepositoryInterface $mediaRepository,
         private readonly StorageServiceInterface $storageService,
         private readonly AlbumRepositoryInterface $albumRepository,
+        private readonly MediaFullResponseFactory $mediaFullResponseFactory,
+        private readonly MediaCacheHeaders $mediaCacheHeaders,
     ) {}
 
     #[Route('/gallery', name: 'app_gallery')]
@@ -107,6 +111,7 @@ final class MediaGalleryController extends AbstractController
         $response = new BinaryFileResponse($absolutePath);
         $response->headers->set('Content-Type', 'image/jpeg');
         $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $this->mediaCacheHeaders->applyTo($response);
 
         return $response;
     }
@@ -133,11 +138,9 @@ final class MediaGalleryController extends AbstractController
             throw $this->createNotFoundException('Fichier introuvable sur le disque.');
         }
 
-        $response = new BinaryFileResponse($absolutePath);
-        $response->headers->set('Content-Type', $file->getMimeType());
-        $response->headers->set('X-Content-Type-Options', 'nosniff');
-        $response->setContentDisposition(\Symfony\Component\HttpFoundation\ResponseHeaderBag::DISPOSITION_INLINE);
-
-        return $response;
+        // Un RAW est servi via sa preview JPEG embarquée : le navigateur ne sait
+        // pas décoder le fichier d'origine, et le télécharger coûterait plusieurs
+        // dizaines de Mo pour n'afficher qu'une image cassée.
+        return $this->mediaFullResponseFactory->create($absolutePath, $file->getMimeType(), $file->getPath());
     }
 }

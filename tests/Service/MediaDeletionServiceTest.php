@@ -10,6 +10,8 @@ use App\Entity\Media;
 use App\Entity\User;
 use App\Interface\StorageServiceInterface;
 use App\Service\MediaDeletionService;
+use App\Interface\RawPreviewCacheInterface;
+use App\Service\RawPreviewCache;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 
@@ -40,7 +42,7 @@ final class MediaDeletionServiceTest extends TestCase
         $em->expects($this->once())->method('remove')->with($media);
         $em->expects($this->once())->method('flush');
 
-        $service = new MediaDeletionService($storage, $em);
+        $service = new MediaDeletionService($storage, $em, $this->createMock(RawPreviewCacheInterface::class));
         $service->delete($media);
     }
 
@@ -59,7 +61,7 @@ final class MediaDeletionServiceTest extends TestCase
         $em->method('remove');
         $em->method('flush');
 
-        $service = new MediaDeletionService($storage, $em);
+        $service = new MediaDeletionService($storage, $em, $this->createMock(RawPreviewCacheInterface::class));
         $service->delete($media);
     }
 
@@ -74,7 +76,23 @@ final class MediaDeletionServiceTest extends TestCase
         $em->method('remove');
         $em->method('flush');
 
-        $service = new MediaDeletionService($storage, $em);
+        $service = new MediaDeletionService($storage, $em, $this->createMock(RawPreviewCacheInterface::class));
+        $service->delete($media);
+    }
+
+    public function testDeleteEvictsCachedRawPreview(): void
+    {
+        // Une preview de RAW mise en cache pèse ~1 Mo : sans éviction, chaque
+        // suppression laisserait un orphelin sur le disque.
+        $media = $this->makeMedia();
+
+        $storage = $this->createMock(StorageServiceInterface::class);
+        $em = $this->createMock(EntityManagerInterface::class);
+
+        $cache = $this->createMock(RawPreviewCacheInterface::class);
+        $cache->expects($this->once())->method('evict')->with('2026/02/photo.jpg');
+
+        $service = new MediaDeletionService($storage, $em, $cache);
         $service->delete($media);
     }
 
@@ -89,7 +107,7 @@ final class MediaDeletionServiceTest extends TestCase
         $em->expects($this->once())->method('remove')->with($media);
         $em->expects($this->once())->method('flush');
 
-        $service = new MediaDeletionService($storage, $em);
+        $service = new MediaDeletionService($storage, $em, $this->createMock(RawPreviewCacheInterface::class));
         $service->delete($media);
     }
 }

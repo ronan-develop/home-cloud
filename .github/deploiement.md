@@ -555,7 +555,15 @@ grep -E "Folder (created|updated|deleted)" "$LOG_FILE" \
 
 # Blocage IPs suspectes (tous les jours à 6h)
 0 6 * * * /home/username/scripts/block_suspicious_ips.sh >> /home/username/logs/security_block.log 2>&1
+
+# Worker Messenger — traitement asynchrone des médias (vignettes, EXIF)
+# Pas de Supervisor sur mutualisé : le cron relance le worker toutes les 5 min.
+# --time-limit borne la durée de vie du process pour éviter les fuites mémoire ;
+# --limit borne le nombre de messages traités par exécution.
+*/5 * * * * cd /home/username/symfony_app && php bin/console messenger:consume async --time-limit=290 --limit=50 --no-debug >> /home/username/logs/messenger.log 2>&1
 ```
+
+> **Sans ce cron, les messages `MediaProcessMessage` (vignettes, EXIF) s'empilent silencieusement dans la table `messenger_messages` sans jamais être traités** — l'upload réussit mais la photo n'apparaît jamais dans la Galerie. Vérifier l'absence de backlog avec `php bin/console messenger:stats`.
 
 ### `scripts/backup.sh`
 

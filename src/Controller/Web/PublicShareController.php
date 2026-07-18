@@ -11,6 +11,8 @@ use App\Interface\FileRepositoryInterface;
 use App\Interface\MediaRepositoryInterface;
 use App\Interface\ShareLinkAccessCheckerInterface;
 use App\Interface\StorageServiceInterface;
+use App\Service\MediaCacheHeaders;
+use App\Service\MediaFullResponseFactory;
 use App\Security\ResourceLocator;
 use App\Security\SharedFileScopeChecker;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -41,6 +43,8 @@ final class PublicShareController extends AbstractController
         private readonly MediaRepositoryInterface $mediaRepository,
         private readonly SharedFileScopeChecker $sharedFileScopeChecker,
         private readonly StorageServiceInterface $storageService,
+        private readonly MediaFullResponseFactory $mediaFullResponseFactory,
+        private readonly MediaCacheHeaders $mediaCacheHeaders,
     ) {}
 
     #[Route('/p/{selector}/{token}', name: 'app_public_share', methods: ['GET'])]
@@ -121,6 +125,9 @@ final class PublicShareController extends AbstractController
 
         $response = new BinaryFileResponse($absolutePath);
         $response->headers->set('Content-Type', 'image/jpeg');
+        // Partagé : le secret est dans l'URL, pas dans une session — un cache
+        // intermédiaire peut légitimement servir ce contenu.
+        $this->mediaCacheHeaders->applyTo($response, shared: true);
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
 
@@ -144,11 +151,12 @@ final class PublicShareController extends AbstractController
             throw new NotFoundHttpException();
         }
 
-        $response = new BinaryFileResponse($absolutePath);
-        $response->headers->set('Content-Type', $file->getMimeType());
-        $response->headers->set('X-Content-Type-Options', 'nosniff');
+        // Un RAW est servi via sa preview JPEG embarquée : le navigateur ne sait
+        // pas décoder le fichier d'origine, et le télécharger coûterait plusieurs
+        // dizaines de Mo pour n'afficher qu'une image cassée.
+        $response = $this->mediaFullResponseFactory->create($absolutePath, $file->getMimeType(), $file->getPath());
         $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
-        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_INLINE);
+        $this->mediaCacheHeaders->applyTo($response, shared: true);
 
         return $response;
     }

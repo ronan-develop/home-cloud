@@ -6,6 +6,8 @@
     "require": {
         "php": ">=8.4",
         "ext-ctype": "*",
+        "ext-exif": "*",
+        "ext-gd": "*",
         "ext-iconv": "*",
         "api-platform/doctrine-orm": "^4.3.16",
         "api-platform/symfony": "^4.3.16",
@@ -104,7 +106,7 @@
     },
     "require-dev": {
         "dama/doctrine-test-bundle": "^8.6",
-        "doctrine/doctrine-fixtures-bundle": "^4.3",
+        "doctrine/doctrine-fixtures-bundle": "^4.3.1",
         "phpunit/phpunit": "^13.2.4",
         "symfony/browser-kit": "8.0.*",
         "symfony/css-selector": "8.0.*",
