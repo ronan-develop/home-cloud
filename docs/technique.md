@@ -7,10 +7,10 @@ Les partis pris structurants et leurs raisons. Pour le détail d'implémentation
 ## Vue d'ensemble
 
 ```text
-Navigateur ──── session (cookie) ────► Controller/Web/  ──┐
-                                                          ├──► Service/ ──► Repository/ ──► MariaDB
+Navigateur ──── session (cookie) ────► Controller/Web/     ──┐
+                                                             ├──► Service/ ──► Repository/ ──► MariaDB
 Client API ──── JWT (Bearer) ────────► State/ (API Platform) ┘                 │
-                                                                                └──► var/storage/ (fichiers)
+                                                                               └──► var/storage/ (fichiers)
 ```
 
 Deux portes d'entrée, une seule logique métier. L'interface web et l'API ne partagent ni authentification ni contrôleurs, mais délèguent aux **mêmes services**.
