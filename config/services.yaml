@@ -76,6 +76,8 @@ services:
     # this creates a service per class whose id is the fully-qualified class name
     App\:
         resource: '../src/'
+        exclude:
+            - '../src/DataFixtures/'
 
     App\Factory\FolderTreeFactory:
         arguments:
@@ -113,11 +115,6 @@ services:
             $storageDir: '%app.storage_dir%'
             $rawPreviewExtractor: '@RonanLenouvel\RawPreviewExtractor\RawPreviewExtractorInterface'
 
-    App\DataFixtures\AppFixtures:
-        arguments:
-            $storageDir: '%app.storage_dir%'
-            $projectDir: '%kernel.project_dir%'
-
     App\EventListener\SecurityHeadersListener:
         arguments:
             $env: '%kernel.environment%'
@@ -129,6 +126,13 @@ services:
     App\State\ShareProcessor:
         arguments:
             $shareCreationLimiter: '@limiter.share_creation'
+
+when@dev:
+    services:
+        App\DataFixtures\AppFixtures:
+            arguments:
+                $storageDir: '%app.storage_dir%'
+                $projectDir: '%kernel.project_dir%'
 
 when@test:
     services:
