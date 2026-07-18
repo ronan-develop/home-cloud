@@ -12,7 +12,10 @@ jest.unstable_mockModule('../js/modal.js', () => ({
 const { Modal } = await import('../js/modal.js');
 await import('../js/delete-folder-modal.js');
 
-// Two tests: when folder is empty -> form submitted immediately; when not empty -> modal opened
+// La confirmation par modale est systématique, qu'un dossier soit vide ou non :
+// un dossier vide peut lui-même être le dernier enfant d'un dossier parent,
+// et une suppression sans confirmation en chaîne effacerait toute une
+// arborescence en quelques clics sans qu'aucun garde-fou n'intervienne.
 
 describe('delete-folder-modal behavior', () => {
   beforeEach(() => {
@@ -32,16 +35,16 @@ describe('delete-folder-modal behavior', () => {
     form.submit = jest.fn();
   });
 
-  test('auto-submit when folder is empty', () => {
-    window.openDeleteFolderModal('id-1', 'EmptyFolder', '', '1');
+  test('opens modal when folder is empty', () => {
+    window.openDeleteFolderModal('id-1', 'EmptyFolder', '');
 
     const form = document.getElementById('delete-folder-form');
-    expect(form.submit).toHaveBeenCalled();
-    expect(Modal.open).not.toHaveBeenCalled();
+    expect(form.submit).not.toHaveBeenCalled();
+    expect(Modal.open).toHaveBeenCalledWith('delete-folder-modal');
   });
 
   test('opens modal when folder is not empty', () => {
-    window.openDeleteFolderModal('id-2', 'NonEmpty', '', '0');
+    window.openDeleteFolderModal('id-2', 'NonEmpty', '');
 
     const form = document.getElementById('delete-folder-form');
     expect(form.submit).not.toHaveBeenCalled();
