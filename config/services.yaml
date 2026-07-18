@@ -116,10 +116,13 @@ services:
 
     App\Interface\RawPreviewCacheInterface: '@App\Service\RawPreviewCache'
 
+    App\Interface\ExifThumbnailExtractorInterface: '@App\Service\ExifThumbnailExtractor'
+
     App\Service\ThumbnailService:
         arguments:
             $storageDir: '%app.storage_dir%'
             $rawPreviewExtractor: '@RonanLenouvel\RawPreviewExtractor\RawPreviewExtractorInterface'
+            $exifThumbnailExtractor: '@App\Interface\ExifThumbnailExtractorInterface'
 
     App\EventListener\SecurityHeadersListener:
         arguments:

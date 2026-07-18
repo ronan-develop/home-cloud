@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Interface\ExifThumbnailExtractorInterface;
 use RonanLenouvel\RawPreviewExtractor\Exception\RawPreviewExtractorException;
 use RonanLenouvel\RawPreviewExtractor\Orientation;
 use RonanLenouvel\RawPreviewExtractor\RawPreviewExtractorInterface;
@@ -33,6 +34,7 @@ class ThumbnailService
     public function __construct(
         private readonly string $storageDir,
         private readonly RawPreviewExtractorInterface $rawPreviewExtractor,
+        private readonly ExifThumbnailExtractorInterface $exifThumbnailExtractor,
     ) {}
 
     /**
@@ -88,9 +90,22 @@ class ThumbnailService
 
     /**
      * Génère le thumbnail depuis un fichier image en clair.
+     *
+     * La plupart des JPEG embarquent déjà une miniature dans leur IFD1 EXIF :
+     * l'utiliser évite de décoder l'image pleine résolution avec GD, un
+     * décodage qui peut à lui seul saturer la mémoire du worker sur un scan
+     * haute résolution. Repli sur le décodage complet si elle est absente.
      */
     private function generateFromPlain(string $plainPath): ?string
     {
+        $exifThumbnail = $this->exifThumbnailExtractor->extract($plainPath);
+        if ($exifThumbnail !== null) {
+            $source = @imagecreatefromstring($exifThumbnail->jpegData);
+            if ($source !== false) {
+                return $this->resizeAndSave($source, $exifThumbnail->orientation);
+            }
+        }
+
         // Vérifier les dimensions AVANT de charger l'image en mémoire GD
         // Une image 100000x100000 peut allouer des dizaines de Go RAM (GD bomb)
         $size = @getimagesize($plainPath);

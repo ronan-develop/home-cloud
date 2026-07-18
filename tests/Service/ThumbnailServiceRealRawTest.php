@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Service;
 
+use App\Interface\ExifThumbnailExtractorInterface;
 use App\Service\ThumbnailService;
 use PHPUnit\Framework\TestCase;
 use RonanLenouvel\RawPreviewExtractor\Orientation;
@@ -69,9 +70,13 @@ final class ThumbnailServiceRealRawTest extends TestCase
 
     public function testGeneratesUprightThumbnailFromRealNef(): void
     {
+        $exifExtractor = $this->createMock(ExifThumbnailExtractorInterface::class);
+        $exifExtractor->method('extract')->willReturn(null);
+
         $service = new ThumbnailService(
             $this->storageDir,
             RawPreviewExtractor::createDefault(),
+            $exifExtractor,
         );
 
         $thumb = $service->generate(self::FIXTURE);
