@@ -7,6 +7,7 @@ namespace App\Controller\Api;
 use App\ApiResource\FileOutput;
 use App\Message\MediaProcessMessage;
 use App\Service\CreateFileService;
+use App\Service\PendingMediaProcessingCollector;
 use App\State\FileProvider;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -40,6 +41,7 @@ final class FileUploadController extends AbstractController
         private readonly FileProvider $provider,
         private readonly SerializerInterface $serializer,
         private readonly MessageBusInterface $bus,
+        private readonly PendingMediaProcessingCollector $pendingMediaProcessingCollector,
     ) {}
 
     /**
@@ -73,10 +75,13 @@ final class FileUploadController extends AbstractController
             $request->request->get('newFolderName'),
         );
 
-        // Dispatch async si c'est un média (image/* ou video/*)
+        // Dispatch async (filet de sécurité) + traitement immédiat après la
+        // réponse HTTP (kernel.terminate, cf. ProcessPendingMediaListener) :
+        // le worker Messenger reste le secours si ce dernier échoue.
         $mimeType = $file->getMimeType();
         if (str_starts_with($mimeType, 'image/') || str_starts_with($mimeType, 'video/')) {
             $this->bus->dispatch(new MediaProcessMessage((string) $file->getId()));
+            $this->pendingMediaProcessingCollector->add((string) $file->getId());
         }
 
         $output = $this->provider->toOutput($file);

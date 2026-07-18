@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Service;
 
+use App\Interface\ExifThumbnailExtractorInterface;
 use App\Service\ThumbnailService;
 use PHPUnit\Framework\TestCase;
 use RonanLenouvel\RawPreviewExtractor\Exception\PreviewNotFoundException;
@@ -63,6 +64,19 @@ final class ThumbnailServiceRawTest extends TestCase
     }
 
     /**
+     * Ces tests couvrent le pipeline RAW, pas la miniature EXIF : l'extracteur
+     * EXIF est doublé pour toujours renvoyer null (pas de raccourci), afin de
+     * garder le comportement RAW existant sous les projecteurs.
+     */
+    private function service(RawPreviewExtractorInterface $rawExtractor): ThumbnailService
+    {
+        $exifExtractor = $this->createMock(ExifThumbnailExtractorInterface::class);
+        $exifExtractor->method('extract')->willReturn(null);
+
+        return new ThumbnailService($this->storageDir, $rawExtractor, $exifExtractor);
+    }
+
+    /**
      * Un faux fichier RAW : le contenu importe peu, l'extracteur est doublé.
      */
     private function makeRawFile(): string
@@ -83,7 +97,7 @@ final class ThumbnailServiceRawTest extends TestCase
             new ExtractedPreview($this->makeJpeg(800, 600), 800, 600, Format::NEF),
         );
 
-        $service = new ThumbnailService($this->storageDir, $extractor);
+        $service = $this->service($extractor);
         $thumb = $service->generate($rawPath);
 
         $this->assertNotNull($thumb, 'Un RAW avec preview embarquée doit produire une vignette');
@@ -99,7 +113,7 @@ final class ThumbnailServiceRawTest extends TestCase
         $extractor->method('supports')->willReturn(true);
         $extractor->method('extract')->willThrowException(new PreviewNotFoundException('no preview'));
 
-        $service = new ThumbnailService($this->storageDir, $extractor);
+        $service = $this->service($extractor);
 
         // Dégradation gracieuse : pas de vignette, mais pas d'exception non plus.
         $this->assertNull($service->generate($rawPath));
@@ -120,7 +134,7 @@ final class ThumbnailServiceRawTest extends TestCase
             new ExtractedPreview($this->makeJpeg(900, 600), 900, 600, Format::NEF, Orientation::Rotate90),
         );
 
-        $service = new ThumbnailService($this->storageDir, $extractor);
+        $service = $this->service($extractor);
         $thumb = $service->generate($rawPath);
 
         $this->assertNotNull($thumb);
@@ -145,7 +159,7 @@ final class ThumbnailServiceRawTest extends TestCase
         $extractor->method('supports')->willReturn(false);
         $extractor->expects($this->never())->method('extract');
 
-        $service = new ThumbnailService($this->storageDir, $extractor);
+        $service = $this->service($extractor);
         $thumb = $service->generate($jpegPath);
 
         $this->assertNotNull($thumb, 'Le pipeline GD existant doit continuer à fonctionner');
