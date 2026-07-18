@@ -3,11 +3,15 @@ import { Modal } from './modal.js';
 /**
  * Ouvre la modale de suppression de dossier.
  *
+ * Toujours confirmée, même pour un dossier vide : le supprimer peut lui-même
+ * vider son dossier parent, et enchaîner des suppressions sans confirmation
+ * effacerait une arborescence entière en quelques clics.
+ *
  * @param {string} folderId   UUID du dossier à supprimer
  * @param {string} folderName Nom affiché dans la modale
  * @param {string} parentId   UUID du dossier parent (pour la redirection post-suppression)
  */
-window.openDeleteFolderModal = function (folderId, folderName, parentId, isEmpty) {
+window.openDeleteFolderModal = function (folderId, folderName, parentId) {
 	const form     = document.getElementById('delete-folder-form');
 	const nameEl   = document.getElementById('delete-folder-name');
 	const redirect = document.getElementById('delete-folder-redirect-input');
@@ -17,16 +21,6 @@ window.openDeleteFolderModal = function (folderId, folderName, parentId, isEmpty
 	form.action    = `/folders/${folderId}/delete`;
 	nameEl.textContent = folderName || 'ce dossier';
 	redirect.value = parentId || '';
-
-	// If folder is empty, submit immediately (no modal)
-	if (String(isEmpty) === '1') {
-		const input = document.getElementById('delete-folder-contents-input');
-		if (input) {
-			input.value = '1';
-		}
-		form.submit();
-		return;
-	}
 
 	Modal.open('delete-folder-modal');
 };
