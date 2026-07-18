@@ -128,13 +128,52 @@ php bin/console app:create-user '<email>' '<password>' <prenom> --env=prod
 
 ## Chemins importants sur o2switch
 
-| Ressource   | Chemin                                                      |
-|-------------|-------------------------------------------------------------|
-| Composer    | `/usr/local/bin/composer`                                   |
-| PHP         | `/usr/local/bin/php`                                        |
-| Projet      | `/home9/ron2cuba/<prenom>.lenouvel.me/`                     |
-| Logs deploy | `/home9/ron2cuba/<prenom>.lenouvel.me/var/log/deploy.log`   |
-| SSH user    | `ron2cuba@lenouvel.me`                                      |
+| Ressource   | Chemin                                                    |
+|-------------|-----------------------------------------------------------|
+| Composer    | `/usr/local/bin/composer`                                 |
+| PHP         | `/usr/local/bin/php`                                      |
+| Projet      | `/home9/ron2cuba/<prenom>.lenouvel.me/`                   |
+| Logs deploy | `/home9/ron2cuba/<prenom>.lenouvel.me/var/log/deploy.log` |
+| SSH user    | `ron2cuba@lenouvel.me`                                    |
+
+---
+
+## Worker Messenger — obligatoire
+
+Le traitement des médias (EXIF, vignettes) part en file asynchrone
+(`config/packages/messenger.yaml` route `App\Message\MediaProcessMessage`
+vers le transport `async`, stocké en base). **Sans worker qui dépile cette
+file, aucune vignette n'est générée** : les fichiers s'uploadent et
+apparaissent dans *Mes fichiers*, mais jamais dans la Galerie. Aucune erreur
+n'est levée — la photo « disparaît » silencieusement.
+
+Supervisor n'existe pas sur un hébergement mutualisé (pas de systemd) : on
+passe par une tâche cron cPanel qui relance le worker à intervalle régulier.
+
+| Champ      | Valeur        |
+|------------|---------------|
+| Intervalle | `*/5 * * * *` |
+
+```bash
+flock -n /home9/ron2cuba/.messenger-<prenom>.lock /usr/local/bin/php /home9/ron2cuba/<prenom>.lenouvel.me/bin/console messenger:consume async --time-limit=290 --memory-limit=128M --env=prod >> /home9/ron2cuba/<prenom>.lenouvel.me/var/log/messenger.log 2>&1
+```
+
+- `flock -n` : si un worker tourne déjà, la tentative suivante ne fait rien —
+  sans lui, un nouveau processus s'accumulerait toutes les 5 minutes.
+- `--time-limit=290` : le worker meurt avant le prochain cron (300 s) ; sans
+  lui, `flock` bloquerait tout redémarrage.
+- `--memory-limit=128M` : PHP fuit en processus long, le worker redémarre
+  proprement avant de saturer.
+
+Diagnostic :
+
+```bash
+php bin/console messenger:stats --env=prod   # messages en attente
+tail -20 var/log/messenger.log               # erreurs du worker
+```
+
+**Critère de bon fonctionnement** : uploader une photo → elle apparaît dans
+la Galerie avec sa vignette en moins de 5 minutes.
 
 ---
 
@@ -157,10 +196,11 @@ JWT_PASSPHRASE=
 
 ## Diagnostic — erreurs fréquentes
 
-| Symptôme                  | Cause                              | Solution                                       |
-|---------------------------|------------------------------------|------------------------------------------------|
-| 500 sur le site           | Assets non compilés                | `php bin/console asset-map:compile`            |
-| 500 sur le site           | `SecRuleEngine` dans `.htaccess`   | Supprimer ce bloc du `.htaccess` serveur       |
-| `git pull` bloqué         | Fichier untracked sur le serveur   | `rm -f <fichier>` puis `git pull`              |
-| DB access denied          | `.env.local` incorrect             | Vérifier `DATABASE_URL` et mot de passe cPanel |
-| SSH refusé                | IP non whitelistée                 | cPanel → Accès SSH → Autorisation SSH          |
+| Symptôme                             | Cause                            | Solution                                                     |
+|--------------------------------------|----------------------------------|--------------------------------------------------------------|
+| 500 sur le site                      | Assets non compilés              | `php bin/console asset-map:compile`                          |
+| 500 sur le site                      | `SecRuleEngine` dans `.htaccess` | Supprimer ce bloc du `.htaccess` serveur                     |
+| `git pull` bloqué                    | Fichier untracked sur le serveur | `rm -f <fichier>` puis `git pull`                            |
+| DB access denied                     | `.env.local` incorrect           | Vérifier `DATABASE_URL` et mot de passe cPanel               |
+| SSH refusé                           | IP non whitelistée               | cPanel → Accès SSH → Autorisation SSH                        |
+| Pas de vignette/EXIF dans la Galerie | Worker Messenger absent          | Vérifier la tâche cron (voir « Worker Messenger » ci-dessus) |
