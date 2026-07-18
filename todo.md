@@ -59,4 +59,8 @@ Tous suivis sur https://github.com/ronan-develop/home-cloud/issues
 
 ### 🟢 Perf/UX upload (2026-07-18, suite investigation #237)
 
-- [ ] [#251](https://github.com/ronan-develop/home-cloud/issues/251) — Accélérer le traitement des uploads (exif_thumbnail) + statut « en cours » tant que le Media n'existe pas
+- [x] [#251](https://github.com/ronan-develop/home-cloud/issues/251) — Accélérer le traitement des uploads (exif_thumbnail) + statut « en cours » tant que le Media n'existe pas
+      — Partie 1 (perf `exif_thumbnail`) + traitement immédiat post-upload (`kernel.terminate`) : PR #253, déployé en prod
+      — Rattrapage des fichiers déjà orphelins (`app:media:process-missing`) : PR #254
+      — Fix de la route web legacy (`FileWebController::upload`, ne dispatchait rien) : PR #255, déployé en prod
+      — ⚠️ **Partie 2 non traitée** : le badge visuel « Traitement en cours » (décrit dans le corps de l'issue) n'a pas été implémenté — le délai perçu est devenu négligeable grâce au traitement immédiat, donc la priorité a baissé, mais ce n'est pas fait. À rouvrir en ticket dédié si encore utile.
