@@ -30,3 +30,29 @@
 1. Dév module suivi d'upload (état, progression %, métadonnées du fichier en cours)
 2. Audit erreurs serveur/browser → vraie page d'erreur
 3. Renforcer les échecs silencieux : lever exceptions explicites au lieu de `return null` (+ tests TDD)
+
+---
+
+## Tickets GitHub — 2026-07-18
+
+Tous suivis sur https://github.com/ronan-develop/home-cloud/issues
+
+### 🔴 Critique
+
+- [ ] [#237](https://github.com/ronan-develop/home-cloud/issues/237) — BUG : suppression de fichiers/dossiers non scopée, perte de dossiers racine
+
+### 🟠 Bugs / retours utilisateur (2026-07-18)
+
+- [ ] [#238](https://github.com/ronan-develop/home-cloud/issues/238) — Glisser-déposer d'un dossier local (avec structure) vers un dossier cible
+- [ ] [#239](https://github.com/ronan-develop/home-cloud/issues/239) — Barre de progression d'upload ne fonctionne pas
+- [ ] [#240](https://github.com/ronan-develop/home-cloud/issues/240) — Téléchargement d'un dossier entier ne fonctionne pas
+- [ ] [#241](https://github.com/ronan-develop/home-cloud/issues/241) — Prévisualisation des fichiers PDF
+
+### 🟡 Backlog fonctionnel initial (001 à 006, 2026-07-18)
+
+- [ ] [#242](https://github.com/ronan-develop/home-cloud/issues/242) — Renommer un album
+- [ ] [#243](https://github.com/ronan-develop/home-cloud/issues/243) — Zoom sur une photo (clic ou +/-)
+- [ ] [#244](https://github.com/ronan-develop/home-cloud/issues/244) — Nettoyer les liens publics à la révocation du partage
+- [ ] [#245](https://github.com/ronan-develop/home-cloud/issues/245) — Curseur de contrôle de concurrence d'envoi à l'upload
+- [ ] [#246](https://github.com/ronan-develop/home-cloud/issues/246) — Suppression photo « mes fichiers » : proposer conservation dans « mes albums »
+- [ ] [#247](https://github.com/ronan-develop/home-cloud/issues/247) — Vérifier/fiabiliser le flux import et nouveau fichier
