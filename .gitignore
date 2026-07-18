@@ -58,3 +58,4 @@ php.ini
 
 # Métadonnées de provenance générées par Windows/WSL
 *:Zone.Identifier
+.secrets.*
