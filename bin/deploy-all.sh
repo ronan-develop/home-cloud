@@ -136,6 +136,7 @@ for PRENOM in "${TARGETS[@]}"; do
             mkdir -p ${DEPLOY_PATH}
             cd ${DEPLOY_PATH}
             git clone ${GIT_REPO} .
+            mkdir -p var/log
             cat > .env.local <<'ENVEOF'
 APP_ENV=prod
 APP_SECRET=${APP_SECRET}
@@ -167,6 +168,7 @@ ENVEOF
         if ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" "
             set -e
             cd ${DEPLOY_PATH}
+            mkdir -p var/log
             git pull origin ${GIT_BRANCH}
             ${COMPOSER_BIN} install --no-interaction --prefer-dist --no-progress --no-dev
             ${PHP_BIN} bin/console cache:clear --env=prod

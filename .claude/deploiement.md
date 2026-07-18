@@ -204,3 +204,4 @@ JWT_PASSPHRASE=
 | DB access denied                     | `.env.local` incorrect           | Vérifier `DATABASE_URL` et mot de passe cPanel               |
 | SSH refusé                           | IP non whitelistée               | cPanel → Accès SSH → Autorisation SSH                        |
 | Pas de vignette/EXIF dans la Galerie | Worker Messenger absent          | Vérifier la tâche cron (voir « Worker Messenger » ci-dessus) |
+| Messages Messenger jamais consommés (`messenger:stats` ne baisse jamais) | `var/log/` absent sur le serveur | Le cron redirige vers `var/log/messenger.log` (`>>`) : si le dossier n'existe pas, la redirection échoue et **la commande PHP ne s'exécute jamais**, sans erreur visible. `mkdir -p var/log` (corrigé dans `bin/deploy-all.sh` depuis le 2026-07-18, mais les instances déployées avant cette date doivent l'avoir manuellement). |
