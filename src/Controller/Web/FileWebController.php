@@ -57,6 +57,23 @@ final class FileWebController extends AbstractController
     #[Route('/files/{id}/download', name: 'app_file_download', methods: ['GET'])]
     public function download(string $id): Response
     {
+        return $this->buildFileResponse($id, ResponseHeaderBag::DISPOSITION_ATTACHMENT);
+    }
+
+    /**
+     * Affiche le fichier dans le navigateur au lieu de forcer son
+     * téléchargement — un PDF s'ouvre alors avec le lecteur natif du
+     * navigateur (pagination, zoom, recherche texte), sans aucune librairie
+     * JS côté client (#241).
+     */
+    #[Route('/files/{id}/view', name: 'app_file_view', methods: ['GET'])]
+    public function view(string $id): Response
+    {
+        return $this->buildFileResponse($id, ResponseHeaderBag::DISPOSITION_INLINE);
+    }
+
+    private function buildFileResponse(string $id, string $disposition): Response
+    {
         $file = $this->fileRepository->find(\Symfony\Component\Uid\Uuid::fromString($id));
 
         if ($file === null) {
@@ -71,10 +88,7 @@ final class FileWebController extends AbstractController
 
         $absolutePath = $this->storage->getAbsolutePath($file->getPath());
         $response = new BinaryFileResponse($absolutePath);
-        $response->setContentDisposition(
-            ResponseHeaderBag::DISPOSITION_ATTACHMENT,
-            $file->getOriginalName()
-        );
+        $response->setContentDisposition($disposition, $file->getOriginalName());
 
         return $response;
     }

@@ -7,6 +7,7 @@ import './js/move-modal.js';
 import './js/folder-children.js';
 import './js/rename.js';
 import './js/delete-folder-modal.js';
+import './js/pdf-viewer-modal.js';
 import { initUploadModal } from './js/upload-modal.js';
 
 initUploadModal();

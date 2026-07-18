@@ -1,0 +1,25 @@
+{# Modale de visualisation PDF — lecteur natif du navigateur, aucune librairie JS #}
+<div id="pdf-viewer-modal"
+     class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+     tabindex="-1"
+     aria-modal="true"
+     role="dialog">
+  <div class="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl
+              shadow-2xl p-4 w-full h-full max-w-5xl max-h-[90vh] mx-4 flex flex-col">
+
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-white text-lg font-semibold truncate" id="pdf-viewer-name">ce document</h2>
+      <button type="button"
+              onclick="closePdfViewerModal()"
+              class="px-3 py-1.5 rounded-xl text-white/70 hover:text-white hover:bg-white/10 transition-colors">
+        Fermer
+      </button>
+    </div>
+
+    <iframe id="pdf-viewer-iframe"
+            src="about:blank"
+            class="flex-1 w-full rounded-xl bg-white"
+            title="Aperçu du document PDF"></iframe>
+
+  </div>
+</div>

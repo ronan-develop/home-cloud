@@ -378,4 +378,45 @@ final class ExplorerPageTest extends WebTestCase
         $this->assertSelectorExists('[data-testid="share-folder-btn-' . $folder->getId()->toRfc4122() . '"]');
         $this->assertSelectorExists('form[action*="/share-create"] input[value="' . $folder->getId()->toRfc4122() . '"]');
     }
+
+    /**
+     * #241 — le bouton "Visualiser" (ouvre app_file_view en inline) ne doit
+     * apparaître que pour les PDF, pas pour les autres types de fichiers.
+     */
+    public function testViewButtonAppearsOnlyForPdfFiles(): void
+    {
+        $user = $this->createUser();
+
+        $folder = new Folder('Docs', $user);
+        $this->em->persist($folder);
+        $this->em->flush();
+        $folderId = $folder->getId()->toRfc4122();
+
+        $this->login();
+        $token = $this->uploadCsrfToken();
+
+        $pdfTmp = tempnam(sys_get_temp_dir(), 'hc_pdf_');
+        file_put_contents($pdfTmp, '%PDF-1.4 fake content');
+        $pdfUpload = new UploadedFile($pdfTmp, 'rapport.pdf', 'application/pdf', null, true);
+        $this->client->request('POST', '/files/upload', ['folder_id' => $folderId, '_token' => $token], ['file' => $pdfUpload]);
+        $this->client->followRedirect();
+
+        $txtTmp = tempnam(sys_get_temp_dir(), 'hc_txt_') . '.txt';
+        file_put_contents($txtTmp, 'contenu texte');
+        $txtUpload = new UploadedFile($txtTmp, 'notes.txt', 'text/plain', null, true);
+        $this->client->request('POST', '/files/upload', ['folder_id' => $folderId, '_token' => $this->uploadCsrfToken()], ['file' => $txtUpload]);
+        $crawler = $this->client->followRedirect();
+
+        $this->assertResponseIsSuccessful();
+
+        $pdfFile = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['originalName' => 'rapport.pdf']);
+        $txtFile = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['originalName' => 'notes.txt']);
+
+        $this->assertSelectorExists('[data-testid="view-pdf-btn-' . $pdfFile->getId()->toRfc4122() . '"]');
+        $this->assertCount(
+            0,
+            $crawler->filter('[data-testid="view-pdf-btn-' . $txtFile->getId()->toRfc4122() . '"]'),
+            'Un fichier non-PDF ne doit pas avoir de bouton "Visualiser"'
+        );
+    }
 }
