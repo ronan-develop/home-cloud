@@ -39,7 +39,7 @@ Tous suivis sur https://github.com/ronan-develop/home-cloud/issues
 
 ### 🔴 Critique
 
-- [ ] [#237](https://github.com/ronan-develop/home-cloud/issues/237) — BUG : suppression de fichiers/dossiers non scopée, perte de dossiers racine
+- [x] [#237](https://github.com/ronan-develop/home-cloud/issues/237) — BUG : suppression de fichiers/dossiers non scopée, perte de dossiers racine (fixé PR #249, déployé en prod)
 
 ### 🟠 Bugs / retours utilisateur (2026-07-18)
 
@@ -56,3 +56,7 @@ Tous suivis sur https://github.com/ronan-develop/home-cloud/issues
 - [ ] [#245](https://github.com/ronan-develop/home-cloud/issues/245) — Curseur de contrôle de concurrence d'envoi à l'upload
 - [ ] [#246](https://github.com/ronan-develop/home-cloud/issues/246) — Suppression photo « mes fichiers » : proposer conservation dans « mes albums »
 - [ ] [#247](https://github.com/ronan-develop/home-cloud/issues/247) — Vérifier/fiabiliser le flux import et nouveau fichier
+
+### 🟢 Perf/UX upload (2026-07-18, suite investigation #237)
+
+- [ ] [#251](https://github.com/ronan-develop/home-cloud/issues/251) — Accélérer le traitement des uploads (exif_thumbnail) + statut « en cours » tant que le Media n'existe pas
