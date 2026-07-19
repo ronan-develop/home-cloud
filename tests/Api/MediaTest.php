@@ -155,9 +155,15 @@ final class MediaTest extends AuthenticatedApiTestCase
         $this->assertResponseStatusCodeSame(404);
     }
 
-    // --- POST upload image → message dispatché ---
+    // --- POST upload image (sans lot) → traité immédiatement, pas via le worker ---
 
-    public function testUploadImageDispatchesMediaProcessMessage(): void
+    /**
+     * Depuis le routage exclusif (#259), un upload image sans lot déclaré n'est
+     * plus dispatché au worker : il est traité juste après la réponse HTTP
+     * (kernel.terminate). Le worker est réservé aux lots lourds (mode deferred).
+     * Ce test garantit qu'un upload isolé ne mobilise jamais la file.
+     */
+    public function testUploadImageWithoutBatchDoesNotDispatchToWorker(): void
     {
         $user = new User('uploader@example.com', 'Uploader');
         $this->em->persist($user);
@@ -177,7 +183,7 @@ final class MediaTest extends AuthenticatedApiTestCase
         $this->assertResponseStatusCodeSame(201);
 
         $transport = static::getContainer()->get('messenger.transport.async');
-        $this->assertCount(1, $transport->get());
+        $this->assertCount(0, $transport->get());
     }
 
     public function testUploadNonImageDoesNotDispatchMediaMessage(): void

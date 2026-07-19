@@ -8,7 +8,6 @@ use App\Entity\File;
 use App\Entity\Share;
 use App\Interface\MediaProcessorInterface;
 use App\Interface\StorageServiceInterface;
-use App\Message\MediaProcessMessage;
 use App\Repository\FileRepository;
 use App\Interface\DefaultFolderServiceInterface;
 use App\Interface\SharedResourceCleanerInterface;
@@ -21,7 +20,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -49,7 +47,6 @@ final class FileWebController extends AbstractController
         private readonly EntityManagerInterface $em,
         private readonly SharedResourceCleanerInterface $sharedResourceCleaner,
         private readonly GuestRestrictionChecker $guestRestrictionChecker,
-        private readonly MessageBusInterface $bus,
         private readonly PendingMediaProcessingCollector $pendingMediaProcessingCollector,
         private readonly MediaProcessorInterface $mediaProcessor,
     ) {}
@@ -147,13 +144,13 @@ final class FileWebController extends AbstractController
         $this->em->persist($file);
         $this->em->flush();
 
-        // Dispatch async (filet de sécurité) + traitement immédiat après la
-        // réponse HTTP (kernel.terminate, cf. ProcessPendingMediaListener) —
-        // même mécanisme que FileUploadController (API). supports() couvre
-        // aussi les RAW envoyés en application/octet-stream (reconnus par
-        // extension) — un simple test image/*|video/* les aurait ignorés.
+        // Route web (un seul fichier par requête, pas de notion de lot) : le
+        // traitement média se fait toujours juste après la réponse HTTP
+        // (kernel.terminate, cf. ProcessPendingMediaListener), jamais via le
+        // worker — celui-ci est réservé aux lots lourds déclarés par l'API.
+        // supports() couvre aussi les RAW en application/octet-stream (reconnus
+        // par extension).
         if ($this->mediaProcessor->supports($mimeType, $originalName)) {
-            $this->bus->dispatch(new MediaProcessMessage((string) $file->getId()));
             $this->pendingMediaProcessingCollector->add((string) $file->getId());
         }
 
