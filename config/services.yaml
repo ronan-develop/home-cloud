@@ -9,6 +9,10 @@
 parameters:
     app.storage_dir: '%kernel.project_dir%/var/storage'
     app.encryption_key: '%env(base64:APP_ENCRYPTION_KEY)%'
+    # Seuil de taille cumulée (octets) au-delà duquel un lot d'upload est déporté
+    # au worker Messenger plutôt que traité immédiatement. 250 Mo par défaut,
+    # ajustable sans redéploiement de code.
+    hc.upload.deferred_threshold_bytes: 262144000
 
 services:
     # Bindings interfaces → implémentations (Dependency Inversion Principle)
@@ -23,6 +27,7 @@ services:
     App\Interface\FilenameValidatorInterface:     '@App\Service\FilenameValidator'
     App\Interface\OwnershipCheckerInterface:      '@App\Security\OwnershipChecker'
     App\Interface\AuthenticationResolverInterface: '@App\Security\AuthenticationResolver'
+    App\Interface\UploadBatchRepositoryInterface: '@App\Repository\UploadBatchRepository'
 
     App\State\AlbumProcessor:
         arguments:
@@ -52,7 +57,7 @@ services:
             $logger: '@logger'
 
     App\Security\AuthorizationChecker: ~
-    
+
     App\Service\FileActionService:
         arguments:
             $fileRepository: '@App\Repository\FileRepository'
@@ -84,6 +89,10 @@ services:
             $folderRepository: '@App\Repository\FolderRepository'
             $userRepository: '@App\Repository\UserRepository'
             $em: '@doctrine.orm.entity_manager'
+
+    App\Service\UploadRoutingDecider:
+        arguments:
+            $deferredThresholdBytes: '%hc.upload.deferred_threshold_bytes%'
 
     # Déclaration explicite du FolderProcessor pour garantir l'injection
     App\State\FolderProcessor:
