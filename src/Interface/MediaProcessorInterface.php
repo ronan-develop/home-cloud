@@ -21,4 +21,10 @@ interface MediaProcessorInterface
      * sans dupliquer la logique de reconnaissance (mimeType + extensions RAW).
      */
     public function supports(string $mimeType, string $originalName): bool;
+
+    /**
+     * Le fichier est-il un RAW (reconnu par extension) ? Seule source de vérité
+     * pour cette décision, réutilisée par UploadRoutingDecider.
+     */
+    public function isRaw(string $originalName): bool;
 }

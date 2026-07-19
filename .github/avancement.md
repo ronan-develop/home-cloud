@@ -1,8 +1,26 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-07-15
+> Dernière mise à jour : 2026-07-19
 
-> **Status git :** branche `feat/album-explicit-cover` — 677 tests ✅
+> **Status git :** branche `feat/#259-worker-media-batch-routing` — chantier worker média en cours
+
+---
+
+## 🚧 En cours — Worker média : routage lots lourds / petits lots (2026-07-19)
+
+Le worker Messenger ne servait plus à rien : chaque upload faisait **les deux** — `bus->dispatch(MediaProcessMessage)` **et** `collector->add()` (traitement immédiat sur `kernel.terminate`) — le worker refaisant un **no-op** grâce à l'idempotence de `MediaProcessor::process()`.
+
+Refonte : le worker ne tourne **que pour les lots lourds**. Petit lot → traitement immédiat (latence perçue nulle). Lot lourd (**taille cumulée > seuil OU présence d'un RAW**) → déporté au worker, avec **notif email + toast** en fin de traitement. Le serveur décide du routage (le JS ne fait que l'UX) ; corrélation des fichiers d'un même envoi par `batchId`.
+
+Contraintes o2switch (mutualisé) : pas de daemon → worker = **cron 5 min** conservé ; **Mercure exclu** → notif écran par **polling court**.
+
+| Lot  | Ticket | Contenu                                                                                   | Statut                    |
+|------|--------|-------------------------------------------------------------------------------------------|---------------------------|
+| PR 1 | #259   | `UploadBatch` + seuil (`UploadRoutingDecider`) + routage exclusif immediate/deferred (fin du double dispatch) | 🚧 en cours               |
+| PR 2 | #260   | Email de fin de lot différé (`BatchCompletionNotifier`)                                    | ⏳ planifié (dépend #259) |
+| PR 3 | #261   | Polling statut de lot + toast front                                                       | ⏳ planifié (dépend #259) |
+
+Plan détaillé : `.claude/plans/je-suis-d-accord-avec-ticklish-zebra.md`. Connexes : #245 (curseur de concurrence d'upload), #239 (barre de progression).
 
 ---
 
