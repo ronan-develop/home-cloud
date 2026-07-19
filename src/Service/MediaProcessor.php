@@ -108,14 +108,21 @@ final class MediaProcessor implements MediaProcessorInterface
 
         // Le mimeType ne dit rien d'utile (typiquement "application/octet-stream",
         // ce que les navigateurs envoient pour un RAW) : l'extension tranche.
-        if ($this->isRawFile($originalName)) {
+        if ($this->isRaw($originalName)) {
             return 'photo';
         }
 
         return null;
     }
 
-    private function isRawFile(string $originalName): bool
+    /**
+     * Le fichier est-il un RAW (reconnu par extension) ?
+     *
+     * Exposé publiquement pour être la seule source de vérité de cette décision,
+     * réutilisée par UploadRoutingDecider (un RAW dans un lot force le déport au
+     * worker, son décodage preview étant coûteux).
+     */
+    public function isRaw(string $originalName): bool
     {
         $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
 

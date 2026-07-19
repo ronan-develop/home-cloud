@@ -206,4 +206,39 @@ final class MediaProcessorTest extends TestCase
         $this->assertInstanceOf(Media::class, $media);
         $this->assertSame('video', $media->getMediaType());
     }
+
+    /**
+     * `isRaw()` expose publiquement la reconnaissance des RAW (jusqu'ici privée)
+     * pour que la décision de routage (UploadRoutingDecider) s'appuie sur cette
+     * seule source de vérité plutôt que de redupliquer la liste RAW_EXTENSIONS.
+     */
+    #[DataProvider('isRawProvider')]
+    public function testIsRawRecognisesRawExtensionsCaseInsensitively(string $filename, bool $expected): void
+    {
+        $processor = new MediaProcessor(
+            $this->createStub(MediaRepository::class),
+            $this->createStub(EntityManagerInterface::class),
+            $this->createStub(ExifService::class),
+            $this->createStub(ThumbnailService::class),
+            $this->createStub(StorageServiceInterface::class),
+        );
+
+        $this->assertSame($expected, $processor->isRaw($filename));
+    }
+
+    /**
+     * @return iterable<string, array{string, bool}>
+     */
+    public static function isRawProvider(): iterable
+    {
+        yield 'nef minuscule'   => ['photo.nef', true];
+        yield 'NEF majuscule'   => ['PHOTO.NEF', true];
+        yield 'cr2 casse mixte' => ['img.Cr2', true];
+        yield 'cr3'             => ['clip.cr3', true];
+        yield 'arw'             => ['DSC01234.arw', true];
+        yield 'dng'             => ['shot.dng', true];
+        yield 'jpg non raw'     => ['photo.jpg', false];
+        yield 'tiff hors liste' => ['scan.tiff', false];
+        yield 'sans extension'  => ['README', false];
+    }
 }
