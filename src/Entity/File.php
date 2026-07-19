@@ -72,6 +72,16 @@ class File
     #[ORM\JoinColumn(nullable: false)]
     private User $owner;
 
+    /**
+     * Lot d'upload d'origine, si le fichier vient d'un envoi corrélé côté client
+     * (batchId). Nullable : les flux sans lot (route web, import album, fixtures)
+     * restent inchangés. Sert au routage immediate/deferred et à la détection de
+     * fin de lot pour la notification.
+     */
+    #[ORM\ManyToOne(targetEntity: UploadBatch::class)]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?UploadBatch $batch = null;
+
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
@@ -150,6 +160,16 @@ class File
     public function getOwner(): User
     {
         return $this->owner;
+    }
+
+    public function getBatch(): ?UploadBatch
+    {
+        return $this->batch;
+    }
+
+    public function setBatch(?UploadBatch $batch): void
+    {
+        $this->batch = $batch;
     }
     public function getCreatedAt(): \DateTimeImmutable
     {
