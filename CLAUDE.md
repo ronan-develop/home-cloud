@@ -66,7 +66,7 @@ Ne jamais utiliser `#[ORM\GeneratedValue]` ni `private ?Uuid $id = null;`.
 | `File`   | Fichier uploadé                 |
 | `Media`  | Métadonnées média (image/vidéo) |
 
-Stack : Symfony 7 / API Platform 3, PHP 8.4, MariaDB, Tailwind v4, Stimulus, PWA.
+Stack : Symfony 7 / API Platform 3, PHP 8.4, MariaDB, Tailwind v4, Stimulus.
 
 ---
 
