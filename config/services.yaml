@@ -28,6 +28,7 @@ services:
     App\Interface\OwnershipCheckerInterface:      '@App\Security\OwnershipChecker'
     App\Interface\AuthenticationResolverInterface: '@App\Security\AuthenticationResolver'
     App\Interface\UploadBatchRepositoryInterface: '@App\Repository\UploadBatchRepository'
+    App\Interface\BatchCompletionNotifierInterface: '@App\Service\BatchCompletionNotifier'
 
     App\State\AlbumProcessor:
         arguments:

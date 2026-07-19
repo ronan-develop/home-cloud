@@ -188,9 +188,20 @@ DATABASE_URL=mysql://ron2cuba_<prenom>:<password>@127.0.0.1:3306/ron2cuba_<preno
 JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
 JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
 JWT_PASSPHRASE=
+MAILER_DSN=smtp://<user>:<password>@lenouvel.me:465
 ```
 
 > Généré automatiquement par `bin/deploy-all.sh --init`. Pour `bin/deploy.sh`, le script le crée aussi.
+
+### `MAILER_DSN` — obligatoire pour les emails (dont la notif de fin de lot)
+
+Par défaut `MAILER_DSN=null://null` (`.env`) : **aucun email n'est envoyé**. Les
+flux transactionnels (reset password, invitation, notification de partage) et la
+**notification de fin de traitement d'un lot lourd** (#260 — email « vos fichiers
+sont prêts » quand le worker a terminé un lot deferred) nécessitent un DSN SMTP
+réel, à renseigner sur chaque instance (jamais dans git — SMTP o2switch injoignable
+depuis localhost, port 465 bloqué). Sans lui, le traitement se fait quand même,
+seul l'email de notification manque.
 
 ---
 
