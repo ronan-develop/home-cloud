@@ -29,6 +29,7 @@ services:
     App\Interface\AuthenticationResolverInterface: '@App\Security\AuthenticationResolver'
     App\Interface\UploadBatchRepositoryInterface: '@App\Repository\UploadBatchRepository'
     App\Interface\BatchCompletionNotifierInterface: '@App\Service\BatchCompletionNotifier'
+    App\Interface\ShareNotificationMailerInterface: '@App\Service\ShareNotificationMailer'
 
     App\State\AlbumProcessor:
         arguments:
