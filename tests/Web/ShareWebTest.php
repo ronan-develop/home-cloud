@@ -217,11 +217,31 @@ final class ShareWebTest extends WebTestCase
         ]);
 
         $this->assertResponseRedirects('/albums/' . $album->getId()->toRfc4122());
-        self::assertEmailCount(1);
 
-        $email = self::getMailerMessage();
-        $this->assertStringContainsString('invite@example.com', $email->getTo()[0]->toString());
-        $this->assertStringContainsString('Vacances', $email->getHtmlBody());
+        // L'email part en asynchrone (#270) : la requête ne l'envoie plus, elle
+        // dispatche un ShareNotificationMessage vers le transport async.
+        $messages = iterator_to_array(self::getContainer()->get('messenger.transport.async')->get());
+        $this->assertCount(1, $messages);
+        $message = $messages[0]->getMessage();
+        $this->assertInstanceOf(\App\Message\ShareNotificationMessage::class, $message);
+        $this->assertSame('Vacances', $message->resourceName);
+    }
+
+    /**
+     * Consomme les ShareNotificationMessage en attente sur le transport async
+     * (le worker le ferait en prod) pour vérifier l'envoi réel de l'email.
+     */
+    private function consumeShareNotifications(): void
+    {
+        $transport = self::getContainer()->get('messenger.transport.async');
+        $handler = self::getContainer()->get(\App\Handler\ShareNotificationHandler::class);
+
+        foreach (iterator_to_array($transport->get()) as $envelope) {
+            $message = $envelope->getMessage();
+            if ($message instanceof \App\Message\ShareNotificationMessage) {
+                $handler($message);
+            }
+        }
     }
 
     public function testShareNotificationEmailHasStyledTemplateWithOwnerNameAndCtaButton(): void
@@ -243,6 +263,9 @@ final class ShareWebTest extends WebTestCase
             'resourceId'   => $album->getId()->toRfc4122(),
             'permission'   => 'read',
         ]);
+
+        // L'email part en async : on consomme le message pour l'envoyer réellement.
+        $this->consumeShareNotifications();
 
         self::assertEmailCount(1);
         $email = self::getMailerMessage();

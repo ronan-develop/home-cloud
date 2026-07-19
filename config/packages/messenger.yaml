@@ -8,6 +8,7 @@ framework:
 
         routing:
             'App\Message\MediaProcessMessage': async
+            'App\Message\ShareNotificationMessage': async
 
 when@test:
     framework:

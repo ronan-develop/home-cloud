@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\Share;
+use App\Interface\ShareNotificationMailerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
@@ -16,8 +17,11 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
  * qu'à la création du tout premier compte (activation) — un invité qui a
  * déjà un compte actif ne recevait jusqu'ici aucune notification pour les
  * partages suivants.
+ *
+ * Appelé de façon asynchrone par ShareNotificationHandler (transport async) :
+ * l'envoi SMTP ne bloque plus la réponse de /share-create.
  */
-final readonly class ShareNotificationMailer
+final readonly class ShareNotificationMailer implements ShareNotificationMailerInterface
 {
     public function __construct(
         private MailerInterface $mailer,

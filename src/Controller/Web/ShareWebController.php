@@ -12,15 +12,16 @@ use App\Entity\User;
 use App\Interface\ShareLinkRepositoryInterface;
 use App\Interface\ShareRepositoryInterface;
 use App\Interface\UserRepositoryInterface;
+use App\Message\ShareNotificationMessage;
 use App\Security\OwnershipChecker;
 use App\Security\ResourceLocator;
 use App\Service\GuestAccountCreator;
-use App\Service\ShareNotificationMailer;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Uid\Uuid;
@@ -43,7 +44,7 @@ final class ShareWebController extends AbstractController
         private readonly OwnershipChecker $ownershipChecker,
         private readonly EntityManagerInterface $em,
         private readonly GuestAccountCreator $guestAccountCreator,
-        private readonly ShareNotificationMailer $shareNotificationMailer,
+        private readonly MessageBusInterface $bus,
     ) {}
 
     #[Route('/partages', name: 'app_shares')]
@@ -163,8 +164,13 @@ final class ShareWebController extends AbstractController
 
             // Un compte tout juste créé a déjà reçu son email d'activation
             // (GuestAccountCreator) — ne pas doubler la notification.
+            // Envoi asynchrone (transport async) : ne bloque plus la réponse
+            // le temps du SMTP, × nombre d'invités (#270).
             if (!$isNewGuestAccount) {
-                $this->shareNotificationMailer->notify($share, $this->resolveResourceName($share));
+                $this->bus->dispatch(new ShareNotificationMessage(
+                    (string) $share->getId(),
+                    $this->resolveResourceName($share),
+                ));
             }
 
             $shared[] = $email;
