@@ -12,6 +12,7 @@
 
 import '../components/hc-folder-list.js';
 import { apiFetch } from './api.js';
+import { declareBatch, createBatchPoller } from './upload-batch.js';
 
 const UPLOAD_API_ROUTE = '/api/v1/files';
 const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5 GB
@@ -31,24 +32,74 @@ async function getCreateUploadQueue() {
 }
 
 /**
+ * POST JSON vers l'API (déclaration de lot), avec auth centralisée (apiFetch).
+ */
+async function postBatchJson(url, payload) {
+    const res = await apiFetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`Batch request failed: ${res.status}`);
+    return res.json();
+}
+
+/**
+ * GET l'avancement d'un lot.
+ */
+async function fetchBatchStatus(batchId) {
+    const res = await apiFetch(`/api/v1/uploads/${batchId}/status`, { method: 'GET' });
+    if (!res.ok) throw new Error(`Batch status failed: ${res.status}`);
+    return res.json();
+}
+
+/**
+ * Suit un lot deferred : toast quand c'est prêt. S'arrête si l'onglet est caché
+ * (l'email prend le relais), à la complétion ou au timeout (gérés par le poller).
+ */
+function startBatchTracking(batchId) {
+    const poller = createBatchPoller({
+        batchId,
+        fetchStatus: fetchBatchStatus,
+        onComplete: () => {
+            document.removeEventListener('visibilitychange', onHidden);
+            window.showToast?.('Vos fichiers sont prêts dans la galerie', 'success');
+        },
+    });
+
+    function onHidden() {
+        if (document.hidden) {
+            poller.stop();
+            document.removeEventListener('visibilitychange', onHidden);
+        }
+    }
+    document.addEventListener('visibilitychange', onHidden);
+
+    poller.start();
+    return poller;
+}
+
+/**
  * Create uploadFn for upload queue.
  * Wraps XHR to support progress callbacks.
- * 
+ *
  * @param {string} token - Bearer token for auth
  * @param {string} folderId - Optional folder ID
  * @param {string} newFolderName - Optional new folder name
+ * @param {string} batchId - Optional upload batch ID (corrèle les fichiers d'un même envoi)
  * @returns {Function} (file, metadata, onProgress) => Promise
  */
-function createUploadFn(token, folderId, newFolderName) {
+function createUploadFn(token, folderId, newFolderName, batchId) {
     return (file, metadata, onProgress) => {
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             const formData = new FormData();
-            
+
             formData.append('file', file);
             formData.append('ownerId', window.HC?.userId || '');
             if (folderId) formData.append('folderId', folderId);
             if (newFolderName) formData.append('newFolderName', newFolderName);
+            if (batchId) formData.append('batchId', batchId);
 
             // Progress tracking
             if (xhr.upload) {
@@ -400,11 +451,25 @@ async function openUploadModal(files, options = {}) {
         }
 
         try {
-            // Create uploadFn with selected folder
+            // Déclarer le lot : le serveur décide immediate vs deferred et renvoie
+            // le batchId à joindre à chaque upload. Best-effort — si la déclaration
+            // échoue, on uploade quand même sans lot (traitement immédiat côté serveur).
+            let batchId = null;
+            let batchMode = 'immediate';
+            try {
+                const declared = await declareBatch(files, postBatchJson);
+                batchId = declared?.batchId ?? null;
+                batchMode = declared?.mode ?? 'immediate';
+            } catch (e) {
+                console.debug('Batch declaration failed, uploading without batch', e);
+            }
+
+            // Create uploadFn with selected folder + batch
             const uploadFn = createUploadFn(
                 currentToken,
                 destFolder.isNew ? null : destFolder.id,
-                destFolder.isNew ? destFolder.name : null
+                destFolder.isNew ? destFolder.name : null,
+                batchId
             );
 
             // Start queue processing with uploadFn
@@ -412,16 +477,21 @@ async function openUploadModal(files, options = {}) {
 
             // Check results
             const stats = currentUploadQueue.getStats();
-            if (stats.error === 0) {
-                window.showToast?.('Tous les fichiers ont été importés', 'success');
-                setTimeout(() => {
-                    location.reload();
-                }, 2000);
-            } else {
+            if (stats.error > 0) {
                 window.showToast?.(
                     `${stats.error} fichier(s) en erreur, ${stats.completed} réussi(s)`,
                     'warning'
                 );
+            } else if (batchMode === 'deferred' && batchId) {
+                // Lot lourd : le transfert est fini, le traitement média continue
+                // en tâche de fond (worker). On prévient et on suit par polling.
+                window.showToast?.('Envoi terminé — traitement en cours, vous recevrez un email quand tout sera prêt', 'success');
+                startBatchTracking(batchId);
+            } else {
+                window.showToast?.('Tous les fichiers ont été importés', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
             }
 
             closeUploadModal();
