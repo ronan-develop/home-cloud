@@ -10,6 +10,7 @@ use App\Interface\MediaProcessorInterface;
 use App\Interface\StorageServiceInterface;
 use App\Repository\MediaRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use RonanLenouvel\RawPreviewExtractor\RawPreviewExtractorInterface;
 
 /**
  * Crée l'entité Media d'un File en extrayant les EXIF et en générant le
@@ -49,6 +50,8 @@ final class MediaProcessor implements MediaProcessorInterface
         private readonly ExifService $exifService,
         private readonly ThumbnailService $thumbnailService,
         private readonly StorageServiceInterface $storageService,
+        private readonly RawPreviewExtractorInterface $rawPreviewExtractor,
+        private readonly ExifValueFormatter $exifValueFormatter = new ExifValueFormatter(),
     ) {}
 
     public function process(File $file): ?Media
@@ -68,14 +71,16 @@ final class MediaProcessor implements MediaProcessorInterface
         if ($mediaType === 'photo') {
             $absolutePath = $this->storageService->getAbsolutePath($file->getPath());
 
-            $exif = $this->exifService->extract($absolutePath);
-            $media->setWidth($exif['width']);
-            $media->setHeight($exif['height']);
-            $media->setTakenAt($exif['takenAt']);
-            $media->setCameraModel($exif['cameraModel']);
-            $media->setGpsLat($exif['gpsLat']);
-            $media->setGpsLon($exif['gpsLon']);
+            // JPEG : EXIF natif ; RAW : exif_read_data ne sait pas ouvrir le
+            // conteneur, on lit alors les métadonnées via le package (preview EXIF).
+            if ($this->isRaw($file->getOriginalName())) {
+                $this->applyRawMetadata($media, $absolutePath);
+            } else {
+                $this->applyExif($media, $this->exifService->extract($absolutePath));
+            }
 
+            // Vignette inchangée : toujours générée depuis le fichier d'origine
+            // (ThumbnailService gère le RAW et son orientation).
             $thumb = $this->thumbnailService->generate($absolutePath);
             $media->setThumbnailPath($thumb);
         }
@@ -84,6 +89,76 @@ final class MediaProcessor implements MediaProcessorInterface
         $this->em->flush();
 
         return $media;
+    }
+
+    /**
+     * Applique les EXIF d'un JPEG (tableau normalisé d'ExifService) au Media.
+     *
+     * @param array<string, mixed> $exif
+     */
+    private function applyExif(Media $media, array $exif): void
+    {
+        $media->setWidth($exif['width'] ?? null);
+        $media->setHeight($exif['height'] ?? null);
+        $media->setTakenAt($exif['takenAt'] ?? null);
+        $media->setCameraModel($exif['cameraModel'] ?? null);
+        $media->setGpsLat($exif['gpsLat'] ?? null);
+        $media->setGpsLon($exif['gpsLon'] ?? null);
+        $media->setAperture($exif['aperture'] ?? null);
+        $media->setShutterSpeed($exif['shutterSpeed'] ?? null);
+        $media->setIso($exif['iso'] ?? null);
+        $media->setFocalLength($exif['focalLength'] ?? null);
+        $media->setLens($exif['lens'] ?? null);
+    }
+
+    /**
+     * Applique les métadonnées d'un RAW, lues via RawPreviewExtractor (EXIF de
+     * la preview embarquée). Dégradation gracieuse : un RAW illisible ou sans
+     * métadonnées laisse simplement les champs à null.
+     */
+    private function applyRawMetadata(Media $media, string $absolutePath): void
+    {
+        try {
+            $meta = $this->rawPreviewExtractor->extract($absolutePath)->metadata;
+        } catch (\Throwable) {
+            return;
+        }
+
+        if ($meta === null) {
+            return;
+        }
+
+        $media->setTakenAt($this->parseExifDate($meta->dateTimeOriginal));
+        $media->setCameraModel($this->cameraName($meta->cameraMake, $meta->cameraModel));
+        $media->setAperture($meta->fNumber !== null ? $this->exifValueFormatter->fNumber((string) $meta->fNumber) : null);
+        $media->setShutterSpeed($meta->exposureTime);
+        $media->setIso($meta->iso);
+        $media->setFocalLength($meta->focalLength !== null ? $this->exifValueFormatter->focalLength((string) $meta->focalLength) : null);
+        $media->setLens($meta->lensModel);
+    }
+
+    /**
+     * Convertit une date EXIF "YYYY:MM:DD HH:MM:SS" en DateTimeImmutable, ou null.
+     */
+    private function parseExifDate(?string $raw): ?\DateTimeImmutable
+    {
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+
+        $date = \DateTimeImmutable::createFromFormat('Y:m:d H:i:s', $raw);
+
+        return $date === false ? null : $date;
+    }
+
+    /**
+     * Assemble "Make Model" en un libellé d'appareil, ou null si les deux manquent.
+     */
+    private function cameraName(?string $make, ?string $model): ?string
+    {
+        $name = trim(($make ?? '').' '.($model ?? ''));
+
+        return $name === '' ? null : $name;
     }
 
     /**
