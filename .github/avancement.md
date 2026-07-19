@@ -2,25 +2,29 @@
 
 > Dernière mise à jour : 2026-07-19
 
-> **Status git :** branche `feat/#259-worker-media-batch-routing` — chantier worker média en cours
+> **Status git :** `main` — chantier worker média mergé (PRs #262, #265, #264)
 
 ---
 
-## 🚧 En cours — Worker média : routage lots lourds / petits lots (2026-07-19)
+## ✅ Worker média : routage lots lourds / petits lots — TERMINÉ (2026-07-19)
 
 Le worker Messenger ne servait plus à rien : chaque upload faisait **les deux** — `bus->dispatch(MediaProcessMessage)` **et** `collector->add()` (traitement immédiat sur `kernel.terminate`) — le worker refaisant un **no-op** grâce à l'idempotence de `MediaProcessor::process()`.
 
-Refonte : le worker ne tourne **que pour les lots lourds**. Petit lot → traitement immédiat (latence perçue nulle). Lot lourd (**taille cumulée > seuil OU présence d'un RAW**) → déporté au worker, avec **notif email + toast** en fin de traitement. Le serveur décide du routage (le JS ne fait que l'UX) ; corrélation des fichiers d'un même envoi par `batchId`.
+Refonte livrée : le worker ne tourne **que pour les lots lourds**. Petit lot → traitement immédiat (latence perçue nulle). Lot lourd (**taille cumulée > seuil OU présence d'un RAW**) → déporté au worker, avec **notif email + toast** en fin de traitement. Le serveur décide du routage (le JS ne fait que l'UX) ; corrélation des fichiers d'un même envoi par `batchId`.
 
-Contraintes o2switch (mutualisé) : pas de daemon → worker = **cron 5 min** conservé ; **Mercure exclu** → notif écran par **polling court**.
+Contraintes o2switch (mutualisé) : pas de daemon → worker = **cron 5 min** conservé ; **Mercure exclu** → notif écran par **polling court** (jamais de long-polling).
 
-| Lot  | Ticket | Contenu                                                                                   | Statut                    |
-|------|--------|-------------------------------------------------------------------------------------------|---------------------------|
-| PR 1 | #259   | `UploadBatch` + seuil (`UploadRoutingDecider`) + routage exclusif immediate/deferred (fin du double dispatch) | 🚧 en cours               |
-| PR 2 | #260   | Email de fin de lot différé (`BatchCompletionNotifier`)                                    | ⏳ planifié (dépend #259) |
-| PR 3 | #261   | Polling statut de lot + toast front                                                       | ⏳ planifié (dépend #259) |
+| Lot  | Issue | PR mergée | Contenu                                                                                       |
+|------|-------|-----------|-----------------------------------------------------------------------------------------------|
+| PR 1 | #259  | #262      | `UploadBatch` + seuil (`UploadRoutingDecider`) + routage exclusif immediate/deferred (fin du double dispatch) |
+| PR 2 | #260  | #265      | Email de fin de lot différé (`BatchCompletionNotifier` + `MediaProcessHandler`)                |
+| PR 3 | #261  | #264      | Endpoint statut + polling front (`upload-batch.js`) + toast                                    |
 
-Plan détaillé : `.claude/plans/je-suis-d-accord-avec-ticklish-zebra.md`. Connexes : #245 (curseur de concurrence d'upload), #239 (barre de progression).
+Points d'attention post-merge :
+- **`MAILER_DSN`** à activer sur chaque instance (`.env.prod.local`, cf. `deploiement.md`) — sans lui, le traitement fonctionne mais l'email « lot prêt » ne part pas.
+- **Seuil** `hc.upload.deferred_threshold_bytes` = 250 Mo par défaut, ajustable dans `config/services.yaml`.
+
+Plan détaillé : `.claude/plans/je-suis-d-accord-avec-ticklish-zebra.md`. Connexes restantes : #245 (curseur de concurrence d'upload), #239 (barre de progression) — même zone `upload-modal.js`.
 
 ---
 
@@ -211,9 +215,9 @@ Score global : **9/10** — 4/5 axes de remédiation implémentés.
 
 ## 📊 État des tests
 
-- **334 tests**, ~686 assertions
-- 0 skipped, 0 failures, 0 errors
-- +7 tests depuis PR #169 (unicité fichier/dossier)
+- **781 tests PHPUnit** (~1648 assertions), 0 failures, 0 errors, 2 skipped
+- **82 tests Jest** (front)
+- +35 tests depuis le chantier worker média (#259/#260/#261)
 
 ---
 
@@ -239,10 +243,10 @@ Score global : **9/10** — 4/5 axes de remédiation implémentés.
 3. **Badge de couverture d'album** — design trop brut (icône étoile sur fond noir), à retravailler visuellement
 4. **Rendre les interactions asynchrones (fetch/AJAX) au lieu de POST + reload complet** — ✅ fait pour create/edit/delete de la gestion des invités (`guest_management_controller.js`) ; reste à généraliser le même pattern (détection `Accept: application/json` + fallback progressif + contrôleur Stimulus) aux autres actions POST+redirect encore existantes (albums, dossiers, fichiers, partages...)
 5. **Passer l'envoi des emails de notification en asynchrone (Messenger)** — `ShareNotificationMailer::notify()` envoie actuellement de façon synchrone pendant la requête `/share-create`, ce qui bloque la réponse le temps de l'envoi ; faire passer par un message Messenger + worker/transport dédié
-6. **Nettoyer les 141 notices PHPUnit** — `createMock()` utilisé sans `expects()` déclenche désormais une notice PHPUnit 13 ("Consider refactoring your test code to use a test stub instead") ; concentrées dans `tests/Unit/{Entity,EventListener,Security,Service}`, surtout `ShareLinkFactoryTest.php` (10) et `VisibilityCheckerTest.php` (12) ; remplacer ces `createMock()` par `createStub()` là où aucune expectation n'est réellement vérifiée
+6. **Nettoyer les ~168 notices PHPUnit** — `createMock()` utilisé sans `expects()` déclenche une notice PHPUnit 13 ("Consider refactoring your test code to use a test stub instead") ; concentrées dans `tests/Unit/{Entity,EventListener,Security,Service}`, notamment `ShareLinkFactoryTest.php` (~15) ; remplacer ces `createMock()` par `createStub()` là où aucune expectation n'est réellement vérifiée (le chantier worker média a déjà converti quelques cas)
 7. **EXIF des fichiers RAW** — `ExifService` s'appuie sur `exif_read_data()`, qui ne lit pas les conteneurs RAW : date de prise de vue, modèle d'appareil et GPS restent vides pour ces photos (la vignette, elle, fonctionne depuis l'intégration de `ronanlenouvel/raw-preview-extractor`). Deux pistes : lire les EXIF de la preview JPEG extraite (simple, mais métadonnées appauvries), ou exposer les tags TIFF depuis le package (plus riche — réglages complets, résolution capteur réelle)
 8. **Optimiser le redimensionnement des grandes previews** — une preview RAW pleine résolution (8256×5504) prend ~2,9 s à redimensionner sous GD, contre 23 ms pour l'extraction elle-même. Acceptable car le pipeline média est asynchrone (Messenger), mais un redimensionnement en deux passes réduirait nettement le coût
-9. **Chiffrement au repos** — `APP_ENCRYPTION_KEY` est déclaré dans `config/services.yaml` mais injecté nulle part : les fichiers sont stockés en clair. Prévu comme option laissée à l'utilisateur. À noter, un docblock de `ThumbnailService::generate()` prétend déjà que la source est « chiffrée sur disque » — à corriger en même temps
-10. **Extensions PHP sous-déclarées** — `composer.json` ne requiert que `ext-ctype` et `ext-iconv`, alors que `gd` (`ThumbnailService`, `MediaFullResponseFactory`) et `exif` (`ExifService`) sont indispensables. Une install sur un serveur sans ces extensions passerait `composer install` puis échouerait silencieusement à l'exécution
-11. **`CLAUDE.md` annonce une PWA inexistante** — aucun `manifest.json` ni service worker dans le projet. Soit implémenter (installable, cache offline des vignettes), soit retirer la mention
+9. **Chiffrement au repos** — `APP_ENCRYPTION_KEY` est déclaré dans `config/services.yaml` mais injecté nulle part : les fichiers sont stockés en clair. Prévu comme option laissée à l'utilisateur. Incohérence résiduelle : le docblock `@param` de `ThumbnailService::generate()` (ligne 43) dit encore « chiffrée sur disque » alors que le reste de la classe (ligne 24) indique correctement « stockés en clair » — à corriger
+10. ✅ **RÉSOLU** — ~~Extensions PHP sous-déclarées~~ : `composer.json` requiert désormais `ext-ctype`, `ext-iconv`, **`ext-gd`** et **`ext-exif`**. Plus de risque d'échec silencieux à l'exécution
+11. **`CLAUDE.md` annonce une PWA inexistante** — aucun `manifest.json` ni service worker dans le projet (vérifié). `CLAUDE.md` mentionne toujours « PWA » dans la stack. Soit implémenter (installable, cache offline des vignettes), soit retirer la mention
 
