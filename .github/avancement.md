@@ -2,25 +2,29 @@
 
 > Dernière mise à jour : 2026-07-19
 
-> **Status git :** branche `feat/#259-worker-media-batch-routing` — chantier worker média en cours
+> **Status git :** `main` — chantier worker média mergé (PRs #262, #265, #264)
 
 ---
 
-## 🚧 En cours — Worker média : routage lots lourds / petits lots (2026-07-19)
+## ✅ Worker média : routage lots lourds / petits lots — TERMINÉ (2026-07-19)
 
 Le worker Messenger ne servait plus à rien : chaque upload faisait **les deux** — `bus->dispatch(MediaProcessMessage)` **et** `collector->add()` (traitement immédiat sur `kernel.terminate`) — le worker refaisant un **no-op** grâce à l'idempotence de `MediaProcessor::process()`.
 
-Refonte : le worker ne tourne **que pour les lots lourds**. Petit lot → traitement immédiat (latence perçue nulle). Lot lourd (**taille cumulée > seuil OU présence d'un RAW**) → déporté au worker, avec **notif email + toast** en fin de traitement. Le serveur décide du routage (le JS ne fait que l'UX) ; corrélation des fichiers d'un même envoi par `batchId`.
+Refonte livrée : le worker ne tourne **que pour les lots lourds**. Petit lot → traitement immédiat (latence perçue nulle). Lot lourd (**taille cumulée > seuil OU présence d'un RAW**) → déporté au worker, avec **notif email + toast** en fin de traitement. Le serveur décide du routage (le JS ne fait que l'UX) ; corrélation des fichiers d'un même envoi par `batchId`.
 
-Contraintes o2switch (mutualisé) : pas de daemon → worker = **cron 5 min** conservé ; **Mercure exclu** → notif écran par **polling court**.
+Contraintes o2switch (mutualisé) : pas de daemon → worker = **cron 5 min** conservé ; **Mercure exclu** → notif écran par **polling court** (jamais de long-polling).
 
-| Lot  | Ticket | Contenu                                                                                   | Statut                    |
-|------|--------|-------------------------------------------------------------------------------------------|---------------------------|
-| PR 1 | #259   | `UploadBatch` + seuil (`UploadRoutingDecider`) + routage exclusif immediate/deferred (fin du double dispatch) | 🚧 en cours               |
-| PR 2 | #260   | Email de fin de lot différé (`BatchCompletionNotifier`)                                    | ⏳ planifié (dépend #259) |
-| PR 3 | #261   | Polling statut de lot + toast front                                                       | ⏳ planifié (dépend #259) |
+| Lot  | Issue | PR mergée | Contenu                                                                                       |
+|------|-------|-----------|-----------------------------------------------------------------------------------------------|
+| PR 1 | #259  | #262      | `UploadBatch` + seuil (`UploadRoutingDecider`) + routage exclusif immediate/deferred (fin du double dispatch) |
+| PR 2 | #260  | #265      | Email de fin de lot différé (`BatchCompletionNotifier` + `MediaProcessHandler`)                |
+| PR 3 | #261  | #264      | Endpoint statut + polling front (`upload-batch.js`) + toast                                    |
 
-Plan détaillé : `.claude/plans/je-suis-d-accord-avec-ticklish-zebra.md`. Connexes : #245 (curseur de concurrence d'upload), #239 (barre de progression).
+Points d'attention post-merge :
+- **`MAILER_DSN`** à activer sur chaque instance (`.env.prod.local`, cf. `deploiement.md`) — sans lui, le traitement fonctionne mais l'email « lot prêt » ne part pas.
+- **Seuil** `hc.upload.deferred_threshold_bytes` = 250 Mo par défaut, ajustable dans `config/services.yaml`.
+
+Plan détaillé : `.claude/plans/je-suis-d-accord-avec-ticklish-zebra.md`. Connexes restantes : #245 (curseur de concurrence d'upload), #239 (barre de progression) — même zone `upload-modal.js`.
 
 ---
 
@@ -211,9 +215,9 @@ Score global : **9/10** — 4/5 axes de remédiation implémentés.
 
 ## 📊 État des tests
 
-- **334 tests**, ~686 assertions
-- 0 skipped, 0 failures, 0 errors
-- +7 tests depuis PR #169 (unicité fichier/dossier)
+- **781 tests PHPUnit** (~1648 assertions), 0 failures, 0 errors, 2 skipped
+- **82 tests Jest** (front)
+- +35 tests depuis le chantier worker média (#259/#260/#261)
 
 ---
 
