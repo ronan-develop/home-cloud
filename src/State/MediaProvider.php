@@ -87,6 +87,11 @@ final class MediaProvider implements ProviderInterface
             gpsLat: $media->getGpsLat(),
             gpsLon: $media->getGpsLon(),
             cameraModel: $media->getCameraModel(),
+            aperture: $media->getAperture(),
+            shutterSpeed: $media->getShutterSpeed(),
+            iso: $media->getIso(),
+            focalLength: $media->getFocalLength(),
+            lens: $media->getLens(),
             thumbnailUrl: $media->getThumbnailPath() !== null
                 ? '/api/v1/medias/'.$media->getId().'/thumbnail'
                 : null,
