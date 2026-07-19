@@ -40,7 +40,7 @@ class ThumbnailService
     /**
      * Génère un thumbnail et retourne son chemin relatif, ou null si impossible.
      *
-     * @param string $absolutePath Chemin absolu de l'image source (chiffrée sur disque)
+     * @param string $absolutePath Chemin absolu de l'image source (stockée en clair sur disque)
      * @return string|null         Chemin relatif du thumbnail (ex: "thumbs/uuid.jpg") ou null
      */
     public function generate(string $absolutePath): ?string
