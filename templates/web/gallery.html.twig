@@ -23,6 +23,8 @@
       <select class="hc-sort-select" onchange="window.location.href = this.value" aria-label="Trier la galerie">
         <option value="{{ path('app_gallery', {type: type, order: {createdAt: 'desc'}}) }}" {{ (currentSortField is null or (currentSortField == 'createdAt' and currentSortDir == 'desc')) ? 'selected' }}>Plus récent</option>
         <option value="{{ path('app_gallery', {type: type, order: {createdAt: 'asc'}}) }}" {{ (currentSortField == 'createdAt' and currentSortDir == 'asc') ? 'selected' }}>Plus ancien</option>
+        <option value="{{ path('app_gallery', {type: type, order: {takenAt: 'desc'}}) }}" {{ (currentSortField == 'takenAt' and currentSortDir == 'desc') ? 'selected' }}>Prise de vue (récent)</option>
+        <option value="{{ path('app_gallery', {type: type, order: {takenAt: 'asc'}}) }}" {{ (currentSortField == 'takenAt' and currentSortDir == 'asc') ? 'selected' }}>Prise de vue (ancien)</option>
         <option value="{{ path('app_gallery', {type: type, order: {originalName: 'asc'}}) }}" {{ (currentSortField == 'originalName' and currentSortDir == 'asc') ? 'selected' }}>Nom (A→Z)</option>
         <option value="{{ path('app_gallery', {type: type, order: {originalName: 'desc'}}) }}" {{ (currentSortField == 'originalName' and currentSortDir == 'desc') ? 'selected' }}>Nom (Z→A)</option>
         <option value="{{ path('app_gallery', {type: type, order: {size: 'asc'}}) }}" {{ (currentSortField == 'size' and currentSortDir == 'asc') ? 'selected' }}>Taille (petit→grand)</option>
@@ -90,6 +92,17 @@
              data-lightbox
              data-media-type="{{ media.mediaType }}"
              data-full-src="{{ path('app_media_full', {id: media.id}) }}"
+             {% if media.mediaType == 'photo' %}
+             data-taken-at="{{ media.takenAt ? media.takenAt|date('d/m/Y H:i') : '' }}"
+             data-camera="{{ media.cameraModel }}"
+             data-aperture="{{ media.aperture }}"
+             data-shutter="{{ media.shutterSpeed }}"
+             data-iso="{{ media.iso }}"
+             data-focal="{{ media.focalLength }}"
+             data-lens="{{ media.lens }}"
+             data-gps-lat="{{ media.gpsLat }}"
+             data-gps-lon="{{ media.gpsLon }}"
+             {% endif %}
              class="hc-media-thumb-link">
             {% if media.thumbnailPath %}
               <img src="{{ path('app_media_thumbnail', {id: media.id}) }}"

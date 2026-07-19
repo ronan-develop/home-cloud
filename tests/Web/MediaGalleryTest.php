@@ -374,7 +374,7 @@ final class MediaGalleryTest extends WebTestCase
 
         $select = $crawler->filter('.hc-sort-select');
         $this->assertGreaterThanOrEqual(1, $select->count(), 'Le sélecteur de tri doit exister');
-        $this->assertCount(6, $select->filter('option'), 'Le sélecteur de tri doit proposer 6 options');
+        $this->assertCount(8, $select->filter('option'), 'Le sélecteur de tri doit proposer 8 options (dont 2 date de prise de vue)');
 
         $selected = $select->filter('option[selected]');
         $this->assertCount(1, $selected, 'Une seule option doit être marquée comme sélectionnée');
