@@ -19,7 +19,9 @@ namespace App\Service;
  */
 class ExifService
 {
-    public function __construct() {}
+    public function __construct(
+        private readonly ExifValueFormatter $formatter = new ExifValueFormatter(),
+    ) {}
 
     /**
      * Extrait les métadonnées EXIF d'une image.
@@ -32,6 +34,11 @@ class ExifService
      *     cameraModel: string|null,
      *     gpsLat: string|null,
      *     gpsLon: string|null,
+     *     aperture: string|null,
+     *     shutterSpeed: string|null,
+     *     iso: int|null,
+     *     focalLength: string|null,
+     *     lens: string|null,
      * }
      */
     public function extract(string $absolutePath): array
@@ -43,6 +50,11 @@ class ExifService
             'cameraModel' => null,
             'gpsLat' => null,
             'gpsLon' => null,
+            'aperture' => null,
+            'shutterSpeed' => null,
+            'iso' => null,
+            'focalLength' => null,
+            'lens' => null,
         ];
 
         if (!function_exists('exif_read_data') || !file_exists($absolutePath)) {
@@ -75,6 +87,22 @@ class ExifService
         if (!empty($exif['GPSLatitude']) && !empty($exif['GPSLongitude'])) {
             $result['gpsLat'] = number_format($this->gpsToDecimal($exif['GPSLatitude'], $exif['GPSLatitudeRef'] ?? 'N'), 7);
             $result['gpsLon'] = number_format($this->gpsToDecimal($exif['GPSLongitude'], $exif['GPSLongitudeRef'] ?? 'E'), 7);
+        }
+
+        // Réglages de prise de vue (pack photographe) : rationnels bruts mis en
+        // forme par ExifValueFormatter.
+        $result['aperture'] = $this->formatter->fNumber(isset($exif['FNumber']) ? (string) $exif['FNumber'] : null);
+        $result['shutterSpeed'] = $this->formatter->exposure(isset($exif['ExposureTime']) ? (string) $exif['ExposureTime'] : null);
+        $result['focalLength'] = $this->formatter->focalLength(isset($exif['FocalLength']) ? (string) $exif['FocalLength'] : null);
+
+        if (isset($exif['ISOSpeedRatings'])) {
+            $iso = is_array($exif['ISOSpeedRatings']) ? ($exif['ISOSpeedRatings'][0] ?? null) : $exif['ISOSpeedRatings'];
+            $result['iso'] = null !== $iso ? (int) $iso : null;
+        }
+
+        $lens = $exif['UndefinedTag:0xA434'] ?? $exif['LensModel'] ?? null;
+        if (is_string($lens) && '' !== trim($lens)) {
+            $result['lens'] = trim($lens);
         }
 
         return $result;
