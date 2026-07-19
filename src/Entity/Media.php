@@ -60,6 +60,26 @@ class Media
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $cameraModel = null;
 
+    /** Ouverture (f-number EXIF), ex: "2.8" */
+    #[ORM\Column(length: 16, nullable: true)]
+    private ?string $aperture = null;
+
+    /** Vitesse d'obturation (EXIF), ex: "1/250" */
+    #[ORM\Column(length: 16, nullable: true)]
+    private ?string $shutterSpeed = null;
+
+    /** Sensibilité ISO (EXIF) */
+    #[ORM\Column(nullable: true)]
+    private ?int $iso = null;
+
+    /** Longueur focale en mm (EXIF), ex: "50" */
+    #[ORM\Column(length: 16, nullable: true)]
+    private ?string $focalLength = null;
+
+    /** Modèle d'objectif (EXIF LensModel) */
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $lens = null;
+
     /** Chemin relatif du thumbnail dans var/storage/ */
     #[ORM\Column(length: 1024, nullable: true)]
     private ?string $thumbnailPath = null;
@@ -121,6 +141,26 @@ class Media
     {
         return $this->cameraModel;
     }
+    public function getAperture(): ?string
+    {
+        return $this->aperture;
+    }
+    public function getShutterSpeed(): ?string
+    {
+        return $this->shutterSpeed;
+    }
+    public function getIso(): ?int
+    {
+        return $this->iso;
+    }
+    public function getFocalLength(): ?string
+    {
+        return $this->focalLength;
+    }
+    public function getLens(): ?string
+    {
+        return $this->lens;
+    }
     public function getThumbnailPath(): ?string
     {
         return $this->thumbnailPath;
@@ -153,6 +193,26 @@ class Media
     public function setCameraModel(?string $cameraModel): void
     {
         $this->cameraModel = $cameraModel;
+    }
+    public function setAperture(?string $aperture): void
+    {
+        $this->aperture = $aperture;
+    }
+    public function setShutterSpeed(?string $shutterSpeed): void
+    {
+        $this->shutterSpeed = $shutterSpeed;
+    }
+    public function setIso(?int $iso): void
+    {
+        $this->iso = $iso;
+    }
+    public function setFocalLength(?string $focalLength): void
+    {
+        $this->focalLength = $focalLength;
+    }
+    public function setLens(?string $lens): void
+    {
+        $this->lens = $lens;
     }
     public function setThumbnailPath(?string $thumbnailPath): void
     {

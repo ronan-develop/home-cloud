@@ -53,7 +53,9 @@ class MediaRepository extends ServiceEntityRepository implements MediaRepository
             $qb->andWhere('m.mediaType = :type')->setParameter('type', $type);
         }
 
-        $allowed = ['originalName' => 'f.originalName', 'size' => 'f.size', 'createdAt' => 'f.createdAt'];
+        // 'takenAt' trie par date de prise de vue (EXIF) : les médias sans date
+        // de capture (takenAt NULL) se regroupent à une extrémité selon le SGBD.
+        $allowed = ['originalName' => 'f.originalName', 'size' => 'f.size', 'createdAt' => 'f.createdAt', 'takenAt' => 'm.takenAt'];
         $applied = false;
         foreach ($orderBy as $field => $dir) {
             if (isset($allowed[$field])) {

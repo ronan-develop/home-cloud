@@ -13,6 +13,7 @@ use App\Service\ThumbnailService;
 use App\Service\UploadRoutingDecider;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
+use RonanLenouvel\RawPreviewExtractor\RawPreviewExtractorInterface;
 
 /**
  * Le worker Messenger ne doit tourner que pour les lots lourds. UploadRoutingDecider
@@ -33,6 +34,7 @@ final class UploadRoutingDeciderTest extends TestCase
             $this->createStub(ExifService::class),
             $this->createStub(ThumbnailService::class),
             $this->createStub(StorageServiceInterface::class),
+            $this->createStub(RawPreviewExtractorInterface::class),
         );
 
         return new UploadRoutingDecider($mediaProcessor, self::THRESHOLD);

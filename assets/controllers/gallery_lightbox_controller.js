@@ -1,11 +1,12 @@
 import { Controller } from '@hotwired/stimulus';
 import Slideshow from './Slideshow.js';
+import { buildExifPanelHtml } from '../js/exif-panel.js';
 
 /* Lightbox de la galerie médias : ouvre le média en plein écran au clic
  * sur une vignette, navigation précédent/suivant au clavier et via boutons.
  * Le diaporama (auto-avance, pause/lecture) est délégué à Slideshow. */
 export default class extends Controller {
-    static targets = ['img', 'video', 'prev', 'next', 'play'];
+    static targets = ['img', 'video', 'prev', 'next', 'play', 'info'];
 
     connect() {
         this.links = Array.from(document.querySelectorAll('[data-lightbox]'));
@@ -65,9 +66,31 @@ export default class extends Controller {
             this.videoTarget.style.display = 'none';
         }
 
+        this.renderInfo(isVideo ? null : this.links[this.current]);
+
         this.element.style.display = 'flex';
         this.prevTarget.style.visibility = this.current > 0 ? 'visible' : 'hidden';
         this.nextTarget.style.visibility = this.current < this.srcs.length - 1 ? 'visible' : 'hidden';
+    }
+
+    /* Remplit (ou masque) le panneau EXIF depuis les data-* de la vignette. */
+    renderInfo(link) {
+        if (!this.hasInfoTarget) return;
+
+        const html = link ? buildExifPanelHtml({
+            takenAt: link.getAttribute('data-taken-at') || '',
+            camera: link.getAttribute('data-camera') || '',
+            aperture: link.getAttribute('data-aperture') || '',
+            shutter: link.getAttribute('data-shutter') || '',
+            iso: link.getAttribute('data-iso') || '',
+            focal: link.getAttribute('data-focal') || '',
+            lens: link.getAttribute('data-lens') || '',
+            gpsLat: link.getAttribute('data-gps-lat') || '',
+            gpsLon: link.getAttribute('data-gps-lon') || '',
+        }) : '';
+
+        this.infoTarget.innerHTML = html;
+        this.infoTarget.hidden = html === '';
     }
 
     prev() {

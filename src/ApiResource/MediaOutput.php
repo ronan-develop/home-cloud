@@ -62,6 +62,11 @@ final class MediaOutput
         public readonly ?string $gpsLat,
         public readonly ?string $gpsLon,
         public readonly ?string $cameraModel,
+        public readonly ?string $aperture,
+        public readonly ?string $shutterSpeed,
+        public readonly ?int $iso,
+        public readonly ?string $focalLength,
+        public readonly ?string $lens,
         /** URL de l'endpoint thumbnail, null si pas encore généré */
         public readonly ?string $thumbnailUrl,
         public readonly string $createdAt,
