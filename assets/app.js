@@ -9,5 +9,7 @@ import './js/rename.js';
 import './js/delete-folder-modal.js';
 import './js/pdf-viewer-modal.js';
 import { initUploadModal } from './js/upload-modal.js';
+import { initExplorerDrop } from './js/explorer-drop.js';
 
 initUploadModal();
+initExplorerDrop();
