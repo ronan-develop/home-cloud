@@ -8,7 +8,20 @@ Cible : hébergement mutualisé **o2switch**, un sous-domaine par instance (`<pr
 
 SSH depuis la machine locale via les scripts `bin/`.
 
-> Le déploiement automatique GitHub Actions (webhook) ne fonctionne **pas** sur o2switch — les IPs Microsoft Azure (GitHub Actions) sont bloquées par le firewall. Les scripts SSH sont la seule méthode fiable.
+> Le déploiement automatique GitHub Actions (webhook) ne fonctionne **pas** sur o2switch — les IPs des runners GitHub Actions sont bloquées par le firewall SSH. Les scripts SSH sont la seule méthode fiable aujourd'hui (#288, en pause). Le webhook `public/deploy.php` existe dans le repo mais est cassé et inutilisé.
+
+### Piège IP dynamique / VPN d'entreprise
+
+Sans IP fixe (FAI grand public ou VPN d'entreprise désactivé), l'IP change entre deux sessions et le SSH se bloque silencieusement (timeout, pas de refus explicite) si elle n'est plus whitelistée dans cPanel → Sécurité → Accès SSH → Autorisation SSH. Un VPN d'entreprise peut à l'inverse bloquer l'accès à cPanel lui-même — pas de solution simple aux deux contraintes à la fois.
+
+o2switch expose une micro-API `SshWhitelist` (port cPanel 2083, indépendante du port SSH 22) pour whitelister une IP dynamiquement sans accès SSH préalable — utile en dépannage :
+
+```bash
+curl -s -u "<user_cpanel>:<mdp_cpanel>" \
+  "https://<serveur>.o2switch.net:2083/execute/SshWhitelist/add?address=$(curl -4 -s ifconfig.me)&port=22"
+```
+
+Authentification recommandée par o2switch : token API cPanel ("Manage API Tokens") — indisponible sur ce compte au 2026-07-20 ("bloqué à des fins de sécurité" selon le support), d'où le repli sur les identifiants cPanel classiques ci-dessus. Max 5 exceptions simultanées sur le compte.
 
 ---
 

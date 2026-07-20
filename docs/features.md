@@ -8,9 +8,11 @@ Ce que fait HomeCloud, du point de vue de celui qui l'utilise.
 
 Un explorateur classique — arborescence de dossiers, upload par glisser-déposer, renommage, déplacement, suppression.
 
-- **Upload** : plusieurs fichiers à la fois, avec barre de progression et file d'attente. Le dépôt d'un fichier sur un dossier l'y range directement.
-- **Types acceptés** : tout, sauf les exécutables (liste noire, pas liste blanche — un cloud personnel n'a pas à deviner ce que vous stockez).
+- **Upload** : plusieurs fichiers à la fois, avec barre de progression et file d'attente. Le dépôt d'un fichier sur un dossier l'y range directement — y compris un dossier entier glissé depuis le disque, avec sa structure.
+- **Types acceptés** : tout, sauf les exécutables (liste noire, pas liste blanche — un cloud personnel n'a pas à deviner ce que vous stockez). Les fichiers dangereux (scripts, HTML/SVG actifs, PDF avec JavaScript embarqué) sont neutralisés plutôt que rejetés : conservés, mais non exécutables/prévisualisables.
 - **Organisation** : dossiers imbriqués, un nom de fichier étant unique au sein d'un même dossier.
+- **Visualisation** : un PDF s'ouvre directement dans le navigateur, sans téléchargement préalable.
+- **Téléchargement** : un dossier entier se télécharge en une seule archive ZIP.
 
 ## Galerie
 
@@ -19,7 +21,7 @@ Les photos et vidéos, sorties de leur arborescence et présentées par date.
 - **Vignettes** générées automatiquement à l'upload, en tâche de fond.
 - **Lightbox** plein écran, navigation au clavier, diaporama.
 - **Filtres** par type (photo / vidéo) et tri par date.
-- **Métadonnées EXIF** extraites automatiquement : date de prise de vue, modèle d'appareil, coordonnées GPS.
+- **Métadonnées EXIF** extraites automatiquement : date de prise de vue, modèle d'appareil, coordonnées GPS, et pour un photographe — ouverture, vitesse, ISO, focale, objectif (JPEG et RAW, sauf CR3).
 
 ### Fichiers RAW
 
@@ -29,7 +31,7 @@ Un navigateur ne sait pas afficher un RAW, et un fichier de 50 Mo n'a rien à fa
 
 Une photo prise en portrait est automatiquement remise à l'endroit — l'appareil se contente d'enregistrer la rotation, il ne l'applique pas.
 
-> Limite connue : les EXIF d'un RAW ne sont pas encore lus (date, appareil et GPS restent vides pour ces photos). La vignette et l'affichage, eux, fonctionnent.
+> Limite connue : les CR3 (Canon, encodage ISO-BMFF) n'exposent pas encore ces métadonnées — champs vides, sans erreur. Vignette et affichage fonctionnent pour tous les formats RAW supportés.
 
 ## Albums
 
@@ -75,6 +77,7 @@ Recherche par nom sur les fichiers et les dossiers, depuis la barre supérieure.
 - **Mot de passe oublié** : réinitialisation par email.
 - **Thème clair / sombre**, suivant par défaut la préférence du système.
 - **Responsive** : barre latérale sur desktop, tab-bar sur mobile.
+- **Changelog** : page dédiée listant les grandes évolutions du projet, alimentée automatiquement depuis les PR mergées sur GitHub.
 
 ## API
 
