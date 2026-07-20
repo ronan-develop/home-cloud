@@ -5,13 +5,19 @@ declare(strict_types=1);
 namespace App\Controller\Web;
 
 use App\Entity\Folder;
+use App\Entity\Share;
+use App\Entity\User;
 use App\Interface\DefaultFolderServiceInterface;
 use App\Interface\FolderMoverInterface;
+use App\Interface\FolderZipArchiverInterface;
 use App\Repository\FolderRepository;
+use App\Security\ResourceAccessChecker;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Uid\Uuid;
@@ -31,7 +37,31 @@ final class FolderWebController extends AbstractController
         private readonly DefaultFolderServiceInterface $defaultFolderService,
         private readonly EntityManagerInterface $em,
         private readonly \App\Interface\FolderMoverInterface $folderMover,
+        private readonly ResourceAccessChecker $resourceAccessChecker,
+        private readonly FolderZipArchiverInterface $folderZipArchiver,
     ) {}
+
+    #[Route('/folders/{id}/download', name: 'app_folder_download', methods: ['GET'])]
+    public function download(string $id): BinaryFileResponse
+    {
+        $folder = $this->folderRepository->find($id)
+            ?? throw $this->createNotFoundException('Dossier introuvable.');
+
+        /** @var User $user */
+        $user = $this->getUser();
+        if (!$this->resourceAccessChecker->canRead($user, Share::RESOURCE_FOLDER, $folder->getId(), $folder->getOwner())) {
+            throw $this->createAccessDeniedException('Vous ne pouvez pas télécharger ce dossier.');
+        }
+
+        $zipPath = $this->folderZipArchiver->archive($folder);
+
+        $response = new BinaryFileResponse($zipPath);
+        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $folder->getName() . '.zip');
+        $response->headers->set('Content-Type', 'application/zip');
+        $response->deleteFileAfterSend(true);
+
+        return $response;
+    }
 
     #[Route('/folders/{id}/delete', name: 'app_folder_delete', methods: ['POST'])]
     public function delete(string $id, Request $request): Response

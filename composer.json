@@ -9,6 +9,7 @@
         "ext-exif": "*",
         "ext-gd": "*",
         "ext-iconv": "*",
+        "ext-zip": "*",
         "api-platform/doctrine-orm": "^4.3.16",
         "api-platform/symfony": "^4.3.16",
         "doctrine/doctrine-bundle": "^3.2.4",
