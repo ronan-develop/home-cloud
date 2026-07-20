@@ -21,7 +21,10 @@ interface DefaultFolderServiceInterface
      *   2. $newFolderName fourni → crée un nouveau dossier
      *   3. Aucun → retourne/crée le dossier système "Uploads"
      *
+     * $relativePath (optionnel) recrée une sous-arborescence sous le dossier
+     * ainsi résolu — import d'un dossier local avec sa structure (#238).
+     *
      * @throws \Symfony\Component\HttpKernel\Exception\BadRequestHttpException si le folderId n'existe pas ou n'appartient pas à $owner
      */
-    public function resolve(?string $folderId, ?string $newFolderName, User $owner): Folder;
+    public function resolve(?string $folderId, ?string $newFolderName, User $owner, ?string $relativePath = null): Folder;
 }

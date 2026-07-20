@@ -105,6 +105,65 @@ final class DefaultFolderServiceTest extends TestCase
         $this->service->resolve('some-id', null, $owner);
     }
 
+    public function testResolveWithRelativePathCreatesSubfolderUnderFolderId(): void
+    {
+        $owner = new User('owner-rel@example.com', 'Owner');
+        $target = new Folder('Archives', $owner);
+
+        $this->repo->expects($this->once())
+            ->method('find')
+            ->with('target-id')
+            ->willReturn($target);
+
+        // ensureSubfolderPath cherche un enfant existant nommé '2026-07-10-BMA' — absent
+        $this->repo->method('findOneBy')->willReturn(null);
+        $this->em->expects($this->once())->method('persist');
+        $this->em->expects($this->once())->method('flush');
+
+        $result = $this->service->resolve('target-id', null, $owner, '2026-07-10-BMA');
+
+        $this->assertSame('2026-07-10-BMA', $result->getName());
+        $this->assertSame($target, $result->getParent());
+    }
+
+    public function testResolveWithoutRelativePathReturnsFolderIdDirectly(): void
+    {
+        $owner = new User('owner-norel@example.com', 'Owner');
+        $target = new Folder('Archives', $owner);
+
+        $this->repo->expects($this->once())
+            ->method('find')
+            ->with('target-id')
+            ->willReturn($target);
+        $this->em->expects($this->never())->method('persist');
+
+        $result = $this->service->resolve('target-id', null, $owner, null);
+
+        $this->assertSame($target, $result);
+    }
+
+    public function testResolveWithRelativePathAndNoFolderIdCreatesUnderUploads(): void
+    {
+        $owner = new User('owner-rel2@example.com', 'Owner');
+        $uploads = new Folder(DefaultFolderService::DEFAULT_FOLDER_NAME, $owner);
+
+        $this->repo->method('findOneBy')
+            ->willReturnCallback(function (array $criteria) use ($uploads) {
+                if (($criteria['name'] ?? null) === DefaultFolderService::DEFAULT_FOLDER_NAME) {
+                    return $uploads;
+                }
+                return null; // pas de sous-dossier existant
+            });
+
+        $this->em->expects($this->once())->method('persist');
+        $this->em->expects($this->once())->method('flush');
+
+        $result = $this->service->resolve(null, null, $owner, 'Photos2026');
+
+        $this->assertSame('Photos2026', $result->getName());
+        $this->assertSame($uploads, $result->getParent());
+    }
+
     public function testEnsureSubfolderPathCreatesNestedFolders(): void
     {
         $owner = new User('owner@example.com', 'Owner');

@@ -38,9 +38,24 @@ final class DefaultFolderService implements DefaultFolderServiceInterface
      *   newFolderName fourni → crée un nouveau Folder
      *   aucun → retourne (ou crée) le folder "Uploads"
      *
+     * Si $relativePath est fourni (import d'un dossier local avec sa structure,
+     * cf. #238), la ou les sous-arborescences sont créées/réutilisées sous le
+     * folder ainsi résolu, via ensureSubfolderPath().
+     *
      * @throws BadRequestHttpException si folderId est fourni mais introuvable
      */
-    public function resolve(?string $folderId, ?string $newFolderName, User $owner): Folder
+    public function resolve(?string $folderId, ?string $newFolderName, User $owner, ?string $relativePath = null): Folder
+    {
+        $base = $this->resolveBase($folderId, $newFolderName, $owner);
+
+        if ($relativePath === null || $relativePath === '') {
+            return $base;
+        }
+
+        return $this->ensureSubfolderPath($base, $relativePath, $owner);
+    }
+
+    private function resolveBase(?string $folderId, ?string $newFolderName, User $owner): Folder
     {
         if ($folderId !== null && $folderId !== '') {
             $folder = $this->folderRepository->find($folderId);

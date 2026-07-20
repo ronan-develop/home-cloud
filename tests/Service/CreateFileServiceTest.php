@@ -166,7 +166,7 @@ class CreateFileServiceTest extends TestCase
 
         $this->defaultFolderService->expects($this->once())
             ->method('resolve')
-            ->with($folderId, null, $owner)
+            ->with($folderId, null, $owner, null)
             ->willReturn($targetFolder);
 
         $this->storageService->expects($this->once())
@@ -207,7 +207,7 @@ class CreateFileServiceTest extends TestCase
 
         $this->defaultFolderService->expects($this->once())
             ->method('resolve')
-            ->with(null, 'New Folder', $owner)
+            ->with(null, 'New Folder', $owner, null)
             ->willReturn($newFolder);
 
         $this->storageService->expects($this->once())
@@ -226,6 +226,44 @@ class CreateFileServiceTest extends TestCase
 
         // Assert
         $this->assertEquals($newFolder, $file->getFolder());
+    }
+
+    public function testCreateFromUploadWithRelativePathPassesItToResolve(): void
+    {
+        $tmpFile = tempnam(sys_get_temp_dir(), 'test');
+        file_put_contents($tmpFile, 'content');
+        $uploadedFile = new UploadedFile($tmpFile, 'scan.pdf', 'application/pdf', null, true);
+
+        $owner = new User('owner@example.com', 'Owner');
+        $ownerId = (string) $owner->getId();
+        $targetFolder = new Folder('Archives', $owner);
+        $folderId = (string) $targetFolder->getId();
+        $subFolder = new Folder('2026-07-10-BMA', $owner, $targetFolder);
+
+        $this->userRepository->expects($this->once())
+            ->method('find')
+            ->willReturn($owner);
+
+        $this->defaultFolderService->expects($this->once())
+            ->method('resolve')
+            ->with($folderId, null, $owner, '2026-07-10-BMA')
+            ->willReturn($subFolder);
+
+        $this->storageService->expects($this->once())
+            ->method('store')
+            ->willReturn(['path' => '/path/scan.pdf', 'neutralized' => false]);
+
+        $this->em->expects($this->once())->method('persist');
+        $this->em->expects($this->once())->method('flush');
+
+        $file = $this->service->createFromUpload(
+            $uploadedFile,
+            $ownerId,
+            $folderId,
+            relativePath: '2026-07-10-BMA',
+        );
+
+        $this->assertSame($subFolder, $file->getFolder());
     }
 
     public function testCreateFromUploadPersistsFile(): void

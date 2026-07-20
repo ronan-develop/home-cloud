@@ -1,4 +1,5 @@
 import { Controller } from '@hotwired/stimulus';
+import { annotateWebkitRelativePaths } from '../js/directory-entry-reader.js';
 
 /* Bouton "Nouveau" (sidebar) : menu déroulant positionné dynamiquement sous
  * le bouton (fixed, hors du stacking context backdrop-filter de la sidebar).
@@ -55,8 +56,11 @@ export default class extends Controller {
     }
 
     folderSelected() {
+        const files = Array.from(this.folderInputTarget.files);
         this.folderInputTarget.value = '';
         this.closeMenu();
-        window.alert('Folder import — coming soon.');
+        if (files.length === 0) return;
+        annotateWebkitRelativePaths(files);
+        document.dispatchEvent(new CustomEvent('hc:files-selected', { detail: { files } }));
     }
 }
