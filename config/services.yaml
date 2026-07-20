@@ -30,6 +30,7 @@ services:
     App\Interface\UploadBatchRepositoryInterface: '@App\Repository\UploadBatchRepository'
     App\Interface\BatchCompletionNotifierInterface: '@App\Service\BatchCompletionNotifier'
     App\Interface\ShareNotificationMailerInterface: '@App\Service\ShareNotificationMailer'
+    App\Interface\FolderZipArchiverInterface:     '@App\Service\FolderZipArchiver'
 
     App\State\AlbumProcessor:
         arguments:
