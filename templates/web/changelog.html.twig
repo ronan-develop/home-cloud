@@ -1,0 +1,45 @@
+{% extends 'web/layout.html.twig' %}
+
+{% block title %}Changelog — HomeCloud{% endblock %}
+
+{% block content %}
+
+<div class="max-w-3xl mx-auto flex flex-col gap-6">
+
+    <h1 class="text-2xl font-bold" style="color: var(--hc-text)">Changelog</h1>
+    <p style="color: var(--hc-text-secondary, var(--hc-text))">
+        Les grandes évolutions de HomeCloud, mises à jour automatiquement.
+    </p>
+
+    <div class="settings-card">
+        {% if entries is empty %}
+            <p style="color: var(--hc-text-secondary, var(--hc-text))">Aucune entrée disponible pour le moment.</p>
+        {% else %}
+            <table class="w-full text-left" style="border-collapse: collapse">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--hc-border)">
+                        <th class="py-2 pr-4" style="color: var(--hc-text-secondary, var(--hc-text))">Date</th>
+                        <th class="py-2 pr-4" style="color: var(--hc-text-secondary, var(--hc-text))">Évolution</th>
+                        <th class="py-2" style="color: var(--hc-text-secondary, var(--hc-text))">GitHub</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in entries %}
+                        <tr style="border-bottom: 1px solid var(--hc-border)">
+                            <td class="py-2 pr-4 whitespace-nowrap" style="color: var(--hc-text-secondary, var(--hc-text))">{{ entry.date }}</td>
+                            <td class="py-2 pr-4" style="color: var(--hc-text)">{{ entry.title }}</td>
+                            <td class="py-2">
+                                <a href="{{ entry.url }}" target="_blank" rel="noopener noreferrer" class="hc-nav-item" style="display: inline-flex; padding: 0.25rem 0.5rem">
+                                    #{{ entry.number }}
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
+
+</div>
+
+{% endblock %}
