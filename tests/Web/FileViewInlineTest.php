@@ -79,6 +79,27 @@ final class FileViewInlineTest extends WebTestCase
         return $file;
     }
 
+    /**
+     * Fichier neutralisé (#278) : stocké en .bin sur disque, contenu HTML réel —
+     * simule ce que StorageService produit pour un upload HTML/SVG dangereux.
+     */
+    private function createNeutralizedHtmlFile(User $owner): File
+    {
+        $folder = new Folder('Docs', $owner);
+        $this->em->persist($folder);
+
+        $rel = 'view-test/evil-' . uniqid() . '.bin';
+        @mkdir($this->storageDir . '/view-test', 0777, true);
+        $content = '<html><body><script>alert(document.cookie)</script></body></html>';
+        file_put_contents($this->storageDir . '/' . $rel, $content);
+
+        $file = new File('evil.html', 'text/html', strlen($content), $rel, $folder, $owner, neutralized: true);
+        $this->em->persist($file);
+        $this->em->flush();
+
+        return $file;
+    }
+
     public function testViewRouteRespondsWithInlineDisposition(): void
     {
         $user = $this->createUser();
@@ -108,6 +129,36 @@ final class FileViewInlineTest extends WebTestCase
         $this->assertResponseIsSuccessful();
         $disposition = (string) $this->client->getResponse()->headers->get('Content-Disposition');
         $this->assertStringStartsWith('attachment', $disposition);
+    }
+
+    public function testViewRouteForcesOctetStreamForNeutralizedFile(): void
+    {
+        $user = $this->createUser();
+        $file = $this->createNeutralizedHtmlFile($user);
+        $fileId = $file->getId();
+        $this->em->clear();
+
+        $this->login();
+        $this->client->request('GET', '/files/' . $fileId . '/view');
+
+        $this->assertResponseIsSuccessful();
+        $contentType = (string) $this->client->getResponse()->headers->get('Content-Type');
+        $this->assertSame('application/octet-stream', $contentType, 'Un fichier neutralisé ne doit jamais être rendu comme HTML/SVG en inline');
+    }
+
+    public function testDownloadRouteForcesOctetStreamForNeutralizedFile(): void
+    {
+        $user = $this->createUser();
+        $file = $this->createNeutralizedHtmlFile($user);
+        $fileId = $file->getId();
+        $this->em->clear();
+
+        $this->login();
+        $this->client->request('GET', '/files/' . $fileId . '/download');
+
+        $this->assertResponseIsSuccessful();
+        $contentType = (string) $this->client->getResponse()->headers->get('Content-Type');
+        $this->assertSame('application/octet-stream', $contentType);
     }
 
     public function testViewRouteDeniesAccessToNonOwner(): void

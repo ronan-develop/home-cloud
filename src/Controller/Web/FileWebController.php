@@ -87,6 +87,15 @@ final class FileWebController extends AbstractController
         $response = new BinaryFileResponse($absolutePath);
         $response->setContentDisposition($disposition, $file->getOriginalName());
 
+        // BinaryFileResponse devine Content-Type depuis le contenu réel du
+        // fichier (magic bytes), pas depuis son extension .bin sur disque :
+        // un fichier neutralisé (HTML/SVG dangereux) reçoit sinon son vrai
+        // Content-Type (ex. text/html) — en inline, le navigateur le rend et
+        // exécute le JS embarqué, contournant la neutralisation (#278).
+        if ($file->isNeutralized()) {
+            $response->headers->set('Content-Type', 'application/octet-stream');
+        }
+
         return $response;
     }
 
