@@ -122,6 +122,9 @@ for PRENOM in "${TARGETS[@]}"; do
             RESULTS_FAIL+=("$SUBDOMAIN (DB_PASSWORD_PRESET manquant)")
             continue
         fi
+        if [[ -z "${MAILER_DSN_PRESET:-}" ]]; then
+            warn "MAILER_DSN_PRESET absent (.secrets ou .secrets.${PRENOM}) — l'instance n'enverra aucun email"
+        fi
 
         DB_NAME="${SSH_USER}_${PRENOM}"
         DB_USER="${SSH_USER}_${PRENOM}"
@@ -144,6 +147,7 @@ DATABASE_URL=${DATABASE_URL}
 JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
 JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
 JWT_PASSPHRASE=${JWT_PASSPHRASE}
+MAILER_DSN=${MAILER_DSN_PRESET:-null://null}
 ENVEOF
             ${COMPOSER_BIN} install --no-interaction --prefer-dist --no-progress --no-dev
             ${PHP_BIN} bin/console cache:clear --env=prod

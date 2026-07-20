@@ -192,6 +192,11 @@ MAILER_DSN=smtp://<user>:<password>@lenouvel.me:465
 ```
 
 > Généré automatiquement par `bin/deploy-all.sh --init`. Pour `bin/deploy.sh`, le script le crée aussi.
+>
+> `MAILER_DSN` vient de `MAILER_DSN_PRESET` dans `.secrets` (global, partagé par toutes
+> les instances — même boîte SMTP `lenouvel.me` pour tout le monde). Sans cette clé,
+> l'instance est créée avec `MAILER_DSN=null://null` : aucun email d'invitation ni de
+> réinitialisation de mot de passe ne part (cf. `GuestAccountCreator`).
 
 ### `MAILER_DSN` — obligatoire pour les emails (dont la notif de fin de lot)
 
