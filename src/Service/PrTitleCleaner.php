@@ -24,7 +24,8 @@ final class PrTitleCleaner implements PrTitleCleanerInterface
 {
     public function clean(string $title): string
     {
-        $withoutEmoji = $this->stripLeadingEmoji(trim($title));
+        $withoutHeadingMarker = $this->stripLeadingMarkdownHeadingMarker(trim($title));
+        $withoutEmoji = $this->stripLeadingEmoji($withoutHeadingMarker);
         $withoutPrefix = $this->stripConventionalPrefix($withoutEmoji);
 
         $cleaned = trim($withoutPrefix);
@@ -33,6 +34,16 @@ final class PrTitleCleaner implements PrTitleCleanerInterface
         }
 
         return mb_strtoupper(mb_substr($cleaned, 0, 1)) . mb_substr($cleaned, 1);
+    }
+
+    /**
+     * Un "#" markdown collé par erreur en tête d'un titre de PR (ex:
+     * "# 🏷️ PR : ...") bloque sinon la détection de l'emoji qui suit — "#"
+     * n'est ni un symbole \p{So} ni un espace.
+     */
+    private function stripLeadingMarkdownHeadingMarker(string $title): string
+    {
+        return preg_replace('/^#+\s*/u', '', $title) ?? $title;
     }
 
     private function stripLeadingEmoji(string $title): string
