@@ -19,3 +19,9 @@ when@test:
         App\Interface\StorageServiceInterface:
             alias: App\Service\StorageService
             public: true
+
+        App\Tests\Fake\FakeChangelogFetcher: ~
+
+        App\Interface\ChangelogFetcherInterface:
+            alias: App\Tests\Fake\FakeChangelogFetcher
+            public: true
