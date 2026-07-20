@@ -100,6 +100,8 @@ function createUploadFn(token, folderId, newFolderName, batchId) {
             if (folderId) formData.append('folderId', folderId);
             if (newFolderName) formData.append('newFolderName', newFolderName);
             if (batchId) formData.append('batchId', batchId);
+            // Dossier local glissé-déposé (#238) : recrée l'arborescence côté serveur
+            if (file._hcRelativePath) formData.append('relativePath', file._hcRelativePath);
 
             // Progress tracking
             if (xhr.upload) {
