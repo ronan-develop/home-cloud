@@ -77,6 +77,22 @@ final class ChangelogControllerTest extends WebTestCase
     }
 
     /**
+     * Les dates viennent de l'API GitHub au format ISO (Y-m-d) — affichées
+     * en français (jj/mm/aaaa) plutôt que le format ISO brut.
+     */
+    public function testChangelogPageDisplaysDatesInFrenchFormat(): void
+    {
+        $this->login();
+
+        $crawler = $this->client->request('GET', '/changelog');
+
+        $firstRowText = $crawler->filter('table tbody tr')->first()->text();
+
+        $this->assertMatchesRegularExpression('/\d{2}\/\d{2}\/\d{4}/', $firstRowText);
+        $this->assertDoesNotMatchRegularExpression('/\d{4}-\d{2}-\d{2}/', $firstRowText);
+    }
+
+    /**
      * #290 (retour utilisateur) : l'historique complet doit être disponible,
      * mais paginé plutôt qu'affiché en une seule page géante. FakeChangelogFetcher
      * fournit 45 entrées de test — la page 1 doit en afficher un sous-ensemble.
