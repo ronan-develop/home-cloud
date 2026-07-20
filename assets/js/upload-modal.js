@@ -406,29 +406,33 @@ async function openUploadModal(files, options = {}) {
     const fileListEl = overlay.querySelector('#hc-upload-file-list');
     const itemElements = new Map();
 
-    // Map file → queue item element
+    // Map file → queue item element. Indexé par la référence de l'objet File
+    // (et non son nom) : deux fichiers sélectionnés portant le même nom
+    // (ex. IMG_0001.jpg de deux dossiers différents) sont deux références
+    // distinctes, chacune avec sa propre barre — indexer par nom les ferait
+    // collisionner dans la Map (#239).
     files.forEach((file, idx) => {
         const itemEl = fileListEl.children[idx];
-        itemElements.set(file.name, itemEl);
+        itemElements.set(file, itemEl);
     });
 
     // Create upload queue with callbacks for UI updates
     currentUploadQueue = createUploadQueueFn({
         maxConcurrent: 3,
         onProgress: (file, progress) => {
-            const itemEl = itemElements.get(file.name);
+            const itemEl = itemElements.get(file);
             if (itemEl) {
                 updateUploadItem(itemEl, 'uploading', progress.progress || 0);
             }
         },
         onComplete: (file, response) => {
-            const itemEl = itemElements.get(file.name);
+            const itemEl = itemElements.get(file);
             if (itemEl) {
                 updateUploadItem(itemEl, 'completed', 100);
             }
         },
         onError: (file, error) => {
-            const itemEl = itemElements.get(file.name);
+            const itemEl = itemElements.get(file);
             if (itemEl) {
                 updateUploadItem(itemEl, 'error', 0, error.message || 'Unknown error');
             }
