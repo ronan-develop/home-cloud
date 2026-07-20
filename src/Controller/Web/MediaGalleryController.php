@@ -9,7 +9,7 @@ use App\Interface\AlbumRepositoryInterface;
 use App\Interface\MediaRepositoryInterface;
 use App\Interface\StorageServiceInterface;
 use App\Service\MediaCacheHeaders;
-use App\Service\MediaFullResponseFactory;
+use App\Factory\MediaFullResponseFactory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Request;
