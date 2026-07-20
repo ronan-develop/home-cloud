@@ -7,7 +7,7 @@ namespace App\Controller\Web;
 use App\Entity\Share;
 use App\Entity\User;
 use App\Exception\ResourceNotPubliclyShareableException;
-use App\Security\ShareLinkFactory;
+use App\Factory\ShareLinkFactory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;

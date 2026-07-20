@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Service;
+namespace App\Tests\Factory;
 
-use App\Service\MediaFullResponseFactory;
+use App\Factory\MediaFullResponseFactory;
 use App\Service\RawPreviewCache;
 use PHPUnit\Framework\TestCase;
 use RonanLenouvel\RawPreviewExtractor\Exception\PreviewNotFoundException;

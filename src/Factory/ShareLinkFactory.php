@@ -2,12 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Security;
+namespace App\Factory;
 
 use App\Entity\ShareLink;
 use App\Entity\User;
 use App\Interface\OwnershipCheckerInterface;
 use App\Interface\ResourceLocatorInterface;
+use App\Security\CreatedShareLink;
+use App\Security\ShareLinkTokenGenerator;
+use App\Security\VisibilityChecker;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Uid\Uuid;
 

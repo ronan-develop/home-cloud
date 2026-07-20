@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Security;
+namespace App\Tests\Factory;
 
 use App\Entity\File;
 use App\Entity\Folder;
@@ -10,9 +10,9 @@ use App\Entity\Share;
 use App\Entity\ShareLink;
 use App\Entity\User;
 use App\Exception\ResourceNotPubliclyShareableException;
+use App\Factory\ShareLinkFactory;
 use App\Interface\OwnershipCheckerInterface;
 use App\Interface\ResourceLocatorInterface;
-use App\Security\ShareLinkFactory;
 use App\Security\ShareLinkTokenGenerator;
 use App\Security\VisibilityChecker;
 use Doctrine\ORM\EntityManagerInterface;

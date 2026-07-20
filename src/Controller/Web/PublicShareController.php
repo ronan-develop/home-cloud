@@ -12,7 +12,7 @@ use App\Interface\MediaRepositoryInterface;
 use App\Interface\ShareLinkAccessCheckerInterface;
 use App\Interface\StorageServiceInterface;
 use App\Service\MediaCacheHeaders;
-use App\Service\MediaFullResponseFactory;
+use App\Factory\MediaFullResponseFactory;
 use App\Security\ResourceLocator;
 use App\Security\SharedFileScopeChecker;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
