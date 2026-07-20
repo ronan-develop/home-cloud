@@ -161,6 +161,52 @@ final class FileViewInlineTest extends WebTestCase
         $this->assertSame('application/octet-stream', $contentType);
     }
 
+    /**
+     * PDF valide mais dont l'en-tête `%PDF-` n'est pas à l'octet 0 (ex: un
+     * fichier téléchargé depuis un site tiers ayant laissé fuiter du texte de
+     * debug avant le flux réel). La norme PDF (ISO 32000-1 §7.5.2) tolère cet
+     * en-tête décalé dans les 1024 premiers octets — les vrais lecteurs PDF
+     * l'ouvrent sans problème — mais `finfo` (utilisé par BinaryFileResponse)
+     * est plus strict et détecte `application/octet-stream`. Combiné à
+     * X-Content-Type-Options: nosniff, le navigateur ne peut pas se
+     * rattraper : il propose le téléchargement au lieu du rendu inline.
+     */
+    private function createPdfWithShiftedHeader(User $owner): File
+    {
+        $folder = new Folder('Docs', $owner);
+        $this->em->persist($folder);
+
+        $rel = 'view-test/shifted-' . uniqid() . '.pdf';
+        @mkdir($this->storageDir . '/view-test', 0777, true);
+        $content = "SELECT * FROM `manuals` WHERE `id` = '375015'%PDF-1.5\r\n%âãÏÓ\r\nfake content";
+        file_put_contents($this->storageDir . '/' . $rel, $content);
+
+        $file = new File('manual.pdf', 'application/pdf', strlen($content), $rel, $folder, $owner);
+        $this->em->persist($file);
+        $this->em->flush();
+
+        return $file;
+    }
+
+    public function testViewRouteForcesPdfContentTypeWhenHeaderIsShiftedButWithinSpecTolerance(): void
+    {
+        $user = $this->createUser();
+        $file = $this->createPdfWithShiftedHeader($user);
+        $fileId = $file->getId();
+        $this->em->clear();
+
+        $this->login();
+        $this->client->request('GET', '/files/' . $fileId . '/view');
+
+        $this->assertResponseIsSuccessful();
+        $contentType = (string) $this->client->getResponse()->headers->get('Content-Type');
+        $this->assertSame(
+            'application/pdf',
+            $contentType,
+            'Un PDF valide dont l\'en-tête est décalé dans les 1024 premiers octets (toléré par la norme) doit rester servi comme application/pdf.'
+        );
+    }
+
     public function testViewRouteDeniesAccessToNonOwner(): void
     {
         $owner = $this->createUser('owner@example.com', 'pwd12345');

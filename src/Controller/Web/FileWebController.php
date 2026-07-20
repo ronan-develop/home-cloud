@@ -12,6 +12,7 @@ use App\Repository\FileRepository;
 use App\Interface\DefaultFolderServiceInterface;
 use App\Interface\SharedResourceCleanerInterface;
 use App\Security\GuestRestrictionChecker;
+use App\Service\PdfSignatureDetector;
 use App\Service\PendingMediaProcessingCollector;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -49,6 +50,7 @@ final class FileWebController extends AbstractController
         private readonly GuestRestrictionChecker $guestRestrictionChecker,
         private readonly PendingMediaProcessingCollector $pendingMediaProcessingCollector,
         private readonly MediaProcessorInterface $mediaProcessor,
+        private readonly PdfSignatureDetector $pdfSignatureDetector,
     ) {}
 
     #[Route('/files/{id}/download', name: 'app_file_download', methods: ['GET'])]
@@ -94,6 +96,17 @@ final class FileWebController extends AbstractController
         // exécute le JS embarqué, contournant la neutralisation (#278).
         if ($file->isNeutralized()) {
             $response->headers->set('Content-Type', 'application/octet-stream');
+        } elseif (
+            str_ends_with(strtolower($file->getOriginalName()), '.pdf')
+            && $response->headers->get('Content-Type') !== 'application/pdf'
+            && $this->pdfSignatureDetector->detect($absolutePath)
+        ) {
+            // finfo (via BinaryFileResponse) peut détecter à tort
+            // application/octet-stream sur un PDF valide mais dont l'en-tête
+            // est décalé (ex: texte de debug fuité en préfixe par un site
+            // tiers) — pourtant lisible par tout vrai lecteur PDF, cf.
+            // PdfSignatureDetector.
+            $response->headers->set('Content-Type', 'application/pdf');
         }
 
         return $response;
