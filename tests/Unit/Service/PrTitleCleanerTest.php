@@ -82,4 +82,29 @@ final class PrTitleCleanerTest extends TestCase
 
         $this->assertSame('Palette, layout et redirection post-login', $result);
     }
+
+    /**
+     * Bug réel (retour utilisateur sur le rendu du changelog) : un "#" de titre
+     * markdown collé par erreur en tête du titre de PR (ex: "# 🏷️ PR : ...")
+     * bloquait la détection de l'emoji qui suivait, puisque le "#" n'est ni un
+     * symbole \p{So} ni un caractère blanc.
+     */
+    /**
+     * "PR :" est ici traité comme un préfixe conventionnel générique
+     * ("type:"), au même titre que "fix:"/"feat:" — résultat plus propre
+     * pour l'utilisateur final qu'un "PR :" redondant conservé tel quel.
+     */
+    public function testStripsLeadingMarkdownHeadingMarkerBeforeEmoji(): void
+    {
+        $result = (new PrTitleCleaner())->clean('# 🏷️ PR : Move Folder/File UI — Sidebar + Modal');
+
+        $this->assertSame('Move Folder/File UI — Sidebar + Modal', $result);
+    }
+
+    public function testStripsLeadingMarkdownHeadingMarkerBeforeEmojiAndProseColon(): void
+    {
+        $result = (new PrTitleCleaner())->clean('# ✨ Fonctionnalité principale : Gestion des photos');
+
+        $this->assertSame('Fonctionnalité principale : Gestion des photos', $result);
+    }
 }
