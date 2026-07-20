@@ -50,6 +50,20 @@ final class StorageService implements StorageServiceInterface
         'text/javascript', 'application/javascript', 'text/css',
     ];
 
+    /**
+     * Marqueurs de contenu actif PDF (#286) : le format PDF peut embarquer du
+     * JavaScript exécutable via ces objets (/OpenAction, /AA = actions
+     * automatiques à l'ouverture/l'événement, /JS/JavaScript = le script
+     * lui-même, /Launch = exécution d'un programme externe). Un PDF contenant
+     * l'un de ces tokens est neutralisé comme les autres types dangereux —
+     * détection par recherche de motif sur le contenu brut, pas un vrai parseur
+     * PDF (les objets compressés en flux /ObjStm échappent à cette détection,
+     * risque résiduel documenté dans #286).
+     */
+    private const PDF_ACTIVE_CONTENT_MARKERS = [
+        '/JavaScript', '/JS', '/OpenAction', '/AA', '/Launch',
+    ];
+
     public function __construct(
         private readonly string $storageDir,
     ) {}
@@ -83,6 +97,12 @@ final class StorageService implements StorageServiceInterface
         $neutralized = in_array($originalExt, self::NEUTRALIZED_EXTENSIONS, true)
             || in_array($detectedExt, self::NEUTRALIZED_EXTENSIONS, true)
             || in_array($detectedMime, self::NEUTRALIZED_MIME_TYPES, true);
+
+        $isPdf = $originalExt === 'pdf' || $detectedExt === 'pdf' || $detectedMime === 'application/pdf';
+        if (!$neutralized && $isPdf && $this->pdfHasActiveContent($file->getPathname())) {
+            $neutralized = true;
+        }
+
         $ext = $neutralized ? 'bin' : $originalExt;
 
         $subDir = sprintf('%s/%s', $year, $month);
@@ -94,6 +114,31 @@ final class StorageService implements StorageServiceInterface
             'path'       => sprintf('%s/%s', $subDir, $filename),
             'neutralized' => $neutralized,
         ];
+    }
+
+    /**
+     * Détecte du contenu actif (JS embarqué, action au lancement) dans un PDF
+     * via une recherche de motif sur le contenu brut (#286).
+     */
+    private function pdfHasActiveContent(string $pathname): bool
+    {
+        $content = file_get_contents($pathname);
+        if ($content === false) {
+            return false;
+        }
+
+        // Délimité par une lettre/chiffre en négatif : un vrai nom d'objet PDF
+        // (/JS, /AA…) n'est jamais suivi directement d'un caractère alphanumérique
+        // qui en ferait un nom différent — sinon /JS matcherait /JSON en sous-chaîne
+        // (ex: un chemin "config/JSON" cité dans le texte d'un PDF légitime, #286).
+        foreach (self::PDF_ACTIVE_CONTENT_MARKERS as $marker) {
+            $pattern = '/' . preg_quote($marker, '/') . '(?![A-Za-z0-9])/';
+            if (preg_match($pattern, $content) === 1) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
