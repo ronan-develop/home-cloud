@@ -58,6 +58,8 @@ final class CreateFileService implements CreateFileServiceInterface
      * @param string $ownerId              User UUID
      * @param string|null $folderId        Target folder (optional)
      * @param string|null $newFolderName   Create new folder (optional)
+     * @param string|null $relativePath    Sous-arborescence à recréer sous le dossier
+     *                                     résolu (import d'un dossier local, #238)
      * @return File                        Persisted entity
      *
      * @throws BadRequestHttpException     if validation fails
@@ -68,6 +70,7 @@ final class CreateFileService implements CreateFileServiceInterface
         string $ownerId,
         ?string $folderId = null,
         ?string $newFolderName = null,
+        ?string $relativePath = null,
     ): File {
         // 1. Security FIRST: validate file is not executable (before any DB lookup)
         $this->validateExecutable($uploadedFile);
@@ -78,8 +81,8 @@ final class CreateFileService implements CreateFileServiceInterface
 
         $this->guestRestrictionChecker->denyUnlessFullAccount($owner);
 
-        // 3. Folder resolution: folderId > newFolderName > Uploads
-        $folder = $this->defaultFolderService->resolve($folderId, $newFolderName, $owner);
+        // 3. Folder resolution: folderId > newFolderName > Uploads, puis relativePath
+        $folder = $this->defaultFolderService->resolve($folderId, $newFolderName, $owner, $relativePath);
 
         // 4. Extract metadata (name, mime, size)
         $metadata = $this->extractMetadata($uploadedFile);

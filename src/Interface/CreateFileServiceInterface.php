@@ -20,5 +20,6 @@ interface CreateFileServiceInterface
         string $ownerId,
         ?string $folderId = null,
         ?string $newFolderName = null,
+        ?string $relativePath = null,
     ): File;
 }

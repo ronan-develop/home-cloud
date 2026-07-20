@@ -60,8 +60,11 @@ final class FileUploadController extends AbstractController
      *   ownerId        (UUID utilisateur, obligatoire)
      *   folderId       (UUID folder existant, optionnel)
      *   newFolderName  (nom du nouveau folder à créer, optionnel)
+     *   relativePath   (sous-arborescence à recréer sous le folder cible,
+     *                   ex. "2026-07-10-BMA/scans" — import d'un dossier
+     *                   local avec sa structure, #238)
      *
-     * Priorité : folderId > newFolderName > dossier "Uploads"
+     * Priorité : folderId > newFolderName > dossier "Uploads", puis relativePath
      */
     public function __invoke(Request $request): Response
     {
@@ -81,6 +84,7 @@ final class FileUploadController extends AbstractController
             $ownerId,
             $request->request->get('folderId'),
             $request->request->get('newFolderName'),
+            $request->request->get('relativePath'),
         );
 
         $batch = $this->resolveBatch($request, $ownerId);
