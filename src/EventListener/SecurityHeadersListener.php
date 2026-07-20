@@ -29,6 +29,11 @@ use Symfony\Component\HttpKernel\KernelEvents;
  *   principal (app.js et tout ce qu'il importe). Risque limité : `data:`
  *   n'autorise que du contenu inline déjà rendu par le serveur, comme
  *   `'unsafe-inline'` déjà présent.
+ *
+ * Dérogation /files/{id}/view (#280) : le viewer PDF (#241) embarque cette
+ * route dans une <iframe> same-origin — DENY/'none' bloquerait cet embedding
+ * même en same-origin. Remplacé par SAMEORIGIN/'self' UNIQUEMENT sur cette
+ * route, pour ne pas affaiblir la protection anti-clickjacking ailleurs.
  */
 #[AsEventListener(event: KernelEvents::RESPONSE)]
 final class SecurityHeadersListener
@@ -43,17 +48,18 @@ final class SecurityHeadersListener
             return;
         }
 
+        $path = $event->getRequest()->getPathInfo();
+        $isFileViewRoute = (bool) preg_match('#^/files/[^/]+/view$#', $path);
+
         $headers = $event->getResponse()->headers;
         $headers->set('X-Content-Type-Options', 'nosniff');
-        $headers->set('X-Frame-Options', 'DENY');
+        $headers->set('X-Frame-Options', $isFileViewRoute ? 'SAMEORIGIN' : 'DENY');
         $headers->set('Referrer-Policy', 'no-referrer');
 
         // HSTS : uniquement en prod — HTTPS non disponible en dev/test.
         if ('prod' === $this->env) {
             $headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
         }
-
-        $path = $event->getRequest()->getPathInfo();
 
         // CSP strict sur l'API (JSON) — pas de script, style, image, etc.
         // La Swagger UI est exclue car elle charge des scripts et styles externes.
@@ -70,9 +76,10 @@ final class SecurityHeadersListener
         // CSP permissive sur le front HTML : bloque l'injection de sources
         // EXTERNES (le vecteur XSS le plus dangereux), mais autorise encore
         // les scripts/styles inline existants faute de nonces sur chacun.
+        $frameAncestors = $isFileViewRoute ? "frame-ancestors 'self'" : "frame-ancestors 'none'";
         $headers->set(
             'Content-Security-Policy',
-            "default-src 'self'; script-src 'self' 'unsafe-inline' data:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
+            "default-src 'self'; script-src 'self' 'unsafe-inline' data:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; object-src 'none'; base-uri 'self'; {$frameAncestors}",
         );
     }
 }
