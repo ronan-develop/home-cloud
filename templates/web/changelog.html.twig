@@ -26,7 +26,7 @@
                 <tbody>
                     {% for entry in entries %}
                         <tr style="border-bottom: 1px solid var(--hc-border)">
-                            <td class="py-2 pr-4 whitespace-nowrap" style="color: var(--hc-text-secondary, var(--hc-text))">{{ entry.date }}</td>
+                            <td class="py-2 pr-4 whitespace-nowrap" style="color: var(--hc-text-secondary, var(--hc-text))">{{ entry.date|date('d/m/Y') }}</td>
                             <td class="py-2 pr-4" style="color: var(--hc-text)">{{ entry.title }}</td>
                             <td class="py-2">
                                 <a href="{{ entry.url }}" target="_blank" rel="noopener noreferrer" class="hc-nav-item" style="display: inline-flex; padding: 0.25rem 0.5rem">
