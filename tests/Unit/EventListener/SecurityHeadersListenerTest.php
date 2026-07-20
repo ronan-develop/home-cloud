@@ -131,4 +131,31 @@ final class SecurityHeadersListenerTest extends TestCase
 
         $this->assertSame("default-src 'none'", $event->getResponse()->headers->get('Content-Security-Policy'));
     }
+
+    /**
+     * #280 : le viewer PDF (#241) embarque /files/{id}/view dans une <iframe>
+     * same-origin. X-Frame-Options: DENY et frame-ancestors 'none' bloquent
+     * cet embedding inconditionnellement, y compris depuis la même origine —
+     * la dérogation est strictement scopée à cette route pour ne pas
+     * affaiblir la protection anti-clickjacking ailleurs.
+     */
+    public function testFileViewRouteAllowsSameOriginFraming(): void
+    {
+        $event = $this->buildEvent('/files/0198c1b2-6b8b-7f3e-8a1a-000000000001/view');
+        (new SecurityHeadersListener('test'))($event);
+
+        $headers = $event->getResponse()->headers;
+        $this->assertSame('SAMEORIGIN', $headers->get('X-Frame-Options'));
+        $this->assertStringContainsString("frame-ancestors 'self'", $headers->get('Content-Security-Policy'));
+    }
+
+    public function testOtherFrontRoutesStillDenyFraming(): void
+    {
+        $event = $this->buildEvent('/files/0198c1b2-6b8b-7f3e-8a1a-000000000001/download');
+        (new SecurityHeadersListener('test'))($event);
+
+        $headers = $event->getResponse()->headers;
+        $this->assertSame('DENY', $headers->get('X-Frame-Options'));
+        $this->assertStringContainsString("frame-ancestors 'none'", $headers->get('Content-Security-Policy'));
+    }
 }
