@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Interface\ChangelogFetcherInterface;
+use App\Interface\PrTitleCleanerInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -30,6 +31,7 @@ final class GitHubChangelogFetcher implements ChangelogFetcherInterface
     public function __construct(
         private readonly HttpClientInterface $httpClient,
         private readonly CacheInterface $cache,
+        private readonly PrTitleCleanerInterface $titleCleaner,
     ) {}
 
     public function fetchEntries(): array
@@ -65,7 +67,7 @@ final class GitHubChangelogFetcher implements ChangelogFetcherInterface
 
             $entries[] = [
                 'number' => (int) $pull['number'],
-                'title' => $this->cleanTitle((string) $pull['title']),
+                'title' => $this->titleCleaner->clean((string) $pull['title']),
                 'date' => substr((string) $pull['merged_at'], 0, 10),
                 'url' => (string) $pull['html_url'],
                 'mergedAt' => (string) $pull['merged_at'],
@@ -124,28 +126,5 @@ final class GitHubChangelogFetcher implements ChangelogFetcherInterface
         }
 
         return $all;
-    }
-
-    /**
-     * Retire l'emoji et le préfixe conventionnel ("type(scope): ") d'un titre
-     * de PR pour un affichage lisible côté utilisateur final (ex: "✨
-     * feat(FolderZipArchiver): télécharger un dossier en zip" → "Télécharger
-     * un dossier en zip").
-     */
-    private function cleanTitle(string $title): string
-    {
-        $cleaned = preg_replace(
-            '/^(\p{So}\s*)?[a-zA-Zàâäéèêëïîôöùûüç]+(\([^)]*\))?\s*:\s*/u',
-            '',
-            trim($title),
-        ) ?? $title;
-
-        $cleaned = trim($cleaned);
-
-        if ($cleaned === '') {
-            return trim($title);
-        }
-
-        return mb_strtoupper(mb_substr($cleaned, 0, 1)) . mb_substr($cleaned, 1);
     }
 }

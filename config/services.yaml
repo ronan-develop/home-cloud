@@ -21,6 +21,7 @@ services:
     App\Interface\UserRepositoryInterface:        '@App\Repository\UserRepository'
     App\Interface\ShareRepositoryInterface:       '@App\Repository\ShareRepository'
     App\Interface\ChangelogFetcherInterface:      '@App\Service\GitHubChangelogFetcher'
+    App\Interface\PrTitleCleanerInterface:        '@App\Service\PrTitleCleaner'
     App\Interface\ShareLinkRepositoryInterface:   '@App\Repository\ShareLinkRepository'
     App\Interface\ShareLinkAccessCheckerInterface: '@App\Security\ShareLinkAccessChecker'
     App\Interface\ResourceLocatorInterface:       '@App\Security\ResourceLocator'

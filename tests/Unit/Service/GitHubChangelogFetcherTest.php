@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Service;
 
 use App\Service\GitHubChangelogFetcher;
+use App\Service\PrTitleCleaner;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\HttpClient\MockHttpClient;
@@ -39,7 +40,7 @@ final class GitHubChangelogFetcherTest extends TestCase
         ];
 
         $client = new MockHttpClient([new MockResponse(json_encode($prs))]);
-        $fetcher = new GitHubChangelogFetcher($client, new ArrayAdapter());
+        $fetcher = new GitHubChangelogFetcher($client, new ArrayAdapter(), new PrTitleCleaner());
 
         $entries = $fetcher->fetchEntries();
 
@@ -55,7 +56,7 @@ final class GitHubChangelogFetcherTest extends TestCase
         ];
 
         $client = new MockHttpClient([new MockResponse(json_encode($prs))]);
-        $fetcher = new GitHubChangelogFetcher($client, new ArrayAdapter());
+        $fetcher = new GitHubChangelogFetcher($client, new ArrayAdapter(), new PrTitleCleaner());
 
         $entries = $fetcher->fetchEntries();
 
@@ -70,7 +71,7 @@ final class GitHubChangelogFetcherTest extends TestCase
         ];
 
         $client = new MockHttpClient([new MockResponse(json_encode($prs))]);
-        $fetcher = new GitHubChangelogFetcher($client, new ArrayAdapter());
+        $fetcher = new GitHubChangelogFetcher($client, new ArrayAdapter(), new PrTitleCleaner());
 
         $entries = $fetcher->fetchEntries();
 
@@ -83,7 +84,7 @@ final class GitHubChangelogFetcherTest extends TestCase
         $client = new MockHttpClient(static function (): void {
             throw new \Symfony\Component\HttpClient\Exception\TransportException('network down');
         });
-        $fetcher = new GitHubChangelogFetcher($client, new ArrayAdapter());
+        $fetcher = new GitHubChangelogFetcher($client, new ArrayAdapter(), new PrTitleCleaner());
 
         $this->assertSame([], $fetcher->fetchEntries());
     }
@@ -105,7 +106,7 @@ final class GitHubChangelogFetcherTest extends TestCase
             new MockResponse(json_encode($fullPage)),
             new MockResponse(json_encode($lastPage)),
         ]);
-        $fetcher = new GitHubChangelogFetcher($client, new ArrayAdapter());
+        $fetcher = new GitHubChangelogFetcher($client, new ArrayAdapter(), new PrTitleCleaner());
 
         $entries = $fetcher->fetchEntries();
 
@@ -122,7 +123,7 @@ final class GitHubChangelogFetcherTest extends TestCase
             return new MockResponse(json_encode($prs));
         });
         $cache = new ArrayAdapter();
-        $fetcher = new GitHubChangelogFetcher($client, $cache);
+        $fetcher = new GitHubChangelogFetcher($client, $cache, new PrTitleCleaner());
 
         $fetcher->fetchEntries();
         $fetcher->fetchEntries();
