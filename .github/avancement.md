@@ -2,7 +2,53 @@
 
 > Dernière mise à jour : 2026-07-20
 
-> **Status git :** `main` — dernière PR mergée #271 (`feat/#270-async-share-email`)
+> **Status git :** `main` — dernière PR mergée #298 (`fix/changelog-markdown-heading-artifact`)
+
+---
+
+## ✅ Déploiement, gestion des instances (2026-07-20)
+
+- **7ᵉ instance `baptiste.lenouvel.me`** ajoutée : base MySQL créée via `uapi Mysql create_database`/`set_privileges_on_database` (utilisateur partagé `ron2cuba_ronan`, comme les 6 autres instances — divergence constatée entre la doc `deploiement.md` qui documentait un utilisateur par instance et la pratique réelle), premier déploiement manuel, premier compte créé, puis ajoutée à `.deploy-targets` pour les mises à jour futures.
+- **Webhook de déploiement cassé découvert** : `public/deploy.php` (déclenché par un webhook GitHub natif, pas une Action) recevait un 401 "Invalid signature" sur toutes les livraisons depuis plusieurs jours — secret désynchronisé entre GitHub et le serveur. N'était de toute façon plus le mécanisme réel de déploiement (voir ci-dessous), corrigé dans la doc (`cicd.md`, `DEPLOY_WORKFLOW.md`, `DEPLOY_SECRETS.md`).
+- **Ticket #288** (industrialiser le déploiement via GitHub Actions) : bloqué par l'absence d'IP fixe pour un runner self-hosted. Piste alternative trouvée : l'API `SshWhitelist` d'o2switch (port cPanel 2083) permet de whitelister dynamiquement l'IP d'un runner GitHub-hosted avant chaque déploiement. Authentification recommandée (token API cPanel) indisponible sur ce compte ("bloqué à des fins de sécurité" — réponse du support). **Décision actée : rester sur le déploiement manuel `bin/deploy-all.sh` pour l'instant**, ticket laissé ouvert pour référence.
+- **Piège IP dynamique / VPN d'entreprise** identifié en pratique : sans IP fixe, le SSH se bloque silencieusement (timeout) dès que l'IP whitelistée change — rencontré 3 fois dans la même session. L'API `SshWhitelist` permet de re-whitelister sans accès SSH préalable (identifiants cPanel classiques en repli, le token étant indisponible).
+- `bin/deploy-all.sh` avait perdu son bit exécutable (PR #289).
+
+## ✅ Page changelog auto-alimentée (2026-07-20, #290)
+
+Page `/changelog`, accessible depuis la navigation, listant les grandes évolutions du projet.
+
+- `GitHubChangelogFetcher` (PR #292) : interroge l'API GitHub (PR mergées), filtre par label `feature`/`bug`/`securité`/`performance` — le reste (chore, refactor, ci, docs, tests) reste filtré comme bruit interne. Résultat mis en cache 1h (`cache.app`), aucune table dédiée en base — GitHub reste la seule source de vérité.
+- **Historique complet paginé** (PR #294) : le fetcher parcourt désormais toutes les pages GitHub jusqu'à épuisement (garde-fou 20 pages) plutôt que de se limiter aux 100 PR les plus récentes ; affichage paginé côté page (20 entrées/page).
+- **Dates au format français** (PR #296) : `jj/mm/aaaa` plutôt que l'ISO brut renvoyé par l'API.
+- **`PrTitleCleaner` extrait du fetcher** (PR #297, SRP) : le nettoyage de titre (retrait emoji + préfixe conventionnel `type(scope):`) est un service indépendant (`PrTitleCleanerInterface`), injecté par DIP. Corrige au passage plusieurs bugs réels : emoji suivi d'un variation selector (`🛡️` = U+1F6E1 + U+FE0F) non reconnu, titre avec emoji mais sans deux-points, titre en prose avec un deux-points plus loin dans la phrase.
+- **`#` markdown en tête de titre** (PR #298) : un `#` collé par erreur devant l'emoji sur d'anciens titres de PR (ex: `# 🏷️ PR : ...`) bloquait aussi la détection de l'emoji — corrigé.
+- **Ticket #293** ouvert : notification visuelle (icône + badge) pour signaler de nouvelles entrées changelog — décision actée que le marqueur "dernière visite" ira sur `User` (DB), pas en `localStorage`.
+
+## ✅ Sécurité — viewer PDF et fichiers actifs (2026-07-20, #280/#286)
+
+- **#280 / PR #287** : `X-Frame-Options: DENY` et `frame-ancestors 'none'` bloquaient l'iframe same-origin du viewer PDF (#241) — dérogation strictement scopée à `/files/{id}/view` (`SAMEORIGIN`/`frame-ancestors 'self'`), les autres routes gardent la protection anti-clickjacking complète.
+- **#286 / PR #291** : un PDF peut embarquer du JavaScript exécutable (`/OpenAction`, `/AA`, `/JS`, `/Launch`) — détecté à l'upload (recherche de motif délimité, évite le faux positif `/JSON` confondu avec `/JS`) et neutralisé comme les autres types dangereux (même mécanisme que HTML/SVG). Limite documentée : les objets compressés en flux `/ObjStm` échappent à cette détection (heuristique, pas un vrai parseur PDF).
+- **Bug latéral découvert et corrigé** (même PR #291) : un PDF valide mais dont l'en-tête `%PDF-` est décalé au-delà de l'octet 0 (ex: fichier téléchargé depuis un site tiers ayant laissé fuiter du texte de debug en préfixe) était servi en `application/octet-stream` par `finfo`, forçant un téléchargement au lieu du rendu inline malgré la tolérance de la norme PDF (ISO 32000-1 §7.5.2, en-tête toléré dans les 1024 premiers octets). `PdfSignatureDetector` reproduit cette tolérance.
+- **Tickets de suivi ouverts** : #285 (dérogation CSP basée sur le path plutôt que `_route`, fragile), #276 (redirection changement de mot de passe à la première connexion — toujours pas implémenté, pertinent pour tout compte créé avec un mot de passe temporaire).
+
+## ✅ Centralisation des factories (2026-07-20, PR #295)
+
+`ShareLinkFactory` (`App\Security` → `App\Factory`) et `MediaFullResponseFactory` (`App\Service` → `App\Factory`) déplacées vers `src/Factory/`, cohérent avec `FolderTreeFactory` déjà présente à cet endroit. Déplacement pur, aucun changement de comportement.
+
+## ✅ Téléchargement de dossier en ZIP (2026-07-20, PR #274)
+
+`FolderZipArchiver` : télécharger un dossier entier (avec sa structure) en une seule archive.
+
+## ✅ Glisser-déposer un dossier local (2026-07-20, PR #279)
+
+Upload d'un dossier complet depuis le disque, avec sa structure, par glisser-déposer dans l'explorateur.
+
+## ✅ Fix barre de progression upload multiple (2026-07-20, PR #275)
+
+## ⚠️ Ticket ouvert — révocation d'un partage par compte (2026-07-20, #299)
+
+Aucune route de révocation n'existe pour un `Share` (partage par compte à un invité) — seul `ShareLink` (lien public) peut être révoqué. Trou fonctionnel de bout en bout (backend + frontend), pas juste un oubli d'UI.
 
 ---
 

@@ -47,8 +47,8 @@ php bin/console app:create-user 'vous@example.com' '<mot-de-passe>' 'Prénom'
 
 ```bash
 composer dev-check            # build des assets + suite PHP complète
-./vendor/bin/phpunit          # 738 tests
-npm test                      # 17 suites Jest
+./vendor/bin/phpunit          # 832 tests
+npm test                      # 25 suites Jest
 ```
 
 La méthodologie TDD est suivie sans exception : le test échoue d'abord, sinon il ne prouve rien. Voir [.claude/tdd.md](.claude/tdd.md).

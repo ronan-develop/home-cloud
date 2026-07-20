@@ -1,5 +1,7 @@
 # Configuration des secrets GitHub pour le déploiement
 
+> **État (2026-07-20) : secrets présents mais inutilisés.** `gh secret list` confirme que `DEPLOY_SSH_*`, `DEPLOY_PRENOM`, `DEPLOY_DB_PASSWORD` (créés 2026-03-08) et `DEPLOY_WEBHOOK_SECRET`/`DEPLOY_WEBHOOK_URL` (créés 2026-04-11) existent bien côté GitHub — mais aucun des deux mécanismes qu'ils devaient alimenter n'est actif : `deploy.yml` n'a jamais été committé (seul `ci.yml` existe), et le webhook `public/deploy.php` reçoit une signature invalide depuis plusieurs jours (401 sur toutes les livraisons récentes). Le déploiement réel passe par `bin/deploy-all.sh` en SSH manuel — voir `.claude/deploiement.md`.
+
 ## Secrets requis (Settings → Secrets and variables → Actions)
 
 ### SSH

@@ -7,15 +7,16 @@
 | PHPUnit + MariaDB       | push / PR sur `main`  | PHP 8.4, MariaDB 10.11       |
 | Jest (JS)               | push / PR sur `main`  | Node.js 22 (LTS)             |
 | `composer audit`        | dans le job PHP       | avant les tests              |
-| Déploiement webhook     | CI ✅ sur `main`       | déclenché automatiquement    |
-| Déploiement manuel      | `workflow_dispatch`   | via GitHub Actions           |
 
 ## Déploiement
 
-Webhook PHP sur `ronan.lenouvel.me` — déclenché automatiquement après CI verte sur `main`.
+**Manuel, pas automatique** — `bash bin/deploy-all.sh` après merge sur `main` (CI verte requise avant de lancer). o2switch bloque les IPs des runners GitHub Actions (whitelist SSH obligatoire), donc aucun déclenchement automatique n'est possible depuis GitHub aujourd'hui.
 
-Détail du workflow : `.github/DEPLOY_WORKFLOW.md`  
-Secrets nécessaires : `.github/DEPLOY_SECRETS.md`
+Un webhook PHP (`public/deploy.php`) existe dans le repo mais est **cassé et inutilisé** (signature HMAC invalide depuis plusieurs jours au 2026-07-20) — ne pas s'y fier, ni supposer qu'un push sur `main` déploie quoi que ce soit automatiquement.
+
+Piste d'automatisation via GitHub Actions + l'API `SshWhitelist` d'o2switch (whitelist dynamique de l'IP du runner) : voir #288 (en pause, décision actée de rester en manuel pour l'instant).
+
+Détail complet : `.claude/deploiement.md`.
 
 ## Suivi d'avancement
 

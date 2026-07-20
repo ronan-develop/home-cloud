@@ -17,15 +17,16 @@ Deux portes d'entrée, une seule logique métier. L'interface web et l'API ne pa
 
 ## Structure de `src/`
 
-| Dossier       | Rôle                                                             |
-|---------------|------------------------------------------------------------------|
-| `Controller/` | HTTP uniquement — lit la requête, délègue, rend la réponse       |
-| `Service/`    | Logique métier, testable sans HTTP ni base                       |
-| `Repository/` | Accès aux données                                                |
-| `State/`      | Processors et providers API Platform                             |
-| `Security/`   | Authentification, ownership, contrôle d'accès aux partages       |
-| `Interface/`  | Contrats — les services dépendent d'abstractions, pas de classes |
-| `Entity/`     | Entités Doctrine                                                 |
+| Dossier       | Rôle                                                                       |
+|---------------|-----------------------------------------------------------------------------|
+| `Controller/` | HTTP uniquement — lit la requête, délègue, rend la réponse                 |
+| `Service/`    | Logique métier, testable sans HTTP ni base                                 |
+| `Factory/`    | Construction d'objets complexes/conditionnels (`ShareLinkFactory`, `MediaFullResponseFactory`) |
+| `Repository/` | Accès aux données                                                          |
+| `State/`      | Processors et providers API Platform                                       |
+| `Security/`   | Authentification, ownership, contrôle d'accès aux partages                 |
+| `Interface/`  | Contrats — les services dépendent d'abstractions, pas de classes           |
+| `Entity/`     | Entités Doctrine                                                           |
 | `Message/`    | Messages Symfony Messenger (traitement asynchrone)               |
 
 Un contrôleur qui contient de la logique métier est un bug de conception : il devient intestable sans requête HTTP, et la logique n'est plus réutilisable entre le web et l'API.
@@ -135,6 +136,6 @@ Les migrations sont générées par `make:migration` (diff automatique), jamais 
 
 ## Déploiement
 
-Push sur `main` avec CI verte → déploiement automatique. Hébergement mutualisé o2switch : pas d'accès root, donc pas d'`apt install` — toute dépendance système est exclue par principe.
+Manuel (`bin/deploy-all.sh` en SSH, après CI verte sur `main`) — o2switch bloque les IPs des runners GitHub Actions, aucune automatisation possible aujourd'hui. Hébergement mutualisé : pas d'accès root, donc pas d'`apt install` — toute dépendance système est exclue par principe.
 
 Détail dans [.claude/deploiement.md](../.claude/deploiement.md) et [.claude/cicd.md](../.claude/cicd.md).

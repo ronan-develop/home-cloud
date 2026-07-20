@@ -1,5 +1,7 @@
 # Déploiement sécurisé — bin/deploy.sh
 
+> **État (2026-07-20) : non implémenté.** Le workflow GitHub Actions décrit ci-dessous (`.github/workflows/deploy.yml`) n'a jamais été committé — seul `ci.yml` existe. Le déploiement réel se fait manuellement via `bin/deploy-all.sh` (voir `.claude/deploiement.md`). Ce document reste une référence technique valide si l'automatisation est reprise un jour (cf. #288, en pause).
+
 Ce document décrit le workflow du script `bin/deploy.sh` et fournit un exemple sécurisé de workflow GitHub Actions (manuel) pour déclencher le déploiement sans risquer d'écraser une base existante.
 
 ---
