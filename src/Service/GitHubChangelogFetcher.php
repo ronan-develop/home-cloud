@@ -22,6 +22,10 @@ final class GitHubChangelogFetcher implements ChangelogFetcherInterface
     private const RELEVANT_LABELS = ['feature', 'bug', 'securité', 'performance'];
     private const CACHE_TTL_SECONDS = 3600;
     private const CACHE_KEY = 'changelog_github_entries';
+    private const PER_PAGE = 100;
+    // Garde-fou : 20 pages = 2000 PR, largement au-delà de l'historique actuel
+    // du dépôt — évite une boucle infinie si l'API se comporte anormalement.
+    private const MAX_PAGES = 20;
 
     public function __construct(
         private readonly HttpClientInterface $httpClient,
@@ -42,22 +46,7 @@ final class GitHubChangelogFetcher implements ChangelogFetcherInterface
      */
     private function fetchFromGitHub(): array
     {
-        try {
-            $response = $this->httpClient->request('GET', sprintf(
-                'https://api.github.com/repos/%s/pulls?state=closed&per_page=100&sort=updated&direction=desc',
-                self::REPO,
-            ), [
-                'headers' => ['Accept' => 'application/vnd.github+json'],
-            ]);
-
-            $pulls = $response->toArray(false);
-        } catch (\Throwable) {
-            return [];
-        }
-
-        if (!is_array($pulls)) {
-            return [];
-        }
+        $pulls = $this->fetchAllPages();
 
         $entries = [];
         foreach ($pulls as $pull) {
@@ -90,6 +79,51 @@ final class GitHubChangelogFetcher implements ChangelogFetcherInterface
 
             return $entry;
         }, $entries);
+    }
+
+    /**
+     * Parcourt toutes les pages de PR jusqu'à épuisement (#290 : l'historique
+     * complet dépasse les 100 PR d'une seule page GitHub) — s'arrête dès
+     * qu'une page renvoie moins de PER_PAGE éléments (dernière page atteinte).
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function fetchAllPages(): array
+    {
+        $all = [];
+
+        for ($page = 1; $page <= self::MAX_PAGES; ++$page) {
+            try {
+                $response = $this->httpClient->request('GET', sprintf(
+                    'https://api.github.com/repos/%s/pulls?state=closed&per_page=%d&page=%d&sort=created&direction=desc',
+                    self::REPO,
+                    self::PER_PAGE,
+                    $page,
+                ), [
+                    'headers' => ['Accept' => 'application/vnd.github+json'],
+                ]);
+
+                $pulls = $response->toArray(false);
+            } catch (\Throwable) {
+                break;
+            }
+
+            if (!is_array($pulls) || count($pulls) === 0) {
+                break;
+            }
+
+            foreach ($pulls as $pull) {
+                if (is_array($pull)) {
+                    $all[] = $pull;
+                }
+            }
+
+            if (count($pulls) < self::PER_PAGE) {
+                break;
+            }
+        }
+
+        return $all;
     }
 
     /**

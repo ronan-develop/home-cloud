@@ -88,6 +88,30 @@ final class GitHubChangelogFetcherTest extends TestCase
         $this->assertSame([], $fetcher->fetchEntries());
     }
 
+    /**
+     * L'historique complet peut dépasser les 100 PR par page de l'API GitHub
+     * — il faut paginer jusqu'à épuisement pour ne pas perdre les thèmes les
+     * plus anciens (#290, retour utilisateur : "tout depuis le début").
+     */
+    public function testPaginatesThroughAllPagesUntilExhausted(): void
+    {
+        $fullPage = array_map(
+            fn (int $i) => $this->pr($i, "feat: theme {$i}", '2026-01-01T10:00:00Z', ['feature']),
+            range(1, 100),
+        );
+        $lastPage = [$this->pr(101, 'feat: dernier thème', '2026-01-01T10:00:00Z', ['feature'])];
+
+        $client = new MockHttpClient([
+            new MockResponse(json_encode($fullPage)),
+            new MockResponse(json_encode($lastPage)),
+        ]);
+        $fetcher = new GitHubChangelogFetcher($client, new ArrayAdapter());
+
+        $entries = $fetcher->fetchEntries();
+
+        $this->assertCount(101, $entries);
+    }
+
     public function testResultIsCachedAndDoesNotTriggerASecondHttpCall(): void
     {
         $prs = [$this->pr(40, 'feat: une feature', '2026-07-20T10:00:00Z', ['feature'])];

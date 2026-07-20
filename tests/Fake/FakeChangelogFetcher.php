@@ -12,21 +12,23 @@ use App\Interface\ChangelogFetcherInterface;
  */
 final class FakeChangelogFetcher implements ChangelogFetcherInterface
 {
+    public function __construct(private readonly int $count = 45)
+    {
+    }
+
     public function fetchEntries(): array
     {
-        return [
-            [
-                'number' => 291,
-                'title' => 'Neutraliser les PDF actifs',
-                'date' => '2026-07-20',
-                'url' => 'https://github.com/ronan-develop/home-cloud/pull/291',
-            ],
-            [
-                'number' => 280,
-                'title' => 'Corriger le viewer PDF',
-                'date' => '2026-07-19',
-                'url' => 'https://github.com/ronan-develop/home-cloud/pull/280',
-            ],
-        ];
+        $entries = [];
+        for ($i = 0; $i < $this->count; ++$i) {
+            $number = 300 - $i;
+            $entries[] = [
+                'number' => $number,
+                'title' => "Thème historique numéro {$i}",
+                'date' => '2026-07-' . str_pad((string) max(1, 20 - $i % 20), 2, '0', \STR_PAD_LEFT),
+                'url' => "https://github.com/ronan-develop/home-cloud/pull/{$number}",
+            ];
+        }
+
+        return $entries;
     }
 }

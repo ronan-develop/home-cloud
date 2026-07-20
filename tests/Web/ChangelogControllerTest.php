@@ -75,4 +75,36 @@ final class ChangelogControllerTest extends WebTestCase
 
         $this->assertResponseRedirects('/login');
     }
+
+    /**
+     * #290 (retour utilisateur) : l'historique complet doit être disponible,
+     * mais paginé plutôt qu'affiché en une seule page géante. FakeChangelogFetcher
+     * fournit 45 entrées de test — la page 1 doit en afficher un sous-ensemble.
+     */
+    public function testChangelogPageIsPaginated(): void
+    {
+        $this->login();
+
+        $crawler = $this->client->request('GET', '/changelog');
+
+        $rows = $crawler->filter('table tbody tr');
+        $this->assertLessThan(45, $rows->count(), 'La page 1 ne doit pas afficher les 45 entrées d\'un coup.');
+
+        $pagination = $crawler->filter('[data-testid="changelog-pagination"]');
+        $this->assertGreaterThan(0, $pagination->count(), 'Des contrôles de pagination doivent être visibles.');
+    }
+
+    public function testChangelogPageSecondPageShowsDifferentEntries(): void
+    {
+        $this->login();
+
+        $crawlerPage1 = $this->client->request('GET', '/changelog');
+        $firstEntryPage1 = trim($crawlerPage1->filter('table tbody tr')->first()->text());
+
+        $crawlerPage2 = $this->client->request('GET', '/changelog?page=2');
+        $firstEntryPage2 = trim($crawlerPage2->filter('table tbody tr')->first()->text());
+
+        $this->assertResponseIsSuccessful();
+        $this->assertNotSame($firstEntryPage1, $firstEntryPage2, 'La page 2 doit afficher des entrées différentes de la page 1.');
+    }
 }

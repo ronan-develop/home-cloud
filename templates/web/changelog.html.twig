@@ -40,6 +40,24 @@
         {% endif %}
     </div>
 
+    {% if totalPages > 1 %}
+        <div data-testid="changelog-pagination" class="flex items-center justify-between">
+            {% if currentPage > 1 %}
+                <a href="{{ path('app_changelog', {page: currentPage - 1}) }}" class="btn btn-soft">← Précédent</a>
+            {% else %}
+                <span></span>
+            {% endif %}
+
+            <span style="color: var(--hc-text-secondary, var(--hc-text))">Page {{ currentPage }} / {{ totalPages }}</span>
+
+            {% if currentPage < totalPages %}
+                <a href="{{ path('app_changelog', {page: currentPage + 1}) }}" class="btn btn-soft">Suivant →</a>
+            {% else %}
+                <span></span>
+            {% endif %}
+        </div>
+    {% endif %}
+
 </div>
 
 {% endblock %}
