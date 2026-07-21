@@ -19,7 +19,9 @@ use Symfony\Component\Uid\Uuid;
  *   sans FK Doctrine (évite la complexité d'une union de tables).
  * - permission (read|write) : read = voir/télécharger, write = lire + uploader.
  * - expiresAt nullable : accès permanent si null, révocation automatique si défini.
- * - Révocation manuelle via DELETE /api/v1/shares/{id}.
+ * - Révocation manuelle via POST /share-revoke (ShareWebController::revoke) :
+ *   suppression directe de l'entité (pas de soft-delete comme ShareLink,
+ *   la vérification d'accès ne se fait que sur expiresAt).
  */
 #[ORM\Entity(repositoryClass: ShareRepository::class)]
 #[ORM\Table(name: 'shares')]
