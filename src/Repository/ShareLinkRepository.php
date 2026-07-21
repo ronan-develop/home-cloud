@@ -75,4 +75,16 @@ class ShareLinkRepository extends ServiceEntityRepository implements ShareLinkRe
             ->getQuery()
             ->execute();
     }
+
+    /** Purge les liens révoqués depuis avant $threshold (cf. app:share-link:purge-revoked). */
+    public function deleteRevokedOlderThan(\DateTimeImmutable $threshold): int
+    {
+        return (int) $this->createQueryBuilder('sl')
+            ->delete()
+            ->where('sl.revokedAt IS NOT NULL')
+            ->andWhere('sl.revokedAt < :threshold')
+            ->setParameter('threshold', $threshold)
+            ->getQuery()
+            ->execute();
+    }
 }

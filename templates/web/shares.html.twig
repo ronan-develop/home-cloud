@@ -100,6 +100,9 @@
                   {% else %}
                     {{ row.link.isActive ? 'expire le ' ~ row.link.expiresAt|date('d/m/Y') : 'révoqué/expiré le ' ~ row.link.expiresAt|date('d/m/Y') }}
                   {% endif %}
+                  {% if row.link.revokedAt %}
+                    · sera supprimé automatiquement dans {{ row.link.daysUntilPurge }} j
+                  {% endif %}
                 </div>
               </div>
             </div>
@@ -109,6 +112,14 @@
                 <input type="hidden" name="linkId" value="{{ row.link.id }}">
                 <button type="submit" class="hc-item-action hc-item-action--danger" style="background:none; border:none; cursor:pointer; font-size:0.8125rem; font-weight:600;">
                   Révoquer
+                </button>
+              </form>
+            {% elseif row.link.revokedAt %}
+              <form method="post" action="{{ path('app_share_link_reactivate') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('share-link-reactivate') }}">
+                <input type="hidden" name="linkId" value="{{ row.link.id }}">
+                <button type="submit" class="hc-item-action" style="background:none; border:none; cursor:pointer; font-size:0.8125rem; font-weight:600;">
+                  Réactiver
                 </button>
               </form>
             {% endif %}

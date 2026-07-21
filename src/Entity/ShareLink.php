@@ -28,6 +28,9 @@ use Symfony\Component\Uid\Uuid;
 #[ORM\Table(name: 'share_links')]
 class ShareLink
 {
+    /** Délai de grâce avant purge définitive d'un lien révoqué (cf. app:share-link:purge-revoked). */
+    public const PURGE_AFTER_DAYS = 30;
+
     #[ORM\Id]
     #[ORM\Column(type: 'uuid', unique: true)]
     private Uuid $id;
@@ -121,6 +124,11 @@ class ShareLink
         $this->revokedAt = new \DateTimeImmutable();
     }
 
+    public function reactivate(): void
+    {
+        $this->revokedAt = null;
+    }
+
     public function isExpired(): bool
     {
         return $this->expiresAt !== null && $this->expiresAt < new \DateTimeImmutable();
@@ -129,6 +137,19 @@ class ShareLink
     public function isActive(): bool
     {
         return $this->revokedAt === null && !$this->isExpired();
+    }
+
+    /** Jours restants avant purge définitive, ou null si le lien n'est pas révoqué. */
+    public function daysUntilPurge(): ?int
+    {
+        if ($this->revokedAt === null) {
+            return null;
+        }
+
+        $purgeAt = $this->revokedAt->modify(sprintf('+%d days', self::PURGE_AFTER_DAYS));
+        $secondsRemaining = $purgeAt->getTimestamp() - (new \DateTimeImmutable())->getTimestamp();
+
+        return max(0, (int) ceil($secondsRemaining / 86400));
     }
 
     /**

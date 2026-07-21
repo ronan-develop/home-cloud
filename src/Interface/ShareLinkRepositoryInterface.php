@@ -27,4 +27,7 @@ interface ShareLinkRepositoryInterface
 
     /** Supprime tous les liens pointant vers cette ressource (nettoyage à la suppression). */
     public function deleteByResource(string $resourceType, Uuid $resourceId): void;
+
+    /** Purge les liens révoqués depuis avant $threshold. Retourne le nombre de liens supprimés. */
+    public function deleteRevokedOlderThan(\DateTimeImmutable $threshold): int;
 }
