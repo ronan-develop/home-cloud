@@ -308,7 +308,10 @@
   transition: transform 0.2s ease;
 }
 
-.hc-lightbox-img--zoomed {
+/* Palier maximum atteint : le prochain clic réinitialise, pas de zoom
+   supplémentaire possible — le curseur bascule sur zoom-out pour le signaler.
+   Zoomé mais pas encore au max : curseur zoom-in inchangé (on peut zoomer plus). */
+.hc-lightbox-img--max-zoomed {
   cursor: zoom-out;
 }
 
