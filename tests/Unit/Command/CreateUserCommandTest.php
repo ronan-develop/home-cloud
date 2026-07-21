@@ -97,11 +97,11 @@ final class CreateUserCommandTest extends TestCase
         $tester = new CommandTester($command);
         $tester->execute([
             'email'       => 'admin@example.com',
-            'password'    => 'S3cret!',
+            'password'    => 'irrelevant-plain-password',
             'displayName' => 'prenom',
         ]);
 
-        $this->assertSame('hashed-S3cret!', $persistedUser->getPassword());
+        $this->assertSame('hashed-irrelevant-plain-password', $persistedUser->getPassword());
         $this->assertStringNotContainsString('reset-password', $tester->getDisplay());
     }
 }
