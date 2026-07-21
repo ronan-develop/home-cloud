@@ -119,4 +119,22 @@ describe('gallery-lightbox zoom', () => {
     clickAt(controller.imgTarget, 150, 75); // back to unzoomed
     expect(controller.imgTarget.classList.contains('hc-lightbox-img--zoomed')).toBe(false);
   });
+
+  test('cursor affordance reflects whether the next click zooms further or resets', () => {
+    const controller = getController();
+    controller.show(0);
+
+    // Pas zoomé : curseur zoom-in (état par défaut, pas de classe max)
+    expect(controller.imgTarget.classList.contains('hc-lightbox-img--max-zoomed')).toBe(false);
+
+    clickAt(controller.imgTarget, 150, 75); // scale 2, on peut encore zoomer
+    expect(controller.imgTarget.classList.contains('hc-lightbox-img--zoomed')).toBe(true);
+    expect(controller.imgTarget.classList.contains('hc-lightbox-img--max-zoomed')).toBe(false);
+
+    clickAt(controller.imgTarget, 150, 75); // scale 3 (max), le prochain clic va réinitialiser
+    expect(controller.imgTarget.classList.contains('hc-lightbox-img--max-zoomed')).toBe(true);
+
+    clickAt(controller.imgTarget, 150, 75); // retour à l'état non zoomé
+    expect(controller.imgTarget.classList.contains('hc-lightbox-img--max-zoomed')).toBe(false);
+  });
 });

@@ -24,6 +24,11 @@ export default class Zoom {
         return this.scale > MIN_SCALE;
     }
 
+    /* Palier maximum atteint : le prochain clic réinitialisera au lieu de zoomer davantage. */
+    get isAtMaxZoom() {
+        return this.scale >= MAX_SCALE;
+    }
+
     /* originX/originY en % (0-100), position du clic relative à l'image. */
     toggleAt(originX, originY) {
         if (!this.isZoomed) {

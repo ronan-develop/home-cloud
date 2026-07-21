@@ -110,6 +110,7 @@ export default class extends Controller {
         this.imgTarget.style.transformOrigin = `${this.zoom.originX}% ${this.zoom.originY}%`;
         this.imgTarget.style.transform = `scale(${this.zoom.scale})`;
         this.imgTarget.classList.toggle('hc-lightbox-img--zoomed', this.zoom.isZoomed);
+        this.imgTarget.classList.toggle('hc-lightbox-img--max-zoomed', this.zoom.isAtMaxZoom);
     }
 
     prev() {
