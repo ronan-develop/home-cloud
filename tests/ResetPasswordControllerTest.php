@@ -75,6 +75,25 @@ class ResetPasswordControllerTest extends WebTestCase
     }
 
     /**
+     * Anti-énumération de comptes : un email qui n'existe pas en base ne doit
+     * ni envoyer de mail, ni faire échouer la requête différemment d'un email
+     * existant — sinon on peut deviner quels comptes existent selon la réponse.
+     */
+    public function testRequestResetPasswordWithUnknownEmailSendsNoEmailButReturnsGenericSuccess(): void
+    {
+        $this->client->request('POST', '/api/request-reset-password', [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode(['email' => 'inconnu@example.com']));
+
+        self::assertResponseIsSuccessful();
+        self::assertEmailCount(0);
+
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+        self::assertArrayHasKey('message', $data);
+        self::assertSame('Si un compte existe, un email a été envoyé.', $data['message']);
+    }
+
+    /**
      * F6 de l'audit sécurité : le mail de réinitialisation envoyait le token
      * brut en texte simple, avec un expéditeur non routable. Doit désormais
      * être un email HTML contenant un LIEN (pas le token nu) vers une page
