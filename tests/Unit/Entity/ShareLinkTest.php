@@ -123,4 +123,40 @@ final class ShareLinkTest extends TestCase
 
         $this->assertFalse($link->isActive());
     }
+
+    public function testReactivateClearsRevokedAt(): void
+    {
+        $link = new ShareLink(
+            $this->makeOwner(),
+            Share::RESOURCE_FILE,
+            Uuid::v7(),
+            'selector0000000000000000000000',
+            hash('sha256', 'plain-token'),
+            new \DateTimeImmutable('+7 days'),
+        );
+
+        $link->revoke();
+        $link->reactivate();
+
+        $this->assertNull($link->getRevokedAt());
+        $this->assertTrue($link->isActive());
+    }
+
+    public function testReactivateOnExpiredLinkStaysInactive(): void
+    {
+        $link = new ShareLink(
+            $this->makeOwner(),
+            Share::RESOURCE_FILE,
+            Uuid::v7(),
+            'selector0000000000000000000000',
+            hash('sha256', 'plain-token'),
+            new \DateTimeImmutable('-1 second'),
+        );
+
+        $link->revoke();
+        $link->reactivate();
+
+        $this->assertNull($link->getRevokedAt());
+        $this->assertFalse($link->isActive());
+    }
 }
