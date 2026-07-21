@@ -23,6 +23,7 @@ class ResetPasswordController extends AbstractController
         private EntityManagerInterface $entityManager,
         private \App\Interface\PasswordResetServiceInterface $passwordResetService,
         private RateLimiterFactory $resetPasswordRequestLimiter,
+        private RateLimiterFactory $resetPasswordSubmitLimiter,
     ) {}
 
     /**
@@ -50,6 +51,11 @@ class ResetPasswordController extends AbstractController
     #[Route('/api/reset-password', name: 'api_reset_password', methods: ['POST'])]
     public function apiResetPassword(Request $request): Response
     {
+        $limiter = $this->resetPasswordSubmitLimiter->create($request->getClientIp());
+        if (!$limiter->consume(1)->isAccepted()) {
+            throw new TooManyRequestsHttpException(null, 'Trop de tentatives. Réessayez plus tard.');
+        }
+
         $data = json_decode($request->getContent(), true);
         $token = $data['token'] ?? null;
         $newPassword = $data['password'] ?? null;

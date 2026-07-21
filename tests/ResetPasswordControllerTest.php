@@ -149,6 +149,28 @@ class ResetPasswordControllerTest extends WebTestCase
     }
 
     /**
+     * Brute-force du token : le bundle SymfonyCasts vérifie la longueur (40
+     * caractères) et l'expiration du token, mais ne limite pas le nombre de
+     * tentatives de validation — sans rate limiting applicatif, une IP peut
+     * boucler indéfiniment sur /api/reset-password avec des tokens devinés.
+     */
+    public function testResetPasswordSubmitIsRateLimited(): void
+    {
+        for ($i = 0; $i < 5; $i++) {
+            $this->client->request('POST', '/api/reset-password', [], [], [
+                'CONTENT_TYPE' => 'application/json',
+            ], json_encode(['token' => "invalid-token-$i", 'password' => 'NewPassword123!']));
+            self::assertResponseStatusCodeSame(400);
+        }
+
+        $this->client->request('POST', '/api/reset-password', [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode(['token' => 'invalid-token-6', 'password' => 'NewPassword123!']));
+
+        self::assertResponseStatusCodeSame(429);
+    }
+
+    /**
      * F6 de l'audit sécurité : le mail de réinitialisation envoyait le token
      * brut en texte simple, avec un expéditeur non routable. Doit désormais
      * être un email HTML contenant un LIEN (pas le token nu) vers une page

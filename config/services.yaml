@@ -153,6 +153,7 @@ services:
     App\Controller\Api\ResetPasswordController:
         arguments:
             $resetPasswordRequestLimiter: '@limiter.reset_password_request'
+            $resetPasswordSubmitLimiter: '@limiter.reset_password_submit'
 
 when@dev:
     services:
