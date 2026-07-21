@@ -463,4 +463,181 @@ final class ShareWebTest extends WebTestCase
         $shares = $this->em->getRepository(Share::class)->findBy(['resourceId' => $album->getId()]);
         $this->assertCount(0, $shares);
     }
+
+    // ─── Révocation / réactivation d'un partage par compte (#299, #305) ────
+
+    private function createRevocableShare(string $ownerEmail = 'shares@example.com', string $guestEmail = 'guest-revoke@example.com'): array
+    {
+        $owner = $this->createUser($ownerEmail);
+        $guest = $this->createUser($guestEmail);
+        $folder = new Folder('Dossier à révoquer', $owner);
+        $this->em->persist($folder);
+        $this->em->flush();
+
+        $share = new Share($owner, $guest, Share::RESOURCE_FOLDER, $folder->getId(), Share::PERMISSION_READ);
+        $this->em->persist($share);
+        $this->em->flush();
+
+        return [$owner, $guest, $folder, $share];
+    }
+
+    private function revokeShareToken(): string
+    {
+        $crawler = $this->client->request('GET', '/partages');
+
+        return $crawler->filter('form[action*="/share-revoke"] input[name="_token"]')->first()->attr('value');
+    }
+
+    private function reactivateShareToken(): string
+    {
+        $crawler = $this->client->request('GET', '/partages');
+
+        return $crawler->filter('form[action*="/share-reactivate"] input[name="_token"]')->first()->attr('value');
+    }
+
+    public function testOwnerCanRevokeTheirShare(): void
+    {
+        [, , , $share] = $this->createRevocableShare();
+        $shareId = $share->getId();
+
+        $this->login();
+        $token = $this->revokeShareToken();
+
+        $this->client->request('POST', '/share-revoke', [
+            '_token'  => $token,
+            'shareId' => $shareId->toRfc4122(),
+        ]);
+
+        $this->assertResponseRedirects('/partages');
+
+        // Révocation soft (#305) : la ligne reste en base, historisée.
+        $revokedShare = $this->em->getRepository(Share::class)->find($shareId);
+        $this->assertNotNull($revokedShare);
+        $this->assertFalse($revokedShare->isActive());
+        $this->assertNotNull($revokedShare->getRevokedAt());
+    }
+
+    public function testNonOwnerCannotRevokeShare(): void
+    {
+        [, , , $share] = $this->createRevocableShare();
+
+        $attacker = $this->createUser('attacker-revoke@example.com');
+        $attackerGuest = $this->createUser('attacker-guest@example.com');
+        $attackerFolder = new Folder('Dossier attaquant', $attacker);
+        $this->em->persist($attackerFolder);
+        $this->em->flush();
+        // Le token CSRF est lié à la session : l'attaquant a besoin de son
+        // propre partage pour obtenir un token valide dans SA session.
+        $attackerShare = new Share($attacker, $attackerGuest, Share::RESOURCE_FOLDER, $attackerFolder->getId(), Share::PERMISSION_READ);
+        $this->em->persist($attackerShare);
+        $this->em->flush();
+
+        $this->login('attacker-revoke@example.com');
+        $token = $this->revokeShareToken();
+
+        $this->client->request('POST', '/share-revoke', [
+            '_token'  => $token,
+            'shareId' => $share->getId()->toRfc4122(),
+        ]);
+
+        $this->assertResponseStatusCodeSame(403);
+        $this->assertTrue($this->em->getRepository(Share::class)->find($share->getId())->isActive());
+    }
+
+    public function testGuestLosesAccessAfterShareIsRevoked(): void
+    {
+        [, $guest, $folder, $share] = $this->createRevocableShare();
+
+        $this->login();
+        $token = $this->revokeShareToken();
+
+        $this->client->request('POST', '/share-revoke', [
+            '_token'  => $token,
+            'shareId' => $share->getId()->toRfc4122(),
+        ]);
+
+        $shareRepository = $this->em->getRepository(Share::class);
+        $this->assertNull($shareRepository->findActiveShare($guest, Share::RESOURCE_FOLDER, $folder->getId(), Share::PERMISSION_READ));
+    }
+
+    public function testSharesPageShowsRevokeButtonForOutgoingShares(): void
+    {
+        $this->createRevocableShare();
+
+        $this->login();
+
+        $crawler = $this->client->request('GET', '/partages');
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorExists('[data-testid="share-row-outgoing"] form[action*="/share-revoke"] button[type="submit"]');
+    }
+
+    public function testOwnerCanReactivateARevokedShare(): void
+    {
+        [, $guest, $folder, $share] = $this->createRevocableShare();
+        $share->revoke();
+        $this->em->flush();
+        $shareId = $share->getId();
+
+        $this->login();
+        $token = $this->reactivateShareToken();
+
+        $this->client->request('POST', '/share-reactivate', [
+            '_token'  => $token,
+            'shareId' => $shareId->toRfc4122(),
+        ]);
+
+        $this->assertResponseRedirects('/partages');
+
+        $this->em->clear();
+        $reactivated = $this->em->getRepository(Share::class)->find($shareId);
+        $this->assertTrue($reactivated->isActive());
+        $this->assertNull($reactivated->getRevokedAt());
+
+        $shareRepository = $this->em->getRepository(Share::class);
+        $this->assertNotNull($shareRepository->findActiveShare($guest, Share::RESOURCE_FOLDER, $folder->getId(), Share::PERMISSION_READ));
+    }
+
+    public function testNonOwnerCannotReactivateShare(): void
+    {
+        [, , , $share] = $this->createRevocableShare();
+        $share->revoke();
+        $this->em->flush();
+
+        $attacker = $this->createUser('attacker-reactivate@example.com');
+        $attackerGuest = $this->createUser('attacker-guest2@example.com');
+        $attackerFolder = new Folder('Dossier attaquant 2', $attacker);
+        $this->em->persist($attackerFolder);
+        $this->em->flush();
+        $attackerShare = new Share($attacker, $attackerGuest, Share::RESOURCE_FOLDER, $attackerFolder->getId(), Share::PERMISSION_READ);
+        $attackerShare->revoke();
+        $this->em->persist($attackerShare);
+        $this->em->flush();
+
+        $this->login('attacker-reactivate@example.com');
+        $token = $this->reactivateShareToken();
+
+        $this->client->request('POST', '/share-reactivate', [
+            '_token'  => $token,
+            'shareId' => $share->getId()->toRfc4122(),
+        ]);
+
+        $this->assertResponseStatusCodeSame(403);
+        $this->assertFalse($this->em->getRepository(Share::class)->find($share->getId())->isActive());
+    }
+
+    public function testSharesPageShowsReactivateButtonForRevokedShares(): void
+    {
+        [, , , $share] = $this->createRevocableShare();
+        $share->revoke();
+        $this->em->flush();
+
+        $this->login();
+
+        $crawler = $this->client->request('GET', '/partages');
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorExists('[data-testid="share-row-outgoing"] form[action*="/share-reactivate"] button[type="submit"]');
+        $this->assertSelectorNotExists('[data-testid="share-row-outgoing"] form[action*="/share-revoke"]');
+    }
 }

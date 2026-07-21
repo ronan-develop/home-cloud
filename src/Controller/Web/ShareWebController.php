@@ -219,6 +219,48 @@ final class ShareWebController extends AbstractController
         return $this->redirect('/partages');
     }
 
+    #[Route('/share-revoke', name: 'app_share_revoke', methods: ['POST'])]
+    public function revoke(Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('share-revoke', (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
+
+        $shareId = (string) $request->request->get('shareId', '');
+        $share = $this->shareRepository->find(Uuid::fromString($shareId))
+            ?? throw $this->createNotFoundException('Partage introuvable.');
+
+        $this->ownershipChecker->denyUnlessOwner($share);
+
+        $share->revoke();
+        $this->em->flush();
+
+        $this->addFlash('success', 'Partage révoqué.');
+
+        return $this->redirect('/partages');
+    }
+
+    #[Route('/share-reactivate', name: 'app_share_reactivate', methods: ['POST'])]
+    public function reactivate(Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('share-reactivate', (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
+
+        $shareId = (string) $request->request->get('shareId', '');
+        $share = $this->shareRepository->find(Uuid::fromString($shareId))
+            ?? throw $this->createNotFoundException('Partage introuvable.');
+
+        $this->ownershipChecker->denyUnlessOwner($share);
+
+        $share->reactivate();
+        $this->em->flush();
+
+        $this->addFlash('success', 'Partage réactivé.');
+
+        return $this->redirect('/partages');
+    }
+
     private function resolveResourceNameForLink(\App\Entity\ShareLink $link): string
     {
         try {
