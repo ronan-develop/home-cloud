@@ -219,6 +219,31 @@ final class ShareWebController extends AbstractController
         return $this->redirect('/partages');
     }
 
+    #[Route('/share-link-reactivate', name: 'app_share_link_reactivate', methods: ['POST'])]
+    public function reactivateLink(Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('share-link-reactivate', (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
+
+        $linkId = (string) $request->request->get('linkId', '');
+        $link = $this->shareLinkRepository->find(Uuid::fromString($linkId))
+            ?? throw $this->createNotFoundException('Lien introuvable.');
+
+        /** @var User $user */
+        $user = $this->getUser();
+        if (!$link->getOwner()->getId()->equals($user->getId())) {
+            throw $this->createAccessDeniedException('Vous n\'êtes pas le propriétaire de ce lien.');
+        }
+
+        $link->reactivate();
+        $this->em->flush();
+
+        $this->addFlash('success', 'Lien de partage réactivé.');
+
+        return $this->redirect('/partages');
+    }
+
     #[Route('/share-revoke', name: 'app_share_revoke', methods: ['POST'])]
     public function revoke(Request $request): Response
     {
