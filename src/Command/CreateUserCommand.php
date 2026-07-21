@@ -13,6 +13,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
 
 #[AsCommand(name: 'app:create-user', description: 'Crée un utilisateur')]
 class CreateUserCommand extends Command
@@ -20,6 +22,8 @@ class CreateUserCommand extends Command
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly UserPasswordHasherInterface $hasher,
+        private readonly ResetPasswordHelperInterface $resetPasswordHelper,
+        private readonly UrlGeneratorInterface $urlGenerator,
     ) {
         parent::__construct();
     }
@@ -28,8 +32,8 @@ class CreateUserCommand extends Command
     {
         $this
             ->addArgument('email', InputArgument::REQUIRED, 'Email')
-            ->addArgument('password', InputArgument::REQUIRED, 'Mot de passe')
-            ->addArgument('displayName', InputArgument::OPTIONAL, 'Nom affiché', 'User');
+            ->addArgument('displayName', InputArgument::OPTIONAL, 'Nom affiché', 'User')
+            ->addArgument('password', InputArgument::OPTIONAL, 'Mot de passe (omis : le compte est créé sans mot de passe, à définir via un lien de réinitialisation)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -37,9 +41,28 @@ class CreateUserCommand extends Command
         $io = new SymfonyStyle($input, $output);
 
         $user = new User($input->getArgument('email'), $input->getArgument('displayName'));
-        $user->setPassword($this->hasher->hashPassword($user, $input->getArgument('password')));
+        $password = $input->getArgument('password');
 
         $this->em->persist($user);
+
+        if ($password === null) {
+            $this->em->flush();
+
+            $resetToken = $this->resetPasswordHelper->generateResetToken($user);
+            $resetUrl = $this->urlGenerator->generate(
+                'web_reset_password_confirm',
+                ['token' => $resetToken->getToken()],
+                UrlGeneratorInterface::ABSOLUTE_URL,
+            );
+
+            $io->success('User créé : ' . $user->getEmail());
+            $io->writeln('Définissez le mot de passe ici (lien valable 1h) :');
+            $io->writeln($resetUrl);
+
+            return Command::SUCCESS;
+        }
+
+        $user->setPassword($this->hasher->hashPassword($user, $password));
         $this->em->flush();
 
         $io->success('User créé : ' . $user->getEmail());

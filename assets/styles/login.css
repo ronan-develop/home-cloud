@@ -70,6 +70,15 @@
 	color: var(--hc-text-2);
 }
 
+.login-forgot-link {
+	color: var(--hc-accent);
+	text-decoration: none;
+}
+
+.login-forgot-link:hover {
+	text-decoration: underline;
+}
+
 .login-submit {
 	width: 100%;
 	justify-content: center;

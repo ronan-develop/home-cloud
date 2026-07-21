@@ -37,10 +37,10 @@ composer build-assets
 symfony server:start
 ```
 
-Créer un compte :
+Créer un compte (mot de passe optionnel : s'il est omis, un lien de définition de mot de passe est affiché) :
 
 ```bash
-php bin/console app:create-user 'vous@example.com' '<mot-de-passe>' 'Prénom'
+php bin/console app:create-user 'vous@example.com' 'Prénom' '<mot-de-passe>'
 ```
 
 ## Tests
