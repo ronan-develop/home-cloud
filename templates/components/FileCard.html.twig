@@ -56,11 +56,9 @@
 			<a href="#"
 			   role="button"
 			   data-testid="move-file-btn-{{ item.id }}"
-			   class="move-btn group relative hc-item-action hc-item-action--move flex items-center gap-1.5"
+			   class="move-btn hc-item-action hc-item-action--move"
 			   title="Déplacer {{ (item.originalName ?? item.name)|e('html') }}"
-			   onclick="openGlobalMoveModal('file', '{{ item.id }}', '{{ (item.originalName ?? item.name)|e('js') }}'); return false;"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-arrow-up-right"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
-				<span class="hidden group-hover:inline text-xs font-medium whitespace-nowrap">Déplacer {{ (item.originalName ?? item.name)|e('html') }}</span>
-			</a>
+			   onclick="openGlobalMoveModal('file', '{{ item.id }}', '{{ (item.originalName ?? item.name)|e('js') }}'); return false;"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-arrow-up-right"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></a>
 			<form method="post" action="{{ path('app_file_delete', { id: item.id }) }}"
 			      onsubmit="return confirm('Supprimer « {{ item.originalName|e('js') }} » ?')">
 				<input type="hidden" name="_token" value="{{ csrf_token('delete-file') }}">

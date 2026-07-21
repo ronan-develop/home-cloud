@@ -13,11 +13,10 @@
 		        data-folder-id="{{ item.id }}"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-pencil"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
 		<button type="button"
 		        data-testid="move-folder-btn-{{ item.id }}"
-		        class="move-btn group relative hc-item-action hc-item-action--move flex items-center gap-1.5"
+		        class="move-btn hc-item-action hc-item-action--move"
 		        title="Déplacer {{ item.name|e('html') }}"
 		        onclick="openGlobalMoveModal('folder', '{{ item.id }}', '{{ item.name|e('js') }}')">
 			<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-arrow-up-right"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
-			<span class="hidden group-hover:inline text-xs font-medium whitespace-nowrap">Déplacer {{ item.name|e('html') }}</span>
 		</button>
 		<button type="button"
 		        id="share-open-btn-{{ item.id }}"
