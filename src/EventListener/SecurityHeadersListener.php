@@ -34,6 +34,9 @@ use Symfony\Component\HttpKernel\KernelEvents;
  * route dans une <iframe> same-origin — DENY/'none' bloquerait cet embedding
  * même en same-origin. Remplacé par SAMEORIGIN/'self' UNIQUEMENT sur cette
  * route, pour ne pas affaiblir la protection anti-clickjacking ailleurs.
+ * Identifiée par nom de route (_route), pas par un regex sur le path (#285) :
+ * le nom de route est la source de vérité unique, un renommage du path dans
+ * l'attribut #[Route] n'affecte plus la dérogation.
  */
 #[AsEventListener(event: KernelEvents::RESPONSE)]
 final class SecurityHeadersListener
@@ -49,7 +52,7 @@ final class SecurityHeadersListener
         }
 
         $path = $event->getRequest()->getPathInfo();
-        $isFileViewRoute = (bool) preg_match('#^/files/[^/]+/view$#', $path);
+        $isFileViewRoute = $event->getRequest()->attributes->get('_route') === 'app_file_view';
 
         $headers = $event->getResponse()->headers;
         $headers->set('X-Content-Type-Options', 'nosniff');

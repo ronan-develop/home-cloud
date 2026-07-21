@@ -13,10 +13,13 @@ use Symfony\Component\HttpKernel\HttpKernelInterface;
 
 final class SecurityHeadersListenerTest extends TestCase
 {
-    private function buildEvent(string $path = '/api/v1/users'): ResponseEvent
+    private function buildEvent(string $path = '/api/v1/users', ?string $route = null): ResponseEvent
     {
         $kernel = $this->createMock(HttpKernelInterface::class);
         $request = Request::create($path);
+        if ($route !== null) {
+            $request->attributes->set('_route', $route);
+        }
         $response = new Response();
 
         return new ResponseEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST, $response);
@@ -141,7 +144,7 @@ final class SecurityHeadersListenerTest extends TestCase
      */
     public function testFileViewRouteAllowsSameOriginFraming(): void
     {
-        $event = $this->buildEvent('/files/0198c1b2-6b8b-7f3e-8a1a-000000000001/view');
+        $event = $this->buildEvent('/files/0198c1b2-6b8b-7f3e-8a1a-000000000001/view', 'app_file_view');
         (new SecurityHeadersListener('test'))($event);
 
         $headers = $event->getResponse()->headers;
@@ -151,7 +154,22 @@ final class SecurityHeadersListenerTest extends TestCase
 
     public function testOtherFrontRoutesStillDenyFraming(): void
     {
-        $event = $this->buildEvent('/files/0198c1b2-6b8b-7f3e-8a1a-000000000001/download');
+        $event = $this->buildEvent('/files/0198c1b2-6b8b-7f3e-8a1a-000000000001/download', 'app_file_download');
+        (new SecurityHeadersListener('test'))($event);
+
+        $headers = $event->getResponse()->headers;
+        $this->assertSame('DENY', $headers->get('X-Frame-Options'));
+        $this->assertStringContainsString("frame-ancestors 'none'", $headers->get('Content-Security-Policy'));
+    }
+
+    /**
+     * #285 : la dérogation était basée sur un regex du path, dupliqué de
+     * l'attribut #[Route] — une route différente qui matcherait
+     * accidentellement le même pattern de path ne doit pas en bénéficier.
+     */
+    public function testPathMatchingFileViewPatternButDifferentRouteNameDoesNotGetDeroga(): void
+    {
+        $event = $this->buildEvent('/files/0198c1b2-6b8b-7f3e-8a1a-000000000001/view', 'app_some_other_route');
         (new SecurityHeadersListener('test'))($event);
 
         $headers = $event->getResponse()->headers;
