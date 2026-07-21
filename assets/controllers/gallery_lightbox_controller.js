@@ -1,5 +1,6 @@
 import { Controller } from '@hotwired/stimulus';
 import Slideshow from './Slideshow.js';
+import Zoom from './Zoom.js';
 import { buildExifPanelHtml } from '../js/exif-panel.js';
 
 /* Lightbox de la galerie médias : ouvre le média en plein écran au clic
@@ -15,6 +16,7 @@ export default class extends Controller {
         this.current = -1;
         this.slideshowPausedForVideo = false;
         this.slideshow = new Slideshow(() => this.next());
+        this.zoom = new Zoom();
 
         this.links.forEach((el, index) => {
             el.addEventListener('click', (e) => {
@@ -45,6 +47,8 @@ export default class extends Controller {
         if (index < 0 || index >= this.srcs.length) return;
         this.videoTarget.pause();
         this.current = index;
+        this.zoom.reset();
+        this.applyZoom();
 
         const isVideo = this.mediaTypes[this.current] === 'video';
 
@@ -91,6 +95,21 @@ export default class extends Controller {
 
         this.infoTarget.innerHTML = html;
         this.infoTarget.hidden = html === '';
+    }
+
+    toggleZoom(event) {
+        const rect = this.imgTarget.getBoundingClientRect();
+        const originX = ((event.clientX - rect.left) / rect.width) * 100;
+        const originY = ((event.clientY - rect.top) / rect.height) * 100;
+
+        this.zoom.toggleAt(originX, originY);
+        this.applyZoom();
+    }
+
+    applyZoom() {
+        this.imgTarget.style.transformOrigin = `${this.zoom.originX}% ${this.zoom.originY}%`;
+        this.imgTarget.style.transform = `scale(${this.zoom.scale})`;
+        this.imgTarget.classList.toggle('hc-lightbox-img--zoomed', this.zoom.isZoomed);
     }
 
     prev() {

@@ -303,6 +303,15 @@
   object-fit: contain;
 }
 
+.hc-lightbox-img {
+  cursor: zoom-in;
+  transition: transform 0.2s ease;
+}
+
+.hc-lightbox-img--zoomed {
+  cursor: zoom-out;
+}
+
 .hc-lightbox-close {
   position: absolute;
   top: 1.5rem;
