@@ -19,7 +19,11 @@ use Symfony\Component\Uid\Uuid;
  *   sans FK Doctrine (évite la complexité d'une union de tables).
  * - permission (read|write) : read = voir/télécharger, write = lire + uploader.
  * - expiresAt nullable : accès permanent si null, révocation automatique si défini.
- * - Révocation manuelle via DELETE /api/v1/shares/{id}.
+ * - revokedAt nullable : révocation manuelle (soft), distincte de l'expiration
+ *   automatique — réversible via reactivate(), sur le même modèle que ShareLink
+ *   (cf. src/Entity/ShareLink.php). Contrairement à ShareLink, un Share
+ *   révoqué peut redevenir actif : l'historique (createdAt, permission...)
+ *   est conservé plutôt que de recréer un partage identique.
  */
 #[ORM\Entity(repositoryClass: ShareRepository::class)]
 #[ORM\Table(name: 'shares')]
@@ -62,6 +66,9 @@ class Share
 
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $createdAt;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $revokedAt = null;
 
     public function __construct(
         User $owner,
@@ -113,6 +120,10 @@ class Share
     {
         return $this->createdAt;
     }
+    public function getRevokedAt(): ?\DateTimeImmutable
+    {
+        return $this->revokedAt;
+    }
 
     public function setPermission(string $permission): void
     {
@@ -123,6 +134,16 @@ class Share
         $this->expiresAt = $expiresAt;
     }
 
+    public function revoke(): void
+    {
+        $this->revokedAt = new \DateTimeImmutable();
+    }
+
+    public function reactivate(): void
+    {
+        $this->revokedAt = null;
+    }
+
     public function isExpired(): bool
     {
         return $this->expiresAt !== null && $this->expiresAt < new \DateTimeImmutable();
@@ -130,6 +151,6 @@ class Share
 
     public function isActive(): bool
     {
-        return !$this->isExpired();
+        return $this->revokedAt === null && !$this->isExpired();
     }
 }
