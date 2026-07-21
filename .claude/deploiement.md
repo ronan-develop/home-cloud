@@ -131,8 +131,11 @@ Après `--init` ou `bin/deploy.sh`, **en SSH** :
 ssh -i ~/.ssh/o2switch ron2cuba@lenouvel.me
 cd /home9/ron2cuba/<prenom>.lenouvel.me
 
-# Créer le premier utilisateur admin
-php bin/console app:create-user '<email>' '<password>' <prenom> --env=prod
+# Créer le premier utilisateur admin sans mot de passe :
+# la commande affiche un lien de définition de mot de passe (valable 1h)
+# à ouvrir dans le navigateur — évite de taper un mot de passe en clair
+# sur la ligne de commande / dans l'historique bash SSH.
+php bin/console app:create-user '<email>' <prenom> --env=prod
 ```
 
 > `lexik:jwt:generate-keypair` et `asset-map:compile` sont déjà gérés par les scripts.
