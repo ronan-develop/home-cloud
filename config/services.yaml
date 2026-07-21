@@ -150,6 +150,10 @@ services:
         arguments:
             $shareCreationLimiter: '@limiter.share_creation'
 
+    App\Controller\Api\ResetPasswordController:
+        arguments:
+            $resetPasswordRequestLimiter: '@limiter.reset_password_request'
+
 when@dev:
     services:
         App\DataFixtures\AppFixtures:
