@@ -40,13 +40,32 @@
               <div class="hc-item-meta">
                 Partagé avec {{ row.share.guest.displayName }} ·
                 {{ row.share.permission == 'write' ? 'lecture/écriture' : 'lecture seule' }} ·
-                {% if row.share.expiresAt %}
+                {% if not row.share.isActive and row.share.revokedAt %}
+                  révoqué
+                {% elseif row.share.expiresAt %}
                   {{ row.share.isActive ? 'expire le ' ~ row.share.expiresAt|date('d/m/Y') : 'expiré le ' ~ row.share.expiresAt|date('d/m/Y') }}
                 {% else %}
                   permanent
                 {% endif %}
               </div>
             </div>
+            {% if row.share.isActive %}
+              <form method="post" action="{{ path('app_share_revoke') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('share-revoke') }}">
+                <input type="hidden" name="shareId" value="{{ row.share.id }}">
+                <button type="submit" class="hc-item-action hc-item-action--danger" style="background:none; border:none; cursor:pointer; font-size:0.8125rem; font-weight:600;">
+                  Révoquer
+                </button>
+              </form>
+            {% elseif row.share.revokedAt %}
+              <form method="post" action="{{ path('app_share_reactivate') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('share-reactivate') }}">
+                <input type="hidden" name="shareId" value="{{ row.share.id }}">
+                <button type="submit" class="hc-item-action" style="background:none; border:none; cursor:pointer; font-size:0.8125rem; font-weight:600;">
+                  Réactiver
+                </button>
+              </form>
+            {% endif %}
           </div>
         {% endfor %}
       </div>
