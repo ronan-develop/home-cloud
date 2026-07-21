@@ -42,6 +42,11 @@ class ResetPasswordControllerTest extends WebTestCase
         $conn->executeStatement('DELETE FROM users');
         $conn->executeStatement('SET FOREIGN_KEY_CHECKS=1');
         $this->em->clear();
+
+        // Le rate limiter (limiter.reset_password_request) persiste son état dans
+        // cache.rate_limiter entre les tests, alors que le client de test réutilise
+        // toujours la même IP — sans ce reset, un test épuise le quota du suivant.
+        $container->get('cache.rate_limiter')->clear();
     }
 
     public function testResetPasswordController(): void
@@ -72,6 +77,75 @@ class ResetPasswordControllerTest extends WebTestCase
         // On ne teste plus le lien reçu par email ni la page de confirmation
 
         // Ici on ne teste que la demande de reset password (pas la soumission du nouveau mot de passe)
+    }
+
+    /**
+     * Anti-énumération de comptes : un email qui n'existe pas en base ne doit
+     * ni envoyer de mail, ni faire échouer la requête différemment d'un email
+     * existant — sinon on peut deviner quels comptes existent selon la réponse.
+     */
+    public function testRequestResetPasswordWithUnknownEmailSendsNoEmailButReturnsGenericSuccess(): void
+    {
+        $this->client->request('POST', '/api/request-reset-password', [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode(['email' => 'inconnu@example.com']));
+
+        self::assertResponseIsSuccessful();
+        self::assertEmailCount(0);
+
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+        self::assertArrayHasKey('message', $data);
+        self::assertSame('Si un compte existe, un email a été envoyé.', $data['message']);
+    }
+
+    /**
+     * Saturation applicative : sans limite de fréquence, une IP peut boucler
+     * sur cet endpoint indéfiniment (recherche DB à chaque appel), que
+     * l'email soumis existe ou non en base. Le rate limiting doit bloquer
+     * avant même la recherche en base, donc s'applique aussi aux emails inconnus.
+     */
+    public function testRequestResetPasswordIsRateLimitedWithUnknownEmails(): void
+    {
+        for ($i = 0; $i < 5; $i++) {
+            $this->client->request('POST', '/api/request-reset-password', [], [], [
+                'CONTENT_TYPE' => 'application/json',
+            ], json_encode(['email' => "inconnu-$i@example.com"]));
+            self::assertResponseIsSuccessful();
+        }
+
+        $this->client->request('POST', '/api/request-reset-password', [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode(['email' => 'inconnu-6@example.com']));
+
+        self::assertResponseStatusCodeSame(429);
+        self::assertEmailCount(0);
+    }
+
+    /**
+     * Ciblage d'un utilisateur précis : un attaquant qui boucle sur l'email
+     * d'une victime réelle doit être bloqué par la même limite, pas seulement
+     * les emails inconnus.
+     */
+    public function testRequestResetPasswordIsRateLimitedWithKnownEmail(): void
+    {
+        $user = new User('victime@example.com', 'Victime');
+        $user->setPassword('irrelevant');
+        $this->em->persist($user);
+        $this->em->flush();
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->client->request('POST', '/api/request-reset-password', [], [], [
+                'CONTENT_TYPE' => 'application/json',
+            ], json_encode(['email' => 'victime@example.com']));
+            self::assertResponseIsSuccessful();
+        }
+
+        $this->client->request('POST', '/api/request-reset-password', [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode(['email' => 'victime@example.com']));
+
+        self::assertResponseStatusCodeSame(429);
+        self::assertEmailCount(0, 'La 6e requête, au-delà du seuil, ne doit envoyer aucun mail.');
     }
 
     /**

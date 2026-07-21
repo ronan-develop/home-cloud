@@ -8,8 +8,10 @@ use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
 use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
 
@@ -20,6 +22,7 @@ class ResetPasswordController extends AbstractController
         private ResetPasswordHelperInterface $resetPasswordHelper,
         private EntityManagerInterface $entityManager,
         private \App\Interface\PasswordResetServiceInterface $passwordResetService,
+        private RateLimiterFactory $resetPasswordRequestLimiter,
     ) {}
 
     /**
@@ -72,6 +75,11 @@ class ResetPasswordController extends AbstractController
         ResetPasswordHelperInterface $resetPasswordHelper,
         MailerInterface $mailer
     ): Response {
+        $limiter = $this->resetPasswordRequestLimiter->create($request->getClientIp());
+        if (!$limiter->consume(1)->isAccepted()) {
+            throw new TooManyRequestsHttpException(null, 'Trop de demandes de réinitialisation. Réessayez plus tard.');
+        }
+
         $data = json_decode($request->getContent(), true);
         $email = $data['email'] ?? null;
         if (!$email) {
