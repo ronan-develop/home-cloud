@@ -51,6 +51,31 @@ final class MoveModalWebTest extends WebTestCase
         $this->assertSelectorExists('[data-testid^="move-file-btn-"]', 'Le bouton déplacer fichier doit exister');
     }
 
+    // ─── #281 : le libellé au survol débordait sur les cartes voisines ─────
+
+    public function testMoveFolderButtonHasNoOverflowingHoverLabel(): void
+    {
+        // Le title natif du navigateur porte déjà "Déplacer <nom>" : le span
+        // affiché en plus au survol (whitespace-nowrap, sans largeur
+        // contrainte) débordait de la carte pour les noms longs.
+        $this->client->request('GET', '/explorer');
+
+        $this->assertSelectorNotExists(
+            '[data-testid^="move-folder-btn-"] span',
+            'Le bouton déplacer dossier ne doit plus afficher de libellé au survol (redondant avec le title)',
+        );
+    }
+
+    public function testMoveFileButtonHasNoOverflowingHoverLabel(): void
+    {
+        $this->client->request('GET', '/explorer?folder=' . $this->folderId);
+
+        $this->assertSelectorNotExists(
+            '[data-testid^="move-file-btn-"] span',
+            'Le bouton déplacer fichier ne doit plus afficher de libellé au survol (redondant avec le title)',
+        );
+    }
+
     public function testGlobalMoveModalExistsInDOM(): void
     {
         $this->client->request('GET', '/explorer');
