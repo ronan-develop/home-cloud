@@ -168,6 +168,17 @@ ENVEOF
 
     else
         # ── Mise à jour ───────────────────────────────────────────────────────
+        # Tailwind build en local puis scp : le binaire natif ne tourne pas de
+        # façon fiable sur o2switch (mutualisé), cf. bin/deploy.sh.
+        info "Build Tailwind (local)…"
+        php bin/console tailwind:build --minify
+
+        info "Envoi de app.built.css…"
+        ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" "mkdir -p ${DEPLOY_PATH}/var/tailwind"
+        scp ${SSH_KEY_OPTS} -P "${SSH_PORT}" \
+            var/tailwind/app.built.css \
+            "${SSH_USER}@${SSH_HOST}:${DEPLOY_PATH}/var/tailwind/app.built.css"
+
         info "git pull + composer + cache + migrations + assets…"
         if ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" "
             set -e
