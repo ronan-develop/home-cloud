@@ -7,6 +7,7 @@ namespace App\Controller\Web;
 use App\Entity\User;
 use App\Repository\FileRepository;
 use App\Repository\FolderRepository;
+use App\Repository\MediaRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,6 +25,7 @@ final class ExplorerController extends AbstractController
     public function __construct(
         private readonly FolderRepository $folderRepository,
         private readonly FileRepository $fileRepository,
+        private readonly MediaRepository $mediaRepository,
     ) {}
 
     #[Route('/explorer', name: 'app_explorer')]
@@ -53,6 +55,15 @@ final class ExplorerController extends AbstractController
             ? $this->fileRepository->findBy(['folder' => $currentFolder, 'owner' => $user], ['createdAt' => 'DESC'])
             : [];
 
+        // Vignettes : les Media du dossier en une requête, indexés par id de File.
+        // La relation Media→File est unidirectionnelle — sans cette map, Twig n'a
+        // aucun chemin vers la vignette. Une relation inverse lazy provoquerait un
+        // N+1 sur chaque carte de la grille.
+        $mediasByFileId = [];
+        foreach ($this->mediaRepository->findBy(['file' => $files]) as $media) {
+            $mediasByFileId[$media->getFile()->getId()->toRfc4122()] = $media;
+        }
+
         // Construit le chemin complet (ancêtres) pour la breadcrumb
         $breadcrumbFolders = [];
         $ancestor = $currentFolder;
@@ -76,6 +87,7 @@ final class ExplorerController extends AbstractController
             'breadcrumbSegments' => $breadcrumbSegments,
             'folders'            => $folders,
             'files'              => $files,
+            'mediasByFileId'     => $mediasByFileId,
             'folderCount'        => count($folders),
             'fileCount'          => count($files),
             'sidebarTree'        => $this->folderRepository->findAllAsTree($user, $currentFolder),
