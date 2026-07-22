@@ -88,9 +88,11 @@ function startBatchTracking(batchId) {
  * @param {string} folderId - Optional folder ID
  * @param {string} newFolderName - Optional new folder name
  * @param {string} batchId - Optional upload batch ID (corrèle les fichiers d'un même envoi)
+ * @param {boolean} [processSync] - Traitement média synchrone (#339, import direct dans un album :
+ *   le mediaId doit être connu immédiatement dans la réponse)
  * @returns {Function} (file, metadata, onProgress) => Promise
  */
-function createUploadFn(token, folderId, newFolderName, batchId) {
+function createUploadFn(token, folderId, newFolderName, batchId, processSync) {
     return (file, metadata, onProgress) => {
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
@@ -101,6 +103,7 @@ function createUploadFn(token, folderId, newFolderName, batchId) {
             if (folderId) formData.append('folderId', folderId);
             if (newFolderName) formData.append('newFolderName', newFolderName);
             if (batchId) formData.append('batchId', batchId);
+            if (processSync) formData.append('processSync', '1');
             // Dossier local glissé-déposé (#238) : recrée l'arborescence côté serveur
             if (file._hcRelativePath) formData.append('relativePath', file._hcRelativePath);
 
@@ -156,14 +159,31 @@ function createUploadFn(token, folderId, newFolderName, batchId) {
 }
 
 /**
+ * Associe un média fraîchement uploadé (processSync) à un album (#339).
+ *
+ * @param {string} albumId
+ * @param {string} mediaId
+ */
+async function addMediaToAlbum(albumId, mediaId) {
+    const res = await apiFetch(`/api/v1/albums/${albumId}/medias`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mediaId }),
+    });
+    if (!res.ok) throw new Error(`Album association failed: ${res.status}`);
+    return res.json();
+}
+
+/**
  * Render upload modal overlay + card.
- * 
+ *
  * @param {File[]} files
  * @param {string} currentFolderId - Pre-selected folder
  * @param {Object} folders - Available folders {id, name, icon}[]
+ * @param {boolean} [isAlbumMode] - Mode album (#339) : pas de sélecteur de destination
  * @returns {HTMLElement} overlay
  */
-function createModalOverlay(files, currentFolderId, folders) {
+function createModalOverlay(files, currentFolderId, folders, isAlbumMode) {
     const overlay = document.createElement('div');
     overlay.className = 'upload-modal-overlay';
     overlay.id = 'hc-upload-modal-overlay';
@@ -196,21 +216,25 @@ function createModalOverlay(files, currentFolderId, folders) {
     title.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>'
         + `<span>Importer ${files.length} fichier${files.length > 1 ? 's' : ''}</span>`;
 
-    // Destination section
-    const destSection = document.createElement('div');
-    destSection.className = 'upload-destination';
-    destSection.style.marginBottom = '1.25rem';
+    // Destination section — absente en mode album (#339) : pas de dossier
+    // à choisir, le fichier est associé directement à l'album.
+    let destSection = null;
+    if (!isAlbumMode) {
+        destSection = document.createElement('div');
+        destSection.className = 'upload-destination';
+        destSection.style.marginBottom = '1.25rem';
 
-    const destLabel = document.createElement('label');
-    destLabel.className = 'upload-destination-label';
-    destLabel.style.cssText = 'font-size:0.75rem;font-weight:600;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;display:block';
-    destLabel.textContent = 'Destination';
+        const destLabel = document.createElement('label');
+        destLabel.className = 'upload-destination-label';
+        destLabel.style.cssText = 'font-size:0.75rem;font-weight:600;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;display:block';
+        destLabel.textContent = 'Destination';
 
-    const folderListEl = document.createElement('hc-folder-list');
-    folderListEl.id = 'hc-upload-folder-list';
+        const folderListEl = document.createElement('hc-folder-list');
+        folderListEl.id = 'hc-upload-folder-list';
 
-    destSection.appendChild(destLabel);
-    destSection.appendChild(folderListEl);
+        destSection.appendChild(destLabel);
+        destSection.appendChild(folderListEl);
+    }
 
     // File list
     const fileListEl = document.createElement('div');
@@ -245,7 +269,7 @@ function createModalOverlay(files, currentFolderId, folders) {
     actions.appendChild(submitBtn);
 
     content.appendChild(title);
-    content.appendChild(destSection);
+    if (destSection) content.appendChild(destSection);
     content.appendChild(fileListEl);
     content.appendChild(actions);
 
@@ -390,12 +414,16 @@ function updateUploadItem(itemEl, state, progress, error, volumeInfo) {
 /**
  * Initialize upload modal and queue.
  * Called when 'hc:files-selected' fires.
- * 
+ *
  * @param {File[]} files
- * @param {Object} options - {folderId, folders}
+ * @param {Object} options - {folderId, folders, albumId}
+ * @param {string} [options.albumId] - Mode album (#339) : pas de sélecteur de
+ *   destination, chaque upload est traité en synchrone (processSync) puis
+ *   associé à cet album via son mediaId.
  */
 async function openUploadModal(files, options = {}) {
-    const { folderId, folders } = options;
+    const { folderId, folders, albumId } = options;
+    const isAlbumMode = Boolean(albumId);
 
     // Close previous modal if any
     closeUploadModal();
@@ -412,16 +440,19 @@ async function openUploadModal(files, options = {}) {
     const createUploadQueueFn = await getCreateUploadQueue();
 
     // Create & open modal
-    const overlay = createModalOverlay(files, folderId, folders || []);
+    const overlay = createModalOverlay(files, folderId, folders || [], isAlbumMode);
     document.body.appendChild(overlay);
 
-    // Initialize hc-folder-list component with available folders
+    // Initialize hc-folder-list component with available folders — absent en mode album
     const folderListEl = overlay.querySelector('#hc-upload-folder-list');
-    folderListEl.setFolders(folders || []);
-    if (folderId) folderListEl.setSelected(folderId);
+    if (folderListEl) {
+        folderListEl.setFolders(folders || []);
+        if (folderId) folderListEl.setSelected(folderId);
+    }
 
-    // Get folder selection on submit — delegate to hc-folder-list
-    const getDestFolder = () => folderListEl.getSelected();
+    // Get folder selection on submit — mode album : pas de dossier à choisir,
+    // le backend en assigne un par défaut (DefaultFolderService).
+    const getDestFolder = () => (isAlbumMode ? { id: null, isNew: false } : folderListEl.getSelected());
 
     const fileListEl = overlay.querySelector('#hc-upload-file-list');
     const itemElements = new Map();
@@ -441,6 +472,10 @@ async function openUploadModal(files, options = {}) {
     files.forEach((file) => {
         etaTrackers.set(file, createEtaTracker());
     });
+
+    // Mode album (#339) : promesses d'association média→album en cours,
+    // à attendre avant d'afficher le succès / recharger la page.
+    const pendingAlbumAssociations = [];
 
     // Create upload queue with callbacks for UI updates
     currentUploadQueue = createUploadQueueFn({
@@ -464,6 +499,21 @@ async function openUploadModal(files, options = {}) {
             const itemEl = itemElements.get(file);
             if (itemEl) {
                 updateUploadItem(itemEl, 'completed', 100);
+            }
+            // Mode album (#339) : le fichier a été traité en synchrone
+            // (processSync), le mediaId est donc déjà connu — l'associer à
+            // l'album. Un fichier sans média possible (ex: PDF) n'a pas de
+            // mediaId : rien à associer, ce n'est pas une erreur. La promesse
+            // est stockée (pas juste catchée) pour que le submit handler
+            // puisse attendre la fin de TOUTES les associations avant
+            // d'afficher le succès / recharger la page — sinon un lot de
+            // plusieurs fichiers en concurrence pourrait recharger la page
+            // avant que la dernière association ait fini côté serveur.
+            if (isAlbumMode && response?.mediaId) {
+                const p = addMediaToAlbum(albumId, response.mediaId).catch((err) => {
+                    console.error('[UploadModal] Album association failed:', err);
+                });
+                pendingAlbumAssociations.push(p);
             }
         },
         onError: (file, error) => {
@@ -493,14 +543,19 @@ async function openUploadModal(files, options = {}) {
             // Déclarer le lot : le serveur décide immediate vs deferred et renvoie
             // le batchId à joindre à chaque upload. Best-effort — si la déclaration
             // échoue, on uploade quand même sans lot (traitement immédiat côté serveur).
+            // Mode album (#339) : jamais de lot deferred — processSync l'exige déjà
+            // côté backend (garde-fou 400 sinon), et l'utilisateur attend la
+            // confirmation immédiate de l'ajout à l'album.
             let batchId = null;
             let batchMode = 'immediate';
-            try {
-                const declared = await declareBatch(files, postBatchJson);
-                batchId = declared?.batchId ?? null;
-                batchMode = declared?.mode ?? 'immediate';
-            } catch (e) {
-                console.debug('Batch declaration failed, uploading without batch', e);
+            if (!isAlbumMode) {
+                try {
+                    const declared = await declareBatch(files, postBatchJson);
+                    batchId = declared?.batchId ?? null;
+                    batchMode = declared?.mode ?? 'immediate';
+                } catch (e) {
+                    console.debug('Batch declaration failed, uploading without batch', e);
+                }
             }
 
             // Create uploadFn with selected folder + batch
@@ -508,11 +563,20 @@ async function openUploadModal(files, options = {}) {
                 currentToken,
                 destFolder.isNew ? null : destFolder.id,
                 destFolder.isNew ? destFolder.name : null,
-                batchId
+                batchId,
+                isAlbumMode,
             );
 
             // Start queue processing with uploadFn
             await currentUploadQueue.process(uploadFn);
+
+            // Mode album : attendre que toutes les associations média→album
+            // (déclenchées par onComplete) soient terminées avant d'afficher
+            // le succès et de recharger la page — sinon la dernière
+            // association pourrait ne pas être visible après le reload.
+            if (isAlbumMode) {
+                await Promise.all(pendingAlbumAssociations);
+            }
 
             // Check results
             const stats = currentUploadQueue.getStats();
@@ -576,9 +640,18 @@ function closeUploadModal() {
  */
 export function initUploadModal() {
     document.addEventListener('hc:files-selected', async (event) => {
-        const { files, folderId } = event.detail;
+        const { files, folderId, albumId } = event.detail;
         if (!files || !Array.isArray(files)) {
             console.warn('[UploadModal] Invalid files:', files);
+            return;
+        }
+
+        // Mode album (#339) : pas de sélecteur de destination, donc pas
+        // besoin de récupérer la liste des dossiers.
+        if (albumId) {
+            openUploadModal(files, { albumId }).catch(err => {
+                console.error('[UploadModal] Error opening modal:', err);
+            });
             return;
         }
 
