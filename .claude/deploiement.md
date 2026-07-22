@@ -42,8 +42,11 @@ alice
 **`.secrets`** — variables globales SSH :
 
 ```bash
-SSH_KEY_PATH=/home/ronan/.ssh/o2switch
+SSH_KEY_PATH=/home/ronan/.ssh/o2switch-new
+SSH_KEY_PASSPHRASE=
 ```
+
+> Voir « Mode opératoire — clé SSH o2switch » ci-dessous avant de générer ou remplacer cette clé.
 
 **`.secrets.<prenom>`** — par instance, uniquement pour `--init` :
 
@@ -120,8 +123,82 @@ bash bin/deploy.sh --update  # mise à jour d'une seule instance
 ### d) Clé SSH autorisée
 
 - cPanel → Sécurité → Accès SSH → Gérer les clés
-- La clé `o2switch-homecloud` doit être présente et `authorized`
-- Clé privée locale : `~/.ssh/o2switch`
+- La clé `o2switch-homecloud-new` doit être présente et **`authorized`** (pas seulement « importée » — voir mode opératoire ci-dessous)
+- Clé privée locale : `~/.ssh/o2switch-new`
+
+---
+
+## Mode opératoire — clé SSH o2switch
+
+### Piège vécu (2026-07-22)
+
+L'ancienne clé (`~/.ssh/o2switch`, passphrase documentée dans `.secrets`) a cessé
+de fonctionner sans explication : `ssh-keygen -y -f ~/.ssh/o2switch` avec la
+passphrase documentée renvoyait *"incorrect passphrase supplied to decrypt
+private key"*. Vérifié : le fichier de clé était intact (`file` confirme un
+format OpenSSH valide), la passphrase documentée ne contenait aucun caractère
+caché (`od -c`). **Cause jamais identifiée** — la clé et sa passphrase
+documentée avaient simplement divergé.
+
+Contournement adopté : régénérer une clé neuve plutôt que continuer à chercher
+la cause.
+
+### Régénérer la clé si l'authentification par clé casse
+
+**1. Générer une nouvelle paire, sans passphrase** (le déploiement tourne en
+script non interactif — une passphrase impose un `ssh-agent` à chaque
+exécution, source de bugs comme celui-ci) :
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/o2switch-new -N "" -C "o2switch-homecloud-new"
+```
+
+**2. Récupérer la clé publique à importer :**
+
+```bash
+cat ~/.ssh/o2switch-new.pub
+```
+
+**3. Importer dans cPanel** → Sécurité → Gestionnaire de clés SSH → « Importer
+une clé » :
+
+- Nom : un nom **différent** de l'ancienne clé (ex. `o2switch-homecloud-new`)
+- Coller uniquement la **clé publique** dans le champ prévu
+- **Ne jamais coller la clé privée dans cPanel** — aucun besoin, c'est un
+  import de clé publique, un champ privé rempli est un signal d'alerte
+- Laisser le champ passphrase vide (clé générée sans passphrase)
+
+**4. Vérifier le statut "authorized"** (pas juste "importée") dans le tableau
+du Gestionnaire de clés SSH — c'est ce statut, pas l'import seul, qui active
+réellement l'authentification par clé publique côté serveur.
+
+**5. Tester en non-interactif AVANT de toucher `.secrets`** — c'est le test
+qui aurait évité l'essentiel du temps perdu la dernière fois (une connexion
+manuelle interactive avec mot de passe réussit même quand l'auth par clé est
+cassée, ce qui donne un faux sentiment que "ça marche") :
+
+```bash
+ssh -i ~/.ssh/o2switch-new -p 22 -o ConnectTimeout=10 -o BatchMode=yes \
+    ron2cuba@lenouvel.me "echo OK"
+```
+
+`BatchMode=yes` interdit tout fallback interactif (mot de passe, agent
+askpass) — si la clé n'est pas acceptée, la commande échoue immédiatement au
+lieu de sembler bloquée.
+
+**6. Seulement après un `OK` confirmé**, mettre à jour `.secrets` :
+
+```bash
+SSH_KEY_PATH="$HOME/.ssh/o2switch-new"
+SSH_KEY_PASSPHRASE=""
+```
+
+> `.secrets` est sourcé par `bin/deploy-all.sh` — un `SSH_KEY_PATH=...` passé
+> en préfixe de commande shell (`SSH_KEY_PATH=~/.ssh/o2switch-new bash
+> bin/deploy-all.sh`) est **écrasé** par le `source .secrets` du script (ligne
+> ~17). Modifier `.secrets` directement est le seul moyen fiable de changer la
+> clé utilisée par le déploiement — un override en ligne de commande ne suffit
+> pas et fait perdre du temps à chercher pourquoi "ça ne prend pas en compte".
 
 ---
 

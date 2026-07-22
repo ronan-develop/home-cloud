@@ -29,8 +29,18 @@ if ! curl -fsSL -o ffmpeg.tar.xz "${DOWNLOAD_URL}"; then
     exit 0
 fi
 
-# Extraction
-if ! tar -xf ffmpeg.tar.xz; then
+# Extraction — o2switch n'a ni xz ni unxz (tar -xf échoue silencieusement sur
+# le flux compressé). python3 + son module lzma standard sont présents et
+# servent de décompresseur de repli.
+if command -v xz >/dev/null 2>&1 || command -v unxz >/dev/null 2>&1; then
+    EXTRACT_OK=$(tar -xf ffmpeg.tar.xz && echo yes || echo no)
+elif command -v python3 >/dev/null 2>&1; then
+    EXTRACT_OK=$(python3 -c 'import lzma,sys; sys.stdout.buffer.write(lzma.open("ffmpeg.tar.xz","rb").read())' | tar -x && echo yes || echo no)
+else
+    EXTRACT_OK=no
+fi
+
+if [[ "${EXTRACT_OK}" != "yes" ]]; then
     echo "⚠ Impossible d'extraire ffmpeg — vignettes vidéo indisponibles"
     exit 0
 fi
