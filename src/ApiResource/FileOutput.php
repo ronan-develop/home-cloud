@@ -84,6 +84,13 @@ final class FileOutput
     public string $folderName = '';
     public ?string $ownerId = null;
     public string $createdAt = '';
+    /**
+     * UUID du Media créé, si le fichier a été traité en synchrone (POST avec
+     * `processSync=1`, cf. FileUploadController). Reste null quand le
+     * traitement média est différé (kernel.terminate ou worker) : le Media
+     * n'existe pas encore au moment de la réponse.
+     */
+    public ?string $mediaId = null;
 
     // --- Champs d'entrée supplémentaires (POST via JSON ou multipart) ---
     /** UUID d'un folder existant. Prioritaire sur newFolderName. */

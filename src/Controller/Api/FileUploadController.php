@@ -88,20 +88,34 @@ final class FileUploadController extends AbstractController
         );
 
         $batch = $this->resolveBatch($request, $ownerId);
+
+        $processSync = $request->request->getBoolean('processSync');
+        if ($processSync && $batch !== null && $batch->isDeferred()) {
+            throw new BadRequestHttpException('processSync cannot be combined with a deferred batch');
+        }
+
         if ($batch !== null) {
             $file->setBatch($batch);
             $this->em->flush();
         }
 
         // Routage EXCLUSIF du traitement média (supports() reconnaît aussi les RAW
-        // envoyés en application/octet-stream, via l'extension) :
-        // - lot "deferred" (lourd) → worker Messenger seul, l'utilisateur n'attend pas ;
+        // envoyés en application/octet-stream, via l'extension) — un seul des
+        // trois chemins est emprunté, jamais plusieurs pour le même fichier :
+        // - processSync (import direct, ex. album) → traité ici même, l'appelant
+        //   a besoin du Media (et donc de son id) dans la réponse immédiate ;
+        // - sinon, lot "deferred" (lourd) → worker Messenger seul, l'utilisateur
+        //   n'attend pas ;
         // - sinon (immediate, ou pas de lot) → traitement juste après la réponse
         //   HTTP (kernel.terminate), sans mobiliser la file.
-        // Un seul des deux chemins est emprunté : fini le no-op systématique du
-        // worker qui refaisait le travail déjà fait à kernel.terminate.
+        // Fini le no-op systématique du worker qui refaisait le travail déjà
+        // fait à kernel.terminate.
+        $mediaId = null;
         if ($this->mediaProcessor->supports($file->getMimeType(), $file->getOriginalName())) {
-            if ($batch !== null && $batch->isDeferred()) {
+            if ($processSync) {
+                $media = $this->mediaProcessor->process($file);
+                $mediaId = $media?->getId()->toRfc4122();
+            } elseif ($batch !== null && $batch->isDeferred()) {
                 $this->bus->dispatch(new MediaProcessMessage((string) $file->getId()));
             } else {
                 $this->pendingMediaProcessingCollector->add((string) $file->getId());
@@ -109,6 +123,7 @@ final class FileUploadController extends AbstractController
         }
 
         $output = $this->provider->toOutput($file);
+        $output->mediaId = $mediaId;
 
         return new JsonResponse(
             json_decode($this->serializer->serialize($output, 'json'), true),
