@@ -39,7 +39,8 @@
         {{ icons.icon('images', 20) }}
       </a>
       <form method="post" action="{{ path('app_album_import', {id: album.id}) }}"
-            enctype="multipart/form-data" data-controller="album-import">
+            enctype="multipart/form-data" data-controller="album-import"
+            data-album-import-album-id-value="{{ album.id }}">
         <input type="hidden" name="_token" value="{{ csrf_token('album-import') }}">
         <input type="file" name="files[]" multiple accept="image/*,video/*"
                class="hidden" data-album-import-target="input"
