@@ -110,6 +110,17 @@ final class AlbumService implements AlbumServiceInterface
     }
 
     /**
+     * Renomme un album.
+     *
+     * @throws \InvalidArgumentException si le nom est vide ou uniquement des espaces
+     */
+    public function rename(Album $album, string $name): void
+    {
+        $album->setName($name);
+        $this->repository->save($album);
+    }
+
+    /**
      * Supprime un album (et ses associations album_media — pas les médias eux-mêmes).
      */
     public function delete(Album $album): void

@@ -6,6 +6,12 @@
 
 ---
 
+## ✅ Renommer un album (2026-07-22, #242)
+
+- `AlbumService::rename()` ajouté (délègue à `Album::setName()`, déjà existant avec trim/validation), route `POST /albums/{id}/rename` sur `AlbumWebController` (CSRF + `AlbumVoter::VIEW`, cohérent avec les autres actions d'édition d'album accessibles aux guests en partage write — `add-media`, `reorder`, `set-cover`, `import`).
+- UI : bouton crayon dans l'en-tête de `album_detail.html.twig`, `prompt()` natif pour saisir le nouveau nom (cohérent avec `confirm()` déjà utilisé pour la suppression), form POST classique + redirect — pas de nouveau contrôleur Stimulus.
+- TDD complet : `tests/Service/AlbumServiceTest.php` (happy path, nom vide/whitespace, non-save si invalide) + `tests/Web/AlbumRenameWebTest.php` (redirect, persistance, CSRF invalide → 403, autre utilisateur → 403, nom vide → 400).
+
 ## ✅ Déploiement, gestion des instances (2026-07-20)
 
 - **7ᵉ instance `baptiste.lenouvel.me`** ajoutée : base MySQL créée via `uapi Mysql create_database`/`set_privileges_on_database` (utilisateur partagé `ron2cuba_ronan`, comme les 6 autres instances — divergence constatée entre la doc `deploiement.md` qui documentait un utilisateur par instance et la pratique réelle), premier déploiement manuel, premier compte créé, puis ajoutée à `.deploy-targets` pour les mises à jour futures.
