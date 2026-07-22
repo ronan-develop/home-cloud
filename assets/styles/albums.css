@@ -18,10 +18,35 @@
   cursor: pointer;
 }
 
+.hc-album-card-thumb-wrap {
+  position: relative;
+  width: calc(100% + 32px);
+  height: 220px;
+  margin: -16px -16px -16px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
 .hc-album-card-thumb {
   width: 100%;
-  aspect-ratio: 1;
+  height: 100%;
   object-fit: cover;
-  border-radius: 0.5rem;
   display: block;
+}
+
+/* Overlay dégradé + texte incrusté — noir/blanc fixes (indépendants du thème
+   clair/sombre de l'UI) : c'est un habillage de photo, pas un fond d'interface. */
+.hc-album-card-thumb-overlay {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 24px 12px 10px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0) 100%);
+}
+
+.hc-album-card-thumb-overlay .hc-item-name {
+  color: #fff;
+}
+
+.hc-album-card-thumb-overlay .hc-item-meta {
+  color: rgba(255, 255, 255, 0.75);
 }
