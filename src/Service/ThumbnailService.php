@@ -7,6 +7,8 @@ namespace App\Service;
 use App\Exception\Video\VideoThumbnailExtractionException;
 use App\Interface\ExifThumbnailExtractorInterface;
 use App\Interface\VideoThumbnailExtractorInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use RonanLenouvel\RawPreviewExtractor\Exception\RawPreviewExtractorException;
 use RonanLenouvel\RawPreviewExtractor\Orientation;
 use RonanLenouvel\RawPreviewExtractor\RawPreviewExtractorInterface;
@@ -38,6 +40,7 @@ class ThumbnailService
         private readonly RawPreviewExtractorInterface $rawPreviewExtractor,
         private readonly ExifThumbnailExtractorInterface $exifThumbnailExtractor,
         private readonly VideoThumbnailExtractorInterface $videoThumbnailExtractor,
+        private readonly LoggerInterface $logger = new NullLogger(),
     ) {}
 
     /**
@@ -79,9 +82,14 @@ class ThumbnailService
     {
         try {
             $preview = $this->rawPreviewExtractor->extract($absolutePath);
-        } catch (RawPreviewExtractorException) {
+        } catch (RawPreviewExtractorException $e) {
             // RAW sans preview, illisible ou format non géré : pas de vignette,
             // le Media est créé sans, comme pour une image GD en échec.
+            $this->logger->warning('Échec de génération de vignette (RAW)', [
+                'path' => $absolutePath,
+                'exception' => $e,
+            ]);
+
             return null;
         }
 
@@ -104,9 +112,14 @@ class ThumbnailService
     {
         try {
             $frame = $this->videoThumbnailExtractor->extract($absolutePath);
-        } catch (VideoThumbnailExtractionException) {
+        } catch (VideoThumbnailExtractionException $e) {
             // Binaire absent ou extraction en échec : pas de vignette, le Media
             // est créé sans — comme pour un RAW illisible (generateFromRaw).
+            $this->logger->warning('Échec de génération de vignette (vidéo)', [
+                'path' => $absolutePath,
+                'exception' => $e,
+            ]);
+
             return null;
         }
 

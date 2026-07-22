@@ -11,6 +11,8 @@ use App\Interface\UploadBatchRepositoryInterface;
 use App\Message\MediaProcessMessage;
 use App\Repository\FileRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 /**
@@ -34,16 +36,46 @@ final class MediaProcessHandler
         private readonly UploadBatchRepositoryInterface $uploadBatchRepository,
         private readonly BatchCompletionNotifierInterface $batchCompletionNotifier,
         private readonly EntityManagerInterface $em,
+        private readonly LoggerInterface $logger = new NullLogger(),
     ) {}
 
     public function __invoke(MediaProcessMessage $message): void
     {
         $file = $this->fileRepository->find($message->fileId);
         if ($file === null) {
+            // Message rejoué après suppression du fichier, ou fileId invalide :
+            // ne pas confondre avec un traitement silencieusement sauté.
+            $this->logger->warning('MediaProcessMessage : fichier introuvable', [
+                'fileId' => $message->fileId,
+            ]);
+
             return;
         }
 
-        $this->mediaProcessor->process($file);
+        $media = $this->mediaProcessor->process($file);
+
+        if ($media === null) {
+            // Fichier dont le type n'ouvre pas droit à un Media (ni photo, ni
+            // vidéo) : pas une erreur, mais utile à distinguer d'un traitement
+            // qui aurait dû produire un Media et n'y est pas arrivé.
+            $this->logger->info('Fichier sans Media associé (type non pris en charge)', [
+                'fileName' => $file->getOriginalName(),
+                'fileId' => $file->getId()->toRfc4122(),
+            ]);
+        } elseif ($media->getThumbnailPath() === null) {
+            // Media créé mais sans vignette : succès partiel — la cause précise
+            // (ffmpeg absent, RAW illisible, etc.) est déjà tracée par
+            // ThumbnailService, ce warning sert à repérer l'occurrence côté fichier.
+            $this->logger->warning('Media traité sans vignette', [
+                'fileName' => $file->getOriginalName(),
+                'fileId' => $file->getId()->toRfc4122(),
+            ]);
+        } else {
+            $this->logger->info('Media traité', [
+                'fileName' => $file->getOriginalName(),
+                'fileId' => $file->getId()->toRfc4122(),
+            ]);
+        }
 
         $this->notifyIfBatchCompleted($file->getBatch());
     }
