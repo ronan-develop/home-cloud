@@ -2,18 +2,19 @@
 
 > Dernière mise à jour : 2026-07-22
 
-> **Status git :** `main` — dernière PR mergée #298 (`fix/changelog-markdown-heading-artifact`) ; PR #331 en revue (`feat/311-media-viewer`)
+> **Status git :** `main` — dernière PR mergée #331 (`feat/311-media-viewer`)
 
 ---
 
-## 🚧 Viewer média (image/vidéo) dans « Mes fichiers » (2026-07-22, #311, PR #331 en revue)
+## ✅ Viewer média (image/vidéo) dans « Mes fichiers » (2026-07-22, #311, PR #331)
 
 - Bouton "Visualiser" ajouté sur les cartes fichier image/vidéo dans `FileCard.html.twig`, sur le même modèle que le bouton PDF existant (#241) — `data-testid="view-media-btn-{id}"`, distinction image/vidéo par `mimeType`.
 - Nouvelle modale `MediaViewerModal.html.twig` (`<img>`/`<video controls>` natifs, un seul élément affiché à la fois selon le type) et `assets/js/media-viewer-modal.js` — même helper `Modal` (`assets/js/modal.js`) que les autres modales du projet.
 - Fermeture vidéo : `pause()` + `removeAttribute('src')` + `load()`, pas seulement `about:blank` (suffisant pour l'iframe PDF mais insuffisant pour un `<video>` — sans ça le flux continue de streamer/décoder en arrière-plan).
 - Aucune modification serveur : réutilise `app_file_view`, déjà générique (`DISPOSITION_INLINE` + ownership) depuis #241.
 - TDD : `testViewButtonAppearsOnlyForImageAndVideoFiles` (`ExplorerPageTest.php`) + `media-viewer-modal.test.js` (4 cas Jest : ouverture image, ouverture vidéo, fermeture propre, bascule image↔vidéo).
-- Reste à faire avant merge : vérification manuelle en navigateur (desktop + mobile), non effectuée en local (pas de compte de test disponible sur le serveur dev) — prévue sur `ronan.lenouvel.me` après merge.
+- Mergé et déployé sur les 7 instances o2switch ; **vérification manuelle confirmée OK** par l'utilisateur sur `ronan.lenouvel.me` (desktop + mobile, upload/visualisation/fermeture image et vidéo).
+- **Bug latéral trouvé et corrigé pendant le déploiement** : `.secrets` contenait deux lignes non commentées (`login : ...` / `mot de passe : ...`) sous forme de note en clair — sourcées en bash par `deploy-all.sh`, `login` était exécuté comme commande système et cassait le script avant la connexion SSH. Commentées.
 - **Ticket #310 découvert en parallèle** (viewer PDF en plein écran, demandé par l'utilisateur, déjà ouvert) : la modale PDF actuelle est contrainte (`max-w-5xl max-h-[90vh]`), pas encore traité.
 
 ## ✅ Renommer un album (2026-07-22, #242)
