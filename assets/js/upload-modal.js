@@ -13,6 +13,7 @@
 import '../components/hc-folder-list.js';
 import { apiFetch } from './api.js';
 import { declareBatch, createBatchPoller } from './upload-batch.js';
+import { createEtaTracker, formatSpeed, formatEta } from './upload-eta.js';
 
 const UPLOAD_API_ROUTE = '/api/v1/files';
 const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5 GB
@@ -300,12 +301,17 @@ function createUploadItem(file) {
 
     const bar = document.createElement('div');
     bar.className = 'upload-item__bar';
-    bar.style.cssText = 'height:100%;background:rgba(59,130,246,0.7);border-radius:1px;transition:width 0.3s ease;width:0%';
+    bar.style.cssText = 'height:100%;border-radius:1px;transition:width 0.3s ease;width:0%';
 
     progress.appendChild(bar);
 
+    const meta = document.createElement('div');
+    meta.className = 'upload-item__meta';
+    meta.style.cssText = 'margin-top:0.25rem';
+
     item.appendChild(header);
     item.appendChild(progress);
+    item.appendChild(meta);
 
     return item;
 }
@@ -317,9 +323,9 @@ function createUploadItem(file) {
  * @returns {string}
  */
 function formatFileSize(bytes) {
-    if (bytes === 0) return '0 B';
+    if (bytes === 0) return '0 o';
     const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const sizes = ['o', 'Ko', 'Mo', 'Go'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
@@ -331,8 +337,9 @@ function formatFileSize(bytes) {
  * @param {string} state
  * @param {number} progress
  * @param {string} error
+ * @param {{loaded: number, total: number, speedBytesPerSec: number, etaSeconds: number|null}} [volumeInfo]
  */
-function updateUploadItem(itemEl, state, progress, error) {
+function updateUploadItem(itemEl, state, progress, error, volumeInfo) {
     // Update state class
     const stateClass = state.toLowerCase();
     itemEl.className = `upload-item upload-item--${stateClass}`;
@@ -353,6 +360,17 @@ function updateUploadItem(itemEl, state, progress, error) {
     // Update progress bar
     const barEl = itemEl.querySelector('.upload-item__bar');
     barEl.style.width = `${progress || 0}%`;
+
+    // Update volume/speed/ETA line
+    const metaEl = itemEl.querySelector('.upload-item__meta');
+    if (metaEl) {
+        if (state === 'uploading' && volumeInfo) {
+            const { loaded, total, speedBytesPerSec, etaSeconds } = volumeInfo;
+            metaEl.textContent = `${formatFileSize(loaded)} / ${formatFileSize(total)} — ${formatSpeed(speedBytesPerSec)} — ${formatEta(etaSeconds)}`;
+        } else {
+            metaEl.textContent = '';
+        }
+    }
 
     // Show error message if needed
     if (state === 'error' && error) {
@@ -418,13 +436,28 @@ async function openUploadModal(files, options = {}) {
         itemElements.set(file, itemEl);
     });
 
+    // Tracker de vitesse/ETA par fichier, indexé comme itemElements (#336)
+    const etaTrackers = new Map();
+    files.forEach((file) => {
+        etaTrackers.set(file, createEtaTracker());
+    });
+
     // Create upload queue with callbacks for UI updates
     currentUploadQueue = createUploadQueueFn({
         maxConcurrent: 3,
         onProgress: (file, progress) => {
             const itemEl = itemElements.get(file);
             if (itemEl) {
-                updateUploadItem(itemEl, 'uploading', progress.progress || 0);
+                const loaded = progress.loaded || 0;
+                const total = progress.total || file.size;
+                const tracker = etaTrackers.get(file);
+                const { speedBytesPerSec, etaSeconds } = tracker.sample(loaded, total);
+                updateUploadItem(itemEl, 'uploading', progress.progress || 0, null, {
+                    loaded,
+                    total,
+                    speedBytesPerSec,
+                    etaSeconds,
+                });
             }
         },
         onComplete: (file, response) => {
