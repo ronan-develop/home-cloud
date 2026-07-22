@@ -149,8 +149,10 @@ JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
 JWT_PASSPHRASE=${JWT_PASSPHRASE}
 MAILER_DSN=${MAILER_DSN_PRESET:-null://null}
 ENVEOF
-            ${COMPOSER_BIN} install --no-interaction --prefer-dist --no-progress --no-dev
+            ${COMPOSER_BIN} install --no-interaction --prefer-dist --no-progress --no-dev --no-scripts
             ${PHP_BIN} bin/console cache:clear --env=prod
+            ${PHP_BIN} bin/console assets:install public --env=prod
+            ${PHP_BIN} bin/console importmap:install --env=prod
             ${PHP_BIN} bin/console doctrine:migrations:migrate --no-interaction --env=prod
             ${PHP_BIN} bin/console lexik:jwt:generate-keypair --skip-if-exists --env=prod
             ${PHP_BIN} bin/console asset-map:compile
@@ -185,8 +187,10 @@ ENVEOF
             cd ${DEPLOY_PATH}
             mkdir -p var/log
             git pull origin ${GIT_BRANCH}
-            ${COMPOSER_BIN} install --no-interaction --prefer-dist --no-progress --no-dev
+            ${COMPOSER_BIN} install --no-interaction --prefer-dist --no-progress --no-dev --no-scripts
             ${PHP_BIN} bin/console cache:clear --env=prod
+            ${PHP_BIN} bin/console assets:install public --env=prod
+            ${PHP_BIN} bin/console importmap:install --env=prod
             ${PHP_BIN} bin/console doctrine:migrations:migrate --no-interaction --env=prod
             ${PHP_BIN} bin/console asset-map:compile
             echo '<!-- Deployed: '$(date '+%Y-%m-%d %H:%M:%S')' -->' > templates/deploy-info.html.twig

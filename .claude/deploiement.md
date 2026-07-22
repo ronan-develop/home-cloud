@@ -60,7 +60,9 @@ bash bin/deploy-all.sh
 ```
 
 Chaîne exécutée sur chaque serveur :
-`git pull` → `composer install --no-dev` → `cache:clear` → `migrations` → `asset-map:compile`
+`git pull` → `composer install --no-dev --no-scripts` → `cache:clear` → `assets:install` → `importmap:install` → `migrations` → `asset-map:compile`
+
+`--no-scripts` évite l'exécution des scripts post-install Symfony Flex (`auto-scripts` : `cache:clear`, `assets:install %PUBLIC_DIR%`, `importmap:install`) pendant `composer install` — ajouté suite à des `Killed` (OOM) répétés sur le mutualisé o2switch pendant cette phase (2026-07-22), alors que le `composer install` en lui-même n'était pas en cause (`Nothing to install, update or remove`, dépendances déjà à jour). Les 3 commandes sautées sont rappelées explicitement ensuite, une par une (moins gourmand qu'un `composer install` qui les enchaîne toutes en une seule fois) — ne pas en retirer une sans vérifier qu'elle est bien redondante ailleurs dans le script.
 
 ### Premier déploiement de toutes les instances
 
