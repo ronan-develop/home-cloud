@@ -11,7 +11,7 @@ Un explorateur classique — arborescence de dossiers, upload par glisser-dépos
 - **Upload** : plusieurs fichiers à la fois, avec barre de progression et file d'attente. Le dépôt d'un fichier sur un dossier l'y range directement — y compris un dossier entier glissé depuis le disque, avec sa structure.
 - **Types acceptés** : tout, sauf les exécutables (liste noire, pas liste blanche — un cloud personnel n'a pas à deviner ce que vous stockez). Les fichiers dangereux (scripts, HTML/SVG actifs, PDF avec JavaScript embarqué) sont neutralisés plutôt que rejetés : conservés, mais non exécutables/prévisualisables.
 - **Organisation** : dossiers imbriqués, un nom de fichier étant unique au sein d'un même dossier.
-- **Visualisation** : un PDF s'ouvre directement dans le navigateur, sans téléchargement préalable.
+- **Visualisation** : un PDF, une image ou une vidéo s'ouvre directement dans le navigateur, sans téléchargement préalable — affichage à la demande, un fichier à la fois (pas de navigation vers les fichiers voisins).
 - **Téléchargement** : un dossier entier se télécharge en une seule archive ZIP.
 
 ## Galerie
