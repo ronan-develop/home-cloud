@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controller\Api;
 
+use App\Entity\User;
 use App\Interface\AlbumRepositoryInterface;
 use App\Repository\MediaRepository;
+use App\Security\AlbumVoter;
 use App\State\AlbumProvider;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -13,6 +15,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\AsController;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
@@ -42,6 +45,8 @@ final class AlbumAddMediaController extends AbstractController
         $album = $this->albumRepository->findById(Uuid::fromString($id))
             ?? throw new NotFoundHttpException('Album not found');
 
+        $this->denyAccessUnlessGranted(AlbumVoter::VIEW, $album);
+
         $body = json_decode((string) $request->getContent(), true);
         $mediaId = $body['mediaId'] ?? null;
 
@@ -51,6 +56,12 @@ final class AlbumAddMediaController extends AbstractController
 
         $media = $this->mediaRepository->find($mediaId)
             ?? throw new NotFoundHttpException('Media not found');
+
+        /** @var User $user */
+        $user = $this->getUser();
+        if (!$media->isOwnedBy($user)) {
+            throw new AccessDeniedHttpException('You are not the owner of this Media');
+        }
 
         $album->addMedia($media); // idempotent via Collection::contains()
         $this->em->flush();

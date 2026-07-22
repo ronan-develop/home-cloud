@@ -47,10 +47,15 @@ final class AlbumTest extends AuthenticatedApiTestCase
         return $user;
     }
 
-    private function createMedia(): Media
+    /**
+     * Média appartenant à alice@example.com (utilisateur JWT par défaut de
+     * requestWithJwt) : les endpoints /albums/{id}/medias vérifient
+     * désormais l'ownership du Media, un média d'un autre utilisateur serait
+     * rejeté (403) — cf. AlbumMediaOwnershipTest pour ces cas.
+     */
+    private function createMedia(?User $owner = null): Media
     {
-        $user = new User('media-owner@example.com', 'Owner');
-        $this->em->persist($user);
+        $user = $owner ?? $this->em->getRepository(User::class)->findOneBy(['email' => 'alice@example.com']);
         $folder = new Folder('Photos', $user);
         $this->em->persist($folder);
         $file = new File('photo.jpg', 'image/jpeg', 1024, '2026/02/test.jpg', $folder, $user);
@@ -254,7 +259,7 @@ final class AlbumTest extends AuthenticatedApiTestCase
         $client = static::createClient();
         $response = ApiTestHelper::requestWithJwt($client, 'POST', '/api/v1/albums/' . $album->getId() . '/medias', [
             'json' => ['mediaId' => (string) $media->getId()]
-        ]);
+        ], 'alice@example.com');
 
         Assert::assertSame(200, $response->getStatusCode());
         Assert::assertSame(1, $response->toArray()['mediaCount']);
@@ -282,7 +287,7 @@ final class AlbumTest extends AuthenticatedApiTestCase
         $client = static::createClient();
         $response = ApiTestHelper::requestWithJwt($client, 'POST', '/api/v1/albums/' . $album->getId() . '/medias', [
             'json' => ['mediaId' => '00000000-0000-0000-0000-000000000000']
-        ]);
+        ], 'alice@example.com');
 
         Assert::assertSame(404, $response->getStatusCode());
     }
@@ -297,7 +302,7 @@ final class AlbumTest extends AuthenticatedApiTestCase
         $this->em->flush();
 
         $client = static::createClient();
-        $response = ApiTestHelper::requestWithJwt($client, 'DELETE', '/api/v1/albums/' . $album->getId() . '/medias/' . $media->getId());
+        $response = ApiTestHelper::requestWithJwt($client, 'DELETE', '/api/v1/albums/' . $album->getId() . '/medias/' . $media->getId(), [], 'alice@example.com');
 
         Assert::assertSame(200, $response->getStatusCode());
         Assert::assertSame(0, $response->toArray()['mediaCount']);
