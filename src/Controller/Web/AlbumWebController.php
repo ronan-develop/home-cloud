@@ -170,6 +170,29 @@ final class AlbumWebController extends AbstractController
         return $this->redirectToRoute('app_album_detail', ['id' => $album->getId()->toRfc4122()]);
     }
 
+    #[Route('/albums/{id}/rename', name: 'app_album_rename', methods: ['POST'], requirements: ['id' => '[0-9a-f\-]+'])]
+    public function rename(string $id, Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('album-rename', (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
+
+        $album = $this->albumRepository->findById(Uuid::fromString($id))
+            ?? throw $this->createNotFoundException('Album introuvable.');
+
+        $this->denyAccessUnlessGranted(AlbumVoter::VIEW, $album);
+
+        $name = (string) $request->request->get('name', '');
+
+        try {
+            $this->albumService->rename($album, $name);
+        } catch (\InvalidArgumentException $e) {
+            throw new BadRequestHttpException($e->getMessage());
+        }
+
+        return $this->redirectToRoute('app_album_detail', ['id' => $album->getId()->toRfc4122()]);
+    }
+
     #[Route('/albums/{id}', name: 'app_album_detail', requirements: ['id' => '[0-9a-f\-]+'])]
     public function detail(string $id): Response
     {

@@ -217,6 +217,56 @@ final class AlbumServiceTest extends TestCase
         $this->service->setCoverMedia($album, $foreignMedia);
     }
 
+    // --- rename() ---
+
+    public function testRenameSetsNewNameAndSaves(): void
+    {
+        $user  = $this->makeUser();
+        $album = new Album('Ancien nom', $user);
+
+        $this->repository
+            ->expects($this->once())
+            ->method('save')
+            ->with($album);
+
+        $this->service->rename($album, 'Nouveau nom');
+
+        $this->assertSame('Nouveau nom', $album->getName());
+    }
+
+    public function testRenameWithEmptyNameThrowsException(): void
+    {
+        $user  = $this->makeUser();
+        $album = new Album('Ancien nom', $user);
+
+        $this->expectException(\InvalidArgumentException::class);
+
+        $this->service->rename($album, '');
+    }
+
+    public function testRenameWithWhitespaceOnlyNameThrowsException(): void
+    {
+        $user  = $this->makeUser();
+        $album = new Album('Ancien nom', $user);
+
+        $this->expectException(\InvalidArgumentException::class);
+
+        $this->service->rename($album, '   ');
+    }
+
+    public function testRenameDoesNotSaveWhenNameInvalid(): void
+    {
+        $user  = $this->makeUser();
+        $album = new Album('Ancien nom', $user);
+
+        $this->repository->expects($this->never())->method('save');
+
+        try {
+            $this->service->rename($album, '');
+        } catch (\InvalidArgumentException) {
+        }
+    }
+
     // --- delete() ---
 
     public function testDeleteCallsRepositoryRemove(): void

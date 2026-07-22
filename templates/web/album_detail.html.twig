@@ -22,6 +22,16 @@
     </div>
 
     <div class="flex gap-2" role="group" aria-label="Actions de l'album">
+      <form method="post" action="{{ path('app_album_rename', {id: album.id}) }}"
+            onsubmit="const n = window.prompt('Nouveau nom de l\'album', {{ album.name|json_encode|raw }}); if (!n || n === {{ album.name|json_encode|raw }}) return false; this.querySelector('input[name=name]').value = n;">
+        <input type="hidden" name="_token" value="{{ csrf_token('album-rename') }}">
+        <input type="hidden" name="name" value="">
+        <button type="submit" class="hc-item-action flex items-center justify-center w-11 h-11 rounded-md"
+                style="border:1px solid var(--hc-border); color: var(--hc-accent);"
+                title="Renommer l'album" aria-label="Renommer l'album">
+          {{ icons.icon('pencil', 20) }}
+        </button>
+      </form>
       <a href="{{ path('app_gallery', {album: album.id}) }}"
          class="hc-item-action flex items-center justify-center w-11 h-11 rounded-md"
          style="border:1px solid var(--hc-border); color: var(--hc-accent); text-decoration:none;"

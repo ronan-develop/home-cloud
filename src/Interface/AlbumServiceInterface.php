@@ -29,4 +29,9 @@ interface AlbumServiceInterface
     public function reorder(Album $album, array $mediaIds): void;
 
     public function delete(Album $album): void;
+
+    /**
+     * @throws \InvalidArgumentException si le nom est vide ou uniquement des espaces
+     */
+    public function rename(Album $album, string $name): void;
 }
