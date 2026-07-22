@@ -420,6 +420,57 @@ final class ExplorerPageTest extends WebTestCase
         );
     }
 
+    /**
+     * #312 volet 1 — FileCard affiche l'<img> quand Media.thumbnailPath existe.
+     */
+    public function testFileCardShowsThumbnailWhenMediaExists(): void
+    {
+        $user = $this->createUser();
+
+        $folder = new Folder('Photos', $user);
+        $this->em->persist($folder);
+
+        // Fichier avec Media/thumbnailPath
+        $photoFile = new \App\Entity\File('photo.jpg', 'image/jpeg', 1024, 'test/photo.jpg', $folder, $user);
+        $this->em->persist($photoFile);
+
+        $media = new \App\Entity\Media($photoFile, 'photo');
+        $media->setThumbnailPath('thumbs/abc123.jpg');
+        $this->em->persist($media);
+
+        // Fichier sans Media
+        $pdfFile = new \App\Entity\File('doc.pdf', 'application/pdf', 2048, 'test/doc.pdf', $folder, $user);
+        $this->em->persist($pdfFile);
+
+        $this->em->flush();
+        $folderId = $folder->getId()->toRfc4122();
+
+        $this->login();
+
+        $crawler = $this->client->request('GET', '/explorer?folder=' . $folderId);
+
+        $this->assertResponseIsSuccessful();
+
+        // Vérifier qu'il y a bien 2 fichiers affichés
+        $this->assertSelectorExists('[data-testid="file-list"]');
+        // La grille contient au moins 2 cartes
+        $cards = $crawler->filter('.hc-item-card');
+        $this->assertGreaterThanOrEqual(2, $cards->count(), 'Attendu 2 fichiers dans le dossier');
+
+        // Chercher la carte par le nom de fichier unique (l'<img> est dedans)
+        $photoCard = null;
+        $cards->each(function ($card, $key) use (&$photoCard) {
+            $name = $card->filter('.hc-item-name')->text();
+            if (strpos($name, 'photo.jpg') !== false) {
+                $photoCard = $card;
+            }
+        });
+
+        $this->assertNotNull($photoCard, 'Carte photo.jpg non trouvée');
+        // Le photo doit avoir une <img> (pas une icône SVG)
+        $this->assertCount(1, $photoCard->filter('img.hc-item-thumb-img'), 'La photo doit avoir une vignette');
+    }
+
     public function testViewButtonAppearsOnlyForImageAndVideoFiles(): void
     {
         $user = $this->createUser();

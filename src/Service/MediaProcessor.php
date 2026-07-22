@@ -83,6 +83,11 @@ final class MediaProcessor implements MediaProcessorInterface
             // (ThumbnailService gère le RAW et son orientation).
             $thumb = $this->thumbnailService->generate($absolutePath);
             $media->setThumbnailPath($thumb);
+        } elseif ($mediaType === 'video') {
+            // Pas d'EXIF pour la vidéo (hors scope #312) : seulement la vignette.
+            // ThumbnailService détecte lui-même la source, MediaProcessor ignore ffmpeg.
+            $absolutePath = $this->storageService->getAbsolutePath($file->getPath());
+            $media->setThumbnailPath($this->thumbnailService->generate($absolutePath));
         }
 
         $this->em->persist($media);

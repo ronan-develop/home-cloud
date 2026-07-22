@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Exception\Video\VideoThumbnailExtractionException;
 use App\Interface\ExifThumbnailExtractorInterface;
+use App\Interface\VideoThumbnailExtractorInterface;
 use RonanLenouvel\RawPreviewExtractor\Exception\RawPreviewExtractorException;
 use RonanLenouvel\RawPreviewExtractor\Orientation;
 use RonanLenouvel\RawPreviewExtractor\RawPreviewExtractorInterface;
@@ -35,6 +37,7 @@ class ThumbnailService
         private readonly string $storageDir,
         private readonly RawPreviewExtractorInterface $rawPreviewExtractor,
         private readonly ExifThumbnailExtractorInterface $exifThumbnailExtractor,
+        private readonly VideoThumbnailExtractorInterface $videoThumbnailExtractor,
     ) {}
 
     /**
@@ -50,6 +53,10 @@ class ThumbnailService
         }
 
         try {
+            if ($this->videoThumbnailExtractor->supports($absolutePath)) {
+                return $this->generateFromVideo($absolutePath);
+            }
+
             if ($this->rawPreviewExtractor->supports($absolutePath)) {
                 return $this->generateFromRaw($absolutePath);
             }
@@ -84,6 +91,31 @@ class ThumbnailService
         }
 
         return $this->resizeAndSave($source, $preview->orientation);
+    }
+
+    /**
+     * Génère le thumbnail depuis une frame extraite d'une vidéo.
+     *
+     * ffmpeg applique déjà la métadonnée `rotate` du conteneur au décodage :
+     * la frame arrive droite, d'où l'orientation Normal — contrairement à une
+     * preview RAW, livrée telle que le capteur l'a vue.
+     */
+    private function generateFromVideo(string $absolutePath): ?string
+    {
+        try {
+            $frame = $this->videoThumbnailExtractor->extract($absolutePath);
+        } catch (VideoThumbnailExtractionException) {
+            // Binaire absent ou extraction en échec : pas de vignette, le Media
+            // est créé sans — comme pour un RAW illisible (generateFromRaw).
+            return null;
+        }
+
+        $source = @imagecreatefromstring($frame->jpegData);
+        if ($source === false) {
+            return null;
+        }
+
+        return $this->resizeAndSave($source, Orientation::Normal);
     }
 
     private const MAX_IMAGE_DIMENSION = 10000; // pixels — au-delà, risque GD memory bomb

@@ -297,7 +297,7 @@ final class MediaProcessorTest extends TestCase
         $this->assertNull($media);
     }
 
-    public function testProcessCreatesVideoMediaWithoutExifOrThumbnail(): void
+    public function testProcessCreatesVideoMediaWithThumbnailButNoExif(): void
     {
         $file = $this->createStub(File::class);
         $file->method('getMimeType')->willReturn('video/mp4');
@@ -314,7 +314,7 @@ final class MediaProcessorTest extends TestCase
         $exifService = $this->createMock(ExifService::class);
         $exifService->expects($this->never())->method('extract');
         $thumbnailService = $this->createMock(ThumbnailService::class);
-        $thumbnailService->expects($this->never())->method('generate');
+        $thumbnailService->expects($this->once())->method('generate')->willReturn('thumbs/abc.jpg');
 
         $media = $this->processor(
             $mediaRepo,
@@ -326,6 +326,7 @@ final class MediaProcessorTest extends TestCase
 
         $this->assertInstanceOf(Media::class, $media);
         $this->assertSame('video', $media->getMediaType());
+        $this->assertSame('thumbs/abc.jpg', $media->getThumbnailPath());
     }
 
     /**

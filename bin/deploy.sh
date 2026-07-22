@@ -200,7 +200,7 @@ if [[ "$UPDATE_MODE" == true ]]; then
     { error "❌ Erreur lors du déploiement."; exit 1; }
 else
     info "Mode primo déploiement : clonage repo + setup"
-    ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" "mkdir -p ${DEPLOY_PATH} && cd ${DEPLOY_PATH} && git clone ${GIT_REPO} . && composer install --no-interaction --prefer-dist --no-progress" && \
+    ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" "mkdir -p ${DEPLOY_PATH} && cd ${DEPLOY_PATH} && git clone ${GIT_REPO} . && composer install --no-interaction --prefer-dist --no-progress && bash bin/install-ffmpeg.sh || echo '⚠ ffmpeg non installé — vignettes vidéo indisponibles'" && \
     success "✅ Déploiement réussi !" || \
     { error "❌ Erreur lors du déploiement."; exit 1; }
 fi

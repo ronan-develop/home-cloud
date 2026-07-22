@@ -1,17 +1,24 @@
 {# Composant FileCard — Carte fichier #}
 <div class="folder-card hc-item-card">
-	<div class="file-icon hc-item-icon
-		{%- if item.mimeType starts with 'image/' %} hc-item-icon--image
-		{%- elseif item.mimeType starts with 'video/' or item.mimeType starts with 'audio/' or item.mimeType == 'application/pdf' %} hc-item-icon--doc
-		{%- else %} hc-item-icon--doc
-		{%- endif %} mb-2">
-		{% if item.mimeType starts with 'image/' %}<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-images"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-			{% elseif item.mimeType starts with 'video/' %}<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-video"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-			{% elseif item.mimeType starts with 'audio/' %}<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-music"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-			{% elseif item.mimeType == 'application/pdf' %}<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-file"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
-			{% else %}<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-file"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
-		{% endif %}
-	</div>
+	{% if media is defined and media and media.thumbnailPath %}
+		<div class="file-icon hc-item-icon hc-item-icon--thumb mb-2">
+			<img src="{{ path('media_thumbnail', {id: media.id}) }}"
+			     alt="{{ item.originalName ?? item.name }}"
+			     loading="lazy"
+			     class="hc-item-thumb-img">
+		</div>
+	{% else %}
+		<div class="file-icon hc-item-icon
+			{%- if item.mimeType starts with 'image/' %} hc-item-icon--image
+			{%- else %} hc-item-icon--doc
+			{%- endif %} mb-2">
+			{% if item.mimeType starts with 'image/' %}<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-images"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+				{% elseif item.mimeType starts with 'video/' %}<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-video"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+				{% elseif item.mimeType starts with 'audio/' %}<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-music"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+				{% else %}<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-file"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+			{% endif %}
+		</div>
+	{% endif %}
 	<div class="file-name hc-item-name">{{ item.originalName ?? item.name }}</div>
 	<div class="file-meta hc-item-meta">
 		{% if item.size is defined %}
