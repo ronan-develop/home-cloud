@@ -10,7 +10,7 @@
       Cliquez pour importer un fichier<br>ou glissez-déposez ici
     </div>
     <input type="hidden" name="folder_id" value="{{ currentFolder ? currentFolder.id : '' }}">
-    <input type="file" name="file" id="import-file-input" class="hidden" onchange="this.form.submit()">
+    <input type="file" name="file" id="import-file-input" class="hidden" multiple>
     <button type="button" class="import-btn hc-btn-soft font-semibold text-sm px-4 py-2 rounded-md cursor-pointer"
             style="border:none; background: var(--hc-accent-soft); color: var(--hc-accent);"
             onclick="document.getElementById('import-file-input').click();">
