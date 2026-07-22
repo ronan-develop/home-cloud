@@ -6,6 +6,14 @@
 
 ---
 
+## ✅ Viewer PDF/média en plein écran (2026-07-22, #310, branche `feat/310-pdf-viewer-fullscreen`)
+
+- `PdfViewerModal.html.twig` et `MediaViewerModal.html.twig` (#311) occupaient l'écran avec une marge (`max-w-5xl max-h-[90vh] mx-4 rounded-3xl`) au lieu du plein écran attendu par #310. Classes remplacées par `w-screen h-screen` (coins arrondis retirés, plus de sens à 100vw/100vh).
+- Mécanisme d'ouverture/fermeture inchangé : `Modal.open/close` (`assets/js/modal.js`), pas de migration vers le WebComponent `<hc-modal>` (son `sizeMap.fullscreen` n'est pas branché sur ces deux modales et changer l'API aurait cassé les tests JS existants).
+- Vérifié visuellement via Playwright (desktop 1440px + mobile 375px, PDF et image) : plein écran conforme, sans marge, header/bouton Fermer bien positionnés.
+- **Limitation découverte, non corrigée dans ce ticket** : ni la touche Échap ni le clic sur l'overlay ne ferment ces deux modales (seul le bouton "Fermer" fonctionne) — absent de `modal.js`/`pdf-viewer-modal.js`/`media-viewer-modal.js` **avant** ce changement, donc pas une régression introduite ici. Le ticket #310 présupposait à tort que ce mécanisme existait déjà. Décision : rester dans le scope CSS (XS), traiter Échap/overlay dans un ticket séparé si souhaité.
+- Aucun test unitaire modifié : changement purement CSS, `testViewButtonAppearsOnlyForPdfFiles` et `pdf-viewer-modal.test.js` restent verts sans modification (filet de non-régression).
+
 ## ✅ Viewer média (image/vidéo) dans « Mes fichiers » (2026-07-22, #311, PR #331)
 
 - Bouton "Visualiser" ajouté sur les cartes fichier image/vidéo dans `FileCard.html.twig`, sur le même modèle que le bouton PDF existant (#241) — `data-testid="view-media-btn-{id}"`, distinction image/vidéo par `mimeType`.
