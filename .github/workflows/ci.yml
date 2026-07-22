@@ -7,6 +7,23 @@ on:
     branches: [ main ]
 
 jobs:
+  labels:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🏷️ Vérifier qu'au moins un label est présent
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          COUNT=$(gh pr view "${{ github.event.pull_request.number }}" \
+            --repo "${{ github.repository }}" \
+            --json labels -q '.labels | length')
+          if [ "$COUNT" -eq 0 ]; then
+            echo "::error::Aucun label sur cette PR — le changelog (/changelog) filtre par label (feature/bug/securité/performance), une PR sans label reste invisible pour l'utilisateur final."
+            exit 1
+          fi
+          echo "✅ $COUNT label(s) présent(s)."
+
   php:
     runs-on: ubuntu-latest
 
