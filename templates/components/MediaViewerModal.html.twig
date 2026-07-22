@@ -1,0 +1,30 @@
+{# Modale de visualisation image/vidéo — lecteurs natifs du navigateur #}
+<div id="media-viewer-modal"
+     class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+     tabindex="-1"
+     aria-modal="true"
+     role="dialog">
+  <div class="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl
+              shadow-2xl p-4 w-full h-full max-w-5xl max-h-[90vh] mx-4 flex flex-col">
+
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-white text-lg font-semibold truncate" id="media-viewer-name">ce fichier</h2>
+      <button type="button"
+              onclick="closeMediaViewerModal()"
+              class="px-3 py-1.5 rounded-xl text-white/70 hover:text-white hover:bg-white/10 transition-colors">
+        Fermer
+      </button>
+    </div>
+
+    <div class="flex-1 flex items-center justify-center overflow-hidden">
+      <img id="media-viewer-image"
+           src=""
+           alt=""
+           class="hidden max-w-full max-h-full object-contain rounded-xl">
+      <video id="media-viewer-video"
+             controls
+             class="hidden max-w-full max-h-full rounded-xl"></video>
+    </div>
+
+  </div>
+</div>

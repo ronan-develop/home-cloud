@@ -419,4 +419,49 @@ final class ExplorerPageTest extends WebTestCase
             'Un fichier non-PDF ne doit pas avoir de bouton "Visualiser"'
         );
     }
+
+    public function testViewButtonAppearsOnlyForImageAndVideoFiles(): void
+    {
+        $user = $this->createUser();
+
+        $folder = new Folder('Médias', $user);
+        $this->em->persist($folder);
+        $this->em->flush();
+        $folderId = $folder->getId()->toRfc4122();
+
+        $this->login();
+        $token = $this->uploadCsrfToken();
+
+        $imgTmp = tempnam(sys_get_temp_dir(), 'hc_img_') . '.jpg';
+        file_put_contents($imgTmp, 'fake jpeg content');
+        $imgUpload = new UploadedFile($imgTmp, 'photo.jpg', 'image/jpeg', null, true);
+        $this->client->request('POST', '/files/upload', ['folder_id' => $folderId, '_token' => $token], ['file' => $imgUpload]);
+        $this->client->followRedirect();
+
+        $videoTmp = tempnam(sys_get_temp_dir(), 'hc_vid_') . '.mp4';
+        file_put_contents($videoTmp, 'fake mp4 content');
+        $videoUpload = new UploadedFile($videoTmp, 'clip.mp4', 'video/mp4', null, true);
+        $this->client->request('POST', '/files/upload', ['folder_id' => $folderId, '_token' => $this->uploadCsrfToken()], ['file' => $videoUpload]);
+        $this->client->followRedirect();
+
+        $txtTmp = tempnam(sys_get_temp_dir(), 'hc_txt_') . '.txt';
+        file_put_contents($txtTmp, 'contenu texte');
+        $txtUpload = new UploadedFile($txtTmp, 'notes.txt', 'text/plain', null, true);
+        $this->client->request('POST', '/files/upload', ['folder_id' => $folderId, '_token' => $this->uploadCsrfToken()], ['file' => $txtUpload]);
+        $crawler = $this->client->followRedirect();
+
+        $this->assertResponseIsSuccessful();
+
+        $imgFile = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['originalName' => 'photo.jpg']);
+        $videoFile = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['originalName' => 'clip.mp4']);
+        $txtFile = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['originalName' => 'notes.txt']);
+
+        $this->assertSelectorExists('[data-testid="view-media-btn-' . $imgFile->getId()->toRfc4122() . '"]');
+        $this->assertSelectorExists('[data-testid="view-media-btn-' . $videoFile->getId()->toRfc4122() . '"]');
+        $this->assertCount(
+            0,
+            $crawler->filter('[data-testid="view-media-btn-' . $txtFile->getId()->toRfc4122() . '"]'),
+            'Un fichier texte ne doit pas avoir de bouton de visualisation média'
+        );
+    }
 }
