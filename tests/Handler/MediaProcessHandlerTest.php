@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Handler;
 
 use App\Entity\File;
+use App\Entity\Media;
 use App\Entity\UploadBatch;
 use App\Entity\User;
 use App\Handler\MediaProcessHandler;
@@ -15,6 +16,7 @@ use App\Repository\FileRepository;
 use App\Interface\BatchCompletionNotifierInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 final class MediaProcessHandlerTest extends TestCase
 {
@@ -24,6 +26,7 @@ final class MediaProcessHandlerTest extends TestCase
         ?UploadBatchRepositoryInterface $batchRepo = null,
         ?BatchCompletionNotifierInterface $notifier = null,
         ?EntityManagerInterface $em = null,
+        ?LoggerInterface $logger = null,
     ): MediaProcessHandler {
         return new MediaProcessHandler(
             $fileRepo,
@@ -31,6 +34,7 @@ final class MediaProcessHandlerTest extends TestCase
             $batchRepo ?? $this->createStub(UploadBatchRepositoryInterface::class),
             $notifier ?? $this->createStub(BatchCompletionNotifierInterface::class),
             $em ?? $this->createStub(EntityManagerInterface::class),
+            $logger ?? $this->createStub(LoggerInterface::class),
         );
     }
 
@@ -177,5 +181,120 @@ final class MediaProcessHandlerTest extends TestCase
             $batchRepo,
             $notifier,
         )(new MediaProcessMessage('id'));
+    }
+
+    /**
+     * Un Media créé sans vignette (thumbnailPath null) est un succès partiel :
+     * on veut le voir dans les logs pour distinguer "traité mais dégradé" de
+     * "jamais traité" — observé en prod sur #312, impossible à diagnostiquer
+     * sans ce niveau de détail.
+     */
+    public function testLogsInfoWithFileIdWhenMediaCreatedWithoutThumbnail(): void
+    {
+        $file = $this->createStub(File::class);
+        $file->method('getId')->willReturn(\Symfony\Component\Uid\Uuid::fromString('0195c2f0-0000-7000-8000-000000000001'));
+        $file->method('getOriginalName')->willReturn('video.mp4');
+        $file->method('getBatch')->willReturn(null);
+
+        $fileRepo = $this->createStub(FileRepository::class);
+        $fileRepo->method('find')->willReturn($file);
+
+        $media = $this->createStub(Media::class);
+        $media->method('getThumbnailPath')->willReturn(null);
+
+        $processor = $this->createStub(MediaProcessorInterface::class);
+        $processor->method('process')->willReturn($media);
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())
+            ->method('warning')
+            ->with(
+                $this->stringContains('sans vignette'),
+                $this->callback(fn (array $context) => ($context['fileName'] ?? null) === 'video.mp4'),
+            );
+
+        $this->handler($fileRepo, $processor, logger: $logger)(new MediaProcessMessage('0195c2f0-0000-7000-8000-000000000001'));
+    }
+
+    /**
+     * Un Media créé avec vignette : succès complet, tracé en info (pas warning).
+     */
+    public function testLogsInfoWithFileIdWhenMediaCreatedWithThumbnail(): void
+    {
+        $file = $this->createStub(File::class);
+        $file->method('getId')->willReturn(\Symfony\Component\Uid\Uuid::fromString('0195c2f0-0000-7000-8000-000000000002'));
+        $file->method('getOriginalName')->willReturn('photo.jpg');
+        $file->method('getBatch')->willReturn(null);
+
+        $fileRepo = $this->createStub(FileRepository::class);
+        $fileRepo->method('find')->willReturn($file);
+
+        $media = $this->createStub(Media::class);
+        $media->method('getThumbnailPath')->willReturn('thumbs/abc.jpg');
+
+        $processor = $this->createStub(MediaProcessorInterface::class);
+        $processor->method('process')->willReturn($media);
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->never())->method('warning');
+        $logger->expects($this->once())
+            ->method('info')
+            ->with(
+                $this->stringContains('traité'),
+                $this->callback(fn (array $context) => ($context['fileName'] ?? null) === 'photo.jpg'),
+            );
+
+        $this->handler($fileRepo, $processor, logger: $logger)(new MediaProcessMessage('0195c2f0-0000-7000-8000-000000000002'));
+    }
+
+    /**
+     * MediaProcessor::process() renvoie null pour un type non pris en charge
+     * (ex: PDF) : ne doit jamais être confondu avec "Media traité" (succès).
+     */
+    public function testLogsInfoWhenFileTypeHasNoAssociatedMedia(): void
+    {
+        $file = $this->createStub(File::class);
+        $file->method('getId')->willReturn(\Symfony\Component\Uid\Uuid::fromString('0195c2f0-0000-7000-8000-000000000003'));
+        $file->method('getOriginalName')->willReturn('document.pdf');
+        $file->method('getBatch')->willReturn(null);
+
+        $fileRepo = $this->createStub(FileRepository::class);
+        $fileRepo->method('find')->willReturn($file);
+
+        $processor = $this->createStub(MediaProcessorInterface::class);
+        $processor->method('process')->willReturn(null);
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->never())->method('warning');
+        $logger->expects($this->once())
+            ->method('info')
+            ->with(
+                $this->stringContains('non pris en charge'),
+                $this->callback(fn (array $context) => ($context['fileName'] ?? null) === 'document.pdf'),
+            );
+
+        $this->handler($fileRepo, $processor, logger: $logger)(new MediaProcessMessage('0195c2f0-0000-7000-8000-000000000003'));
+    }
+
+    /**
+     * Fichier introuvable en base : traçé pour distinguer d'un traitement
+     * silencieusement sauté par accident (message rejoué après suppression).
+     */
+    public function testLogsWarningWhenFileNotFound(): void
+    {
+        $fileRepo = $this->createStub(FileRepository::class);
+        $fileRepo->method('find')->willReturn(null);
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())
+            ->method('warning')
+            ->with(
+                $this->stringContains('introuvable'),
+                $this->callback(fn (array $context) => ($context['fileId'] ?? null) === 'missing-uuid'),
+            );
+
+        $this->handler($fileRepo, $this->createStub(MediaProcessorInterface::class), logger: $logger)(
+            new MediaProcessMessage('missing-uuid'),
+        );
     }
 }
