@@ -44,6 +44,12 @@
 			        class="hc-item-action hc-item-action--move"
 			        title="Visualiser {{ item.originalName ?? item.name|e('html') }}"
 			        onclick="openPdfViewerModal('{{ path('app_file_view', { id: item.id }) }}', '{{ (item.originalName ?? item.name)|e('js') }}')"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+			{% elseif item.mimeType starts with 'image/' or item.mimeType starts with 'video/' %}
+			<button type="button"
+			        data-testid="view-media-btn-{{ item.id }}"
+			        class="hc-item-action hc-item-action--move"
+			        title="Visualiser {{ item.originalName ?? item.name|e('html') }}"
+			        onclick="openMediaViewerModal('{{ path('app_file_view', { id: item.id }) }}', '{{ (item.originalName ?? item.name)|e('js') }}', '{{ item.mimeType starts with 'image/' ? 'image' : 'video' }}')"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
 			{% endif %}
 			<a href="{{ path('app_file_download', { id: item.id }) }}"
 			   class="hc-item-action hc-item-action--move"
