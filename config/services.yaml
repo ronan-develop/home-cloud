@@ -9,6 +9,8 @@
 parameters:
     app.storage_dir: '%kernel.project_dir%/var/storage'
     app.encryption_key: '%env(base64:APP_ENCRYPTION_KEY)%'
+    app.ffmpeg_bin: '%kernel.project_dir%/var/bin/ffmpeg'
+    app.ffprobe_bin: '%kernel.project_dir%/var/bin/ffprobe'
     # Seuil de taille cumulée (octets) au-delà duquel un lot d'upload est déporté
     # au worker Messenger plutôt que traité immédiatement. 250 Mo par défaut,
     # ajustable sans redéploiement de code.
@@ -132,11 +134,24 @@ services:
 
     App\Interface\ExifThumbnailExtractorInterface: '@App\Service\ExifThumbnailExtractor'
 
+    App\Service\Video\VideoDurationProbe:
+        arguments:
+            $ffprobeBin: '%app.ffprobe_bin%'
+
+    App\Service\Video\VideoFrameGrabber:
+        arguments:
+            $ffmpegBin: '%app.ffmpeg_bin%'
+
+    App\Interface\VideoDurationProbeInterface: '@App\Service\Video\VideoDurationProbe'
+    App\Interface\VideoFrameGrabberInterface: '@App\Service\Video\VideoFrameGrabber'
+    App\Interface\VideoThumbnailExtractorInterface: '@App\Service\Video\FfmpegVideoThumbnailExtractor'
+
     App\Service\ThumbnailService:
         arguments:
             $storageDir: '%app.storage_dir%'
             $rawPreviewExtractor: '@RonanLenouvel\RawPreviewExtractor\RawPreviewExtractorInterface'
             $exifThumbnailExtractor: '@App\Interface\ExifThumbnailExtractorInterface'
+            $videoThumbnailExtractor: '@App\Interface\VideoThumbnailExtractorInterface'
 
     App\EventListener\SecurityHeadersListener:
         arguments:

@@ -73,7 +73,10 @@ final class ThumbnailServiceRawTest extends TestCase
         $exifExtractor = $this->createMock(ExifThumbnailExtractorInterface::class);
         $exifExtractor->method('extract')->willReturn(null);
 
-        return new ThumbnailService($this->storageDir, $rawExtractor, $exifExtractor);
+        $videoExtractor = $this->createMock(\App\Interface\VideoThumbnailExtractorInterface::class);
+        $videoExtractor->method('supports')->willReturn(false);
+
+        return new ThumbnailService($this->storageDir, $rawExtractor, $exifExtractor, $videoExtractor);
     }
 
     /**

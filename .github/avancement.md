@@ -6,6 +6,21 @@
 
 ---
 
+## 🚧 Vignettes médias — explorer et vidéo (en cours, #312, branche `feat/312-vignettes-medias`)
+
+- **Volet 1** ✅ : afficher les vignettes images dans « Mes fichiers ». Images existantes, câblage pur.
+  - `ExplorerController` charge les Media en une requête, indexés par File.id (pas de N+1).
+  - `FileCard.html.twig` affiche `<img>` quand `Media.thumbnailPath` existe, sinon icône SVG.
+  - CSS : `.hc-item-icon--thumb` + `.hc-item-thumb-img` (cover-fit, 320×320px).
+  - Test : `testFileCardShowsThumbnailWhenMediaExists` (vérifie l'affichage réel).
+- **Volet 2** 🚧 : extraire et afficher les vignettes vidéo. Volet 1 mergeable seul ; volet 2 en dev.
+  - Exceptions + interfaces + VO : `VideoThumbnailExtractionException`, `VideoThumbnailExtractorInterface`, `ExtractedVideoFrame`.
+  - Implémentation : `VideoDurationProbe` (ffprobe), `VideoFrameGrabber` (ffmpeg), `FfmpegVideoThumbnailExtractor` (façade, 50 %).
+  - Câblage `ThumbnailService` : branchement vidéo en premier (avant RAW), dégradation gracieuse.
+  - `MediaProcessor` : génère la vignette pour les vidéos, pas d'EXIF.
+  - Tests : `ThumbnailServiceVideoTest` (4 cas), `VideoThumbnailExtractorWiringTest`, `FfmpegVideoThumbnailExtractorTest` (skipé, ffmpeg absent localement).
+  - Déploiement : script `bin/install-ffmpeg.sh` (idempotent, non-bloquant), intégré à `deploy-all.sh`/`deploy.sh` ; ffmpeg ajouté au CI (`.github/workflows/ci.yml`).
+
 ## ✅ Viewer PDF/média en plein écran (2026-07-22, #310, branche `feat/310-pdf-viewer-fullscreen`)
 
 - `PdfViewerModal.html.twig` et `MediaViewerModal.html.twig` (#311) occupaient l'écran avec une marge (`max-w-5xl max-h-[90vh] mx-4 rounded-3xl`) au lieu du plein écran attendu par #310. Classes remplacées par `w-screen h-screen` (coins arrondis retirés, plus de sens à 100vw/100vh).

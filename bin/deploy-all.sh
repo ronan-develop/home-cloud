@@ -150,6 +150,7 @@ JWT_PASSPHRASE=${JWT_PASSPHRASE}
 MAILER_DSN=${MAILER_DSN_PRESET:-null://null}
 ENVEOF
             ${COMPOSER_BIN} install --no-interaction --prefer-dist --no-progress --no-dev --no-scripts
+            bash bin/install-ffmpeg.sh || echo '⚠ ffmpeg non installé — vignettes vidéo indisponibles'
             ${PHP_BIN} bin/console cache:clear --env=prod
             ${PHP_BIN} bin/console assets:install public --env=prod
             ${PHP_BIN} bin/console importmap:install --env=prod
@@ -188,6 +189,7 @@ ENVEOF
             mkdir -p var/log
             git pull origin ${GIT_BRANCH}
             ${COMPOSER_BIN} install --no-interaction --prefer-dist --no-progress --no-dev --no-scripts
+            bash bin/install-ffmpeg.sh || echo '⚠ ffmpeg non installé — vignettes vidéo indisponibles'
             ${PHP_BIN} bin/console cache:clear --env=prod
             ${PHP_BIN} bin/console assets:install public --env=prod
             ${PHP_BIN} bin/console importmap:install --env=prod
