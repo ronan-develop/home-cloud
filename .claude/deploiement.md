@@ -23,6 +23,17 @@ curl -s -u "<user_cpanel>:<mdp_cpanel>" \
 
 Authentification recommandée par o2switch : token API cPanel ("Manage API Tokens") — indisponible sur ce compte au 2026-07-20 ("bloqué à des fins de sécurité" selon le support), d'où le repli sur les identifiants cPanel classiques ci-dessus. Max 5 exceptions simultanées sur le compte.
 
+> **Piège identifiants** (vécu le 2026-07-23) — `.secrets` contient plusieurs
+> mots de passe pour des comptes différents (le compte cPanel `ron2cuba` ET le
+> compte mail `ronan@lenouvel.me`, entre autres). Utiliser le mauvais mot de
+> passe renvoie `invalid_login` côté API `SshWhitelist`, mais la réponse est
+> une page HTML de login cPanel (pas un JSON d'erreur explicite) — facile à
+> confondre avec un problème réseau/API si on ne grep pas le corps de la
+> réponse. Vérifier `msg_code:[invalid_login]` dans le HTML avant de suspecter
+> autre chose. **Aussi** : cette API n'est **pas** la méthode retenue pour ce
+> projet — le SSH direct (whitelisting manuel via cPanel si besoin) reste la
+> voie normale ; ne pas y revenir par réflexe sans demander d'abord.
+
 ---
 
 ## Déploiement multi-instances — `bin/deploy-all.sh`
@@ -67,6 +78,19 @@ Chaîne exécutée sur chaque serveur :
 
 `--no-scripts` évite l'exécution des scripts post-install Symfony Flex (`auto-scripts` : `cache:clear`, `assets:install %PUBLIC_DIR%`, `importmap:install`) pendant `composer install` — ajouté suite à des `Killed` (OOM) répétés sur le mutualisé o2switch pendant cette phase (2026-07-22), alors que le `composer install` en lui-même n'était pas en cause (`Nothing to install, update or remove`, dépendances déjà à jour). Les 3 commandes sautées sont rappelées explicitement ensuite, une par une (moins gourmand qu'un `composer install` qui les enchaîne toutes en une seule fois) — ne pas en retirer une sans vérifier qu'elle est bien redondante ailleurs dans le script.
 
+> **OOM résiduel, ponctuel, une seule instance** (vécu le 2026-07-23) — même
+> après le split `--no-scripts`, `doctrine:migrations:migrate` ou
+> `asset-map:compile` peuvent encore se faire tuer (`Killed`, exit 255) sur
+> une instance isolée pendant `deploy-all.sh` sans que ça se reproduise sur
+> les 6 autres — pas un bug de script, la charge mémoire mutualisée
+> o2switch varie d'un run à l'autre. `deploy-all.sh` s'arrête (`✖ <instance>
+> — échec`) mais **les autres instances déjà traitées ne sont pas
+> affectées**. Ne pas relancer `deploy.sh`/`deploy-all.sh` en entier pour
+> réparer une seule instance (risque de retomber sur le piège
+> `PRENOM_PRESET` ci-dessus) : rejouer uniquement la commande tuée en SSH
+> direct (cf. exemple dans la section `bin/deploy.sh`) — un simple retry
+> suffit en général, sans changer aucun code.
+
 ### Premier déploiement de toutes les instances
 
 ```bash
@@ -93,6 +117,29 @@ Pour une instance spécifique (beta, test, ou nouvelle instance en solo) :
 bash bin/deploy.sh           # premier déploiement interactif
 bash bin/deploy.sh --update  # mise à jour d'une seule instance
 ```
+
+> **Piège `PRENOM_PRESET`** (vécu le 2026-07-23) — `.secrets` contient un
+> `PRENOM_PRESET="<prenom>"` qui court-circuite **toute** saisie interactive,
+> y compris passer le prénom via un heredoc/stdin (`bash bin/deploy.sh <<<
+> "corentin"`) : le script lit la variable d'environnement avant de tenter le
+> `read`, donc le stdin fourni est silencieusement ignoré. Résultat vécu :
+> vouloir cibler `corentin` a relancé un déploiement complet sur `ronan` (le
+> prénom figé dans `.secrets`) sans message d'erreur.
+>
+> Pour cibler une autre instance ponctuellement : éditer `PRENOM_PRESET` dans
+> `.secrets` directement (puis le remettre après), ou commenter la ligne pour
+> forcer la saisie interactive. Ne jamais supposer qu'un argument ou un stdin
+> passé en ligne de commande écrasera le preset.
+>
+> Pour rejouer une seule étape en échec sur une instance précise (ex.
+> migration tuée par OOM, cf. ci-dessous) sans relancer tout `deploy.sh` :
+> SSH direct, ciblé sur le dossier de l'instance concernée :
+>
+> ```bash
+> source .secrets
+> ssh -i "$SSH_KEY_PATH" ron2cuba@lenouvel.me \
+>     "cd <prenom>.lenouvel.me && php bin/console doctrine:migrations:migrate --no-interaction --env=prod"
+> ```
 
 ---
 
