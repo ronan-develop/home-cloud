@@ -9,6 +9,7 @@ use App\Interface\MediaRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Uid\Uuid;
@@ -41,9 +42,16 @@ final class MediaRenameController extends AbstractController
             throw $this->createNotFoundException('Média introuvable.');
         }
 
-        $newName = (string) $request->request->get('name', '');
-        $this->fileActionService->rename($media->getFile(), $newName);
+        $file = $media->getFile();
+        if ($file === null) {
+            // Media détaché (#246) : plus de File à renommer. Le bouton est
+            // masqué côté template, mais l'endpoint doit rester sûr.
+            throw new BadRequestHttpException('Impossible de renommer : le fichier source a été supprimé.');
+        }
 
-        return $this->json(['name' => $media->getFile()->getOriginalName()]);
+        $newName = (string) $request->request->get('name', '');
+        $this->fileActionService->rename($file, $newName);
+
+        return $this->json(['name' => $file->getOriginalName()]);
     }
 }

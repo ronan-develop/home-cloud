@@ -18,8 +18,10 @@ use Doctrine\ORM\EntityManagerInterface;
  * La preview de RAW éventuellement mise en cache est évincée au passage : elle
  * pèse ~1 Mo et resterait sinon orpheline sur le disque.
  *
- * Le File et les associations AlbumMedia sont retirés en cascade au niveau
- * DB (onDelete: CASCADE sur Media::$file et AlbumMedia::$media) au flush.
+ * Media::$file est en onDelete: SET NULL (#246, plus de CASCADE) : File et
+ * Media sont donc retirés explicitement ici, tous les deux. Un Media déjà
+ * détaché (file null) est toléré — MediaBulkDeleteController peut alors
+ * supprimer définitivement un média conservé sans File source.
  */
 final class MediaDeletionService implements MediaDeletionServiceInterface
 {
@@ -31,18 +33,21 @@ final class MediaDeletionService implements MediaDeletionServiceInterface
 
     public function delete(Media $media): void
     {
-        $sourcePath = $media->getFile()->getPath();
+        $file = $media->getFile();
 
-        $this->deleteFromDiskGracefully($sourcePath);
+        if ($file !== null) {
+            $this->deleteFromDiskGracefully($file->getPath());
+            $this->rawPreviewCache->evict($file->getPath());
+        }
 
         if ($media->getThumbnailPath() !== null) {
             $this->deleteFromDiskGracefully($media->getThumbnailPath());
         }
 
-        // Sans effet pour un JPEG, qui n'a jamais de preview en cache.
-        $this->rawPreviewCache->evict($sourcePath);
-
         $this->em->remove($media);
+        if ($file !== null) {
+            $this->em->remove($file);
+        }
         $this->em->flush();
     }
 

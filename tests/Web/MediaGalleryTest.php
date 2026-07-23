@@ -462,4 +462,18 @@ final class MediaGalleryTest extends WebTestCase
         $this->assertResponseStatusCodeSame(403);
     }
 
+    public function testMediaFullReturns404ForDetachedMedia(): void
+    {
+        // Media détaché (#246) : plus de File, la vue plein écran doit
+        // renvoyer un 404 propre plutôt qu'une 500.
+        $user = $this->createUser();
+        $media = $this->createMediaFile($user, 'detached.jpg', 'photo');
+        $media->detach();
+        $this->em->flush();
+
+        $this->login();
+        $this->client->request('GET', '/gallery/' . $media->getId()->toRfc4122() . '/full');
+
+        $this->assertResponseStatusCodeSame(404);
+    }
 }

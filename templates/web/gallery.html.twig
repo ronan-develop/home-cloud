@@ -72,10 +72,12 @@
          data-gallery-selection-csrf-token-value="{{ csrf_token('gallery-bulk-delete') }}">
       {% for media in medias %}
         <div data-testid="media-thumbnail" class="hc-media-thumb" data-gallery-selection-target="thumb"
+             {% if media.file is not null %}
              data-controller="rename-media"
              data-rename-media-url-value="{{ path('app_media_rename', {id: media.id}) }}"
              data-rename-media-current-name-value="{{ media.file.originalName }}"
-             data-rename-media-csrf-token-value="{{ csrf_token('media-rename') }}">
+             data-rename-media-csrf-token-value="{{ csrf_token('media-rename') }}"
+             {% endif %}>
           <twig:MediaThumbActions :media="media" />
           {% set mediaAlbumNames = albumNamesByMediaId[media.id ~ ''] ?? [] %}
           {% if mediaAlbumNames is not empty %}
@@ -106,7 +108,7 @@
              class="hc-media-thumb-link">
             {% if media.thumbnailPath %}
               <img src="{{ path('app_media_thumbnail', {id: media.id}) }}"
-                   alt="{{ media.file.originalName }}"
+                   alt="{{ media.file is not null ? media.file.originalName : 'Média' }}"
                    loading="lazy"
                    class="hc-media-thumb-img">
             {% else %}
@@ -120,7 +122,7 @@
             {% endif %}
           </a>
           <div class="hc-media-thumb-caption" data-rename-media-target="caption">
-            {{ media.file.originalName }}
+            {{ media.file is not null ? media.file.originalName : 'Média (fichier source supprimé)' }}
           </div>
         </div>
       {% endfor %}

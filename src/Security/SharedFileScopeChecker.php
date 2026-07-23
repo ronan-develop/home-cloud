@@ -55,7 +55,9 @@ final readonly class SharedFileScopeChecker
         }
 
         foreach ($linkResource->getMedias() as $media) {
-            if ($media->getFile()->getId()->equals($file->getId())) {
+            // Un Media détaché (#246) n'a plus de File : il ne peut pas être
+            // la cible d'un accès par File, on l'ignore simplement.
+            if ($media->getFile()?->getId()->equals($file->getId()) === true) {
                 return true;
             }
         }

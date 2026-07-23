@@ -116,4 +116,35 @@ final class MediaThumbnailOwnershipTest extends AuthenticatedApiTestCase
 
         $this->assertSame(403, $browser->getResponse()->getStatusCode());
     }
+
+    public function testOwnerCanViewThumbnailOfDetachedMedia(): void
+    {
+        // Media détaché (#246) : plus de File, mais le thumbnail doit rester
+        // consultable par son owner — c'est tout l'objet du détachement.
+        $media = $this->makeStoredMedia('owner6@example.com');
+        $media->detach();
+        $this->em->flush();
+        $mediaId = (string) $media->getId();
+        $this->em->clear();
+
+        $browser = $this->createAuthenticatedKernelBrowser('owner6@example.com');
+        $browser->request('GET', '/api/v1/medias/' . $mediaId . '/thumbnail');
+
+        $this->assertSame(200, $browser->getResponse()->getStatusCode());
+    }
+
+    public function testOtherUserCannotViewThumbnailOfDetachedMedia(): void
+    {
+        $media = $this->makeStoredMedia('owner7@example.com');
+        $media->detach();
+        $this->em->flush();
+        $mediaId = (string) $media->getId();
+        $this->createUser('attacker7@example.com', 'password123', 'Attacker');
+        $this->em->clear();
+
+        $browser = $this->createAuthenticatedKernelBrowser('attacker7@example.com');
+        $browser->request('GET', '/api/v1/medias/' . $mediaId . '/thumbnail');
+
+        $this->assertSame(403, $browser->getResponse()->getStatusCode());
+    }
 }

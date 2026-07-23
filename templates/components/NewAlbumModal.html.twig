@@ -50,7 +50,7 @@
                      class="hc-new-album-media-checkbox">
               {% if media.thumbnailPath %}
                 <img src="{{ path('app_media_thumbnail', {id: media.id}) }}"
-                     alt="{{ media.file.originalName }}" loading="lazy"
+                     alt="{{ media.file is not null ? media.file.originalName : 'Média' }}" loading="lazy"
                      class="w-full h-full object-cover">
               {% else %}
                 <div class="hc-new-album-media-fallback w-full h-full flex items-center justify-center">

@@ -132,6 +132,11 @@ final class MediaGalleryController extends AbstractController
         }
 
         $file = $media->getFile();
+        if ($file === null) {
+            // Media détaché (#246) : le fichier source a été supprimé
+            // volontairement, seule la vignette reste disponible.
+            throw $this->createNotFoundException("Fichier d'origine supprimé, seule la vignette reste disponible.");
+        }
         $absolutePath = $this->storageService->getAbsolutePath($file->getPath());
 
         if (!file_exists($absolutePath)) {

@@ -53,7 +53,7 @@ final class MediaRenameTest extends WebTestCase
     {
         $crawler = $this->client->request('GET', '/gallery');
 
-        return $crawler->filter('[data-testid="media-thumbnail"]')->first()->attr('data-rename-media-csrf-token-value');
+        return $crawler->filter('[data-rename-media-csrf-token-value]')->first()->attr('data-rename-media-csrf-token-value');
     }
 
     public function testRenameMediaReturnsJsonWithNewName(): void
@@ -164,5 +164,30 @@ final class MediaRenameTest extends WebTestCase
         );
 
         $this->assertResponseStatusCodeSame(403);
+    }
+
+    public function testRenameDetachedMediaReturns400(): void
+    {
+        // Media détaché (#246) : plus de File à renommer. Le bouton est
+        // masqué côté template, mais l'endpoint doit rester sûr (défense en
+        // profondeur). Le token CSRF est lu via un autre média (l'intention
+        // 'media-rename' ne dépend pas de la ressource ciblée), le média
+        // détaché n'ayant plus l'attribut data-rename-media-csrf-token-value.
+        $user  = $this->createUser();
+        $this->createMediaFile($user, 'autre.jpg', 'photo');
+        $media = $this->createMediaFile($user, 'photo.jpg', 'photo');
+        $media->detach();
+        $this->em->flush();
+        $this->login();
+
+        $this->client->request(
+            'POST',
+            '/gallery/' . $media->getId()->toRfc4122() . '/rename',
+            ['name' => 'nouveau-nom.jpg', '_token' => $this->csrfToken()],
+            [],
+            ['HTTP_ACCEPT' => 'application/json'],
+        );
+
+        $this->assertResponseStatusCodeSame(400);
     }
 }

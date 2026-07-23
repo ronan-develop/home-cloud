@@ -55,7 +55,8 @@ final class MediaOutput
     public function __construct(
         public readonly string $id,
         public readonly string $mediaType,
-        public readonly string $fileId,
+        /** null si le Media est détaché de son File source (#246) */
+        public readonly ?string $fileId,
         public readonly ?int $width,
         public readonly ?int $height,
         public readonly ?string $takenAt,

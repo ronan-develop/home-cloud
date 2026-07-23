@@ -56,7 +56,14 @@ final class MediaThumbnailController extends AbstractController
 
         /** @var User $user */
         $user = $this->getUser();
-        if (!$this->resourceAccessChecker->canRead($user, Share::RESOURCE_FILE, $media->getFile()->getId(), $media->getFile()->getOwner())) {
+        // Un Media détaché (#246) n'a plus de File : sa vignette doit rester
+        // consultable par son owner (c'est tout l'objet du détachement), mais
+        // le partage par fichier n'a alors plus de sens.
+        $file = $media->getFile();
+        $canRead = $file !== null
+            ? $this->resourceAccessChecker->canRead($user, Share::RESOURCE_FILE, $file->getId(), $file->getOwner())
+            : $media->isOwnedBy($user);
+        if (!$canRead) {
             throw $this->createAccessDeniedException('Vous ne pouvez pas voir ce média.');
         }
 

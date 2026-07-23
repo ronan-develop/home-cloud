@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller\Web;
 
 use App\Entity\User;
+use App\Interface\AlbumRepositoryInterface;
 use App\Repository\FileRepository;
 use App\Repository\FolderRepository;
 use App\Repository\MediaRepository;
@@ -26,6 +27,7 @@ final class ExplorerController extends AbstractController
         private readonly FolderRepository $folderRepository,
         private readonly FileRepository $fileRepository,
         private readonly MediaRepository $mediaRepository,
+        private readonly AlbumRepositoryInterface $albumRepository,
     ) {}
 
     #[Route('/explorer', name: 'app_explorer')]
@@ -60,8 +62,20 @@ final class ExplorerController extends AbstractController
         // aucun chemin vers la vignette. Une relation inverse lazy provoquerait un
         // N+1 sur chaque carte de la grille.
         $mediasByFileId = [];
-        foreach ($this->mediaRepository->findBy(['file' => $files]) as $media) {
+        $mediasInFolder = $this->mediaRepository->findBy(['file' => $files]);
+        foreach ($mediasInFolder as $media) {
             $mediasByFileId[$media->getFile()->getId()->toRfc4122()] = $media;
+        }
+
+        // Fichiers dont le Media est dans au moins un album (#246) : détermine
+        // si la modale de suppression propose l'option "conserver dans mes albums".
+        $mediaIds = array_map(static fn ($media) => $media->getId(), $mediasInFolder);
+        $albumNamesByMediaId = $this->albumRepository->findAlbumNamesByMediaIds($mediaIds);
+        $filesInAlbum = [];
+        foreach ($mediasByFileId as $fileId => $media) {
+            if (isset($albumNamesByMediaId[$media->getId()->toRfc4122()])) {
+                $filesInAlbum[] = $fileId;
+            }
         }
 
         // Construit le chemin complet (ancêtres) pour la breadcrumb
@@ -88,6 +102,7 @@ final class ExplorerController extends AbstractController
             'folders'            => $folders,
             'files'              => $files,
             'mediasByFileId'     => $mediasByFileId,
+            'filesInAlbum'       => $filesInAlbum,
             'folderCount'        => count($folders),
             'fileCount'          => count($files),
             'sidebarTree'        => $this->folderRepository->findAllAsTree($user, $currentFolder),

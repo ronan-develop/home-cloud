@@ -51,7 +51,14 @@ final class MediaProvider implements ProviderInterface
             $media = $this->repository->find(Uuid::fromString($uriVariables['id']))
                 ?? throw new NotFoundHttpException('Media not found');
 
-            if (!$this->resourceAccessChecker->canRead($currentUser, Share::RESOURCE_FILE, $media->getFile()->getId(), $media->getFile()->getOwner())) {
+            // Un Media détaché (#246) n'a plus de File : le partage par fichier
+            // (ResourceAccessChecker) n'a alors plus de sens, seul l'owner du
+            // Media garde l'accès.
+            $file = $media->getFile();
+            $canRead = $file !== null
+                ? $this->resourceAccessChecker->canRead($currentUser, Share::RESOURCE_FILE, $file->getId(), $file->getOwner())
+                : $media->isOwnedBy($currentUser);
+            if (!$canRead) {
                 throw new AccessDeniedHttpException();
             }
 
@@ -80,7 +87,7 @@ final class MediaProvider implements ProviderInterface
         return new MediaOutput(
             id: (string) $media->getId(),
             mediaType: $media->getMediaType(),
-            fileId: (string) $media->getFile()->getId(),
+            fileId: $media->getFile() !== null ? (string) $media->getFile()->getId() : null,
             width: $media->getWidth(),
             height: $media->getHeight(),
             takenAt: $media->getTakenAt()?->format(\DateTimeInterface::ATOM),
