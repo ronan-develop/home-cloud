@@ -6,6 +6,15 @@
 
 ---
 
+## ✅ Diffusion d'un message admin multi-instances (2026-07-23, #283, branche `feature/283-broadcast-message`)
+
+- Ronan peut diffuser un message (maintenance, indisponibilité, mise à jour majeure) par email à tous les utilisateurs (propriétaires + invités) de toutes les instances déployées, ou une seule instance ciblée, en une seule action depuis `/admin/broadcast`.
+- Architecture : chaque instance a sa propre DB isolée (pas de requête SQL centrale possible). L'instance `ronan.lenouvel.me` orchestre via un appel HTTP interne (`BroadcastOrchestrator` → `POST /internal/broadcast`) sur chaque autre instance, qui envoie ensuite ses propres emails localement (`BroadcastMailer::sendToAllUsers`). Secret partagé identique sur les 7 instances (`BROADCAST_SHARED_TOKEN`), authentification par `BroadcastTokenAuthenticator` sur un firewall dédié `broadcast_internal`, hors du firewall JWT `api` (structurellement incompatible avec un appel service-to-service).
+- Pas de nouveau `ROLE_ADMIN` Symfony (aucun rôle différencié n'existe dans ce projet) : garde applicative `BroadcastAdminChecker` (whitelist par email `BROADCAST_ADMIN_EMAIL`), couvrant le cas où un guest serait un jour ajouté sur l'instance admin elle-même.
+- Dry-run à tous les niveaux (service, orchestrateur, endpoint, command, formulaire admin) sans duplication de la logique d'envoi — en dry-run, l'orchestrateur ne fait aucun appel HTTP sortant.
+- Canal email uniquement pour cette version — notification in-app laissée en ticket de suivi (#361).
+- Tests : `BroadcastTargetProviderTest`, `BroadcastMailerTest` (dont guest inclus, email invalide skippé), `BroadcastOrchestratorTest` (ciblage, dry-run, échec partiel n'interrompt pas les autres), `BroadcastInternalControllerTest` (401 sans/mauvais token), `BroadcastSendCommandTest`, `BroadcastAdminCheckerTest`, `BroadcastAdminWebControllerTest` (403 non-admin).
+
 ## ✅ Stockage utilisé sur le dashboard (2026-07-23, #301, branche `feature/301-storage-used-dashboard`)
 
 - `HomeController::index()` affichait un placeholder statique (`'Calcul à implémenter'`) à la place du poids réel de stockage.
