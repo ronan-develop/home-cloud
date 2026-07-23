@@ -63,9 +63,9 @@ class HCFolderList extends HTMLElement {
                     gap: 0.5rem;
                     padding: 0.6rem 0.75rem;
                     border-radius: 0.75rem;
-                    background: rgba(255,255,255,0.06);
-                    border: 1px solid rgba(255,255,255,0.1);
-                    color: rgba(255,255,255,0.8);
+                    background: var(--hc-surface-2);
+                    border: 1px solid var(--hc-border);
+                    color: var(--hc-text-2);
                     font-size: 0.85rem;
                     cursor: pointer;
                     width: 100%;
@@ -74,13 +74,13 @@ class HCFolderList extends HTMLElement {
                 }
 
                 .folder-option:hover {
-                    background: rgba(255,255,255,0.1);
+                    background: var(--hc-input);
                 }
 
                 .folder-option.active {
-                    background: rgba(59,130,246,0.25);
-                    border-color: rgba(59,130,246,0.4);
-                    color: #fff;
+                    background: var(--hc-accent-soft);
+                    border-color: var(--hc-accent);
+                    color: var(--hc-text);
                 }
 
                 .folder-icon {
@@ -91,9 +91,9 @@ class HCFolderList extends HTMLElement {
                     width: 100%;
                     padding: 0.6rem 0.75rem;
                     border-radius: 0.75rem;
-                    background: rgba(255,255,255,0.05);
-                    border: 1px solid rgba(255,255,255,0.1);
-                    color: rgba(255,255,255,0.8);
+                    background: var(--hc-input);
+                    border: 1px solid var(--hc-border);
+                    color: var(--hc-text);
                     font-size: 0.85rem;
                     outline: none;
                     box-sizing: border-box;
@@ -101,17 +101,17 @@ class HCFolderList extends HTMLElement {
                 }
 
                 .new-folder-input:focus {
-                    border-color: rgba(59,130,246,0.5);
-                    background: rgba(255,255,255,0.08);
+                    border-color: var(--hc-accent);
+                    background: var(--hc-surface-2);
                 }
 
                 .new-folder-input::placeholder {
-                    color: rgba(255,255,255,0.3);
+                    color: var(--hc-text-3);
                 }
 
                 .folder-list-empty {
                     padding: 0.75rem;
-                    color: rgba(255,255,255,0.4);
+                    color: var(--hc-text-3);
                     font-size: 0.85rem;
                     font-style: italic;
                     text-align: center;
