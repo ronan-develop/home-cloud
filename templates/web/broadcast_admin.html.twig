@@ -1,0 +1,37 @@
+{% extends 'web/layout.html.twig' %}
+
+{% block title %}Diffusion admin — HomeCloud{% endblock %}
+
+{% block content %}
+
+<div class="flex flex-col gap-7 max-w-[700px] mx-auto h-full">
+
+  <div>
+    <h1 class="text-2xl font-black tracking-tight mb-1">Diffuser un message</h1>
+    <p class="hc-page-sub">Envoie un email à tous les utilisateurs (propriétaires et invités) de toutes les instances, ou d'une instance ciblée.</p>
+  </div>
+
+  {% if results is not null %}
+    <div class="hc-item-card">
+      <p class="font-bold mb-2">Résultat</p>
+      <ul>
+        {% for instance, success in results %}
+          <li>{{ instance }} : {{ success ? 'OK' : 'échec' }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  {{ form_start(form) }}
+    <div class="flex flex-col gap-4">
+      {{ form_row(form.subject) }}
+      {{ form_row(form.body) }}
+      {{ form_row(form.targetInstance) }}
+      {{ form_row(form.dryRun) }}
+      <button type="submit" class="hc-guest-create-submit self-start">Envoyer</button>
+    </div>
+  {{ form_end(form) }}
+
+</div>
+
+{% endblock %}
