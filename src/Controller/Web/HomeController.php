@@ -8,6 +8,7 @@ use App\Entity\User;
 use App\Repository\FileRepository;
 use App\Repository\FolderRepository;
 use App\Repository\ShareRepository;
+use App\Service\FileSizeFormatter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -24,6 +25,7 @@ final class HomeController extends AbstractController
         private readonly FolderRepository $folderRepository,
         private readonly FileRepository $fileRepository,
         private readonly ShareRepository $shareRepository,
+        private readonly FileSizeFormatter $fileSizeFormatter,
     ) {}
 
     #[Route('/', name: 'app_home')]
@@ -68,7 +70,7 @@ final class HomeController extends AbstractController
             'totalCount' => $folderCount + $fileCount,
             'activeSharesCount' => $activeSharesCount,
             'recentItems' => $recentItems,
-            'storageUsedLabel' => 'Calcul à implémenter',
+            'storageUsedLabel' => $this->fileSizeFormatter->format($this->fileRepository->sumSizeByOwner($user)),
         ]);
     }
 }
