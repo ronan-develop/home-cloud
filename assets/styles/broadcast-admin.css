@@ -1,0 +1,110 @@
+/*
+ * assets/styles/broadcast-admin.css
+ * Styles pour la page admin de diffusion (templates/web/broadcast_admin.html.twig)
+ */
+
+.hc-broadcast-field {
+  margin-bottom: 1.1rem;
+}
+
+.hc-broadcast-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--hc-text-2);
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.hc-broadcast-input,
+.hc-broadcast-textarea,
+.hc-broadcast-select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid var(--hc-border);
+  border-radius: 0.6rem;
+  font-size: 0.875rem;
+  color: var(--hc-text);
+  background: var(--hc-surface);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.hc-broadcast-input:focus,
+.hc-broadcast-textarea:focus,
+.hc-broadcast-select:focus {
+  border-color: var(--hc-accent);
+}
+
+.hc-broadcast-textarea {
+  min-height: 140px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.hc-broadcast-select {
+  cursor: pointer;
+}
+
+.hc-broadcast-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.hc-broadcast-checkbox-row .hc-broadcast-label {
+  margin-bottom: 0;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.875rem;
+}
+
+.hc-broadcast-submit {
+  padding: 0.6rem 1.5rem;
+  background: var(--hc-accent);
+  color: #fff;
+  border: none;
+  border-radius: 0.6rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  align-self: flex-start;
+}
+
+.hc-broadcast-submit:hover {
+  background: var(--hc-accent-2);
+}
+
+.hc-broadcast-error {
+  color: var(--hc-err);
+  font-size: 0.8rem;
+  margin-top: 0.35rem;
+}
+
+.hc-broadcast-results {
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--hc-border);
+  border-radius: 0.75rem;
+  background: var(--hc-surface);
+}
+
+.hc-broadcast-results-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--hc-text);
+}
+
+.hc-broadcast-results ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--hc-text-2);
+}
