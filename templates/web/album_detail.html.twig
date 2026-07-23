@@ -90,10 +90,12 @@
              data-album-reorder-target="item"
              data-media-id="{{ media.id }}"
              data-action="dragstart->album-reorder#dragStart dragover->album-reorder#dragOver drop->album-reorder#drop dragend->album-reorder#dragEnd"
+             {% if media.file is not null %}
              data-controller="rename-media"
              data-rename-media-url-value="{{ path('app_media_rename', {id: media.id}) }}"
              data-rename-media-current-name-value="{{ media.file.originalName }}"
-             data-rename-media-csrf-token-value="{{ csrf_token('media-rename') }}">
+             data-rename-media-csrf-token-value="{{ csrf_token('media-rename') }}"
+             {% endif %}>
           <twig:MediaThumbActions
             :media="media"
             removeUrl="{{ path('app_album_remove_media', {id: album.id, mediaId: media.id}) }}"
@@ -113,7 +115,7 @@
              class="hc-media-thumb-link">
             {% if media.thumbnailPath %}
               <img src="{{ path('app_media_thumbnail', {id: media.id}) }}"
-                   alt="{{ media.file.originalName }}"
+                   alt="{{ media.file is not null ? media.file.originalName : 'Média' }}"
                    loading="lazy"
                    class="hc-media-thumb-img">
             {% else %}
@@ -127,7 +129,7 @@
             {% endif %}
           </a>
           <div class="hc-media-thumb-caption" data-rename-media-target="caption">
-            {{ media.file.originalName }}
+            {{ media.file is not null ? media.file.originalName : 'Média (fichier source supprimé)' }}
           </div>
         </div>
       {% endfor %}

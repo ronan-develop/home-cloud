@@ -242,4 +242,40 @@ final class MediaTest extends AuthenticatedApiTestCase
         $this->assertResponseStatusCodeSame(204);
         $this->assertFileDoesNotExist($thumbFile);
     }
+
+    // --- Média détaché (#246) : non-régression API sur Media::$file nullable ---
+
+    public function testGetDetachedMediaReturnsNullFileId(): void
+    {
+        $owner = $this->createUser('test@homecloud.local', 'password123', 'Test');
+        $media = $this->createMedia(owner: $owner);
+        $media->detach();
+        $this->em->flush();
+
+        $client = $this->createAuthenticatedClient();
+        \App\Tests\Api\ApiTestHelper::withFakeJwt($client);
+        $response = $client->request('GET', '/api/v1/medias/' . $media->getId());
+
+        $this->assertResponseStatusCodeSame(200);
+        $this->assertNull($response->toArray()['fileId']);
+    }
+
+    public function testGetMediaCollectionIncludesDetachedMedia(): void
+    {
+        $owner = $this->createUser('test@homecloud.local', 'password123', 'Test');
+        $media = $this->createMedia(owner: $owner);
+        $media->detach();
+        $this->em->flush();
+
+        $client = $this->createAuthenticatedClient();
+        \App\Tests\Api\ApiTestHelper::withFakeJwt($client);
+        $response = $client->request('GET', '/api/v1/medias', [
+            'headers' => ['Accept' => 'application/json'],
+        ]);
+
+        $this->assertResponseStatusCodeSame(200);
+        $data = $response->toArray();
+        $this->assertCount(1, $data);
+        $this->assertNull($data[0]['fileId']);
+    }
 }

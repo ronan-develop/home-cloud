@@ -12,11 +12,13 @@
    par le template appelant, ce composant ne fournit que le bouton
    déclencheur. #}
 <div class="hc-media-thumb-actions">
+  {% if media.file is not null %}
   <button type="button" data-action="click->rename-media#prompt"
           class="hc-media-thumb-action hc-media-thumb-action--rename"
           title="Renommer" aria-label="Renommer">
     <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
   </button>
+  {% endif %}
 
   {% if setCoverUrl is defined and setCoverUrl and not isCover %}
     <form method="post" action="{{ setCoverUrl }}" class="hc-media-thumb-action-form-cover">
@@ -33,7 +35,7 @@
   {% if removeUrl is defined and removeUrl %}
     <form method="post" action="{{ removeUrl }}"
           class="hc-media-thumb-action-form" data-controller="confirm-submit"
-          data-confirm-submit-message-value="Retirer « {{ media.file.originalName }} » de l'album ?">
+          data-confirm-submit-message-value="Retirer « {{ media.file is not null ? media.file.originalName : 'ce média' }} » de l'album ?">
       <input type="hidden" name="_token" value="{{ csrf_token('album-remove-media') }}">
       <button type="submit" class="hc-media-thumb-action hc-media-thumb-action--remove"
               data-testid="remove-media-from-album" title="Retirer de l'album" aria-label="Retirer de l'album"

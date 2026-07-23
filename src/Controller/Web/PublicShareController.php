@@ -166,7 +166,10 @@ final class PublicShareController extends AbstractController
         $media = $this->mediaRepository->findById(Uuid::fromString($mediaId))
             ?? throw new NotFoundHttpException();
 
-        if (!$this->sharedFileScopeChecker->isInScope($media->getFile(), $link->getResourceType(), $link->getResourceId(), $linkResource)) {
+        // Un Media détaché (#246) n'a plus de File : il ne peut plus être
+        // dans le périmètre d'un partage par fichier/dossier/album.
+        $file = $media->getFile();
+        if ($file === null || !$this->sharedFileScopeChecker->isInScope($file, $link->getResourceType(), $link->getResourceId(), $linkResource)) {
             throw new AccessDeniedHttpException('Ce média ne fait pas partie du partage.');
         }
 
