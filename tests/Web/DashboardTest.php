@@ -81,17 +81,36 @@ final class DashboardTest extends WebTestCase
         $this->assertStringContainsString('hc-stat-card', $this->client->getResponse()->getContent());
     }
 
-    // --- Storage Card (Placeholder) ---
+    // --- Storage Card ---
 
-    public function testDashboardStorageCardShowsPlaceholder(): void
+    public function testDashboardStorageCardShowsZeroWhenNoFiles(): void
     {
         $this->createUser();
         $this->login();
 
         $this->client->request('GET', '/');
         $content = $this->client->getResponse()->getContent();
-        $this->assertStringContainsString('Calcul à implémenter', $content);
+        $this->assertStringContainsString('0 o', $content);
         $this->assertStringContainsString('hc-stat-value--placeholder', $content);
+    }
+
+    public function testDashboardStorageCardShowsFormattedTotalSize(): void
+    {
+        $this->createUser();
+        $this->login();
+        $user = $this->em->getRepository(User::class)->findOneBy(['email' => 'dashboard@example.com']);
+
+        $folder = new Folder('Uploads', $user);
+        $this->em->persist($folder);
+        $this->em->flush();
+
+        $file = new File('a.txt', 'text/plain', 1536, 'irrelevant/path', $folder, $user);
+        $this->em->persist($file);
+        $this->em->flush();
+
+        $this->client->request('GET', '/');
+        $content = $this->client->getResponse()->getContent();
+        $this->assertStringContainsString('1,5 Ko', $content);
     }
 
     // --- File & Folder Counts ---
