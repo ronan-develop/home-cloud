@@ -144,6 +144,9 @@ for PRENOM in "${TARGETS[@]}"; do
         if [[ -z "${MAILER_DSN_PRESET:-}" ]]; then
             warn "MAILER_DSN_PRESET absent (.secrets ou .secrets.${PRENOM}) — l'instance n'enverra aucun email"
         fi
+        if [[ -z "${BROADCAST_SHARED_TOKEN_PRESET:-}" ]]; then
+            warn "BROADCAST_SHARED_TOKEN_PRESET absent (.secrets) — le broadcast admin (#283) sera désactivé sur cette instance"
+        fi
 
         DB_NAME="${SSH_USER}_${PRENOM}"
         DB_USER="${SSH_USER}_${PRENOM}"
@@ -160,7 +163,10 @@ DATABASE_URL=${DATABASE_URL}
 JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
 JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
 JWT_PASSPHRASE=${JWT_PASSPHRASE}
-MAILER_DSN=${MAILER_DSN_PRESET:-null://null}"
+MAILER_DSN=${MAILER_DSN_PRESET:-null://null}
+BROADCAST_SHARED_TOKEN=${BROADCAST_SHARED_TOKEN_PRESET:-}
+BROADCAST_INSTANCE_NAME=${PRENOM}
+BROADCAST_ADMIN_EMAIL=${BROADCAST_ADMIN_EMAIL_PRESET:-}"
 
         if ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" "set -e; mkdir -p ${DEPLOY_PATH}; cd ${DEPLOY_PATH}; git clone ${GIT_REPO} . && mkdir -p var/log && cat > .env.local <<'ENVEOF'
 ${ENV_LOCAL_CONTENT}

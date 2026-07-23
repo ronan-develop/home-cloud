@@ -8,7 +8,7 @@ Cible : hébergement mutualisé **o2switch**, un sous-domaine par instance (`<pr
 
 SSH depuis la machine locale via les scripts `bin/`.
 
-> Le déploiement automatique GitHub Actions (webhook) ne fonctionne **pas** sur o2switch — les IPs des runners GitHub Actions sont bloquées par le firewall SSH. Les scripts SSH sont la seule méthode fiable aujourd'hui (#288, en pause). Le webhook `public/deploy.php` existe dans le repo mais est cassé et inutilisé.
+> Le déploiement automatique GitHub Actions (webhook) ne fonctionne **pas** sur o2switch — les IPs des runners GitHub Actions sont bloquées par le firewall SSH. Les scripts SSH sont la seule méthode fiable aujourd'hui (#288, en pause). Le webhook `public/deploy.php` existe dans le repo et est actif (vérifié HMAC-SHA256, secret `DEPLOY_WEBHOOK_SECRET`), déclenché par GitHub Actions après CI success — mais reste sans effet pratique tant que le blocage IP côté o2switch n'est pas levé.
 
 ### Piège IP dynamique / VPN d'entreprise
 
@@ -353,6 +353,27 @@ MAILER_DSN=smtp://<user>:<password>@lenouvel.me:465
 > les instances — même boîte SMTP `lenouvel.me` pour tout le monde). Sans cette clé,
 > l'instance est créée avec `MAILER_DSN=null://null` : aucun email d'invitation ni de
 > réinitialisation de mot de passe ne part (cf. `GuestAccountCreator`).
+
+### `BROADCAST_SHARED_TOKEN` — diffusion admin multi-instances (#283)
+
+Secret partagé, **identique sur les 7 instances**, qui authentifie les appels
+service-to-service entre `ronan.lenouvel.me` (qui orchestre) et chaque autre
+instance (endpoint interne `POST /internal/broadcast`, hors JWT utilisateur).
+
+```bash
+BROADCAST_SHARED_TOKEN=<généré une fois avec : openssl rand -hex 32>
+BROADCAST_INSTANCE_NAME=<prenom>   # ronan, yannick, coralie...
+BROADCAST_ADMIN_EMAIL=<email du compte admin, pertinent uniquement sur ronan.lenouvel.me>
+```
+
+Généré automatiquement par `bin/deploy-all.sh --init` depuis
+`BROADCAST_SHARED_TOKEN_PRESET` (et `BROADCAST_ADMIN_EMAIL_PRESET`) dans
+`.secrets` (variables globales, comme `MAILER_DSN_PRESET`). Pour les
+instances **déjà déployées avant cette feature**, ajouter manuellement les
+3 lignes ci-dessus dans le `.env.local` de chacune (SSH), avec la **même**
+valeur de `BROADCAST_SHARED_TOKEN` partout — un token qui diverge sur une
+seule instance la rend injoignable depuis `ronan.lenouvel.me` (401 silencieux
+côté orchestrateur, loggé en warning, sans bloquer les autres instances).
 
 ### `MAILER_DSN` — obligatoire pour les emails (dont la notif de fin de lot)
 
