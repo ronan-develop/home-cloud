@@ -73,23 +73,37 @@ Après chaque merge sur `main` :
 bash bin/deploy-all.sh
 ```
 
-Chaîne exécutée sur chaque serveur :
-`git pull` → `composer install --no-dev --no-scripts` → `cache:clear` → `assets:install` → `importmap:install` → `migrations` → `asset-map:compile`
+Chaîne exécutée sur chaque serveur, **une connexion SSH par étape** (depuis le
+2026-07-23, cf. ci-dessous) :
+`git pull` → `composer install --no-dev --no-scripts` → `install-ffmpeg` → `cache:clear` → `assets:install` → `importmap:install` → `migrations` → `asset-map:compile` → `deploy-info`
 
-`--no-scripts` évite l'exécution des scripts post-install Symfony Flex (`auto-scripts` : `cache:clear`, `assets:install %PUBLIC_DIR%`, `importmap:install`) pendant `composer install` — ajouté suite à des `Killed` (OOM) répétés sur le mutualisé o2switch pendant cette phase (2026-07-22), alors que le `composer install` en lui-même n'était pas en cause (`Nothing to install, update or remove`, dépendances déjà à jour). Les 3 commandes sautées sont rappelées explicitement ensuite, une par une (moins gourmand qu'un `composer install` qui les enchaîne toutes en une seule fois) — ne pas en retirer une sans vérifier qu'elle est bien redondante ailleurs dans le script.
+`--no-scripts` évite l'exécution des scripts post-install Symfony Flex (`auto-scripts` : `cache:clear`, `assets:install %PUBLIC_DIR%`, `importmap:install`) pendant `composer install` — ajouté suite à des `Killed` (OOM) répétés sur le mutualisé o2switch pendant cette phase (2026-07-22), alors que le `composer install` en lui-même n'était pas en cause (`Nothing to install, update or remove`, dépendances déjà à jour). Les 3 commandes sautées sont rappelées explicitement ensuite, une par une — ne pas en retirer une sans vérifier qu'elle est bien redondante ailleurs dans le script.
 
-> **OOM résiduel, ponctuel, une seule instance** (vécu le 2026-07-23) — même
-> après le split `--no-scripts`, `doctrine:migrations:migrate` ou
-> `asset-map:compile` peuvent encore se faire tuer (`Killed`, exit 255) sur
-> une instance isolée pendant `deploy-all.sh` sans que ça se reproduise sur
-> les 6 autres — pas un bug de script, la charge mémoire mutualisée
-> o2switch varie d'un run à l'autre. `deploy-all.sh` s'arrête (`✖ <instance>
-> — échec`) mais **les autres instances déjà traitées ne sont pas
-> affectées**. Ne pas relancer `deploy.sh`/`deploy-all.sh` en entier pour
-> réparer une seule instance (risque de retomber sur le piège
-> `PRENOM_PRESET` ci-dessus) : rejouer uniquement la commande tuée en SSH
-> direct (cf. exemple dans la section `bin/deploy.sh`) — un simple retry
-> suffit en général, sans changer aucun code.
+> **Cause racine identifiée et corrigée (2026-07-23)** — les `Killed` (OOM)
+> observés à plusieurs reprises sur des instances isolées (une seule sur les
+> 7, jamais la même, commande tuée différente à chaque fois : migrations,
+> `cache:clear`…) ne viennent **pas** d'un manque de RAM sur la machine (`free
+> -h` montre 15 Gio libres sur 125 Gio total) mais d'un **quota mémoire par
+> compte cPanel** — le compte tourne dans un LVE CloudLinux
+> (`/proc/self/cgroup` → `lve508`), un cgroup isolé de la RAM système totale.
+> `deploy-all.sh` enchaînait toutes les commandes `bin/console` dans **un seul
+> process SSH** ; l'empreinte mémoire (opcache, buffers) s'accumulait d'une
+> commande à l'autre dans ce process jusqu'à dépasser le quota du LVE sur une
+> étape qui, seule, tient largement dans ce même quota.
+>
+> **Correctif** : chaque étape (`composer install`, `cache:clear`,
+> `assets:install`, `importmap:install`, `migrations`, `asset-map:compile`…)
+> ouvre maintenant sa **propre connexion SSH** (fonction `run_step` dans
+> `bin/deploy-all.sh`) — chaque étape démarre donc dans un process shell
+> neuf côté serveur, sans hériter de l'empreinte mémoire des étapes
+> précédentes. Validé le 2026-07-23 : 7/7 instances déployées sans échec,
+> y compris les deux qui avaient été tuées par OOM lors des deux
+> déploiements précédents avec l'ancienne version (une seule connexion SSH).
+>
+> Si un `✖ <instance> — échec à l'étape « <nom> »` apparaît malgré tout,
+> rejouer uniquement cette étape en SSH direct (cf. exemple dans la section
+> `bin/deploy.sh`) plutôt que de relancer tout `deploy-all.sh`/`deploy.sh`
+> (risque de retomber sur le piège `PRENOM_PRESET` ci-dessus).
 
 ### Premier déploiement de toutes les instances
 
