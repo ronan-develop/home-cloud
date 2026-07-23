@@ -6,6 +6,14 @@
 
 ---
 
+## ✅ Stockage utilisé sur le dashboard (2026-07-23, #301, branche `feature/301-storage-used-dashboard`)
+
+- `HomeController::index()` affichait un placeholder statique (`'Calcul à implémenter'`) à la place du poids réel de stockage.
+- `FileRepository::sumSizeByOwner(User $owner): int` : agrégation SQL `SUM(f.size)` filtrée par owner, retourne `0` (pas `null`) si aucun fichier — pas de scan disque, `File::$size` est déjà connu à l'upload.
+- `FileSizeFormatter` (nouveau service, `src/Service/`) : formatte un nombre d'octets en Ko/Mo/Go/To lisible (virgule française, `1,5 Ko`), testé unitairement en isolation (`TestCase`, pas de kernel).
+- Décision : les fichiers neutralisés (#278) comptent dans le total — ils occupent toujours l'espace disque réel, seule leur interprétation MIME est neutralisée. `Media` (vignettes/previews) n'a pas de champ `size` en base, donc hors périmètre naturellement.
+- Tests : `FileRepositoryTest` (0 fichier, somme multi-fichiers, isolation entre owners), `FileSizeFormatterTest` (paliers o/Ko/Mo/Go/To), `DashboardTest` mis à jour (l'ancien test vérifiait littéralement le placeholder — remplacé par une vérification du calcul réel bout-en-bout).
+
 ## ✅ Espace « Mes partages » pour l'invité (2026-07-23, #273, branche `feature/273-mes-partages`)
 
 - Nouvelle page `/mes-partages` listant les `Share` actifs (non révoqués, non expirés) dont l'utilisateur connecté est le `guest` — seule porte d'entrée jusqu'ici était le lien contenu dans l'email de notification.
