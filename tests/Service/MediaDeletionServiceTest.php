@@ -39,10 +39,55 @@ final class MediaDeletionServiceTest extends TestCase
         $storage->expects($this->once())->method('delete')->with('2026/02/photo.jpg');
 
         $em = $this->createMock(EntityManagerInterface::class);
-        $em->expects($this->once())->method('remove')->with($media);
+        $em->method('remove');
         $em->expects($this->once())->method('flush');
 
         $service = new MediaDeletionService($storage, $em, $this->createMock(RawPreviewCacheInterface::class));
+        $service->delete($media);
+    }
+
+    public function testDeleteRemovesBothMediaAndFileEntities(): void
+    {
+        // Media::$file est passé à onDelete: SET NULL (#246) : le CASCADE DB
+        // qui supprimait le File avec le Media n'existe plus, il faut donc
+        // supprimer les deux entités explicitement.
+        $media = $this->makeMedia();
+        $file  = $media->getFile();
+
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->expects($this->exactly(2))->method('remove')
+            ->willReturnCallback(function (object $entity) use ($media, $file) {
+                static $expected = true;
+                $this->assertContains($entity, [$media, $file]);
+            });
+        $em->expects($this->once())->method('flush');
+
+        $service = new MediaDeletionService(
+            $this->createMock(StorageServiceInterface::class),
+            $em,
+            $this->createMock(RawPreviewCacheInterface::class),
+        );
+        $service->delete($media);
+    }
+
+    public function testDeleteIsGracefulWhenMediaAlreadyDetached(): void
+    {
+        // Un Media détaché (#246) n'a plus de File : MediaBulkDeleteController
+        // doit pouvoir le supprimer définitivement sans planter.
+        $media = $this->makeMedia('thumbs/abc.jpg');
+        $media->detach();
+
+        $storage = $this->createMock(StorageServiceInterface::class);
+        $storage->expects($this->once())->method('delete')->with('thumbs/abc.jpg');
+
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->expects($this->once())->method('remove')->with($media);
+        $em->expects($this->once())->method('flush');
+
+        $cache = $this->createMock(RawPreviewCacheInterface::class);
+        $cache->expects($this->never())->method('evict');
+
+        $service = new MediaDeletionService($storage, $em, $cache);
         $service->delete($media);
     }
 
@@ -104,7 +149,7 @@ final class MediaDeletionServiceTest extends TestCase
         $storage->method('delete')->willThrowException(new \RuntimeException('File not found'));
 
         $em = $this->createMock(EntityManagerInterface::class);
-        $em->expects($this->once())->method('remove')->with($media);
+        $em->method('remove');
         $em->expects($this->once())->method('flush');
 
         $service = new MediaDeletionService($storage, $em, $this->createMock(RawPreviewCacheInterface::class));

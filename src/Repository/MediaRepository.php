@@ -43,10 +43,13 @@ class MediaRepository extends ServiceEntityRepository implements MediaRepository
      */
     public function findByOwner(User $user, ?string $type = null, array $orderBy = []): array
     {
+        // leftJoin (pas join) : un Media détaché (#246, file NULL) doit rester
+        // visible dans sa galerie — filtré directement sur m.owner, qui ne
+        // dépend pas de l'existence du File.
         $qb = $this->createQueryBuilder('m')
-            ->join('m.file', 'f')
-            ->join('f.owner', 'u')
-            ->where('u.id = :userId')
+            ->addSelect('COALESCE(f.createdAt, m.createdAt) AS HIDDEN sortCreatedAt')
+            ->leftJoin('m.file', 'f')
+            ->where('m.owner = :userId')
             ->setParameter('userId', $user->getId(), 'uuid');
 
         if ($type !== null) {
@@ -55,6 +58,9 @@ class MediaRepository extends ServiceEntityRepository implements MediaRepository
 
         // 'takenAt' trie par date de prise de vue (EXIF) : les médias sans date
         // de capture (takenAt NULL) se regroupent à une extrémité selon le SGBD.
+        // Un Media détaché n'a plus de f.originalName/size/createdAt (f est
+        // NULL) : ces tris le placent à une extrémité selon le SGBD, comme
+        // takenAt NULL — comportement accepté, pas de régression du tri lui-même.
         $allowed = ['originalName' => 'f.originalName', 'size' => 'f.size', 'createdAt' => 'f.createdAt', 'takenAt' => 'm.takenAt'];
         $applied = false;
         foreach ($orderBy as $field => $dir) {
@@ -65,7 +71,11 @@ class MediaRepository extends ServiceEntityRepository implements MediaRepository
         }
 
         if (!$applied) {
-            $qb->orderBy('f.createdAt', 'DESC');
+            // sortCreatedAt (HIDDEN, cf. addSelect ci-dessus) : un Media
+            // détaché n'a plus de f.createdAt (file NULL), on retombe alors
+            // sur sa propre date de création pour garder un tri par défaut
+            // cohérent (le plus récent en premier).
+            $qb->orderBy('sortCreatedAt', 'DESC');
         }
 
         return $qb->getQuery()->getResult();
