@@ -16,7 +16,7 @@ final class ShareLinkAccessCheckerTest extends TestCase
 {
     private function makeShareLink(\DateTimeImmutable $expiresAt, string $plainToken = 'plain-token'): ShareLink
     {
-        $owner = $this->createMock(User::class);
+        $owner = $this->createStub(User::class);
 
         return new ShareLink(
             $owner,
@@ -30,7 +30,7 @@ final class ShareLinkAccessCheckerTest extends TestCase
 
     public function testUnknownSelectorReturnsNull(): void
     {
-        $repository = $this->createMock(ShareLinkRepositoryInterface::class);
+        $repository = $this->createStub(ShareLinkRepositoryInterface::class);
         $repository->method('findBySelector')->willReturn(null);
 
         $checker = new ShareLinkAccessChecker($repository);
@@ -41,7 +41,7 @@ final class ShareLinkAccessCheckerTest extends TestCase
     public function testInvalidTokenReturnsNull(): void
     {
         $link = $this->makeShareLink(new \DateTimeImmutable('+7 days'));
-        $repository = $this->createMock(ShareLinkRepositoryInterface::class);
+        $repository = $this->createStub(ShareLinkRepositoryInterface::class);
         $repository->method('findBySelector')->willReturn($link);
 
         $checker = new ShareLinkAccessChecker($repository);
@@ -52,7 +52,7 @@ final class ShareLinkAccessCheckerTest extends TestCase
     public function testExpiredLinkReturnsNull(): void
     {
         $link = $this->makeShareLink(new \DateTimeImmutable('-1 second'));
-        $repository = $this->createMock(ShareLinkRepositoryInterface::class);
+        $repository = $this->createStub(ShareLinkRepositoryInterface::class);
         $repository->method('findBySelector')->willReturn($link);
 
         $checker = new ShareLinkAccessChecker($repository);
@@ -64,7 +64,7 @@ final class ShareLinkAccessCheckerTest extends TestCase
     {
         $link = $this->makeShareLink(new \DateTimeImmutable('+7 days'));
         $link->revoke();
-        $repository = $this->createMock(ShareLinkRepositoryInterface::class);
+        $repository = $this->createStub(ShareLinkRepositoryInterface::class);
         $repository->method('findBySelector')->willReturn($link);
 
         $checker = new ShareLinkAccessChecker($repository);
@@ -75,7 +75,7 @@ final class ShareLinkAccessCheckerTest extends TestCase
     public function testValidLinkReturnsTheShareLink(): void
     {
         $link = $this->makeShareLink(new \DateTimeImmutable('+7 days'));
-        $repository = $this->createMock(ShareLinkRepositoryInterface::class);
+        $repository = $this->createStub(ShareLinkRepositoryInterface::class);
         $repository->method('findBySelector')->willReturn($link);
 
         $checker = new ShareLinkAccessChecker($repository);

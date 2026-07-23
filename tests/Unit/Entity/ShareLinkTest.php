@@ -14,7 +14,7 @@ final class ShareLinkTest extends TestCase
 {
     private function makeOwner(): User
     {
-        return $this->createMock(User::class);
+        return $this->createStub(User::class);
     }
 
     public function testIsActiveWhenNotExpiredAndNotRevoked(): void

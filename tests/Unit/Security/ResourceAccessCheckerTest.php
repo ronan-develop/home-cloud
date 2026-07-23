@@ -15,7 +15,7 @@ final class ResourceAccessCheckerTest extends TestCase
 {
     private function makeUser(): User
     {
-        $user = $this->createMock(User::class);
+        $user = $this->createStub(User::class);
         $user->method('getId')->willReturn(Uuid::v7());
 
         return $user;
@@ -39,7 +39,7 @@ final class ResourceAccessCheckerTest extends TestCase
         $guest = $this->makeUser();
         $resourceId = Uuid::v7();
 
-        $shareAccessChecker = $this->createMock(ShareAccessCheckerInterface::class);
+        $shareAccessChecker = $this->createStub(ShareAccessCheckerInterface::class);
         $shareAccessChecker->method('canAccess')
             ->willReturnCallback(fn (User $u, string $type, Uuid $id, string $perm) => $perm === Share::PERMISSION_READ);
 
@@ -55,7 +55,7 @@ final class ResourceAccessCheckerTest extends TestCase
         $guest = $this->makeUser();
         $resourceId = Uuid::v7();
 
-        $shareAccessChecker = $this->createMock(ShareAccessCheckerInterface::class);
+        $shareAccessChecker = $this->createStub(ShareAccessCheckerInterface::class);
         $shareAccessChecker->method('canAccess')->willReturn(true);
 
         $checker = new ResourceAccessChecker($shareAccessChecker);
@@ -70,7 +70,7 @@ final class ResourceAccessCheckerTest extends TestCase
         $guest = $this->makeUser();
         $resourceId = Uuid::v7();
 
-        $shareAccessChecker = $this->createMock(ShareAccessCheckerInterface::class);
+        $shareAccessChecker = $this->createStub(ShareAccessCheckerInterface::class);
         $shareAccessChecker->method('canAccess')->willReturn(false);
 
         $checker = new ResourceAccessChecker($shareAccessChecker);
@@ -87,7 +87,7 @@ final class ResourceAccessCheckerTest extends TestCase
         $guest = $this->makeUser();
         $resourceId = Uuid::v7();
 
-        $shareAccessChecker = $this->createMock(ShareAccessCheckerInterface::class);
+        $shareAccessChecker = $this->createStub(ShareAccessCheckerInterface::class);
         $shareAccessChecker->method('canAccess')->willReturn(false);
 
         $checker = new ResourceAccessChecker($shareAccessChecker);

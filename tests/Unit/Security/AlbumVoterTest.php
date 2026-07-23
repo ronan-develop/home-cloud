@@ -17,7 +17,7 @@ final class AlbumVoterTest extends TestCase
 {
     private function makeUser(): User
     {
-        $user = $this->createMock(User::class);
+        $user = $this->createStub(User::class);
         $user->method('getId')->willReturn(Uuid::v7());
 
         return $user;
@@ -25,7 +25,7 @@ final class AlbumVoterTest extends TestCase
 
     private function makeAlbum(User $owner): Album
     {
-        $album = $this->createMock(Album::class);
+        $album = $this->createStub(Album::class);
         $album->method('getId')->willReturn(Uuid::v7());
         $album->method('getOwner')->willReturn($owner);
 
@@ -34,7 +34,7 @@ final class AlbumVoterTest extends TestCase
 
     private function tokenFor(User $user): TokenInterface
     {
-        $token = $this->createMock(TokenInterface::class);
+        $token = $this->createStub(TokenInterface::class);
         $token->method('getUser')->willReturn($user);
 
         return $token;
@@ -45,7 +45,7 @@ final class AlbumVoterTest extends TestCase
         $owner = $this->makeUser();
         $album = $this->makeAlbum($owner);
 
-        $resourceAccessChecker = $this->createMock(ResourceAccessCheckerInterface::class);
+        $resourceAccessChecker = $this->createStub(ResourceAccessCheckerInterface::class);
         $resourceAccessChecker->method('canRead')->willReturn(true);
 
         $voter = new AlbumVoter($resourceAccessChecker);
@@ -62,7 +62,7 @@ final class AlbumVoterTest extends TestCase
         $guest = $this->makeUser();
         $album = $this->makeAlbum($owner);
 
-        $resourceAccessChecker = $this->createMock(ResourceAccessCheckerInterface::class);
+        $resourceAccessChecker = $this->createStub(ResourceAccessCheckerInterface::class);
         $resourceAccessChecker->method('canRead')->willReturn(true);
 
         $voter = new AlbumVoter($resourceAccessChecker);
@@ -79,7 +79,7 @@ final class AlbumVoterTest extends TestCase
         $guest = $this->makeUser();
         $album = $this->makeAlbum($owner);
 
-        $resourceAccessChecker = $this->createMock(ResourceAccessCheckerInterface::class);
+        $resourceAccessChecker = $this->createStub(ResourceAccessCheckerInterface::class);
         $resourceAccessChecker->method('canRead')->willReturn(false);
 
         $voter = new AlbumVoter($resourceAccessChecker);
@@ -98,7 +98,7 @@ final class AlbumVoterTest extends TestCase
         $guest = $this->makeUser();
         $album = $this->makeAlbum($owner);
 
-        $resourceAccessChecker = $this->createMock(ResourceAccessCheckerInterface::class);
+        $resourceAccessChecker = $this->createStub(ResourceAccessCheckerInterface::class);
         $resourceAccessChecker->method('canRead')->willReturn(false);
 
         $voter = new AlbumVoter($resourceAccessChecker);
@@ -117,7 +117,7 @@ final class AlbumVoterTest extends TestCase
         $guest = $this->makeUser();
         $album = $this->makeAlbum($owner);
 
-        $resourceAccessChecker = $this->createMock(ResourceAccessCheckerInterface::class);
+        $resourceAccessChecker = $this->createStub(ResourceAccessCheckerInterface::class);
         $resourceAccessChecker->method('canRead')->willReturn(true);
         $resourceAccessChecker->method('canWrite')->willReturn(true);
 
@@ -134,7 +134,7 @@ final class AlbumVoterTest extends TestCase
         $owner = $this->makeUser();
         $album = $this->makeAlbum($owner);
 
-        $resourceAccessChecker = $this->createMock(ResourceAccessCheckerInterface::class);
+        $resourceAccessChecker = $this->createStub(ResourceAccessCheckerInterface::class);
 
         $voter = new AlbumVoter($resourceAccessChecker);
 

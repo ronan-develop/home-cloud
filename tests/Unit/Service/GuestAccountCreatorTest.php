@@ -31,7 +31,7 @@ final class GuestAccountCreatorTest extends TestCase
 
     private function makeResetPasswordHelperStub(): ResetPasswordHelperInterface
     {
-        $stub = $this->createMock(ResetPasswordHelperInterface::class);
+        $stub = $this->createStub(ResetPasswordHelperInterface::class);
         $stub->method('generateResetToken')
             ->willReturn(new ResetPasswordToken('fake-token', new \DateTimeImmutable('+1 hour'), time()));
 
@@ -40,7 +40,7 @@ final class GuestAccountCreatorTest extends TestCase
 
     private function makeUrlGeneratorStub(): UrlGeneratorInterface
     {
-        $stub = $this->createMock(UrlGeneratorInterface::class);
+        $stub = $this->createStub(UrlGeneratorInterface::class);
         $stub->method('generate')->willReturn('https://example.test/reset-password/fake-token');
 
         return $stub;

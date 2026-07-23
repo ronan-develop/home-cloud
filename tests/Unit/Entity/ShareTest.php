@@ -13,7 +13,7 @@ final class ShareTest extends TestCase
 {
     private function makeUser(): User
     {
-        return $this->createMock(User::class);
+        return $this->createStub(User::class);
     }
 
     private function makeShare(?\DateTimeImmutable $expiresAt = null): Share

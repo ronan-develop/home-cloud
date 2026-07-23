@@ -17,7 +17,7 @@ final class IriExtractorTest extends TestCase
     protected function setUp(): void
     {
         $this->extractor = new IriExtractor(
-            logger: $this->createMock(LoggerInterface::class)
+            logger: $this->createStub(LoggerInterface::class)
         );
     }
 

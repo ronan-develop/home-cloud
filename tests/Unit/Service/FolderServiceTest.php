@@ -18,6 +18,7 @@ use App\Security\GuestRestrictionChecker;
 use App\Service\FolderService;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -34,7 +35,7 @@ final class FolderServiceTest extends TestCase
     /** @var OwnershipCheckerInterface&MockObject */
     private OwnershipCheckerInterface $ownershipChecker;
 
-    /** @var AuthenticationResolverInterface&MockObject */
+    /** @var AuthenticationResolverInterface&Stub */
     private AuthenticationResolverInterface $authResolver;
 
     /** @var DefaultFolderServiceInterface&MockObject */
@@ -43,7 +44,7 @@ final class FolderServiceTest extends TestCase
     /** @var EntityManagerInterface&MockObject */
     private EntityManagerInterface $em;
 
-    /** @var SharedResourceCleanerInterface&MockObject */
+    /** @var SharedResourceCleanerInterface&Stub */
     private SharedResourceCleanerInterface $sharedResourceCleaner;
 
     private FolderService $service;
@@ -53,10 +54,10 @@ final class FolderServiceTest extends TestCase
         $this->folderRepository    = $this->createMock(FolderRepositoryInterface::class);
         $this->filenameValidator   = $this->createMock(FilenameValidatorInterface::class);
         $this->ownershipChecker    = $this->createMock(OwnershipCheckerInterface::class);
-        $this->authResolver        = $this->createMock(AuthenticationResolverInterface::class);
+        $this->authResolver        = $this->createStub(AuthenticationResolverInterface::class);
         $this->defaultFolderService = $this->createMock(DefaultFolderServiceInterface::class);
         $this->em                  = $this->createMock(EntityManagerInterface::class);
-        $this->sharedResourceCleaner = $this->createMock(SharedResourceCleanerInterface::class);
+        $this->sharedResourceCleaner = $this->createStub(SharedResourceCleanerInterface::class);
 
         $this->service = new FolderService(
             folderRepository:      $this->folderRepository,
