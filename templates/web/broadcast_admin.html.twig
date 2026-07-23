@@ -12,8 +12,8 @@
   </div>
 
   {% if results is not null %}
-    <div class="hc-item-card">
-      <p class="font-bold mb-2">Résultat</p>
+    <div class="hc-broadcast-results">
+      <p class="hc-broadcast-results-title">Résultat</p>
       <ul>
         {% for instance, success in results %}
           <li>{{ instance }} : {{ success ? 'OK' : 'échec' }}</li>
@@ -23,13 +23,35 @@
   {% endif %}
 
   {{ form_start(form) }}
-    <div class="flex flex-col gap-4">
-      {{ form_row(form.subject) }}
-      {{ form_row(form.body) }}
-      {{ form_row(form.targetInstance) }}
-      {{ form_row(form.dryRun) }}
-      <button type="submit" class="hc-guest-create-submit self-start">Envoyer</button>
+
+    <div class="hc-broadcast-field">
+      {{ form_label(form.subject, null, {label_attr: {class: 'hc-broadcast-label'}}) }}
+      {{ form_widget(form.subject, {attr: {class: 'hc-broadcast-input'}}) }}
+      {% if not form.subject.vars.valid %}
+        <div class="hc-broadcast-error">{{ form_errors(form.subject) }}</div>
+      {% endif %}
     </div>
+
+    <div class="hc-broadcast-field">
+      {{ form_label(form.body, null, {label_attr: {class: 'hc-broadcast-label'}}) }}
+      {{ form_widget(form.body, {attr: {class: 'hc-broadcast-textarea'}}) }}
+      {% if not form.body.vars.valid %}
+        <div class="hc-broadcast-error">{{ form_errors(form.body) }}</div>
+      {% endif %}
+    </div>
+
+    <div class="hc-broadcast-field">
+      {{ form_label(form.targetInstance, null, {label_attr: {class: 'hc-broadcast-label'}}) }}
+      {{ form_widget(form.targetInstance, {attr: {class: 'hc-broadcast-select'}}) }}
+    </div>
+
+    <div class="hc-broadcast-checkbox-row">
+      {{ form_widget(form.dryRun, {attr: {style: 'accent-color:var(--hc-accent)'}}) }}
+      {{ form_label(form.dryRun, null, {label_attr: {class: 'hc-broadcast-label'}}) }}
+    </div>
+
+    <button type="submit" class="hc-broadcast-submit">Envoyer</button>
+
   {{ form_end(form) }}
 
 </div>
