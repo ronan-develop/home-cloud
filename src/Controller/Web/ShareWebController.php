@@ -53,10 +53,12 @@ final class ShareWebController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
-        // findByUser retourne owner OU guest, mais HomeCloud est mono-owner
-        // par instance : l'utilisateur connecté ici est toujours l'owner, il
-        // n'y a donc jamais de partage "reçu" à distinguer (cf. GuestRestrictionChecker,
-        // les invités n'ont pas accès à cette page).
+        // findByUser retourne owner OU guest, mais cette page n'affiche que
+        // le volet sortant (créé par l'utilisateur) : un guest peut y accéder
+        // (aucune restriction GuestRestrictionChecker ici, qui ne bloque que
+        // l'écriture), il y verrait simplement une liste vide côté sortant.
+        // Le volet "reçu" par un guest est exposé séparément par
+        // /mes-partages (cf. MyReceivedSharesWebController, issue #273).
         $outgoing = array_map(
             fn ($share) => [
                 'share'        => $share,

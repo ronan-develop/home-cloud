@@ -1,10 +1,20 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-07-22
+> Dernière mise à jour : 2026-07-23
 
 > **Status git :** `main` — dernière PR mergée #331 (`feat/311-media-viewer`)
 
 ---
+
+## ✅ Espace « Mes partages » pour l'invité (2026-07-23, #273, branche `feature/273-mes-partages`)
+
+- Nouvelle page `/mes-partages` listant les `Share` actifs (non révoqués, non expirés) dont l'utilisateur connecté est le `guest` — seule porte d'entrée jusqu'ici était le lien contenu dans l'email de notification.
+- `ShareRepository::findActiveByGuest(User $guest)` : nouvelle requête filtrée `guest = :user AND revokedAt IS NULL AND (expiresAt IS NULL OR expiresAt > now)`, triée par `createdAt DESC`. Aucune migration Doctrine nécessaire, l'index `idx_share_lookup(guest_id, resource_type, resource_id)` couvrait déjà ce besoin.
+- `MyReceivedSharesWebController` (nouveau) : lecture seule, réutilise le pattern `resolveResourceName`/`redirectUrlFor` déjà présent dans `ShareWebController` (dupliqué à l'identique plutôt que factorisé — 2 appelants seulement, règle des 3 occurrences).
+- Décisions de conception : page séparée de `/partages` (qui reste dédiée à l'owner) ; partages expirés/révoqués exclus de la liste (pas affichés grisés) ; route accessible à un compte `full` mais toujours liste vide (pas de 403 — cohérent avec l'absence de précédent pour bloquer une route selon `accountType`).
+- Lien de navigation conditionnel `{% if app.user.isGuest %}` ajouté dans la sidebar (`templates/web/layout.html.twig`), pas dans la tab-bar mobile fixe.
+- Correction d'un commentaire obsolète dans `ShareWebController::index()` qui affirmait à tort qu'un guest n'avait pas accès à `/partages`.
+- Tests : isolation stricte entre guests (un guest ne voit que ses propres partages reçus), exclusion expiré/révoqué, cas vide, lien direct vers la ressource, visibilité du lien nav selon `accountType`.
 
 ## 🚧 Vignettes médias — explorer et vidéo (en cours, #312, branche `feat/312-vignettes-medias`)
 

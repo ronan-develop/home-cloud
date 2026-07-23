@@ -76,4 +76,90 @@ final class ShareRepositoryTest extends KernelTestCase
         $this->assertNull($this->repository->find($targetShare->getId()));
         $this->assertNotNull($this->repository->find($otherShare->getId()));
     }
+
+    public function testFindActiveByGuestReturnsOnlyActiveSharesForThatGuest(): void
+    {
+        $owner  = $this->createUser('owner-find-active-guest@example.com');
+        $guestA = $this->createUser('guest-a-find-active@example.com');
+        $guestB = $this->createUser('guest-b-find-active@example.com');
+
+        $shareA = new Share($owner, $guestA, Share::RESOURCE_FOLDER, Uuid::v7(), Share::PERMISSION_READ);
+        $shareB = new Share($owner, $guestB, Share::RESOURCE_FOLDER, Uuid::v7(), Share::PERMISSION_READ);
+        $this->em->persist($shareA);
+        $this->em->persist($shareB);
+        $this->em->flush();
+
+        $result = $this->repository->findActiveByGuest($guestA);
+
+        $this->assertCount(1, $result);
+        $this->assertTrue($result[0]->getId()->equals($shareA->getId()));
+    }
+
+    public function testFindActiveByGuestExcludesExpiredShares(): void
+    {
+        $owner = $this->createUser('owner-expired-guest@example.com');
+        $guest = $this->createUser('guest-expired@example.com');
+
+        $expired = new Share(
+            $owner,
+            $guest,
+            Share::RESOURCE_FOLDER,
+            Uuid::v7(),
+            Share::PERMISSION_READ,
+            new \DateTimeImmutable('-1 day'),
+        );
+        $this->em->persist($expired);
+        $this->em->flush();
+
+        $result = $this->repository->findActiveByGuest($guest);
+
+        $this->assertSame([], $result);
+    }
+
+    public function testFindActiveByGuestExcludesRevokedShares(): void
+    {
+        $owner = $this->createUser('owner-revoked-guest@example.com');
+        $guest = $this->createUser('guest-revoked@example.com');
+
+        $revoked = new Share($owner, $guest, Share::RESOURCE_FOLDER, Uuid::v7(), Share::PERMISSION_READ);
+        $revoked->revoke();
+        $this->em->persist($revoked);
+        $this->em->flush();
+
+        $result = $this->repository->findActiveByGuest($guest);
+
+        $this->assertSame([], $result);
+    }
+
+    public function testFindActiveByGuestReturnsEmptyArrayWhenNoShares(): void
+    {
+        $guest = $this->createUser('guest-no-shares@example.com');
+
+        $result = $this->repository->findActiveByGuest($guest);
+
+        $this->assertSame([], $result);
+    }
+
+    public function testFindActiveByGuestOrdersByCreatedAtDescending(): void
+    {
+        $owner = $this->createUser('owner-order-guest@example.com');
+        $guest = $this->createUser('guest-order@example.com');
+
+        $older = new Share($owner, $guest, Share::RESOURCE_FOLDER, Uuid::v7(), Share::PERMISSION_READ);
+        $newer = new Share($owner, $guest, Share::RESOURCE_FOLDER, Uuid::v7(), Share::PERMISSION_READ);
+        $this->em->persist($older);
+        $this->em->persist($newer);
+        $this->em->flush();
+
+        $reflection = new \ReflectionProperty(Share::class, 'createdAt');
+        $reflection->setValue($older, new \DateTimeImmutable('-2 days'));
+        $reflection->setValue($newer, new \DateTimeImmutable('-1 day'));
+        $this->em->flush();
+
+        $result = $this->repository->findActiveByGuest($guest);
+
+        $this->assertCount(2, $result);
+        $this->assertTrue($result[0]->getId()->equals($newer->getId()));
+        $this->assertTrue($result[1]->getId()->equals($older->getId()));
+    }
 }

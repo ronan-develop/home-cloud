@@ -76,6 +76,20 @@ class ShareRepository extends ServiceEntityRepository implements ShareRepository
         return $qb->getQuery()->getOneOrNullResult();
     }
 
+    /** Partages actifs (non révoqués, non expirés) reçus par ce guest. */
+    public function findActiveByGuest(User $guest): array
+    {
+        return $this->createQueryBuilder('s')
+            ->where('s.guest = :guest')
+            ->andWhere('s.revokedAt IS NULL')
+            ->andWhere('s.expiresAt IS NULL OR s.expiresAt > :now')
+            ->setParameter('guest', $guest->getId(), 'uuid')
+            ->setParameter('now', new \DateTimeImmutable())
+            ->orderBy('s.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
     /** Supprime tous les shares pointant vers cette ressource (nettoyage à la suppression). */
     public function deleteByResource(string $resourceType, Uuid $resourceId): void
     {

@@ -24,6 +24,13 @@ interface ShareRepositoryInterface
 
     public function findActiveShare(User $guest, string $resourceType, Uuid $resourceId, string $permission): ?Share;
 
+    /**
+     * Partages actifs (non révoqués, non expirés) reçus par ce guest.
+     *
+     * @return Share[]
+     */
+    public function findActiveByGuest(User $guest): array;
+
     /** Supprime tous les shares pointant vers cette ressource (nettoyage à la suppression). */
     public function deleteByResource(string $resourceType, Uuid $resourceId): void;
 }
