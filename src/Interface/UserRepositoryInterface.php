@@ -17,4 +17,7 @@ interface UserRepositoryInterface
 
     /** @param array<string, mixed> $criteria */
     public function findOneBy(array $criteria, ?array $orderBy = null): ?User;
+
+    /** @return User[] */
+    public function findAll(): array;
 }
