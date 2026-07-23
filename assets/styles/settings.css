@@ -2,7 +2,6 @@
 
 .settings-card {
     background: var(--hc-surface);
-    backdrop-filter: blur(24px) saturate(180%);
     border: 1px solid var(--hc-border);
     border-radius: 1rem;
     padding: 1.5rem;
