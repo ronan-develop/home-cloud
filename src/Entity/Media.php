@@ -31,8 +31,12 @@ class Media
     private Uuid $id;
 
     #[ORM\OneToOne(targetEntity: File::class)]
-    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    private File $file;
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?File $file;
+
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(nullable: false)]
+    private User $owner;
 
     /** photo | video | unknown */
     #[ORM\Column(length: 20)]
@@ -91,6 +95,7 @@ class Media
     {
         $this->id = Uuid::v7();
         $this->file = $file;
+        $this->owner = $file->getOwner();
         $this->mediaType = $mediaType;
         $this->createdAt = new \DateTimeImmutable();
     }
@@ -99,18 +104,29 @@ class Media
     {
         return $this->id;
     }
-    public function getFile(): File
+    public function getFile(): ?File
     {
         return $this->file;
     }
 
     /**
+     * Détache ce Media de son File source (#246) : le fichier physique est
+     * supprimé mais le Media (et ses appartenances aux albums) survit,
+     * affichable via son thumbnail. Irréversible.
+     */
+    public function detach(): void
+    {
+        $this->file = null;
+    }
+
+    /**
      * Vérifie si ce média appartient à l'utilisateur donné.
-     * Encapsule la chaîne getFile()->getOwner()->getId() (Law of Demeter).
+     * Stocké directement sur Media (pas via getFile()->getOwner()) : un
+     * Media détaché (#246) doit rester vérifiable sans File source.
      */
     public function isOwnedBy(User $user): bool
     {
-        return $this->file->getOwner()->getId()->equals($user->getId());
+        return $this->owner->getId()->equals($user->getId());
     }
 
     public function getMediaType(): string
