@@ -1,0 +1,73 @@
+/*
+ * assets/styles/modals.css
+ * Styles communs aux modales simples (Rename, DeleteFolder, Move, MediaViewer,
+ * PdfViewer, MainToolbar/recherche, reset-password) — remplace le pattern
+ * glassmorphism répété (bg-white/10 backdrop-blur-2xl border-white/20).
+ * cf. share-modal.css pour le pattern équivalent de la modale de partage.
+ */
+
+.hc-modal-overlay {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.hc-modal-card {
+  background: var(--hc-surface);
+  color: var(--hc-text);
+  border: 1px solid var(--hc-border);
+  box-shadow: var(--hc-shadow-crisp);
+}
+
+.hc-modal-title {
+  color: var(--hc-text);
+}
+
+.hc-modal-text {
+  color: var(--hc-text-2);
+}
+
+.hc-modal-input {
+  background: var(--hc-input);
+  border: 1px solid var(--hc-border);
+  color: var(--hc-text);
+}
+
+.hc-modal-input::placeholder {
+  color: var(--hc-text-3);
+}
+
+.hc-modal-btn-cancel {
+  color: var(--hc-text-2);
+}
+
+.hc-modal-btn-cancel:hover {
+  color: var(--hc-text);
+  background: var(--hc-surface-2);
+}
+
+.hc-modal-option {
+  border: 1px solid var(--hc-border);
+}
+
+.hc-modal-option--danger {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.25);
+  color: var(--hc-err);
+}
+
+.hc-modal-option--danger:hover {
+  background: rgba(239, 68, 68, 0.14);
+}
+
+.hc-modal-option--warn {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.25);
+  color: var(--hc-warn);
+}
+
+.hc-modal-option--warn:hover {
+  background: rgba(245, 158, 11, 0.14);
+}
+
+.hc-modal-option-desc {
+  color: var(--hc-text-2);
+}

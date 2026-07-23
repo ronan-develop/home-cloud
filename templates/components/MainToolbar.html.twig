@@ -1,17 +1,15 @@
 {# Overlay résultats de recherche XHR — branché sur #main-search-input du layout #}
 <div id="search-results-overlay"
-     class="hidden fixed inset-0 z-50 flex items-start justify-center bg-black/45 backdrop-blur-sm pt-20"
+     class="hc-modal-overlay hidden fixed inset-0 z-50 flex items-start justify-center pt-20"
      tabindex="-1"
      aria-modal="true"
      role="dialog">
-  <div class="bg-slate-900 border border-white/20 rounded-2xl
-              shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
-    <div class="flex items-center justify-between px-3 py-2 border-b border-white/10">
-      <span id="search-results-count" class="text-xs text-white/50">Recherche…</span>
+  <div class="hc-modal-card rounded-2xl w-full max-w-sm mx-4 overflow-hidden">
+    <div class="flex items-center justify-between px-3 py-2" style="border-bottom: 1px solid var(--hc-border)">
+      <span id="search-results-count" class="hc-modal-text text-xs">Recherche…</span>
       <button type="button" onclick="closeModal('search-results-overlay')"
               title="Fermer" aria-label="Fermer la recherche"
-              class="flex items-center justify-center w-7 h-7 rounded-full
-                     bg-white/10 hover:bg-white/20 text-white/70 hover:text-white
+              class="hc-modal-btn-cancel flex items-center justify-center w-7 h-7 rounded-full
                      text-base leading-none transition-colors">×</button>
     </div>
     <ul id="search-results-list" class="list-none m-0 py-1 max-h-[40vh] overflow-y-auto"></ul>
@@ -68,7 +66,7 @@
         list.innerHTML = '';
         if (items.length === 0) {
             var empty = document.createElement('li');
-            empty.className = 'px-6 py-6 text-center text-sm text-white/40';
+            empty.className = 'hc-modal-text px-6 py-6 text-center text-sm';
             empty.textContent = 'Aucun fichier ni dossier trouvé';
             list.appendChild(empty);
             return;
@@ -82,11 +80,11 @@
 
             var a = document.createElement('a');
             a.href = url;
-            a.className = 'flex items-center gap-2.5 px-3 py-2 text-slate-100 no-underline hover:bg-white/10 transition-colors';
+            a.className = 'hc-modal-title hc-modal-btn-cancel flex items-center gap-2.5 px-3 py-2 no-underline transition-colors';
             a.addEventListener('click', closeSearch);
 
             var iconSpan = document.createElement('span');
-            iconSpan.className = 'shrink-0 text-white/70 flex items-center justify-center w-6 h-6';
+            iconSpan.className = 'hc-modal-text shrink-0 flex items-center justify-center w-6 h-6';
 
             if (item.thumbnailUrl) {
                 var thumb = document.createElement('img');
@@ -109,7 +107,7 @@
 
             if (!item.isFolder) {
                 var folderDiv = document.createElement('div');
-                folderDiv.className = 'flex items-center gap-1 text-xs text-white/45 mt-0.5';
+                folderDiv.className = 'hc-modal-text flex items-center gap-1 text-xs mt-0.5';
                 folderDiv.innerHTML = ICONS.folder;
                 var folderNameSpan = document.createElement('span');
                 folderNameSpan.textContent = item.folderName;

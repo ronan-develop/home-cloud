@@ -1,18 +1,17 @@
 {# Modale de suppression de dossier avec options #}
 <div id="delete-folder-modal"
-     class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+     class="hc-modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center"
      tabindex="-1"
      aria-modal="true"
      role="dialog">
-  <div class="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl
-              shadow-2xl p-6 w-full max-w-md mx-4">
+  <div class="hc-modal-card rounded-3xl p-6 w-full max-w-md mx-4">
 
-    <h2 class="text-white text-xl font-semibold mb-2">
+    <h2 class="hc-modal-title text-xl font-semibold mb-2">
       Supprimer le dossier
     </h2>
-    <p class="text-white/70 text-sm mb-5">
+    <p class="hc-modal-text text-sm mb-5">
       Que souhaitez-vous faire avec le contenu de
-      <strong id="delete-folder-name" class="text-white">ce dossier</strong> ?
+      <strong id="delete-folder-name" class="hc-modal-title">ce dossier</strong> ?
     </p>
 
     <form id="delete-folder-form" method="POST" action="">
@@ -24,24 +23,24 @@
         <button type="button"
                 data-testid="delete-folder-recursive-btn"
                 onclick="submitDeleteFolder(1)"
-                class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-red-500/20 border border-red-500/30
-                       hover:bg-red-500/30 text-red-200 hover:text-white transition-all text-left">
+                class="hc-modal-option hc-modal-option--danger flex items-center gap-3 px-4 py-3 rounded-2xl
+                       transition-all text-left">
           <span class="text-2xl"><svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-trash"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></span>
           <div>
             <div class="font-semibold text-sm">Supprimer tout le contenu</div>
-            <div class="text-xs text-white/50 mt-0.5">Le dossier et tous ses fichiers seront supprimés définitivement.</div>
+            <div class="hc-modal-option-desc text-xs mt-0.5">Le dossier et tous ses fichiers seront supprimés définitivement.</div>
           </div>
         </button>
 
         <button type="button"
                 data-testid="delete-folder-keep-files-btn"
                 onclick="submitDeleteFolder(0)"
-                class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-yellow-500/20 border border-yellow-500/30
-                       hover:bg-yellow-500/30 text-yellow-200 hover:text-white transition-all text-left">
+                class="hc-modal-option hc-modal-option--warn flex items-center gap-3 px-4 py-3 rounded-2xl
+                       transition-all text-left">
           <span class="text-2xl"><svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="hc-icon hc-icon-package"><path d="M16.5 9.4l-9-5.19"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
           <div>
             <div class="font-semibold text-sm">Conserver les fichiers</div>
-            <div class="text-xs text-white/50 mt-0.5">Les fichiers seront déplacés vers le dossier <em>Uploads</em>.</div>
+            <div class="hc-modal-option-desc text-xs mt-0.5">Les fichiers seront déplacés vers le dossier <em>Uploads</em>.</div>
           </div>
         </button>
       </div>
@@ -49,7 +48,7 @@
       <div class="flex justify-end">
         <button type="button"
                 onclick="closeModal('delete-folder-modal')"
-                class="px-4 py-2 rounded-xl text-white/70 hover:text-white hover:bg-white/10 transition-colors">
+                class="hc-modal-btn-cancel px-4 py-2 rounded-xl transition-colors">
           Annuler
         </button>
       </div>
