@@ -188,7 +188,7 @@ function createModalOverlay(files, currentFolderId, folders, isAlbumMode) {
     overlay.className = 'upload-modal-overlay';
     overlay.id = 'hc-upload-modal-overlay';
     // Force critical layout styles inline — CSS class may load after injection
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px)';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45)';
 
     const card = document.createElement('div');
     card.className = 'upload-modal-card';
@@ -199,20 +199,19 @@ function createModalOverlay(files, currentFolderId, folders, isAlbumMode) {
         'margin:1rem',
         'border-radius:1.6rem',
         'overflow:hidden',
-        'background:rgba(255,255,255,0.08)',
-        'backdrop-filter:blur(24px) saturate(180%)',
-        'border:1px solid rgba(255,255,255,0.15)',
-        'box-shadow:0 8px 32px rgba(0,0,0,0.4)',
+        'background:var(--hc-surface)',
+        'border:1px solid var(--hc-border)',
+        'box-shadow:var(--hc-shadow-lg)',
     ].join(';');
 
     const content = document.createElement('div');
     content.className = 'upload-modal-content';
-    content.style.cssText = 'position:relative;z-index:10;padding:1.5rem;color:rgba(255,255,255,0.9);font-family:inherit';
+    content.style.cssText = 'position:relative;z-index:10;padding:1.5rem;color:var(--hc-text);font-family:inherit';
 
     // Title
     const title = document.createElement('div');
     title.className = 'upload-modal-title';
-    title.style.cssText = 'font-size:1.25rem;font-weight:600;color:rgba(255,255,255,0.95);margin-bottom:1.25rem;display:flex;align-items:center;gap:0.5rem';
+    title.style.cssText = 'font-size:1.25rem;font-weight:600;color:var(--hc-text);margin-bottom:1.25rem;display:flex;align-items:center;gap:0.5rem';
     title.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>'
         + `<span>Importer ${files.length} fichier${files.length > 1 ? 's' : ''}</span>`;
 
@@ -226,7 +225,7 @@ function createModalOverlay(files, currentFolderId, folders, isAlbumMode) {
 
         const destLabel = document.createElement('label');
         destLabel.className = 'upload-destination-label';
-        destLabel.style.cssText = 'font-size:0.75rem;font-weight:600;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;display:block';
+        destLabel.style.cssText = 'font-size:0.75rem;font-weight:600;color:var(--hc-text-2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;display:block';
         destLabel.textContent = 'Destination';
 
         const folderListEl = document.createElement('hc-folder-list');
@@ -249,19 +248,19 @@ function createModalOverlay(files, currentFolderId, folders, isAlbumMode) {
     // Actions
     const actions = document.createElement('div');
     actions.className = 'upload-actions';
-    actions.style.cssText = 'display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1.25rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.08)';
+    actions.style.cssText = 'display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--hc-border)';
 
     const cancelBtn = document.createElement('button');
     cancelBtn.type = 'button';
     cancelBtn.className = 'upload-btn upload-btn--cancel';
-    cancelBtn.style.cssText = 'padding:0.6rem 1.25rem;border-radius:0.75rem;border:none;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);font-size:0.9rem;cursor:pointer';
+    cancelBtn.style.cssText = 'padding:0.6rem 1.25rem;border-radius:0.75rem;border:none;background:var(--hc-surface-2);color:var(--hc-text-2);font-size:0.9rem;cursor:pointer';
     cancelBtn.textContent = 'Annuler';
     cancelBtn.id = 'hc-upload-cancel-btn';
 
     const submitBtn = document.createElement('button');
     submitBtn.type = 'button';
     submitBtn.className = 'upload-btn upload-btn--submit';
-    submitBtn.style.cssText = 'padding:0.6rem 1.25rem;border-radius:0.75rem;border:none;background:rgba(59,130,246,0.8);color:#fff;font-size:0.9rem;font-weight:600;cursor:pointer';
+    submitBtn.style.cssText = 'padding:0.6rem 1.25rem;border-radius:0.75rem;border:none;background:var(--hc-accent);color:#fff;font-size:0.9rem;font-weight:600;cursor:pointer';
     submitBtn.textContent = 'Uploader';
     submitBtn.id = 'hc-upload-submit-btn';
 
@@ -289,7 +288,7 @@ function createUploadItem(file) {
     const item = document.createElement('div');
     item.className = 'upload-item upload-item--pending';
     item.setAttribute('data-file-name', file.name);
-    item.style.cssText = 'padding:0.6rem 0;border-bottom:1px solid rgba(255,255,255,0.06)';
+    item.style.cssText = 'padding:0.6rem 0;border-bottom:1px solid var(--hc-border)';
 
     const header = document.createElement('div');
     header.className = 'upload-item__header';
@@ -297,21 +296,21 @@ function createUploadItem(file) {
 
     const icon = document.createElement('span');
     icon.className = 'upload-item__icon';
-    icon.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:rgba(255,255,255,0.85)"><path d="M13.828 10.172a4 4 0 0 0-5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101m-.758-4.899a4 4 0 0 0 5.658 0l4-4a4 4 0 0 0-5.656-5.656l-1.1 1.1"/></svg>';
+    icon.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--hc-text-2)"><path d="M13.828 10.172a4 4 0 0 0-5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101m-.758-4.899a4 4 0 0 0 5.658 0l4-4a4 4 0 0 0-5.656-5.656l-1.1 1.1"/></svg>';
 
     const name = document.createElement('span');
     name.className = 'upload-item__name';
-    name.style.cssText = 'flex:1;color:rgba(255,255,255,0.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    name.style.cssText = 'flex:1;color:var(--hc-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
     name.textContent = file.name;
 
     const size = document.createElement('span');
     size.className = 'upload-item__size';
-    size.style.cssText = 'color:rgba(255,255,255,0.4);font-size:0.75rem;white-space:nowrap';
+    size.style.cssText = 'color:var(--hc-text-3);font-size:0.75rem;white-space:nowrap';
     size.textContent = formatFileSize(file.size);
 
     const status = document.createElement('span');
     status.className = 'upload-item__status upload-item__status--pending';
-    status.style.cssText = 'color:rgba(255,255,255,0.4);font-size:0.75rem;white-space:nowrap';
+    status.style.cssText = 'color:var(--hc-text-3);font-size:0.75rem;white-space:nowrap';
     status.textContent = 'En attente';
 
     header.appendChild(icon);
@@ -321,7 +320,7 @@ function createUploadItem(file) {
 
     const progress = document.createElement('div');
     progress.className = 'upload-item__progress';
-    progress.style.cssText = 'height:2px;background:rgba(255,255,255,0.08);border-radius:1px;margin-top:0.35rem;overflow:hidden';
+    progress.style.cssText = 'height:2px;background:var(--hc-border);border-radius:1px;margin-top:0.35rem;overflow:hidden';
 
     const bar = document.createElement('div');
     bar.className = 'upload-item__bar';
