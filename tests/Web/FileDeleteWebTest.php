@@ -265,4 +265,43 @@ final class FileDeleteWebTest extends WebTestCase
 
         $this->assertResponseRedirects('/login');
     }
+
+    public function testExplorerRendersDeleteButtonWithInAlbumTrueWhenFileHasMediaInAlbum(): void
+    {
+        // Non-régression rendu HTML (#246) : file.id (objet Uuid) doit être
+        // comparé correctement à filesInAlbum (strings RFC4122) côté Twig,
+        // sinon le bouton reçoit toujours inAlbum=false et la modale
+        // n'affiche jamais l'option "conserver dans mes albums".
+        $user = $this->createUser();
+        $media = $this->createMediaFile($user, 'vacances.jpg', 'photo');
+        $file = $media->getFile();
+        $folderId = $file->getFolder()->getId()->toRfc4122();
+
+        $album = new Album('Vacances', $user);
+        $this->em->persist($album);
+        $this->em->persist(new AlbumMedia($album, $media, 0));
+        $this->em->flush();
+        $this->em->clear();
+
+        $this->login();
+        $crawler = $this->client->request('GET', '/explorer?folder=' . $folderId);
+
+        $this->assertResponseIsSuccessful();
+        $button = $crawler->filter('[data-testid="delete-file-btn-' . $file->getId() . '"]');
+        $this->assertStringContainsString('true)', $button->attr('onclick'));
+    }
+
+    public function testExplorerRendersDeleteButtonWithInAlbumFalseWhenFileHasNoMedia(): void
+    {
+        $user = $this->createUser();
+        $folder = $this->createFolder('Docs', $user);
+        $file = $this->createFile('rapport.txt', $folder, $user);
+
+        $this->login();
+        $crawler = $this->client->request('GET', '/explorer?folder=' . $folder->getId()->toRfc4122());
+
+        $this->assertResponseIsSuccessful();
+        $button = $crawler->filter('[data-testid="delete-file-btn-' . $file->getId() . '"]');
+        $this->assertStringContainsString('false)', $button->attr('onclick'));
+    }
 }

@@ -11,7 +11,7 @@
       <twig:FolderCard :item="folder" />
     {% endfor %}
     {% for file in files %}
-      <twig:FileCard :item="file" :media="mediasByFileId[file.id] ?? null" :inAlbum="filesInAlbum is defined and file.id in filesInAlbum" />
+      <twig:FileCard :item="file" :media="mediasByFileId[file.id] ?? null" :inAlbum="filesInAlbum is defined and (file.id ~ '') in filesInAlbum" />
     {% endfor %}
   {% endif %}
 </div>
