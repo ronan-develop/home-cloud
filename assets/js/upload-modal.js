@@ -14,6 +14,7 @@ import '../components/hc-folder-list.js';
 import { apiFetch } from './api.js';
 import { declareBatch, createBatchPoller } from './upload-batch.js';
 import { createEtaTracker, formatSpeed, formatEta } from './upload-eta.js';
+import { getMaxConcurrent } from './upload-preferences.js';
 
 const UPLOAD_API_ROUTE = '/api/v1/files';
 const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5 GB
@@ -478,7 +479,7 @@ async function openUploadModal(files, options = {}) {
 
     // Create upload queue with callbacks for UI updates
     currentUploadQueue = createUploadQueueFn({
-        maxConcurrent: 3,
+        maxConcurrent: getMaxConcurrent(),
         onProgress: (file, progress) => {
             const itemEl = itemElements.get(file);
             if (itemEl) {

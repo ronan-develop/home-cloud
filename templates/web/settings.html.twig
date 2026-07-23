@@ -38,6 +38,29 @@
 
     </div>
 
+    {# ── Card envois ── #}
+    <div class="settings-card">
+
+        <h2 class="settings-card-title">Envois</h2>
+
+        <div class="flex flex-col gap-4">
+
+            <div class="settings-field">
+                <label for="settings-max-concurrent" class="settings-label">
+                    Fichiers envoyés en parallèle : <span id="settings-max-concurrent-value"></span>
+                </label>
+                <input id="settings-max-concurrent" type="range" min="1" max="6" step="1"
+                       class="settings-input">
+                <p class="text-sm" style="color: var(--hc-text-2)">
+                    Réglage propre à cet appareil et à sa connexion — une valeur plus basse
+                    est recommandée sur un réseau lent ou instable.
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+
     {# ── Card mot de passe ── #}
     <div class="settings-card">
 
@@ -74,8 +97,23 @@
 <div id="settings-toast" class="settings-toast"></div>
 
 <script>
-(function () {
+(async function () {
     var userId = '{{ user.id }}';
+
+    var uploadPrefs = await import('{{ asset('js/upload-preferences.js') }}');
+    var rangeEl = document.getElementById('settings-max-concurrent');
+    var valueEl = document.getElementById('settings-max-concurrent-value');
+
+    function renderMaxConcurrent(value) {
+        rangeEl.value = value;
+        valueEl.textContent = value;
+    }
+
+    renderMaxConcurrent(uploadPrefs.getMaxConcurrent());
+    rangeEl.addEventListener('input', function () {
+        uploadPrefs.setMaxConcurrent(Number(rangeEl.value));
+        renderMaxConcurrent(uploadPrefs.getMaxConcurrent());
+    });
 
     function showToast(message, isError) {
         var toast = document.getElementById('settings-toast');
