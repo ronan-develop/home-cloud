@@ -26,6 +26,12 @@ security:
                 max_attempts: 5
                 interval: '15 minutes'
 
+        broadcast_internal:
+            pattern: ^/internal/broadcast
+            stateless: true
+            custom_authenticators:
+                - App\Security\BroadcastTokenAuthenticator
+
         api:
             pattern: ^/api
             stateless: true
@@ -68,6 +74,9 @@ when@dev: &access_control
             - { path: ^/api/reset-password, roles: PUBLIC_ACCESS }
             - { path: ^/api/request-reset-password, roles: PUBLIC_ACCESS }
             - { path: ^/api/docs, roles: PUBLIC_ACCESS }
+            # Auth par secret partagé gérée par BroadcastTokenAuthenticator,
+            # pas par ROLE_USER JWT — doit précéder la règle catch-all ^/api.
+            - { path: ^/internal/broadcast, roles: PUBLIC_ACCESS }
             - { path: ^/api, roles: ROLE_USER }
             # Partage par lien public : accessible sans compte, le secret est
             # dans (selector, token). Doit précéder toute règle catch-all ^/.

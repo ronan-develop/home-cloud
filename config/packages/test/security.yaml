@@ -19,6 +19,12 @@ security:
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
 
+        broadcast_internal:
+            pattern: ^/internal/broadcast
+            stateless: true
+            custom_authenticators:
+                - App\Security\BroadcastTokenAuthenticator
+
         api:
             pattern: ^/api
             stateless: true
@@ -52,6 +58,7 @@ security:
         - { path: ^/api/docs, roles: PUBLIC_ACCESS }
         - { path: ^/api/v1/auth/login$, roles: PUBLIC_ACCESS }
         - { path: ^/api/v1/auth/token/refresh$, roles: PUBLIC_ACCESS }
+        - { path: ^/internal/broadcast, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: ROLE_USER }
         - { path: ^/login$, roles: PUBLIC_ACCESS }
         - { path: ^/web/token$, roles: ROLE_USER }
