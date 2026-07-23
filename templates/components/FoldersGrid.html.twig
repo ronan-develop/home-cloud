@@ -11,8 +11,8 @@
       <twig:FolderCard :item="folder" />
     {% endfor %}
     {% for file in files %}
-      <twig:FileCard :item="file" :media="mediasByFileId[file.id] ?? null" />
+      <twig:FileCard :item="file" :media="mediasByFileId[file.id] ?? null" :inAlbum="filesInAlbum is defined and file.id in filesInAlbum" />
     {% endfor %}
   {% endif %}
 </div>
-{# Props attendues : folders (liste Folder[]), files (liste File[]) #}
+{# Props attendues : folders (liste Folder[]), files (liste File[]), filesInAlbum (liste d'ids de File dont le Media est dans un album, optionnel) #}

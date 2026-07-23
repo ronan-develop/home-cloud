@@ -66,7 +66,7 @@ final class ExplorerPageTest extends WebTestCase
     {
         $crawler = $this->client->request('GET', '/explorer?folder=' . $folderId);
 
-        return $crawler->filter('.file-actions input[name="_token"]')->first()->attr('value');
+        return $crawler->filter('#delete-file-form input[name="_token"]')->attr('value');
     }
 
     private function login(string $email = 'explorer@example.com', string $password = 'secret123'): void

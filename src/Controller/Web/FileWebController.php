@@ -6,9 +6,12 @@ namespace App\Controller\Web;
 
 use App\Entity\File;
 use App\Entity\Share;
+use App\Interface\MediaDeletionServiceInterface;
+use App\Interface\MediaDetachServiceInterface;
 use App\Interface\MediaProcessorInterface;
 use App\Interface\StorageServiceInterface;
 use App\Repository\FileRepository;
+use App\Repository\MediaRepository;
 use App\Interface\DefaultFolderServiceInterface;
 use App\Interface\SharedResourceCleanerInterface;
 use App\Security\GuestRestrictionChecker;
@@ -51,6 +54,9 @@ final class FileWebController extends AbstractController
         private readonly PendingMediaProcessingCollector $pendingMediaProcessingCollector,
         private readonly MediaProcessorInterface $mediaProcessor,
         private readonly PdfSignatureDetector $pdfSignatureDetector,
+        private readonly MediaRepository $mediaRepository,
+        private readonly MediaDetachServiceInterface $mediaDetachService,
+        private readonly MediaDeletionServiceInterface $mediaDeletionService,
     ) {}
 
     #[Route('/files/{id}/download', name: 'app_file_download', methods: ['GET'])]
@@ -206,9 +212,33 @@ final class FileWebController extends AbstractController
         }
 
         $folderId = $request->request->get('folder_id');
+        $keepInAlbums = (bool) $request->request->get('keep_in_albums', '0');
+        $media = $this->mediaRepository->findByFile($file);
+
+        if ($media !== null && $keepInAlbums) {
+            try {
+                $this->mediaDetachService->detachAndDeleteFile($media);
+            } catch (\Throwable) {
+                $this->addFlash('error', "Erreur lors de la suppression du fichier « {$file->getOriginalName()} ».");
+
+                return $this->redirect($folderId ? '/explorer?folder=' . $folderId : '/explorer');
+            }
+
+            $this->addFlash('success', "Fichier « {$file->getOriginalName()} » supprimé, conservé dans vos albums.");
+
+            return $this->redirect($folderId ? '/explorer?folder=' . $folderId : '/explorer');
+        }
 
         try {
-            $this->storage->delete($file->getPath());
+            if ($media !== null) {
+                // Media::$file est désormais onDelete: SET NULL (#246, plus de
+                // CASCADE) : la suppression complète doit retirer le Media
+                // explicitement, sinon il devient orphelin (file_id NULL) sans
+                // que l'utilisateur ait choisi de le conserver.
+                $this->mediaDeletionService->delete($media);
+            } else {
+                $this->storage->delete($file->getPath());
+            }
         } catch (\Throwable) {
             $this->addFlash('error', "Erreur lors de la suppression du fichier « {$file->getOriginalName()} ».");
 
@@ -216,7 +246,9 @@ final class FileWebController extends AbstractController
         }
 
         $this->sharedResourceCleaner->deleteByResource(Share::RESOURCE_FILE, $file->getId());
-        $this->em->remove($file);
+        if ($media === null) {
+            $this->em->remove($file);
+        }
         $this->em->flush();
 
         $this->addFlash('success', "Fichier « {$file->getOriginalName()} » supprimé.");
