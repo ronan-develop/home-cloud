@@ -13,7 +13,7 @@ final class GuestRestrictionCheckerTest extends TestCase
 {
     private function makeUser(bool $isGuest): User
     {
-        $user = $this->createMock(User::class);
+        $user = $this->createStub(User::class);
         $user->method('isGuest')->willReturn($isGuest);
 
         return $user;

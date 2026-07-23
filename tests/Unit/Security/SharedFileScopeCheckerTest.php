@@ -16,7 +16,7 @@ final class SharedFileScopeCheckerTest extends TestCase
 {
     public function testFileLinkAllowsExactlyTheLinkedFile(): void
     {
-        $file = $this->createMock(File::class);
+        $file = $this->createStub(File::class);
         $file->method('getId')->willReturn(Uuid::v7());
 
         $checker = new SharedFileScopeChecker();
@@ -27,7 +27,7 @@ final class SharedFileScopeCheckerTest extends TestCase
     public function testFileLinkDeniesADifferentFile(): void
     {
         $linkedFileId = Uuid::v7();
-        $otherFile = $this->createMock(File::class);
+        $otherFile = $this->createStub(File::class);
         $otherFile->method('getId')->willReturn(Uuid::v7());
 
         $checker = new SharedFileScopeChecker();
@@ -37,10 +37,10 @@ final class SharedFileScopeCheckerTest extends TestCase
 
     public function testFolderLinkAllowsAFileDirectlyInThatFolder(): void
     {
-        $folder = $this->createMock(Folder::class);
+        $folder = $this->createStub(Folder::class);
         $folder->method('getId')->willReturn(Uuid::v7());
 
-        $file = $this->createMock(File::class);
+        $file = $this->createStub(File::class);
         $file->method('getFolder')->willReturn($folder);
 
         $checker = new SharedFileScopeChecker();
@@ -50,13 +50,13 @@ final class SharedFileScopeCheckerTest extends TestCase
 
     public function testFolderLinkDeniesAFileInAnotherFolder(): void
     {
-        $linkedFolder = $this->createMock(Folder::class);
+        $linkedFolder = $this->createStub(Folder::class);
         $linkedFolder->method('getId')->willReturn(Uuid::v7());
 
-        $otherFolder = $this->createMock(Folder::class);
+        $otherFolder = $this->createStub(Folder::class);
         $otherFolder->method('getId')->willReturn(Uuid::v7());
 
-        $file = $this->createMock(File::class);
+        $file = $this->createStub(File::class);
         $file->method('getFolder')->willReturn($otherFolder);
 
         $checker = new SharedFileScopeChecker();
@@ -69,14 +69,14 @@ final class SharedFileScopeCheckerTest extends TestCase
         // Partager Docs/ doit couvrir Docs/Sous/fichier.txt, pas seulement
         // les fichiers directement dans Docs/ — cohérent avec VisibilityChecker
         // qui autorise déjà ce fichier par remontée des ancêtres.
-        $linkedFolder = $this->createMock(Folder::class);
+        $linkedFolder = $this->createStub(Folder::class);
         $linkedFolder->method('getId')->willReturn(Uuid::v7());
 
-        $subfolder = $this->createMock(Folder::class);
+        $subfolder = $this->createStub(Folder::class);
         $subfolder->method('getId')->willReturn(Uuid::v7());
         $subfolder->method('getParent')->willReturn($linkedFolder);
 
-        $file = $this->createMock(File::class);
+        $file = $this->createStub(File::class);
         $file->method('getFolder')->willReturn($subfolder);
 
         $checker = new SharedFileScopeChecker();
@@ -86,18 +86,18 @@ final class SharedFileScopeCheckerTest extends TestCase
 
     public function testFolderLinkDeniesAFileInAnUnrelatedFolderHierarchy(): void
     {
-        $linkedFolder = $this->createMock(Folder::class);
+        $linkedFolder = $this->createStub(Folder::class);
         $linkedFolder->method('getId')->willReturn(Uuid::v7());
 
-        $unrelatedGrandParent = $this->createMock(Folder::class);
+        $unrelatedGrandParent = $this->createStub(Folder::class);
         $unrelatedGrandParent->method('getId')->willReturn(Uuid::v7());
         $unrelatedGrandParent->method('getParent')->willReturn(null);
 
-        $unrelatedFolder = $this->createMock(Folder::class);
+        $unrelatedFolder = $this->createStub(Folder::class);
         $unrelatedFolder->method('getId')->willReturn(Uuid::v7());
         $unrelatedFolder->method('getParent')->willReturn($unrelatedGrandParent);
 
-        $file = $this->createMock(File::class);
+        $file = $this->createStub(File::class);
         $file->method('getFolder')->willReturn($unrelatedFolder);
 
         $checker = new SharedFileScopeChecker();
@@ -107,13 +107,13 @@ final class SharedFileScopeCheckerTest extends TestCase
 
     public function testAlbumLinkAllowsAFileThatIsAMediaOfThatAlbum(): void
     {
-        $file = $this->createMock(File::class);
+        $file = $this->createStub(File::class);
         $file->method('getId')->willReturn(Uuid::v7());
 
-        $media = $this->createMock(\App\Entity\Media::class);
+        $media = $this->createStub(\App\Entity\Media::class);
         $media->method('getFile')->willReturn($file);
 
-        $album = $this->createMock(Album::class);
+        $album = $this->createStub(Album::class);
         $album->method('getMedias')->willReturn(new \Doctrine\Common\Collections\ArrayCollection([$media]));
 
         $checker = new SharedFileScopeChecker();
@@ -123,15 +123,15 @@ final class SharedFileScopeCheckerTest extends TestCase
 
     public function testAlbumLinkDeniesAFileNotInAlbum(): void
     {
-        $file = $this->createMock(File::class);
+        $file = $this->createStub(File::class);
         $file->method('getId')->willReturn(Uuid::v7());
 
-        $otherFile = $this->createMock(File::class);
+        $otherFile = $this->createStub(File::class);
         $otherFile->method('getId')->willReturn(Uuid::v7());
-        $media = $this->createMock(\App\Entity\Media::class);
+        $media = $this->createStub(\App\Entity\Media::class);
         $media->method('getFile')->willReturn($otherFile);
 
-        $album = $this->createMock(Album::class);
+        $album = $this->createStub(Album::class);
         $album->method('getMedias')->willReturn(new \Doctrine\Common\Collections\ArrayCollection([$media]));
 
         $checker = new SharedFileScopeChecker();

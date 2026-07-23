@@ -14,7 +14,7 @@ final class VisibilityCheckerTest extends TestCase
 {
     private function makeFolder(string $visibility, ?Folder $parent = null): Folder
     {
-        $folder = $this->createMock(Folder::class);
+        $folder = $this->createStub(Folder::class);
         $folder->method('getVisibility')->willReturn($visibility);
         $folder->method('getParent')->willReturn($parent);
 
@@ -23,7 +23,7 @@ final class VisibilityCheckerTest extends TestCase
 
     private function makeFile(string $visibility, ?Folder $folder = null): File
     {
-        $file = $this->createMock(File::class);
+        $file = $this->createStub(File::class);
         $file->method('getVisibility')->willReturn($visibility);
         $file->method('getFolder')->willReturn($folder ?? $this->makeFolder(Folder::VISIBILITY_PRIVATE));
 
@@ -32,7 +32,7 @@ final class VisibilityCheckerTest extends TestCase
 
     private function makeAlbum(string $visibility): Album
     {
-        $album = $this->createMock(Album::class);
+        $album = $this->createStub(Album::class);
         $album->method('getVisibility')->willReturn($visibility);
 
         return $album;

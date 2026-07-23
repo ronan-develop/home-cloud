@@ -39,7 +39,7 @@ final class AuthenticationFailureListenerTest extends TestCase
             json_encode(['email' => $email, 'password' => 'wrongpassword'])
         );
 
-        $authenticator = $this->createMock(AuthenticatorInterface::class);
+        $authenticator = $this->createStub(AuthenticatorInterface::class);
         $exception = new BadCredentialsException();
 
         return new LoginFailureEvent($exception, $authenticator, $request, null, 'login');

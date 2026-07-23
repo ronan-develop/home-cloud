@@ -31,7 +31,7 @@ final class ShareNotificationMailerTest extends TestCase
 
     private function makeUrlGeneratorStub(): UrlGeneratorInterface
     {
-        $stub = $this->createMock(UrlGeneratorInterface::class);
+        $stub = $this->createStub(UrlGeneratorInterface::class);
         $stub->method('generate')->willReturn('https://example.test/explorer?folder=some-id');
 
         return $stub;

@@ -15,7 +15,7 @@ final class SecurityHeadersListenerTest extends TestCase
 {
     private function buildEvent(string $path = '/api/v1/users', ?string $route = null): ResponseEvent
     {
-        $kernel = $this->createMock(HttpKernelInterface::class);
+        $kernel = $this->createStub(HttpKernelInterface::class);
         $request = Request::create($path);
         if ($route !== null) {
             $request->attributes->set('_route', $route);
