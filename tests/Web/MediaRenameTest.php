@@ -53,7 +53,7 @@ final class MediaRenameTest extends WebTestCase
     {
         $crawler = $this->client->request('GET', '/gallery');
 
-        return $crawler->filter('[data-testid="media-thumbnail"]')->first()->attr('data-rename-media-csrf-token-value');
+        return $crawler->filter('[data-rename-media-csrf-token-value]')->first()->attr('data-rename-media-csrf-token-value');
     }
 
     public function testRenameMediaReturnsJsonWithNewName(): void
