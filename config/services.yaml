@@ -38,6 +38,8 @@ services:
     App\Interface\BroadcastTargetProviderInterface: '@App\Service\BroadcastTargetProvider'
     App\Interface\BroadcastMailerInterface:       '@App\Service\BroadcastMailer'
     App\Interface\BroadcastOrchestratorInterface: '@App\Service\BroadcastOrchestrator'
+    App\Interface\BroadcastMessageRepositoryInterface: '@App\Repository\BroadcastMessageRepository'
+    App\Interface\BroadcastInAppNotifierInterface: '@App\Service\BroadcastInAppNotifier'
 
     App\State\AlbumProcessor:
         arguments:
