@@ -194,6 +194,14 @@
             {% endfor %}
         {% endfor %}
 
+        {# Message admin diffusé en in-app (#361) #}
+        {% if unreadBroadcastMessage is not null %}
+            <div class="hc-broadcast-banner mx-6 mt-4" role="status">
+                <strong>{{ unreadBroadcastMessage.subject }}</strong>
+                <div>{{ unreadBroadcastMessage.body|raw }}</div>
+            </div>
+        {% endif %}
+
         {# Contenu de la page #}
         <main class="hc-content">
             {% block content %}{% endblock %}

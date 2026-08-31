@@ -212,6 +212,19 @@
 	text-align: center;
 }
 
+.hc-broadcast-banner {
+	padding: 12px 16px;
+	border-radius: 12px;
+	background: var(--hc-surface);
+	border: 1px solid var(--hc-accent);
+	color: var(--hc-text);
+	font-size: 14px;
+}
+.hc-broadcast-banner strong {
+	display: block;
+	margin-bottom: 4px;
+}
+
 /* ── Contenu scrollable ── */
 .hc-content {
 	flex: 1;
