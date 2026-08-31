@@ -51,6 +51,7 @@ final class BroadcastAdminWebController extends AbstractController
                 $input->body,
                 $input->targetInstance,
                 $input->dryRun,
+                $input->alsoInApp,
             );
         }
 

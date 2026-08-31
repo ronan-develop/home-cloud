@@ -39,6 +39,10 @@ final class BroadcastMessageFormType extends AbstractType
                 'label'    => "Essai à blanc (aucun email réel envoyé)",
                 'required' => false,
             ])
+            ->add('alsoInApp', CheckboxType::class, [
+                'label'    => 'Aussi en notification in-app (bannière au prochain login)',
+                'required' => false,
+            ])
         ;
     }
 

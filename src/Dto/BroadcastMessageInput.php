@@ -18,4 +18,6 @@ final class BroadcastMessageInput
     public ?string $targetInstance = null;
 
     public bool $dryRun = false;
+
+    public bool $alsoInApp = false;
 }

@@ -50,6 +50,11 @@
       {{ form_label(form.dryRun, null, {label_attr: {class: 'hc-broadcast-label'}}) }}
     </div>
 
+    <div class="hc-broadcast-checkbox-row">
+      {{ form_widget(form.alsoInApp, {attr: {style: 'accent-color:var(--hc-accent)'}}) }}
+      {{ form_label(form.alsoInApp, null, {label_attr: {class: 'hc-broadcast-label'}}) }}
+    </div>
+
     <button type="submit" class="hc-broadcast-submit">Envoyer</button>
 
   {{ form_end(form) }}

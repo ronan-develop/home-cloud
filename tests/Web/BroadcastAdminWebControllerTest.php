@@ -64,5 +64,48 @@ final class BroadcastAdminWebControllerTest extends WebTestCase
 
         $this->assertResponseIsSuccessful();
         $this->assertSelectorExists('form');
+        $this->assertSelectorExists('input[name="broadcast_message_form[alsoInApp]"]');
+    }
+
+    public function testSubmittingWithAlsoInAppCreatesLocalBroadcastMessage(): void
+    {
+        $this->createAdmin();
+        $this->loginAs($_ENV['BROADCAST_ADMIN_EMAIL']);
+        $this->em->getConnection()->executeStatement('DELETE FROM broadcast_messages');
+
+        $crawler = $this->client->request('GET', '/admin/broadcast');
+        $form = $crawler->selectButton('Envoyer')->form([
+            'broadcast_message_form[subject]' => 'Maintenance planifiée',
+            'broadcast_message_form[body]'    => 'Corps du message',
+        ]);
+        $form['broadcast_message_form[alsoInApp]']->tick();
+
+        $this->client->submit($form);
+
+        $this->assertResponseIsSuccessful();
+
+        $count = (int) $this->em->getConnection()->executeQuery('SELECT COUNT(*) FROM broadcast_messages')->fetchOne();
+        $this->assertSame(1, $count);
+    }
+
+    public function testSubmittingWithoutAlsoInAppDoesNotCreateBroadcastMessage(): void
+    {
+        $this->createAdmin();
+        $this->loginAs($_ENV['BROADCAST_ADMIN_EMAIL']);
+        $this->em->getConnection()->executeStatement('DELETE FROM broadcast_messages');
+
+        $crawler = $this->client->request('GET', '/admin/broadcast');
+        $form = $crawler->selectButton('Envoyer')->form([
+            'broadcast_message_form[subject]' => 'Maintenance planifiée',
+            'broadcast_message_form[body]'    => 'Corps du message',
+            'broadcast_message_form[dryRun]'  => true,
+        ]);
+
+        $this->client->submit($form);
+
+        $this->assertResponseIsSuccessful();
+
+        $count = (int) $this->em->getConnection()->executeQuery('SELECT COUNT(*) FROM broadcast_messages')->fetchOne();
+        $this->assertSame(0, $count);
     }
 }
