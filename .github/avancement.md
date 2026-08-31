@@ -2,9 +2,16 @@
 
 > Dernière mise à jour : 2026-08-31
 
-> **Status git :** `main` — dernière PR mergée #363 (`feature/283-broadcast-message`)
+> **Status git :** `main` — dernière PR mergée #368 (`fix/354-api-delete-detach-media`)
 
 ---
+
+## ✅ DELETE API aligné sur le détachement Media (2026-08-31, #354, branche `fix/354-api-delete-detach-media`)
+
+- Cause : `FileProcessor::handleDelete` (API publique) supprimait toujours le `Media` associé en comptant sur un CASCADE DB retiré par #246 (`Media::$file` est passé en `onDelete: SET NULL`) — le `Media` devenait orphelin sans que thumbnail ni fichier original ne soient nettoyés. Seule la route web (`FileWebController::delete`) avait été mise à jour pour proposer le détachement.
+- Fix : `FileProcessor::handleDelete` réutilise les mêmes services que le web — `MediaDeletionService` pour la suppression totale, `MediaDetachService` pour le détachement. Nouveau paramètre optionnel `?keepInAlbums=1` sur `DELETE /api/v1/files/{id}` : si un `Media` est associé, il est détaché (conservé dans ses albums) au lieu d'être supprimé.
+- Tests : `FileDeleteTest` (API) complété avec les mêmes scénarios que `FileDeleteWebTest` — détachement avec albums préservés, suppression complète sans le flag, cas `keepInAlbums=1` sans Media associé.
+- Suite complète : 987/987 verts.
 
 ## ✅ Téléchargement : nom de fichier accentué provoquait une 500 (2026-08-31, #335, branche `claude/issue-335-1cx4oc`)
 
