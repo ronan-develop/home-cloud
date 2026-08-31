@@ -27,4 +27,21 @@ final class UserTest extends TestCase
         $this->assertTrue($user->isGuest());
     }
 
+    public function testLastChangelogViewedAtIsNullByDefault(): void
+    {
+        $user = new User('someone@example.com', 'Someone');
+
+        $this->assertNull($user->getLastChangelogViewedAt());
+    }
+
+    public function testSetLastChangelogViewedAtStoresValue(): void
+    {
+        $user = new User('someone@example.com', 'Someone');
+        $viewedAt = new \DateTimeImmutable('2026-08-01');
+
+        $user->setLastChangelogViewedAt($viewedAt);
+
+        $this->assertSame($viewedAt, $user->getLastChangelogViewedAt());
+    }
+
 }
