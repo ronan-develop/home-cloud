@@ -6,6 +6,7 @@ namespace App\Command;
 
 use App\Interface\FileRepositoryInterface;
 use App\Interface\MediaProcessorInterface;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -20,6 +21,14 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  * indéfiniment sans vignette, le worker ne les voyant jamais passer.
  * MediaProcessor::process() étant idempotent, relancer cette commande sans
  * rien à traiter est sans risque.
+ *
+ * #365 : sur un rattrapage de plusieurs centaines de fichiers, l'UnitOfWork
+ * accumulait toutes les entités déjà traitées sans jamais les libérer,
+ * jusqu'à l'OOM kill du cron. FileRepository::findWithoutMedia() itère
+ * maintenant (toIterable()) au lieu de tout hydrater d'un coup, et l'EntityManager
+ * est détaché après chaque fichier — pas seulement tous les N — puisque
+ * MediaProcessor::process() flush déjà individuellement : rien n'est en
+ * attente à perdre entre deux fichiers.
  */
 #[AsCommand(name: 'app:media:process-missing', description: 'Traite les fichiers restés sans Media (vignette manquante)')]
 final class MediaProcessMissingCommand extends Command
@@ -27,6 +36,7 @@ final class MediaProcessMissingCommand extends Command
     public function __construct(
         private readonly FileRepositoryInterface $fileRepository,
         private readonly MediaProcessorInterface $mediaProcessor,
+        private readonly EntityManagerInterface $entityManager,
     ) {
         parent::__construct();
     }
@@ -46,6 +56,8 @@ final class MediaProcessMissingCommand extends Command
             } else {
                 ++$skipped;
             }
+
+            $this->entityManager->clear();
         }
 
         $io->writeln(sprintf('%d traité(s), %d ignoré(s) (type non média).', $processed, $skipped));

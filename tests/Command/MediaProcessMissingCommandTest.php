@@ -9,6 +9,7 @@ use App\Entity\File;
 use App\Entity\Media;
 use App\Interface\FileRepositoryInterface;
 use App\Interface\MediaProcessorInterface;
+use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -28,7 +29,7 @@ final class MediaProcessMissingCommandTest extends TestCase
         $pdf = $this->createMock(File::class);
 
         $fileRepository = $this->createMock(FileRepositoryInterface::class);
-        $fileRepository->method('findWithoutMedia')->willReturn([$photo, $pdf]);
+        $fileRepository->method('findWithoutMedia')->willReturn($this->toGenerator([$photo, $pdf]));
 
         $mediaProcessor = $this->createMock(MediaProcessorInterface::class);
         $mediaProcessor->expects($this->exactly(2))
@@ -46,7 +47,7 @@ final class MediaProcessMissingCommandTest extends TestCase
     public function testReportsNothingToDoWhenNoFileIsMissingMedia(): void
     {
         $fileRepository = $this->createMock(FileRepositoryInterface::class);
-        $fileRepository->method('findWithoutMedia')->willReturn([]);
+        $fileRepository->method('findWithoutMedia')->willReturn($this->toGenerator([]));
 
         $mediaProcessor = $this->createMock(MediaProcessorInterface::class);
         $mediaProcessor->expects($this->never())->method('process');
@@ -58,11 +59,46 @@ final class MediaProcessMissingCommandTest extends TestCase
         $this->assertStringContainsString('0 traité', $tester->getDisplay());
     }
 
+    /**
+     * #365 : sur un rattrapage de plusieurs centaines de fichiers, l'UnitOfWork
+     * Doctrine accumulait toutes les entités déjà traitées sans jamais les
+     * libérer, jusqu'à l'OOM kill. On détache donc après chaque fichier — pas
+     * seulement tous les N — puisque MediaProcessor::process() flush déjà
+     * individuellement (rien n'est en attente à perdre).
+     */
+    public function testClearsEntityManagerAfterEachProcessedFile(): void
+    {
+        $files = [$this->createMock(File::class), $this->createMock(File::class), $this->createMock(File::class)];
+
+        $fileRepository = $this->createMock(FileRepositoryInterface::class);
+        $fileRepository->method('findWithoutMedia')->willReturn($this->toGenerator($files));
+
+        $mediaProcessor = $this->createMock(MediaProcessorInterface::class);
+        $mediaProcessor->method('process')->willReturn($this->createMock(Media::class));
+
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects($this->exactly(3))->method('clear');
+
+        $tester = $this->commandTester($fileRepository, $mediaProcessor, $entityManager);
+        $tester->execute([]);
+
+        $tester->assertCommandIsSuccessful();
+    }
+
+    /**
+     * @param list<File> $files
+     */
+    private function toGenerator(array $files): \Generator
+    {
+        yield from $files;
+    }
+
     private function commandTester(
         FileRepositoryInterface $fileRepository,
         MediaProcessorInterface $mediaProcessor,
+        ?EntityManagerInterface $entityManager = null,
     ): CommandTester {
-        $command = new MediaProcessMissingCommand($fileRepository, $mediaProcessor);
+        $command = new MediaProcessMissingCommand($fileRepository, $mediaProcessor, $entityManager ?? $this->createMock(EntityManagerInterface::class));
         $application = new Application();
         $application->addCommand($command);
 
