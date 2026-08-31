@@ -11,6 +11,8 @@ use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\FileOutput;
 use App\Entity\Share;
 use App\Interface\DefaultFolderServiceInterface;
+use App\Interface\MediaDeletionServiceInterface;
+use App\Interface\MediaDetachServiceInterface;
 use App\Repository\FileRepository;
 use App\Repository\MediaRepository;
 use App\Security\AuthenticationResolver;
@@ -51,6 +53,8 @@ final class FileProcessor implements ProcessorInterface
         private readonly RequestStack $requestStack,
         private readonly IriExtractor $iriExtractor,
         private readonly SharedResourceCleanerInterface $sharedResourceCleaner,
+        private readonly MediaDetachServiceInterface $mediaDetachService,
+        private readonly MediaDeletionServiceInterface $mediaDeletionService,
     ) {}
 
     /**
@@ -59,16 +63,19 @@ final class FileProcessor implements ProcessorInterface
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): mixed
     {
         return match (true) {
-            $operation instanceof Delete => $this->handleDelete($uriVariables),
+            $operation instanceof Delete => $this->handleDelete($uriVariables, $context),
             $operation instanceof Patch  => $this->handlePatch($data, $uriVariables),
             default => throw new \LogicException('Unsupported operation for FileProcessor'),
         };
     }
 
     /**
-     * DELETE /api/v1/files/{id} — supprime les métadonnées, le thumbnail ET le fichier physique.
+     * DELETE /api/v1/files/{id} — supprime les métadonnées et le fichier physique.
+     *
+     * ?keepInAlbums=1 : si un Media est lié, il est détaché (conservé dans ses
+     * albums) au lieu d'être supprimé — aligné sur FileWebController::delete (#246).
      */
-    private function handleDelete(array $uriVariables): null
+    private function handleDelete(array $uriVariables, array $context): null
     {
         $file = $this->fileRepository->find($uriVariables['id'])
             ?? throw new NotFoundHttpException('File not found');
@@ -78,16 +85,25 @@ final class FileProcessor implements ProcessorInterface
             throw new AccessDeniedHttpException('You are not allowed to delete this File');
         }
 
-        // Supprimer le thumbnail du disque AVANT le cascade DB (onDelete: CASCADE supprime la ligne Media)
+        $request = $context['request'] ?? null;
+        $keepInAlbums = (bool) $request?->query->get('keepInAlbums', '0');
         $media = $this->mediaRepository->findOneBy(['file' => $file]);
-        if ($media !== null && $media->getThumbnailPath() !== null) {
-            $this->storageService->delete($media->getThumbnailPath());
+
+        if ($media !== null && $keepInAlbums) {
+            $this->mediaDetachService->detachAndDeleteFile($media);
+
+            return null;
         }
 
-        $this->storageService->delete($file->getPath());
         $this->sharedResourceCleaner->deleteByResource(Share::RESOURCE_FILE, $file->getId());
-        $this->em->remove($file);
-        $this->em->flush();
+
+        if ($media !== null) {
+            $this->mediaDeletionService->delete($media);
+        } else {
+            $this->storageService->delete($file->getPath());
+            $this->em->remove($file);
+            $this->em->flush();
+        }
 
         return null;
     }
