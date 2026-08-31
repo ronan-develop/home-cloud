@@ -6,6 +6,22 @@
 
 ---
 
+## 🚧 Notification in-app du message admin broadcast (2026-08-31, #361, branche `feat/361-broadcast-in-app-notification`)
+
+- Suite de #283 (email uniquement) : ajoute un canal complémentaire, une bannière affichée dans l'app au prochain login.
+- Nouvelle entité `BroadcastMessage` (id, subject, body, createdAt) — un seul message actif à la fois par instance (`BroadcastMessageRepository::findLatest()`, `createdAt DESC`), pas d'historique multi-messages, pas de purge automatique après lecture.
+- Nouveau champ `User::lastBroadcastSeenAt` (nullable), même pattern que `lastChangelogViewedAt` (#293), comparé à `BroadcastMessage::createdAt` pour déterminer lu/non-lu.
+- `BroadcastOrchestrator::dispatch()` gagne un paramètre `alsoInApp` (additif, jamais exclusif de l'email) ; le payload JSON envoyé à `/internal/broadcast` transporte ce flag pour déclencher la création locale du message sur chaque instance distante ciblée.
+- Nouveau service `BroadcastInAppNotifier` (persiste le `BroadcastMessage`, no-op en dry-run), appelé par l'orchestrateur (instance locale) et par `BroadcastInternalController` (instances distantes).
+- Formulaire admin (`/admin/broadcast`) : nouvelle case "Aussi en notification in-app".
+- `BroadcastGlobalsExtension` (pattern `GlobalsInterface`, comme #293) expose `unreadBroadcastMessage` (l'objet complet, pas un compteur — la bannière affiche le contenu réel).
+- `BroadcastSeenListener` sur `KernelEvents::RESPONSE` (modèle `SecurityHeadersListener`) marque le message comme vu après le rendu Twig — exclu de `/api` et `/internal`. Dismiss auto au prochain login/à la prochaine page, pas de bouton "fermer".
+- Bannière ajoutée dans `layout.html.twig`, classe `.hc-broadcast-banner` dans `assets/styles/app-shell.css`.
+- Tests : `BroadcastMessageRepositoryTest`, `BroadcastInAppNotifierTest`, `BroadcastOrchestratorTest` (étendu), `BroadcastInternalControllerTest` (étendu), `BroadcastAdminWebControllerTest` (étendu), `BroadcastGlobalsExtensionTest`, `BroadcastSeenListenerTest`. Suite complète : 1022/1022 verts.
+- Reste à faire avant merge : PR à ouvrir, migration à appliquer manuellement sur les 7 instances au déploiement (pas de pipeline centralisé, DB isolée par instance).
+
+---
+
 ## ✅ Badge de notification changelog dans la topbar (2026-08-31, #293, branche `feat/293-changelog-notification-badge`)
 
 - Icône (cloche) ajoutée dans `hc-topbar-right`, visible sur toutes les pages, avec un badge numérique affichant le nombre d'entrées changelog ajoutées depuis la dernière visite de `/changelog`.
