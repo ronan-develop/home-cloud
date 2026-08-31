@@ -99,6 +99,31 @@ final class PublicShareDownloadWebTest extends WebTestCase
         $this->assertResponseIsSuccessful();
     }
 
+    /**
+     * #335 — HeaderUtils::makeDisposition() lève une InvalidArgumentException
+     * (donc une 500) sans fallback ASCII explicite dès que le nom contient un
+     * caractère non-ASCII.
+     */
+    public function testHolderOfFileLinkCanDownloadAFileWithAccentedName(): void
+    {
+        $owner = $this->createOwner();
+        $folder = new Folder('Docs', $owner);
+        $folder->setVisibility(Folder::VISIBILITY_LINK_ALLOWED);
+        $this->em->persist($folder);
+        $this->em->flush();
+        $file = $this->makeStoredFile($owner, $folder, 'Facture été 2026.txt');
+        $link = $this->createLink($owner, Share::RESOURCE_FILE, $file->getId());
+
+        $this->client->request(
+            'GET',
+            '/p/' . $link->getSelector() . '/valid-plain-token/download/' . $file->getId()->toRfc4122()
+        );
+
+        $this->assertResponseIsSuccessful();
+        $disposition = (string) $this->client->getResponse()->headers->get('Content-Disposition');
+        $this->assertStringContainsString("filename*=utf-8''" . rawurlencode('Facture été 2026.txt'), $disposition);
+    }
+
     public function testHolderOfFolderLinkCanDownloadAFileInsideThatFolder(): void
     {
         $owner = $this->createOwner();
