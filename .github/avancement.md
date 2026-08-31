@@ -2,9 +2,18 @@
 
 > Dernière mise à jour : 2026-08-31
 
-> **Status git :** `main` — dernière PR mergée #368 (`fix/354-api-delete-detach-media`)
+> **Status git :** `main` — dernière PR mergée #370 (`feat/293-changelog-notification-badge`)
 
 ---
+
+## ✅ Badge de notification changelog dans la topbar (2026-08-31, #293, branche `feat/293-changelog-notification-badge`)
+
+- Icône (cloche) ajoutée dans `hc-topbar-right`, visible sur toutes les pages, avec un badge numérique affichant le nombre d'entrées changelog ajoutées depuis la dernière visite de `/changelog`.
+- Nouveau champ `User::lastChangelogViewedAt` (nullable, migration `Version20260831125502`) pour tracker la dernière visite — approche backend plutôt que `localStorage`, car la topbar est rendue sur toutes les pages via le layout partagé.
+- `ChangelogGlobalsExtension` (pattern `GlobalsInterface`, comme `FolderGlobalsExtension`/`GuestGlobalsExtension`) expose `changelogUnreadCount` globalement à tous les templates, sans dupliquer la logique par contrôleur.
+- Point d'ordonnancement : `ChangelogController::index()` met à jour `lastChangelogViewedAt` **après** avoir construit la réponse (`render()`), pour que le badge calculé par l'extension Twig utilise bien l'ancienne valeur au moment du rendu.
+- Cas "jamais visité" (`lastChangelogViewedAt === null`) traité comme 0 non-lu, pas le total — évite un faux badge à 45 pour tout utilisateur existant dès le déploiement.
+- Tests : `UserTest` (getter/setter), `ChangelogGlobalsExtensionTest` (anonyme, jamais visité, comptage, aucune nouveauté), `ChangelogControllerTest` (pas de badge si jamais visité, badge si visite ancienne, badge disparaît après visite, marquage de la visite). Suite complète : 997/997 verts.
 
 ## ✅ DELETE API aligné sur le détachement Media (2026-08-31, #354, branche `fix/354-api-delete-detach-media`)
 
