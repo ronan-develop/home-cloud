@@ -7,6 +7,7 @@ namespace App\Controller\Web;
 use App\Entity\Album;
 use App\Entity\File;
 use App\Entity\Folder;
+use App\Http\ContentDispositionFactory;
 use App\Interface\FileRepositoryInterface;
 use App\Interface\MediaRepositoryInterface;
 use App\Interface\ShareLinkAccessCheckerInterface;
@@ -17,7 +18,6 @@ use App\Security\ResourceLocator;
 use App\Security\SharedFileScopeChecker;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -85,7 +85,7 @@ final class PublicShareController extends AbstractController
 
         $detectedMime = (new \finfo(FILEINFO_MIME_TYPE))->file($absolutePath) ?: 'application/octet-stream';
 
-        $disposition = HeaderUtils::makeDisposition(
+        $disposition = ContentDispositionFactory::make(
             ResponseHeaderBag::DISPOSITION_ATTACHMENT,
             $file->getOriginalName(),
         );

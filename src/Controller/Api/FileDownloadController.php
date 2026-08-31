@@ -6,11 +6,11 @@ namespace App\Controller\Api;
 
 use App\Entity\Share;
 use App\Entity\User;
+use App\Http\ContentDispositionFactory;
 use App\Repository\FileRepository;
 use App\Interface\StorageServiceInterface;
 use App\Security\ResourceAccessChecker;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -66,7 +66,7 @@ final class FileDownloadController extends AbstractController
         // MIME détecté depuis le fichier sur disque — pas de confiance au MIME DB (spoofable)
         $detectedMime = (new \finfo(FILEINFO_MIME_TYPE))->file($absolutePath) ?: 'application/octet-stream';
 
-        $disposition = HeaderUtils::makeDisposition(
+        $disposition = ContentDispositionFactory::make(
             ResponseHeaderBag::DISPOSITION_ATTACHMENT,
             $file->getOriginalName(),
         );
