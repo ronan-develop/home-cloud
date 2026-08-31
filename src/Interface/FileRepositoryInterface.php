@@ -32,7 +32,11 @@ interface FileRepositoryInterface
      * décider en un accès mémoire (resolveMediaType()) si un fichier est
      * pertinent, sans toucher au disque pour ceux qu'il écarte (PDF, etc.).
      *
-     * @return list<File>
+     * Retourne un itérable (toIterable()) plutôt qu'un tableau : un rattrapage
+     * peut porter sur plusieurs centaines de fichiers, hydrater le résultat
+     * entier d'un coup a fait tomber le worker en OOM (#365).
+     *
+     * @return iterable<File>
      */
-    public function findWithoutMedia(): array;
+    public function findWithoutMedia(): iterable;
 }
