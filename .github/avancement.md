@@ -6,6 +6,13 @@
 
 ---
 
+## ✅ Téléchargement : nom de fichier accentué provoquait une 500 (2026-08-31, #335, branche `claude/issue-335-1cx4oc`)
+
+- Cause réelle : `FileDownloadController` (API) et `PublicShareController::download()` (partage public) construisaient le header `Content-Disposition` avec `HeaderUtils::makeDisposition($disposition, $file->getOriginalName())`, sans 3ᵉ argument (`$filenameFallback`). Symfony n'auto-génère ce fallback ASCII que dans `BinaryFileResponse::setContentDisposition()` — pas dans `HeaderUtils::makeDisposition()` appelé directement. Sans fallback fourni, il retombe sur `$filename` lui-même et lève une `InvalidArgumentException` (→ 500) dès que le nom contient un caractère non-ASCII (accents, tirets typographiques…). `FileWebController::download()` et `FolderWebController::download()`, qui passent par `BinaryFileResponse::setContentDisposition()`, n'étaient pas concernés.
+- Fix : nouvelle classe `App\Http\ContentDispositionFactory::make()`, qui translittère le nom en ASCII (`iconv(..., 'ASCII//TRANSLIT', ...)`) pour le fallback avant de déléguer à `HeaderUtils::makeDisposition()` — le nom UTF-8 exact reste porté par le paramètre `filename*` (RFC 6266 / RFC 5987), que les navigateurs modernes préfèrent au fallback ASCII.
+- Tests : `FileDownloadFilenameTest` (API — fallback ASCII absent avant fix → 500 ; `filename*=utf-8''...` correctement percent-encodé ; nom de stockage UUID jamais exposé), nouveau cas dans `PublicShareDownloadWebTest` pour le même bug côté lien public.
+- Non-régression vérifiée sur `FileDownloadOwnershipTest`, `FileTest`, l'ensemble de `tests/Api` (234 tests, seuls des échecs pré-existants et sans rapport — JWT non configuré en sandbox, asset `@hotwired/stimulus` non téléchargeable hors-ligne — subsistent).
+
 ## ✅ Fix OOM du cron `app:media:process-missing` (2026-08-31, #365, branche `fix/365-oom-process-missing`)
 
 - Cause : `FileRepository::findWithoutMedia()` hydratait tous les `File` sans `Media` d'un coup (`getResult()`) et `MediaProcessMissingCommand` ne libérait jamais l'UnitOfWork Doctrine entre deux fichiers — sur un rattrapage de plusieurs centaines de RAW, la mémoire du process croissait jusqu'à l'OOM kill.
