@@ -93,6 +93,16 @@ class ThumbnailService
             return null;
         }
 
+        // Vérifier les dimensions AVANT de charger la preview en mémoire GD —
+        // même garde-fou que generateFromPlain() (GD memory bomb).
+        $size = @getimagesizefromstring($preview->jpegData);
+        if ($size === false) {
+            return null;
+        }
+        if ($size[0] > self::MAX_IMAGE_DIMENSION || $size[1] > self::MAX_IMAGE_DIMENSION) {
+            return null;
+        }
+
         $source = @imagecreatefromstring($preview->jpegData);
         if ($source === false) {
             return null;

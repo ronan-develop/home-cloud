@@ -152,6 +152,25 @@ final class ThumbnailServiceRawTest extends TestCase
         $this->assertSame(480, $height, 'Le ratio 3:2 doit être conservé après rotation');
     }
 
+    public function testRejectsRawPreviewExceedingMaxImageDimension(): void
+    {
+        $rawPath = $this->makeRawFile();
+
+        // Un vrai JPEG décodable, mais dont une dimension (10001px de large)
+        // dépasse MAX_IMAGE_DIMENSION (10000px). La hauteur de 1px garde le
+        // test rapide et léger en mémoire : c'est le seuil qui est testé, pas
+        // le comportement de GD sur une image réellement énorme.
+        $extractor = $this->createMock(RawPreviewExtractorInterface::class);
+        $extractor->method('supports')->willReturn(true);
+        $extractor->method('extract')->willReturn(
+            new ExtractedPreview($this->makeJpeg(10001, 1), 10001, 1, Format::NEF),
+        );
+
+        $service = $this->service($extractor);
+
+        $this->assertNull($service->generate($rawPath), 'Une preview RAW surdimensionnée doit être rejetée sans crash mémoire');
+    }
+
     public function testFallsBackToGdForRegularImages(): void
     {
         // Un JPEG normal ne passe pas par l'extracteur : supports() renvoie false.
