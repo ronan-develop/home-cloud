@@ -6,6 +6,7 @@ namespace App\Tests\Repository;
 
 use App\Entity\File;
 use App\Entity\Folder;
+use App\Entity\Media;
 use App\Entity\User;
 use App\Repository\FileRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -86,5 +87,45 @@ final class FileRepositoryTest extends KernelTestCase
         $this->createFile($other, $otherFolder, 'not-mine.txt', 999999);
 
         $this->assertSame(500, $this->repository->sumSizeByOwner($owner));
+    }
+
+    public function testFindWithoutMediaReturnsEmptyWhenNoFiles(): void
+    {
+        $this->assertSame([], iterator_to_array($this->repository->findWithoutMedia()));
+    }
+
+    public function testFindWithoutMediaExcludesFilesThatAlreadyHaveMedia(): void
+    {
+        $owner = $this->createUser('owner-missing-media@example.com');
+        $folder = new Folder('Uploads', $owner);
+        $this->em->persist($folder);
+        $this->em->flush();
+
+        $withMedia = $this->createFile($owner, $folder, 'has-media.jpg', 100);
+        $withoutMedia = $this->createFile($owner, $folder, 'no-media.jpg', 100);
+
+        $this->em->persist(new Media($withMedia, 'photo'));
+        $this->em->flush();
+
+        $result = iterator_to_array($this->repository->findWithoutMedia());
+
+        $this->assertCount(1, $result);
+        $this->assertSame($withoutMedia->getId()->toRfc4122(), $result[0]->getId()->toRfc4122());
+    }
+
+    public function testFindWithoutMediaReturnsIterableUsableWithoutLoadingAllRowsAtOnce(): void
+    {
+        $owner = $this->createUser('owner-iterable@example.com');
+        $folder = new Folder('Uploads', $owner);
+        $this->em->persist($folder);
+        $this->em->flush();
+
+        $this->createFile($owner, $folder, 'a.jpg', 10);
+        $this->createFile($owner, $folder, 'b.jpg', 10);
+
+        $result = $this->repository->findWithoutMedia();
+
+        $this->assertInstanceOf(\Generator::class, $result);
+        $this->assertCount(2, iterator_to_array($result));
     }
 }

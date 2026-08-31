@@ -1,10 +1,17 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-07-23
+> Dernière mise à jour : 2026-08-31
 
-> **Status git :** `main` — dernière PR mergée #331 (`feat/311-media-viewer`)
+> **Status git :** `main` — dernière PR mergée #363 (`feature/283-broadcast-message`)
 
 ---
+
+## ✅ Fix OOM du cron `app:media:process-missing` (2026-08-31, #365, branche `fix/365-oom-process-missing`)
+
+- Cause : `FileRepository::findWithoutMedia()` hydratait tous les `File` sans `Media` d'un coup (`getResult()`) et `MediaProcessMissingCommand` ne libérait jamais l'UnitOfWork Doctrine entre deux fichiers — sur un rattrapage de plusieurs centaines de RAW, la mémoire du process croissait jusqu'à l'OOM kill.
+- Fix : `findWithoutMedia()` retourne un itérable (`toIterable()`) ; la commande appelle `$entityManager->clear()` **après chaque fichier traité**, pas seulement tous les N — `MediaProcessor::process()` flush déjà individuellement, donc rien n'est en attente à perdre en clearant à chaque itération (plus simple et plus sûr qu'un batch de 20).
+- Point de vigilance validé en amont : `clear()` appelé *après* `process()` et non avant, sinon le `File` en cours d'itération se retrouve détaché avant que `MediaProcessor` ne l'utilise comme relation du nouveau `Media`.
+- Hors scope, signalé séparément : `ThumbnailService::generateFromRaw()` décode la preview RAW en pleine résolution sans le garde-fou `MAX_IMAGE_DIMENSION` qui existe déjà pour `generateFromPlain()` — contributeur possible additionnel à l'OOM, à traiter dans un ticket dédié.
 
 ## ✅ Diffusion d'un message admin multi-instances (2026-07-23, #283, branche `feature/283-broadcast-message`)
 
