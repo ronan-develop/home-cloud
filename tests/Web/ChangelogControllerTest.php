@@ -123,4 +123,64 @@ final class ChangelogControllerTest extends WebTestCase
         $this->assertResponseIsSuccessful();
         $this->assertNotSame($firstEntryPage1, $firstEntryPage2, 'La page 2 doit afficher des entrées différentes de la page 1.');
     }
+
+    /**
+     * #293 : badge de notification dans la topbar, calculé à partir de
+     * lastChangelogViewedAt. Un utilisateur qui n'a jamais visité /changelog
+     * ne doit pas voir un badge avec le total (faux signal) — pas de badge.
+     */
+    public function testNoBadgeWhenNeverVisitedChangelog(): void
+    {
+        $this->login();
+
+        $crawler = $this->client->request('GET', '/settings');
+
+        $this->assertSame(0, $crawler->filter('.hc-notif-badge')->count());
+    }
+
+    public function testBadgeShowsUnreadCountWhenLastVisitIsOld(): void
+    {
+        $this->login();
+        $this->setLastChangelogViewedAt(new \DateTimeImmutable('2020-01-01'));
+
+        $crawler = $this->client->request('GET', '/settings');
+
+        $this->assertSame(1, $crawler->filter('.hc-notif-badge')->count());
+    }
+
+    public function testBadgeDisappearsAfterVisitingChangelog(): void
+    {
+        $this->login();
+        $this->setLastChangelogViewedAt(new \DateTimeImmutable('2020-01-01'));
+
+        $this->client->request('GET', '/changelog');
+        $crawler = $this->client->request('GET', '/settings');
+
+        $this->assertSame(0, $crawler->filter('.hc-notif-badge')->count());
+    }
+
+    public function testVisitingChangelogMarksLastViewedAt(): void
+    {
+        $this->login();
+        $this->assertNull($this->currentUser()->getLastChangelogViewedAt());
+
+        $this->client->request('GET', '/changelog');
+
+        $this->assertNotNull($this->currentUser()->getLastChangelogViewedAt());
+    }
+
+    private function setLastChangelogViewedAt(\DateTimeImmutable $date): void
+    {
+        $user = $this->currentUser();
+        $user->setLastChangelogViewedAt($date);
+        $this->em->flush();
+        $this->em->clear();
+    }
+
+    private function currentUser(): User
+    {
+        $this->em->clear();
+
+        return $this->em->getRepository(User::class)->findOneBy(['email' => 'test@example.com']);
+    }
 }

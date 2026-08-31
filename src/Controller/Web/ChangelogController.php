@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controller\Web;
 
+use App\Entity\User;
 use App\Interface\ChangelogFetcherInterface;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -23,6 +25,7 @@ final class ChangelogController extends AbstractController
 
     public function __construct(
         private readonly ChangelogFetcherInterface $changelogFetcher,
+        private readonly EntityManagerInterface $em,
     ) {}
 
     #[Route('/changelog', name: 'app_changelog', methods: ['GET'])]
@@ -34,10 +37,17 @@ final class ChangelogController extends AbstractController
         $page = max(1, min($totalPages, $request->query->getInt('page', 1)));
         $offset = ($page - 1) * self::PER_PAGE;
 
-        return $this->render('web/changelog.html.twig', [
+        $response = $this->render('web/changelog.html.twig', [
             'entries' => array_slice($allEntries, $offset, self::PER_PAGE),
             'currentPage' => $page,
             'totalPages' => $totalPages,
         ]);
+
+        /** @var User $user */
+        $user = $this->getUser();
+        $user->setLastChangelogViewedAt(new \DateTimeImmutable());
+        $this->em->flush();
+
+        return $response;
     }
 }
