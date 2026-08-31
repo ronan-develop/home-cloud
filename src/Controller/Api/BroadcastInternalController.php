@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Api;
 
+use App\Interface\BroadcastInAppNotifierInterface;
 use App\Interface\BroadcastMailerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -20,6 +21,7 @@ final class BroadcastInternalController extends AbstractController
 {
     public function __construct(
         private readonly BroadcastMailerInterface $broadcastMailer,
+        private readonly BroadcastInAppNotifierInterface $inAppNotifier,
     ) {}
 
     #[Route('/internal/broadcast', name: 'internal_broadcast', methods: ['POST'])]
@@ -27,11 +29,15 @@ final class BroadcastInternalController extends AbstractController
     {
         $data = json_decode($request->getContent(), true) ?? [];
 
-        $sent = $this->broadcastMailer->sendToAllUsers(
-            (string) ($data['subject'] ?? ''),
-            (string) ($data['body'] ?? ''),
-            (bool) ($data['dryRun'] ?? false),
-        );
+        $subject = (string) ($data['subject'] ?? '');
+        $body = (string) ($data['body'] ?? '');
+        $dryRun = (bool) ($data['dryRun'] ?? false);
+
+        $sent = $this->broadcastMailer->sendToAllUsers($subject, $body, $dryRun);
+
+        if ((bool) ($data['alsoInApp'] ?? false)) {
+            $this->inAppNotifier->notify($subject, $body, $dryRun);
+        }
 
         return new JsonResponse(['sent' => $sent]);
     }

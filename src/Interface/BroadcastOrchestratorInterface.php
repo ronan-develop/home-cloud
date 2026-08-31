@@ -12,5 +12,5 @@ interface BroadcastOrchestratorInterface
      *
      * @return array<string, bool> prénom d'instance => succès
      */
-    public function dispatch(string $subject, string $body, ?string $targetInstance, bool $dryRun): array;
+    public function dispatch(string $subject, string $body, ?string $targetInstance, bool $dryRun, bool $alsoInApp): array;
 }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Api;
 
+use App\Repository\BroadcastMessageRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 /**
@@ -14,6 +16,14 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
  */
 final class BroadcastInternalControllerTest extends WebTestCase
 {
+    protected function setUp(): void
+    {
+        self::bootKernel();
+        $em = static::getContainer()->get(EntityManagerInterface::class);
+        $em->getConnection()->executeStatement('DELETE FROM broadcast_messages');
+        self::ensureKernelShutdown();
+    }
+
     public function testRejects401WithoutToken(): void
     {
         $client = static::createClient();
@@ -54,5 +64,50 @@ final class BroadcastInternalControllerTest extends WebTestCase
 
         $this->assertSame(200, $client->getResponse()->getStatusCode());
         self::assertEmailCount(0);
+    }
+
+    public function testAlsoInAppTrueCreatesLocalBroadcastMessage(): void
+    {
+        $client = static::createClient();
+        $client->request('POST', '/internal/broadcast', server: [
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_X_BROADCAST_TOKEN' => $_ENV['BROADCAST_SHARED_TOKEN'],
+        ], content: '{"subject":"Maintenance","body":"<p>Texte</p>","dryRun":false,"alsoInApp":true}');
+
+        $this->assertSame(200, $client->getResponse()->getStatusCode());
+
+        $repository = static::getContainer()->get(BroadcastMessageRepository::class);
+        $latest = $repository->findLatest();
+
+        $this->assertNotNull($latest);
+        $this->assertSame('Maintenance', $latest->getSubject());
+    }
+
+    public function testAlsoInAppFalseDoesNotCreateBroadcastMessage(): void
+    {
+        $client = static::createClient();
+        $client->request('POST', '/internal/broadcast', server: [
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_X_BROADCAST_TOKEN' => $_ENV['BROADCAST_SHARED_TOKEN'],
+        ], content: '{"subject":"Maintenance","body":"<p>Texte</p>","dryRun":false,"alsoInApp":false}');
+
+        $this->assertSame(200, $client->getResponse()->getStatusCode());
+
+        $repository = static::getContainer()->get(BroadcastMessageRepository::class);
+        $this->assertNull($repository->findLatest());
+    }
+
+    public function testDryRunWithAlsoInAppDoesNotPersistMessage(): void
+    {
+        $client = static::createClient();
+        $client->request('POST', '/internal/broadcast', server: [
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_X_BROADCAST_TOKEN' => $_ENV['BROADCAST_SHARED_TOKEN'],
+        ], content: '{"subject":"Maintenance","body":"<p>Texte</p>","dryRun":true,"alsoInApp":true}');
+
+        $this->assertSame(200, $client->getResponse()->getStatusCode());
+
+        $repository = static::getContainer()->get(BroadcastMessageRepository::class);
+        $this->assertNull($repository->findLatest());
     }
 }

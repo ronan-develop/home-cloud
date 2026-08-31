@@ -44,6 +44,7 @@ final class BroadcastSendCommand extends Command
             (string) $input->getOption('body'),
             $input->getOption('instance'),
             (bool) $input->getOption('dry-run'),
+            alsoInApp: false,
         );
 
         foreach ($results as $instance => $success) {

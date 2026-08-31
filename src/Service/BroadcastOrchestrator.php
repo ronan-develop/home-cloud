@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Interface\BroadcastInAppNotifierInterface;
 use App\Interface\BroadcastMailerInterface;
 use App\Interface\BroadcastOrchestratorInterface;
 use App\Interface\BroadcastTargetProviderInterface;
@@ -24,12 +25,13 @@ final readonly class BroadcastOrchestrator implements BroadcastOrchestratorInter
         private HttpClientInterface $httpClient,
         private BroadcastTargetProviderInterface $targetProvider,
         private BroadcastMailerInterface $localMailer,
+        private BroadcastInAppNotifierInterface $localInAppNotifier,
         private LoggerInterface $logger,
         private string $currentInstance,
         private string $sharedToken,
     ) {}
 
-    public function dispatch(string $subject, string $body, ?string $targetInstance, bool $dryRun): array
+    public function dispatch(string $subject, string $body, ?string $targetInstance, bool $dryRun, bool $alsoInApp): array
     {
         $targets = $targetInstance !== null
             ? [$targetInstance => $this->targetProvider->getTarget($targetInstance)]
@@ -40,6 +42,11 @@ final readonly class BroadcastOrchestrator implements BroadcastOrchestratorInter
         foreach ($targets as $instance => $url) {
             if ($instance === $this->currentInstance) {
                 $this->localMailer->sendToAllUsers($subject, $body, $dryRun);
+
+                if ($alsoInApp) {
+                    $this->localInAppNotifier->notify($subject, $body, $dryRun);
+                }
+
                 $results[$instance] = true;
                 continue;
             }
@@ -49,18 +56,18 @@ final readonly class BroadcastOrchestrator implements BroadcastOrchestratorInter
                 continue;
             }
 
-            $results[$instance] = $this->dispatchToRemote($url, $subject, $body);
+            $results[$instance] = $this->dispatchToRemote($url, $subject, $body, $alsoInApp);
         }
 
         return $results;
     }
 
-    private function dispatchToRemote(string $url, string $subject, string $body): bool
+    private function dispatchToRemote(string $url, string $subject, string $body, bool $alsoInApp): bool
     {
         try {
             $this->httpClient->request('POST', $url . '/internal/broadcast', [
                 'headers' => ['X-Broadcast-Token' => $this->sharedToken],
-                'json'    => ['subject' => $subject, 'body' => $body, 'dryRun' => false],
+                'json'    => ['subject' => $subject, 'body' => $body, 'dryRun' => false, 'alsoInApp' => $alsoInApp],
             ]);
 
             return true;
