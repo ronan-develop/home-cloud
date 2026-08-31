@@ -57,7 +57,7 @@ use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
             uriTemplate: '/v1/files/{id}',
             openapi: new Model\Operation(
                 summary: 'Supprime un fichier.',
-                description: 'Supprime les métadonnées en base ET le fichier physique sur disque (ainsi que son thumbnail si c\'est un média).',
+                description: 'Supprime les métadonnées en base ET le fichier physique sur disque (ainsi que son thumbnail si c\'est un média). Paramètre optionnel `?keepInAlbums=1` : si le fichier a un Media associé, celui-ci est détaché (conservé dans ses albums) au lieu d\'être supprimé.',
             ),
         ),
         new \ApiPlatform\Metadata\Patch(
