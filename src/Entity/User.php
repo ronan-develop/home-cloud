@@ -46,6 +46,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $lastChangelogViewedAt = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $lastBroadcastSeenAt = null;
+
     public function __construct(string $email, string $displayName)
     {
         $this->id = Uuid::v7();
@@ -133,5 +136,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setLastChangelogViewedAt(?\DateTimeImmutable $lastChangelogViewedAt): void
     {
         $this->lastChangelogViewedAt = $lastChangelogViewedAt;
+    }
+
+    public function getLastBroadcastSeenAt(): ?\DateTimeImmutable
+    {
+        return $this->lastBroadcastSeenAt;
+    }
+
+    public function setLastBroadcastSeenAt(?\DateTimeImmutable $lastBroadcastSeenAt): void
+    {
+        $this->lastBroadcastSeenAt = $lastBroadcastSeenAt;
     }
 }
