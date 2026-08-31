@@ -192,6 +192,26 @@
 	background: var(--hc-surface-2);
 }
 
+.hc-notif-btn {
+	position: relative;
+}
+
+.hc-notif-badge {
+	position: absolute;
+	top: -4px;
+	right: -4px;
+	min-width: 16px;
+	height: 16px;
+	padding: 0 4px;
+	border-radius: 999px;
+	background: var(--hc-err);
+	color: #fff;
+	font-size: 10px;
+	font-weight: 700;
+	line-height: 16px;
+	text-align: center;
+}
+
 /* ── Contenu scrollable ── */
 .hc-content {
 	flex: 1;

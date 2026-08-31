@@ -148,6 +148,16 @@
 
             {# Zone droite : thème + avatar + logout #}
             <div class="hc-topbar-right">
+                <a href="{{ path('app_changelog') }}" class="btn btn-soft btn-icon hc-notif-btn" title="Nouveautés" aria-label="Voir les nouveautés{% if changelogUnreadCount > 0 %} ({{ changelogUnreadCount }} nouvelle{{ changelogUnreadCount > 1 ? 's' : '' }}){% endif %}">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                    {% if changelogUnreadCount > 0 %}
+                        <span class="hc-notif-badge">{{ changelogUnreadCount > 99 ? '99+' : changelogUnreadCount }}</span>
+                    {% endif %}
+                </a>
+
                 <button class="btn btn-soft btn-icon" id="hc-theme-toggle" data-action="click->drawer-theme#toggleTheme" title="Basculer le thème" aria-label="Changer le thème">
                     <svg data-drawer-theme-target="sunIcon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="5"/>

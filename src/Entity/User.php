@@ -43,6 +43,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'string', length: 10, options: ['default' => self::ACCOUNT_TYPE_FULL])]
     private string $accountType = self::ACCOUNT_TYPE_FULL;
 
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $lastChangelogViewedAt = null;
+
     public function __construct(string $email, string $displayName)
     {
         $this->id = Uuid::v7();
@@ -120,5 +123,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function isGuest(): bool
     {
         return $this->accountType === self::ACCOUNT_TYPE_GUEST;
+    }
+
+    public function getLastChangelogViewedAt(): ?\DateTimeImmutable
+    {
+        return $this->lastChangelogViewedAt;
+    }
+
+    public function setLastChangelogViewedAt(?\DateTimeImmutable $lastChangelogViewedAt): void
+    {
+        $this->lastChangelogViewedAt = $lastChangelogViewedAt;
     }
 }
