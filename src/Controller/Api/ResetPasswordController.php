@@ -3,38 +3,25 @@
 namespace App\Controller\Api;
 
 use App\Entity\User;
+use App\Interface\PasswordResetInitiatorInterface;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
-use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Address;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
-use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
 
 
 class ResetPasswordController extends AbstractController
 {
     public function __construct(
-        private ResetPasswordHelperInterface $resetPasswordHelper,
         private EntityManagerInterface $entityManager,
         private \App\Interface\PasswordResetServiceInterface $passwordResetService,
         private RateLimiterFactory $resetPasswordRequestLimiter,
         private RateLimiterFactory $resetPasswordSubmitLimiter,
+        private PasswordResetInitiatorInterface $passwordResetInitiator,
     ) {}
-
-    /**
-     * Dérive l'adresse d'expédition du host de la requête (ex: alice.homecloud.fr
-     * → no-reply@alice.homecloud.fr), pour rester correct sur n'importe quel
-     * sous-domaine sans configuration manuelle par instance.
-     */
-    private function mailerFromAddress(Request $request): string
-    {
-        return 'no-reply@' . $request->getHost();
-    }
 
     #[Route('/reset-password', name: 'web_reset_password', methods: ['GET'])]
     public function webResetPassword(): Response
@@ -75,12 +62,8 @@ class ResetPasswordController extends AbstractController
     }
 
     #[Route('/api/request-reset-password', name: 'api_request_reset_password', methods: ['POST'])]
-    public function apiRequestResetPassword(
-        Request $request,
-        EntityManagerInterface $em,
-        ResetPasswordHelperInterface $resetPasswordHelper,
-        MailerInterface $mailer
-    ): Response {
+    public function apiRequestResetPassword(Request $request, EntityManagerInterface $em): Response
+    {
         $limiter = $this->resetPasswordRequestLimiter->create($request->getClientIp());
         if (!$limiter->consume(1)->isAccepted()) {
             throw new TooManyRequestsHttpException(null, 'Trop de demandes de réinitialisation. Réessayez plus tard.');
@@ -96,15 +79,7 @@ class ResetPasswordController extends AbstractController
             // Pour la sécurité, on ne révèle pas si l'email existe
             return $this->json(['message' => 'Si un compte existe, un email a été envoyé.']);
         }
-        $resetToken = $resetPasswordHelper->generateResetToken($user);
-        $resetUrl = $this->generateUrl('web_reset_password_confirm', ['token' => $resetToken->getToken()], \Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_URL);
-        $emailMessage = (new TemplatedEmail())
-            ->from(new Address($this->mailerFromAddress($request)))
-            ->to($user->getEmail())
-            ->subject('Réinitialisation de votre mot de passe')
-            ->htmlTemplate('reset_password/reset_request_email.html.twig')
-            ->context(['resetUrl' => $resetUrl]);
-        $mailer->send($emailMessage);
+        $this->passwordResetInitiator->sendResetLink($user, $request);
         return $this->json(['message' => 'Si un compte existe, un email a été envoyé.']);
     }
 }
