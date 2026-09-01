@@ -32,6 +32,7 @@ final class GitHubChangelogFetcher implements ChangelogFetcherInterface
         private readonly HttpClientInterface $httpClient,
         private readonly CacheInterface $cache,
         private readonly PrTitleCleanerInterface $titleCleaner,
+        private readonly string $githubToken = '',
     ) {}
 
     public function fetchEntries(): array
@@ -94,6 +95,11 @@ final class GitHubChangelogFetcher implements ChangelogFetcherInterface
     {
         $all = [];
 
+        $headers = ['Accept' => 'application/vnd.github+json'];
+        if ($this->githubToken !== '') {
+            $headers['Authorization'] = 'Bearer ' . $this->githubToken;
+        }
+
         for ($page = 1; $page <= self::MAX_PAGES; ++$page) {
             try {
                 $response = $this->httpClient->request('GET', sprintf(
@@ -102,7 +108,7 @@ final class GitHubChangelogFetcher implements ChangelogFetcherInterface
                     self::PER_PAGE,
                     $page,
                 ), [
-                    'headers' => ['Accept' => 'application/vnd.github+json'],
+                    'headers' => $headers,
                 ]);
 
                 $pulls = $response->toArray(false);
