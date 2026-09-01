@@ -65,4 +65,24 @@ final class BroadcastAdminWebControllerTest extends WebTestCase
         $this->assertResponseIsSuccessful();
         $this->assertSelectorExists('form');
     }
+
+    public function testNavLinkVisibleForAdminUser(): void
+    {
+        $this->createAdmin();
+        $this->loginAs($_ENV['BROADCAST_ADMIN_EMAIL']);
+
+        $this->client->request('GET', '/explorer');
+
+        $this->assertSelectorExists('a[href="/admin/broadcast"]');
+    }
+
+    public function testNavLinkHiddenForNonAdminUser(): void
+    {
+        $this->createWebUser('pas-admin-nav@example.com', 'secret123', 'Pas Admin');
+        $this->loginAs('pas-admin-nav@example.com');
+
+        $this->client->request('GET', '/explorer');
+
+        $this->assertSelectorNotExists('a[href="/admin/broadcast"]');
+    }
 }
