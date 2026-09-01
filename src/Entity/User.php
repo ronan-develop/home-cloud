@@ -46,6 +46,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $lastChangelogViewedAt = null;
 
+    #[ORM\Column(options: ['default' => true])]
+    private bool $isActive = true;
+
     public function __construct(string $email, string $displayName)
     {
         $this->id = Uuid::v7();
@@ -133,5 +136,20 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setLastChangelogViewedAt(?\DateTimeImmutable $lastChangelogViewedAt): void
     {
         $this->lastChangelogViewedAt = $lastChangelogViewedAt;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->isActive;
+    }
+
+    public function deactivate(): void
+    {
+        $this->isActive = false;
+    }
+
+    public function reactivate(): void
+    {
+        $this->isActive = true;
     }
 }
