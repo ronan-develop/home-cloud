@@ -9,6 +9,7 @@ use App\Entity\Share;
 use App\Interface\MediaDeletionServiceInterface;
 use App\Interface\MediaDetachServiceInterface;
 use App\Interface\MediaProcessorInterface;
+use App\Interface\OwnershipCheckerInterface;
 use App\Interface\StorageServiceInterface;
 use App\Repository\FileRepository;
 use App\Repository\MediaRepository;
@@ -57,6 +58,7 @@ final class FileWebController extends AbstractController
         private readonly MediaRepository $mediaRepository,
         private readonly MediaDetachServiceInterface $mediaDetachService,
         private readonly MediaDeletionServiceInterface $mediaDeletionService,
+        private readonly OwnershipCheckerInterface $ownershipChecker,
     ) {}
 
     #[Route('/files/{id}/download', name: 'app_file_download', methods: ['GET'])]
@@ -85,11 +87,7 @@ final class FileWebController extends AbstractController
             throw $this->createNotFoundException('Fichier introuvable.');
         }
 
-        /** @var \App\Entity\User $user */
-        $user = $this->getUser();
-        if (!$file->getOwner()->getId()->equals($user->getId())) {
-            throw $this->createAccessDeniedException('Accès refusé.');
-        }
+        $this->ownershipChecker->denyUnlessOwner($file);
 
         $absolutePath = $this->storage->getAbsolutePath($file->getPath());
         $response = new BinaryFileResponse($absolutePath);
@@ -205,12 +203,10 @@ final class FileWebController extends AbstractController
             throw $this->createNotFoundException('Fichier introuvable.');
         }
 
+        $this->ownershipChecker->denyUnlessOwner($file);
+
         /** @var \App\Entity\User $user */
         $user = $this->getUser();
-        if (!$file->getOwner()->getId()->equals($user->getId())) {
-            throw $this->createAccessDeniedException('Vous ne pouvez pas supprimer ce fichier.');
-        }
-
         $folderId = $request->request->get('folder_id');
         $keepInAlbums = (bool) $request->request->get('keep_in_albums', '0');
         $media = $this->mediaRepository->findByFile($file);
