@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller\Api;
 
 use App\Entity\User;
+use App\Interface\OwnershipCheckerInterface;
 use App\Repository\FolderRepository;
 use App\Repository\FileRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -24,6 +25,7 @@ final class FolderChildrenController extends AbstractController
     public function __construct(
         private readonly FolderRepository $folderRepository,
         private readonly FileRepository $fileRepository,
+        private readonly OwnershipCheckerInterface $ownershipChecker,
     ) {}
 
     #[Route('/api/v1/folders/{id}/children', name: 'api_folder_children', methods: ['GET'])]
@@ -41,7 +43,7 @@ final class FolderChildrenController extends AbstractController
         $folder = $this->folderRepository->find($folderId);
 
         // Vérification de l'existence et de l'ownership
-        if ($folder === null || !$folder->getOwner()->getId()->equals($user->getId())) {
+        if ($folder === null || !$this->ownershipChecker->isOwner($folder)) {
             return $this->json(['error' => 'Folder not found or access denied'], Response::HTTP_FORBIDDEN);
         }
 
