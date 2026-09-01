@@ -39,4 +39,28 @@ class FolderRepositoryTest extends AuthenticatedApiTestCase
         $this->assertNotContains((string)$grandchild->getId(), $ancestors);
         $this->assertCount(2, $ancestors);
     }
+
+    public function testFindRootFoldersReturnsOnlyTopLevelFolders(): void
+    {
+        $user = $this->em->getRepository(User::class)->findOneBy(['email' => 'test@example.com']);
+        $root = $this->createFolder('Root', $user);
+        $this->createFolder('Child', $user, $root);
+
+        /** @var FolderRepository $repo */
+        $repo = self::getContainer()->get(FolderRepository::class);
+        $roots = $repo->findRootFolders($user);
+
+        $this->assertCount(1, $roots);
+        $this->assertSame('Root', $roots[0]->getName());
+    }
+
+    public function testFindRootFoldersReturnsEmptyArrayWhenNoFolders(): void
+    {
+        $user = $this->em->getRepository(User::class)->findOneBy(['email' => 'test@example.com']);
+
+        /** @var FolderRepository $repo */
+        $repo = self::getContainer()->get(FolderRepository::class);
+
+        $this->assertSame([], $repo->findRootFolders($user));
+    }
 }

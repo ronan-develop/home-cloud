@@ -276,4 +276,20 @@ class FolderRepository extends ServiceEntityRepository implements FolderReposito
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * Dossiers de premier niveau d'un owner (#375, détail stockage admin).
+     *
+     * @return Folder[]
+     */
+    public function findRootFolders(User $owner): array
+    {
+        return $this->createQueryBuilder('f')
+            ->where('IDENTITY(f.owner) = :ownerId')
+            ->andWhere('f.parent IS NULL')
+            ->setParameter('ownerId', $owner->getId()->toBinary())
+            ->orderBy('f.name', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }
