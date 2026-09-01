@@ -240,6 +240,28 @@ final class ExplorerPageTest extends WebTestCase
         $this->assertResponseStatusCodeSame(403);
     }
 
+    /**
+     * ExplorerController::index() ne lève pas d'exception sur un dossier
+     * appartenant à un autre utilisateur : il retombe silencieusement sur
+     * la racine (comportement volontaire, distinct des 403 explicites des
+     * autres routes de ce contrôleur).
+     */
+    public function testExplorerFallsBackToRootWhenFolderNotOwned(): void
+    {
+        $owner = $this->createUser('owner-fallback@example.com');
+        $folder = new Folder('Dossier privé', $owner);
+        $this->em->persist($folder);
+        $this->em->flush();
+
+        $this->createUser('attacker-fallback@example.com', 'secret123');
+        $this->login('attacker-fallback@example.com');
+
+        $crawler = $this->client->request('GET', '/explorer?folder=' . $folder->getId()->toRfc4122());
+
+        $this->assertResponseIsSuccessful();
+        $this->assertStringNotContainsString('Dossier privé', $crawler->filter('body')->text());
+    }
+
     // --- Layout tests (migré de WebLayoutTest) ---
 
     public function testSectionTitleDossiersIsAligned(): void
