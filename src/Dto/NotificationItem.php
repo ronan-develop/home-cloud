@@ -20,5 +20,6 @@ final readonly class NotificationItem
         public \DateTimeImmutable $date,
         public string $link,
         public bool $isRead,
+        public ?string $id = null,
     ) {}
 }

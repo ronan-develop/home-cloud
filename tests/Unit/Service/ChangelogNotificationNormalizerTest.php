@@ -50,8 +50,10 @@ final class ChangelogNotificationNormalizerTest extends TestCase
         $this->assertFalse($items[0]->isRead);
     }
 
-    public function testMarksAllAsUnreadWhenNeverViewed(): void
+    public function testMarksAllAsReadWhenNeverViewed(): void
     {
+        // Jamais visité != tout non lu : évite un faux badge géant pour tout
+        // utilisateur existant dès le déploiement d'une nouvelle entrée (#293).
         $user = $this->createStub(User::class);
         $user->method('getLastChangelogViewedAt')->willReturn(null);
 
@@ -64,6 +66,6 @@ final class ChangelogNotificationNormalizerTest extends TestCase
 
         $items = $normalizer->normalize($user);
 
-        $this->assertFalse($items[0]->isRead);
+        $this->assertTrue($items[0]->isRead);
     }
 }

@@ -31,6 +31,7 @@ final class DirectMessageNotificationNormalizerTest extends TestCase
         $this->assertSame('Sujet du message', $items[0]->title);
         $this->assertSame($message->getCreatedAt(), $items[0]->date);
         $this->assertSame('/direct-messages/' . $message->getId(), $items[0]->link);
+        $this->assertSame($message->getId()->toString(), $items[0]->id);
         $this->assertFalse($items[0]->isRead);
     }
 

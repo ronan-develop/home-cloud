@@ -30,6 +30,7 @@ final readonly class DirectMessageNotificationNormalizer implements Notification
                 $message->getCreatedAt(),
                 '/direct-messages/' . $message->getId(),
                 $message->isRead(),
+                $message->getId()->toString(),
             );
         }
 

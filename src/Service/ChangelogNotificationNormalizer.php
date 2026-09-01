@@ -14,6 +14,10 @@ use App\Interface\NotificationNormalizerInterface;
  * (#373). Reprend la logique de lu/non-lu de ChangelogGlobalsExtension
  * (comparaison de date, contrairement à DirectMessage qui a un readAt par
  * entité) — seul service à connaître le format des entrées changelog.
+ *
+ * Jamais visité (lastChangelogViewedAt === null) => tout marqué lu, pas
+ * l'inverse : évite un faux badge géant pour tout utilisateur existant
+ * dès le déploiement d'une nouvelle entrée changelog (#293).
  */
 final readonly class ChangelogNotificationNormalizer implements NotificationNormalizerInterface
 {
@@ -34,7 +38,7 @@ final readonly class ChangelogNotificationNormalizer implements NotificationNorm
                 $entry['title'],
                 new \DateTimeImmutable($entry['date']),
                 $entry['url'],
-                $lastViewedDate !== null && $entry['date'] <= $lastViewedDate,
+                $lastViewedDate === null || $entry['date'] <= $lastViewedDate,
             );
         }
 

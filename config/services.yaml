@@ -109,6 +109,10 @@ services:
         arguments:
             $deferredThresholdBytes: '%hc.upload.deferred_threshold_bytes%'
 
+    App\Service\NotificationFeedProvider:
+        arguments:
+            $normalizers: !tagged_iterator App\Interface\NotificationNormalizerInterface
+
     # Déclaration explicite du FolderProcessor pour garantir l'injection
     App\State\FolderProcessor:
         arguments:
