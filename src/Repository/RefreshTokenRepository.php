@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\RefreshToken;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -33,6 +34,17 @@ class RefreshTokenRepository extends ServiceEntityRepository
             ->delete()
             ->where('rt.expiresAt <= :now')
             ->setParameter('now', new \DateTimeImmutable())
+            ->getQuery()
+            ->execute();
+    }
+
+    /** Révoque tous les refresh tokens d'un user (désactivation de compte, #375). */
+    public function deleteAllForUser(User $user): int
+    {
+        return $this->createQueryBuilder('rt')
+            ->delete()
+            ->where('rt.user = :user')
+            ->setParameter('user', $user->getId()->toBinary())
             ->getQuery()
             ->execute();
     }
