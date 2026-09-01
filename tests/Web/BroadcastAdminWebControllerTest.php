@@ -73,7 +73,7 @@ final class BroadcastAdminWebControllerTest extends WebTestCase
 
         $this->client->request('GET', '/explorer');
 
-        $this->assertSelectorExists('a[href="/admin/broadcast"]');
+        $this->assertSelectorExists('a[href="/admin/users"]');
     }
 
     public function testNavLinkHiddenForNonAdminUser(): void
@@ -83,6 +83,6 @@ final class BroadcastAdminWebControllerTest extends WebTestCase
 
         $this->client->request('GET', '/explorer');
 
-        $this->assertSelectorNotExists('a[href="/admin/broadcast"]');
+        $this->assertSelectorNotExists('a[href="/admin/users"]');
     }
 }
