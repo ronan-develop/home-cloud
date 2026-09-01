@@ -2,9 +2,19 @@
 
 > Dernière mise à jour : 2026-09-01
 
-> **Status git :** branche `refactor/381-ownership-checker-unification` (non mergée) — dernière PR mergée sur `main` #380 (messagerie directe admin, #373)
+> **Status git :** branche `feature/374-admin-users-space` (non mergée) — dernière PR mergée sur `main` #382 (unification ownership, #381)
 
 ---
+
+## ✅ Espace admin — fondations : layout dédié + liste des users (2026-09-01, #374, branche `feature/374-admin-users-space`)
+
+- Nouveau layout `templates/admin/layout.html.twig` (extends `base.html.twig` directement, indépendant du layout général de l'app) : point d'entrée unique de l'espace admin, sidebar listant les écrans (Utilisateurs, Diffuser un message), destiné à accueillir les futurs écrans #375 (gestion users), #376 (monitoring multi-instances), #377 (métriques/santé).
+- Nouvelle page `/admin/users` (`AdminUsersWebController`, route `app_admin_users`) : liste des users de l'instance courante, triés du plus récent au plus ancien (`UserRepository::findAllOrderedByCreatedAt()`), avec email, date de création, stockage utilisé (réutilise `FileRepository::sumSizeByOwner()` + `FileSizeFormatter` existants, aucune nouvelle brique de calcul).
+- Garde d'accès et source de vérité admin déjà généralisées par #373 (`AdminVoter` → `BroadcastAdminChecker`) — rien à refaire, réutilisées telles quelles sur le nouveau contrôleur.
+- Décision : pas de tracking "dernière connexion" dans ce ticket (le ticket dit "si trackée", aucun mécanisme n'existe) — colonne affichée statiquement "Non trackée" plutôt que d'ajouter un scope non demandé (champ + listener de login). Pas de pagination ni de requête agrégée pour le stockage (`GROUP BY`) — volumes mono/multi-tenant trop faibles pour le justifier, YAGNI.
+- Refactor de branchement : le lien de nav général "Diffuser un message" devient "Administration" et pointe vers `/admin/users` (point d'entrée unique) ; `broadcast_admin.html.twig` migre du layout général vers le nouveau layout admin dédié.
+- Tests : `UserRepositoryTest` (tri, cas vide), `AdminUsersWebControllerTest` (anonyme/non-admin/admin, contenu, tri, stockage, nav), `BroadcastAdminWebControllerTest` mis à jour (lien de nav pointe désormais vers `/admin/users`). Suite complète : 1033/1033 verts.
+- Points 1 (garde généralisée) et 4 (`BroadcastAdminChecker` comme source de vérité) du ticket original déjà couverts par #373, non retouchés ici.
 
 ## ✅ Unification des checks d'ownership via OwnershipCheckerInterface (2026-09-01, #381, branche `refactor/381-ownership-checker-unification`)
 
