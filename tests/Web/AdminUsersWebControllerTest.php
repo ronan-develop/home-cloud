@@ -98,6 +98,17 @@ final class AdminUsersWebControllerTest extends WebTestCase
         $this->assertStringContainsString('bob@example.com', $crawler->text());
     }
 
+    public function testEachRowLinksToUserDetailPage(): void
+    {
+        $this->createAdmin();
+        $alice = $this->createWebUser('alice@example.com', 'secret123', 'Alice');
+        $this->loginAs($_ENV['BROADCAST_ADMIN_EMAIL']);
+
+        $this->client->request('GET', '/admin/users');
+
+        $this->assertSelectorExists('a[href="/admin/users/' . $alice->getId() . '"]');
+    }
+
     public function testDisplaysStorageUsagePerUser(): void
     {
         $admin = $this->createAdmin();
