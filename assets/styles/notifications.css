@@ -1,0 +1,72 @@
+/*
+ * assets/styles/notifications.css
+ * Dropdown de notifications de la topbar (#373)
+ * (templates/components/NotificationDropdown.html.twig)
+ */
+
+.hc-notif-wrapper {
+  position: relative;
+}
+
+.hc-notif-panel {
+  display: none;
+  position: fixed;
+  background: var(--hc-surface);
+  color: var(--hc-text);
+  border-radius: 0.8rem;
+  box-shadow: 0 4px 24px 0 rgba(31, 38, 135, 0.15);
+  border: 1px solid var(--hc-border);
+  padding: 0.25rem 0;
+  z-index: 9999;
+  width: 320px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.hc-notif-empty {
+  padding: 1rem;
+  font-size: 0.875rem;
+  color: var(--hc-text-muted, var(--hc-text));
+  text-align: center;
+}
+
+.hc-notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.65rem 1rem;
+  text-decoration: none;
+  color: var(--hc-text);
+}
+
+.hc-notif-item:hover {
+  background: var(--hc-surface-2);
+}
+
+.hc-notif-item--unread {
+  background: var(--hc-accent-soft);
+}
+
+.hc-notif-item-icon {
+  flex-shrink: 0;
+}
+
+.hc-notif-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.hc-notif-item-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hc-notif-item-date {
+  font-size: 0.75rem;
+  opacity: 0.65;
+}
