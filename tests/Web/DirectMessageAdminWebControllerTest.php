@@ -89,6 +89,20 @@ final class DirectMessageAdminWebControllerTest extends WebTestCase
         $this->assertSame($recipient->getId()->toString(), $message->getRecipient()->getId()->toString());
     }
 
+    public function testGuestIsNotSelectableAsRecipient(): void
+    {
+        $this->createAdmin();
+        $this->createWebUser('owner@example.com', 'secret123', 'Owner');
+        $guest = $this->createWebUser('guest@example.com', 'secret123', 'Guest');
+        $guest->markAsGuest();
+        $this->em->flush();
+        $this->loginAs($_ENV['BROADCAST_ADMIN_EMAIL']);
+
+        $crawler = $this->client->request('GET', '/admin/direct-messages');
+
+        $this->assertStringNotContainsString('guest@example.com', $crawler->text());
+    }
+
     public function testRejectsSubmissionWithoutSubject(): void
     {
         $this->createAdmin();

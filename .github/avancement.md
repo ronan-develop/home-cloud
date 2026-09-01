@@ -2,9 +2,16 @@
 
 > Dernière mise à jour : 2026-09-01
 
-> **Status git :** branche `fix/389-exclude-guests-admin-users` (non mergée) — dernière PR mergée sur `main` #383 (espace admin fondations, #374)
+> **Status git :** branche `fix/391-exclude-guests-direct-message-form` (en cours de merge) — dernière PR mergée sur `main` #390 (exclusion invités /admin/users, #389)
 
 ---
+
+## ✅ Audit vie privée espace admin — fix #391 (2026-09-01, branche `fix/391-exclude-guests-direct-message-form`)
+
+- Audit RGPD/minimisation des données mené sur tout l'espace admin suite au fix #389. A confirmé une régression du même type non corrigée : `DirectMessageFormType` (`/admin/direct-messages`, #373) listait tous les `User` dans le `<select>` destinataire, invités inclus, email visible en clair dans le HTML dès l'affichage de la page (sans même soumettre le formulaire).
+- Fix : `query_builder` du champ `recipient` filtré sur `accountType = User::ACCOUNT_TYPE_FULL`.
+- Audit complet (voir aussi #392, non urgent, backlog) : `/admin/users` (déjà conforme post-#389), `/admin/broadcast` (aucune identité individuelle exposée), messages d'erreur `OwnershipChecker` (génériques, jamais d'email), `PublicShareController` (404 systématique, pas de fuite d'identité owner via message d'erreur), pas d'`#[ApiResource]` sur `User` (pas de risque de sérialisation du hash de mot de passe), fixtures propres, templates de partage mono-owner par instance (pas de fuite transversale entre owners). Seul point restant identifié : `AuthenticationFailureListener` logue l'email en clair sans politique de rétention documentée (#392, bonne pratique à formaliser, pas une fuite active).
+- Tests : `DirectMessageAdminWebControllerTest::testGuestIsNotSelectableAsRecipient`. Suite complète : 1034/1034 verts.
 
 ## ✅ Fix vie privée — exclure les invités de la liste admin des users (2026-09-01, #389, branche `fix/389-exclude-guests-admin-users`)
 
