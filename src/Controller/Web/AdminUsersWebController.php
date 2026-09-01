@@ -31,7 +31,7 @@ final class AdminUsersWebController extends AbstractController
     #[Route('/admin/users', name: 'app_admin_users', methods: ['GET'])]
     public function __invoke(): Response
     {
-        $users = $this->userRepository->findAllOrderedByCreatedAt();
+        $users = $this->userRepository->findOwnersOrderedByCreatedAt();
 
         $rows = array_map(
             fn (User $user) => [

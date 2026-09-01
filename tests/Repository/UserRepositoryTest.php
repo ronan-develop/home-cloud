@@ -27,10 +27,14 @@ final class UserRepositoryTest extends KernelTestCase
         $this->em->clear();
     }
 
-    private function createUser(string $email, \DateTimeImmutable $createdAt): User
+    private function createUser(string $email, \DateTimeImmutable $createdAt, bool $guest = false): User
     {
         $user = new User($email, 'Test User');
         $user->setPassword('irrelevant-hash');
+
+        if ($guest) {
+            $user->markAsGuest();
+        }
 
         $prop = new \ReflectionProperty(User::class, 'createdAt');
         $prop->setAccessible(true);
@@ -42,21 +46,34 @@ final class UserRepositoryTest extends KernelTestCase
         return $user;
     }
 
-    public function testFindAllOrderedByCreatedAtReturnsEmptyArrayWhenNoUsers(): void
+    public function testFindOwnersOrderedByCreatedAtReturnsEmptyArrayWhenNoUsers(): void
     {
-        $this->assertSame([], $this->repository->findAllOrderedByCreatedAt());
+        $this->assertSame([], $this->repository->findOwnersOrderedByCreatedAt());
     }
 
-    public function testFindAllOrderedByCreatedAtReturnsUsersNewestFirst(): void
+    public function testFindOwnersOrderedByCreatedAtReturnsUsersNewestFirst(): void
     {
         $this->createUser('oldest@example.com', new \DateTimeImmutable('2026-01-01'));
         $this->createUser('newest@example.com', new \DateTimeImmutable('2026-03-01'));
         $this->createUser('middle@example.com', new \DateTimeImmutable('2026-02-01'));
 
-        $result = $this->repository->findAllOrderedByCreatedAt();
+        $result = $this->repository->findOwnersOrderedByCreatedAt();
 
         $this->assertSame(
             ['newest@example.com', 'middle@example.com', 'oldest@example.com'],
+            array_map(static fn (User $u) => $u->getEmail(), $result),
+        );
+    }
+
+    public function testFindOwnersOrderedByCreatedAtExcludesGuests(): void
+    {
+        $this->createUser('owner@example.com', new \DateTimeImmutable('2026-01-01'));
+        $this->createUser('guest@example.com', new \DateTimeImmutable('2026-02-01'), guest: true);
+
+        $result = $this->repository->findOwnersOrderedByCreatedAt();
+
+        $this->assertSame(
+            ['owner@example.com'],
             array_map(static fn (User $u) => $u->getEmail(), $result),
         );
     }

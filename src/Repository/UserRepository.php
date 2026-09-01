@@ -35,10 +35,18 @@ class UserRepository extends ServiceEntityRepository implements UserRepositoryIn
         return parent::findOneBy($criteria, $orderBy);
     }
 
-    /** @return User[] */
-    public function findAllOrderedByCreatedAt(): array
+    /**
+     * Exclut les comptes invités : un admin ne doit pas voir leur identité
+     * (email), ils sont là à l'invitation d'un user propriétaire, pas de
+     * l'admin de l'instance (cf. #389).
+     *
+     * @return User[]
+     */
+    public function findOwnersOrderedByCreatedAt(): array
     {
         return $this->createQueryBuilder('u')
+            ->andWhere('u.accountType = :accountType')
+            ->setParameter('accountType', User::ACCOUNT_TYPE_FULL)
             ->orderBy('u.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
