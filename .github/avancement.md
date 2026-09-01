@@ -2,9 +2,16 @@
 
 > Dernière mise à jour : 2026-09-01
 
-> **Status git :** branche `feature/374-admin-users-space` (non mergée) — dernière PR mergée sur `main` #382 (unification ownership, #381)
+> **Status git :** branche `fix/389-exclude-guests-admin-users` (non mergée) — dernière PR mergée sur `main` #383 (espace admin fondations, #374)
 
 ---
+
+## ✅ Fix vie privée — exclure les invités de la liste admin des users (2026-09-01, #389, branche `fix/389-exclude-guests-admin-users`)
+
+- `AdminUsersWebController` (#374) exposait l'email de **tous** les `User`, invités inclus. Un invité est présent à l'invitation d'un user propriétaire, pas de l'admin de l'instance — ce dernier n'a pas à connaître son identité via cet écran (minimisation des données, RGPD).
+- `UserRepository::findAllOrderedByCreatedAt()` renommée en `findOwnersOrderedByCreatedAt()` et filtrée sur `accountType = User::ACCOUNT_TYPE_FULL`, pour rendre l'intention explicite plutôt qu'un filtre caché dans le contrôleur.
+- Détecté lors d'un brainstorm sur les métriques admin (#376/#377/#388) : le compteur d'invités agrégé prévu par #388 doit rester un compteur, jamais une liste nominative — ce ticket corrige la fuite déjà en prod avant que #388 ne soit implémenté.
+- Tests : `UserRepositoryTest::testFindOwnersOrderedByCreatedAtExcludesGuests`, `AdminUsersWebControllerTest::testExcludesGuestsFromTheList`. Suite complète : 1035/1035 verts.
 
 ## ✅ Espace admin — fondations : layout dédié + liste des users (2026-09-01, #374, branche `feature/374-admin-users-space`)
 
