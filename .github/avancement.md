@@ -1,10 +1,23 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-08-31
+> Dernière mise à jour : 2026-09-01
 
-> **Status git :** `main` — dernière PR mergée #370 (`feat/293-changelog-notification-badge`)
+> **Status git :** branche `feat/373-direct-messages-admin` (non mergée) — dernière PR mergée sur `main` #371 (`style(changelog): renommer la colonne "GitHub" en "Ticket"`)
 
 ---
+
+## ✅ Messagerie directe admin + pile de notifications unifiée (2026-09-01, #373, branche `feat/373-direct-messages-admin`)
+
+- Nouvelle entité `DirectMessage` (message ciblé 1-à-1 admin → utilisateur, calquée sur `Share.php` : `sender`/`recipient` ManyToOne `User`, `createdAt` immutable, `readAt` nullable), historique multi-messages conservé (pas de message actif unique comme le broadcast).
+- `AdminVoter` généralise la garde admin (`BroadcastAdminChecker`, whitelist par email — toujours pas de `ROLE_ADMIN` Symfony) derrière `#[IsGranted(AdminVoter::ADMIN)]`, sur le modèle d'`AlbumVoter` déjà présent. `BroadcastAdminWebController` migré sur ce même voter. Réutilisable tel quel par le futur espace admin (#374-#377).
+- Page admin `/admin/direct-messages` (calquée sur `/admin/broadcast`) : formulaire `EntityType` de sélection du destinataire + sujet + corps.
+- `POST /direct-messages/{id}/read` : marquage lu explicite au clic (découplé de l'affichage, contrairement au changelog), garde d'appartenance inline (seul le destinataire peut marquer son propre message).
+- Pile de notifications unifiée (dropdown cloche topbar) mélangeant `DirectMessage` et entrées changelog, triée chronologiquement : DTO commun `NotificationItem` produit par deux normalizers isolés (SRP — `DirectMessageNotificationNormalizer`, `ChangelogNotificationNormalizer`), fusionnés et triés par `NotificationFeedProvider` (injecté par `!tagged_iterator`, cf. point de vigilance ci-dessous). `NotificationGlobalsExtension` remplace `ChangelogGlobalsExtension` (logique de comptage migrée dans le normalizer changelog).
+- `notifications_controller.js` (Stimulus, modèle `new_menu_controller.js`) : toggle, fermeture au clic extérieur, marquage lu par `fetch` sans recharger la page.
+- Point de vigilance corrigé en cours de route : dans `config/services.yaml`, une entrée de service explicite (ex. `!tagged_iterator`) doit être déclarée **après** le bloc `App\: resource: '../src/'`, sinon l'auto-découverte l'écrase silencieusement et l'autowiring échoue.
+- Régression détectée et corrigée : le normalizer changelog inversait par erreur le cas "jamais visité" — doit rester "tout lu" (0 badge), pas l'inverse, pour préserver le comportement historique de #293 (pas de faux badge géant pour un utilisateur existant au déploiement d'une nouvelle entrée).
+- Tests : `AdminVoterTest`, `DirectMessageTest`, `DirectMessageAdminWebControllerTest`, `DirectMessageReadWebControllerTest`, `NotificationFeedProviderTest`, `DirectMessageNotificationNormalizerTest`, `ChangelogNotificationNormalizerTest`, `NotificationGlobalsExtensionTest`. Suite complète : 1017/1017 verts.
+- Périmètre restant hors de ce ticket : chantier "espace admin" (#374 fondations, #375 gestion users, #376 monitoring multi-instances, #377 métriques/santé), traité séparément.
 
 ## ✅ Badge de notification changelog dans la topbar (2026-08-31, #293, branche `feat/293-changelog-notification-badge`)
 
