@@ -1,0 +1,29 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="hc-admin-shell">
+    <aside class="hc-admin-sidebar">
+        <div class="hc-admin-sidebar-header">
+            <a href="{{ path('app_home') }}" class="hc-admin-back">&larr; Retour à l'espace</a>
+            <div class="hc-admin-title">Administration</div>
+        </div>
+        <nav class="hc-admin-nav">
+            {% set current_route = app.request.attributes.get('_route') %}
+
+            <a href="{{ path('app_admin_users') }}"
+               class="hc-admin-nav-item {{ current_route == 'app_admin_users' ? 'active' : '' }}">
+                Utilisateurs
+            </a>
+
+            <a href="{{ path('app_broadcast_admin') }}"
+               class="hc-admin-nav-item {{ current_route == 'app_broadcast_admin' ? 'active' : '' }}">
+                Diffuser un message
+            </a>
+        </nav>
+    </aside>
+
+    <main class="hc-admin-content">
+        {% block content %}{% endblock %}
+    </main>
+</div>
+{% endblock %}

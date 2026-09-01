@@ -1,0 +1,28 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Utilisateurs — Administration{% endblock %}
+
+{% block content %}
+<h1 class="hc-admin-page-title">Utilisateurs de l'instance</h1>
+
+<table class="hc-admin-table">
+    <thead>
+        <tr>
+            <th>Email</th>
+            <th>Créé le</th>
+            <th>Dernière connexion</th>
+            <th>Stockage utilisé</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in rows %}
+        <tr>
+            <td>{{ row.user.email }}</td>
+            <td>{{ row.user.createdAt|date('d/m/Y') }}</td>
+            <td>Non trackée</td>
+            <td>{{ row.storage }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

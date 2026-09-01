@@ -1,0 +1,120 @@
+/*
+ * assets/styles/admin-layout.css
+ * Layout dédié de l'espace admin (templates/admin/layout.html.twig, #374)
+ */
+
+.hc-admin-shell {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: 100vh;
+  background: var(--hc-bg);
+}
+
+.hc-admin-sidebar {
+  background: var(--hc-surface);
+  border-right: 1px solid var(--hc-border);
+  padding: 1.25rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.hc-admin-sidebar-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.hc-admin-back {
+  font-size: 0.8rem;
+  color: var(--hc-text-2);
+  text-decoration: none;
+}
+
+.hc-admin-back:hover {
+  color: var(--hc-accent);
+}
+
+.hc-admin-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--hc-text);
+}
+
+.hc-admin-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.hc-admin-nav-item {
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.6rem;
+  font-size: 0.875rem;
+  color: var(--hc-text-2);
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+
+.hc-admin-nav-item:hover {
+  background: var(--hc-surface-2);
+  color: var(--hc-text);
+}
+
+.hc-admin-nav-item.active {
+  background: var(--hc-accent-soft);
+  color: var(--hc-accent);
+  font-weight: 600;
+}
+
+.hc-admin-content {
+  padding: 2rem;
+}
+
+.hc-admin-page-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--hc-text);
+  margin-bottom: 1.25rem;
+}
+
+.hc-admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--hc-surface);
+  border: 1px solid var(--hc-border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  font-size: 0.875rem;
+}
+
+.hc-admin-table th,
+.hc-admin-table td {
+  text-align: left;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--hc-border-row);
+}
+
+.hc-admin-table th {
+  color: var(--hc-text-2);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  background: var(--hc-surface-2);
+}
+
+.hc-admin-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+@media (max-width: 767px) {
+  .hc-admin-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .hc-admin-sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--hc-border);
+  }
+}

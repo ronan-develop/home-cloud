@@ -22,6 +22,7 @@
 @import "./notifications.css";
 @import "./guests.css";
 @import "./broadcast-admin.css";
+@import "./admin-layout.css";
 @import "./main.css";
 
 nav .navbar-logo .navbar-logo-cloud {
