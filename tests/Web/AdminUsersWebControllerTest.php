@@ -119,6 +119,21 @@ final class AdminUsersWebControllerTest extends WebTestCase
         $this->assertStringContainsString('Non trackée', $crawler->text());
     }
 
+    public function testExcludesGuestsFromTheList(): void
+    {
+        $this->createAdmin();
+        $this->createWebUser('owner@example.com', 'secret123', 'Owner');
+        $guest = $this->createWebUser('guest@example.com', 'secret123', 'Guest');
+        $guest->markAsGuest();
+        $this->em->flush();
+        $this->loginAs($_ENV['BROADCAST_ADMIN_EMAIL']);
+
+        $crawler = $this->client->request('GET', '/admin/users');
+
+        $this->assertStringContainsString('owner@example.com', $crawler->text());
+        $this->assertStringNotContainsString('guest@example.com', $crawler->text());
+    }
+
     public function testUsersOrderedNewestFirst(): void
     {
         $this->createAdmin();

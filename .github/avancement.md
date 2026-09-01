@@ -2,7 +2,7 @@
 
 > Dernière mise à jour : 2026-09-01
 
-> **Status git :** branche `fix/391-exclude-guests-direct-message-form` (non mergée) — dernière PR mergée sur `main` #383 (espace admin fondations, #374)
+> **Status git :** branche `fix/391-exclude-guests-direct-message-form` (en cours de merge) — dernière PR mergée sur `main` #390 (exclusion invités /admin/users, #389)
 
 ---
 
@@ -12,6 +12,13 @@
 - Fix : `query_builder` du champ `recipient` filtré sur `accountType = User::ACCOUNT_TYPE_FULL`.
 - Audit complet (voir aussi #392, non urgent, backlog) : `/admin/users` (déjà conforme post-#389), `/admin/broadcast` (aucune identité individuelle exposée), messages d'erreur `OwnershipChecker` (génériques, jamais d'email), `PublicShareController` (404 systématique, pas de fuite d'identité owner via message d'erreur), pas d'`#[ApiResource]` sur `User` (pas de risque de sérialisation du hash de mot de passe), fixtures propres, templates de partage mono-owner par instance (pas de fuite transversale entre owners). Seul point restant identifié : `AuthenticationFailureListener` logue l'email en clair sans politique de rétention documentée (#392, bonne pratique à formaliser, pas une fuite active).
 - Tests : `DirectMessageAdminWebControllerTest::testGuestIsNotSelectableAsRecipient`. Suite complète : 1034/1034 verts.
+
+## ✅ Fix vie privée — exclure les invités de la liste admin des users (2026-09-01, #389, branche `fix/389-exclude-guests-admin-users`)
+
+- `AdminUsersWebController` (#374) exposait l'email de **tous** les `User`, invités inclus. Un invité est présent à l'invitation d'un user propriétaire, pas de l'admin de l'instance — ce dernier n'a pas à connaître son identité via cet écran (minimisation des données, RGPD).
+- `UserRepository::findAllOrderedByCreatedAt()` renommée en `findOwnersOrderedByCreatedAt()` et filtrée sur `accountType = User::ACCOUNT_TYPE_FULL`, pour rendre l'intention explicite plutôt qu'un filtre caché dans le contrôleur.
+- Détecté lors d'un brainstorm sur les métriques admin (#376/#377/#388) : le compteur d'invités agrégé prévu par #388 doit rester un compteur, jamais une liste nominative — ce ticket corrige la fuite déjà en prod avant que #388 ne soit implémenté.
+- Tests : `UserRepositoryTest::testFindOwnersOrderedByCreatedAtExcludesGuests`, `AdminUsersWebControllerTest::testExcludesGuestsFromTheList`. Suite complète : 1035/1035 verts.
 
 ## ✅ Espace admin — fondations : layout dédié + liste des users (2026-09-01, #374, branche `feature/374-admin-users-space`)
 
