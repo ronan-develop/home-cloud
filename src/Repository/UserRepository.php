@@ -34,4 +34,13 @@ class UserRepository extends ServiceEntityRepository implements UserRepositoryIn
     {
         return parent::findOneBy($criteria, $orderBy);
     }
+
+    /** @return User[] */
+    public function findAllOrderedByCreatedAt(): array
+    {
+        return $this->createQueryBuilder('u')
+            ->orderBy('u.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
 }
