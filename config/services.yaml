@@ -91,6 +91,7 @@ services:
             string $adminEmail: '%env(BROADCAST_ADMIN_EMAIL)%'
             string $currentInstance: '%env(BROADCAST_INSTANCE_NAME)%'
             string $configPath: '%kernel.project_dir%/config/broadcast_targets.php'
+            string $githubToken: '%env(GITHUB_PAT)%'
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
