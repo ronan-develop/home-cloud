@@ -7,6 +7,7 @@ namespace App\Controller\Web;
 use App\Entity\User;
 use App\Interface\AlbumRepositoryInterface;
 use App\Interface\MediaRepositoryInterface;
+use App\Interface\OwnershipCheckerInterface;
 use App\Interface\StorageServiceInterface;
 use App\Service\MediaCacheHeaders;
 use App\Factory\MediaFullResponseFactory;
@@ -31,6 +32,7 @@ final class MediaGalleryController extends AbstractController
         private readonly AlbumRepositoryInterface $albumRepository,
         private readonly MediaFullResponseFactory $mediaFullResponseFactory,
         private readonly MediaCacheHeaders $mediaCacheHeaders,
+        private readonly OwnershipCheckerInterface $ownershipChecker,
     ) {}
 
     #[Route('/gallery', name: 'app_gallery')]
@@ -51,8 +53,8 @@ final class MediaGalleryController extends AbstractController
         if ($albumParam !== null) {
             $targetAlbum = $this->albumRepository->findById(Uuid::fromString($albumParam));
 
-            if ($targetAlbum !== null && !$targetAlbum->getOwner()->getId()->equals($user->getId())) {
-                throw $this->createAccessDeniedException('Cet album ne vous appartient pas.');
+            if ($targetAlbum !== null) {
+                $this->ownershipChecker->denyUnlessOwner($targetAlbum);
             }
         }
 
