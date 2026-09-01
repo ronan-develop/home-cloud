@@ -88,6 +88,22 @@ final class AuthTest extends AuthenticatedApiTestCase
         $this->assertResponseStatusCodeSame(401);
     }
 
+    public function testLoginReturns401ForDeactivatedAccount(): void
+    {
+        $user = $this->createUserWithPassword('deactivated@example.com', 'password123');
+        $user->deactivate();
+        $this->em->flush();
+
+        static::createClient()->request('POST', '/api/v1/auth/login', [
+            'json' => [
+                'email' => 'deactivated@example.com',
+                'password' => 'password123',
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(401);
+    }
+
     public function testLoginReturns401OnUnknownEmail(): void
     {
         static::createClient()->request('POST', '/api/v1/auth/login', [
@@ -103,6 +119,17 @@ final class AuthTest extends AuthenticatedApiTestCase
     public function testApiReturns401WithoutToken(): void
     {
         static::createClient()->request('GET', '/api/v1/users');
+
+        $this->assertResponseStatusCodeSame(401);
+    }
+
+    public function testApiReturns401ForDeactivatedAccount(): void
+    {
+        $user = $this->createUserWithPassword('deactivated-api@example.com', 'password123');
+        $user->deactivate();
+        $this->em->flush();
+
+        $response = $this->createAuthenticatedClient($user)->request('GET', '/api/v1/users');
 
         $this->assertResponseStatusCodeSame(401);
     }
