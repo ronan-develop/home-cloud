@@ -207,11 +207,7 @@ final class ShareWebController extends AbstractController
         $link = $this->shareLinkRepository->find(Uuid::fromString($linkId))
             ?? throw $this->createNotFoundException('Lien introuvable.');
 
-        /** @var User $user */
-        $user = $this->getUser();
-        if (!$link->getOwner()->getId()->equals($user->getId())) {
-            throw $this->createAccessDeniedException('Vous n\'êtes pas le propriétaire de ce lien.');
-        }
+        $this->ownershipChecker->denyUnlessOwner($link);
 
         $link->revoke();
         $this->em->flush();
@@ -232,11 +228,7 @@ final class ShareWebController extends AbstractController
         $link = $this->shareLinkRepository->find(Uuid::fromString($linkId))
             ?? throw $this->createNotFoundException('Lien introuvable.');
 
-        /** @var User $user */
-        $user = $this->getUser();
-        if (!$link->getOwner()->getId()->equals($user->getId())) {
-            throw $this->createAccessDeniedException('Vous n\'êtes pas le propriétaire de ce lien.');
-        }
+        $this->ownershipChecker->denyUnlessOwner($link);
 
         $link->reactivate();
         $this->em->flush();

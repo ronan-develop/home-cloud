@@ -6,6 +6,7 @@ namespace App\Controller\Web;
 
 use App\Entity\User;
 use App\Interface\AlbumRepositoryInterface;
+use App\Interface\OwnershipCheckerInterface;
 use App\Repository\FileRepository;
 use App\Repository\FolderRepository;
 use App\Repository\MediaRepository;
@@ -28,6 +29,7 @@ final class ExplorerController extends AbstractController
         private readonly FileRepository $fileRepository,
         private readonly MediaRepository $mediaRepository,
         private readonly AlbumRepositoryInterface $albumRepository,
+        private readonly OwnershipCheckerInterface $ownershipChecker,
     ) {}
 
     #[Route('/explorer', name: 'app_explorer')]
@@ -42,7 +44,7 @@ final class ExplorerController extends AbstractController
         if ($folderId !== null) {
             $currentFolder = $this->folderRepository->find(Uuid::fromString($folderId));
             // Vérification ownership
-            if ($currentFolder !== null && !$currentFolder->getOwner()->getId()->equals($user->getId())) {
+            if ($currentFolder !== null && !$this->ownershipChecker->isOwner($currentFolder)) {
                 $currentFolder = null;
                 $folderId = null;
             }

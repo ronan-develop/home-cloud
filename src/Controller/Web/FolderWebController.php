@@ -10,6 +10,7 @@ use App\Entity\User;
 use App\Interface\DefaultFolderServiceInterface;
 use App\Interface\FolderMoverInterface;
 use App\Interface\FolderZipArchiverInterface;
+use App\Interface\OwnershipCheckerInterface;
 use App\Repository\FolderRepository;
 use App\Security\ResourceAccessChecker;
 use Doctrine\ORM\EntityManagerInterface;
@@ -39,6 +40,7 @@ final class FolderWebController extends AbstractController
         private readonly \App\Interface\FolderMoverInterface $folderMover,
         private readonly ResourceAccessChecker $resourceAccessChecker,
         private readonly FolderZipArchiverInterface $folderZipArchiver,
+        private readonly OwnershipCheckerInterface $ownershipChecker,
     ) {}
 
     #[Route('/folders/{id}/download', name: 'app_folder_download', methods: ['GET'])]
@@ -76,12 +78,10 @@ final class FolderWebController extends AbstractController
             throw $this->createNotFoundException('Dossier introuvable.');
         }
 
+        $this->ownershipChecker->denyUnlessOwner($folder);
+
         /** @var \App\Entity\User $user */
         $user = $this->getUser();
-        if (!$folder->getOwner()->getId()->equals($user->getId())) {
-            throw $this->createAccessDeniedException('Vous ne pouvez pas supprimer ce dossier.');
-        }
-
         $deleteContents = (bool) $request->request->get('delete_contents', '1');
 
         $movedTo = null;

@@ -2,9 +2,20 @@
 
 > Dernière mise à jour : 2026-09-01
 
-> **Status git :** branche `feat/373-direct-messages-admin` (non mergée) — dernière PR mergée sur `main` #371 (`style(changelog): renommer la colonne "GitHub" en "Ticket"`)
+> **Status git :** branche `refactor/381-ownership-checker-unification` (non mergée) — dernière PR mergée sur `main` #380 (messagerie directe admin, #373)
 
 ---
+
+## ✅ Unification des checks d'ownership via OwnershipCheckerInterface (2026-09-01, #381, branche `refactor/381-ownership-checker-unification`)
+
+- Audit refacto ayant identifié 8 occurrences du check manuel `getOwner()->getId()->equals($user->getId())` dupliqué en dur dans les contrôleurs, alors qu'`OwnershipCheckerInterface::denyUnlessOwner()`/`isOwner()` existait déjà et était utilisé seulement dans une partie du code.
+- Décision d'architecture (challengée avant exécution, cf. commentaire sur le ticket) : pas de nouveau Voter Symfony — le besoin est une simple comparaison booléenne owner/non-owner sans règle métier à arbitrer entre plusieurs sources (contrairement à `AlbumVoter`, qui combine ownership OU partage actif). `denyUnlessOwner()`/`isOwner()` suffisent, KISS.
+- 6 contrôleurs migrés : `FileWebController`, `ShareWebController` (`revokeLink`/`reactivateLink`), `FolderWebController`, `MediaGalleryController` utilisent `denyUnlessOwner()` (lèvent déjà une `AccessDeniedHttpException`, comportement observable inchangé) ; `FolderChildrenController` et `ExplorerController` utilisent `isOwner()` (booléen) car ils ne lèvent pas d'exception — JSON 403 custom pour l'un, fallback silencieux vers la racine pour l'autre — comportement observable préservé.
+- `OwnershipCheckerInterface`/`OwnershipChecker` élargis à `ShareLink` (absent du type union initial) : `revokeLink`/`reactivateLink` vérifient l'ownership du lien lui-même, distinct de `ShareLinkFactory` qui vérifie l'ownership de la ressource *pointée par* le lien.
+- Fix de cohérence au même thème (double chemin d'autorisation) : `BroadcastAdminExtension` appelait `BroadcastAdminChecker::isAdmin()` directement au lieu du `AdminVoter::ADMIN` déjà généralisé par #373 — migré vers `Security::isGranted()`.
+- Hors périmètre, documenté sur le ticket : `DirectMessageReadWebController:41` compare `getRecipient()`, pas `getOwner()` — sémantique différente (destinataire vs propriétaire), à traiter séparément si besoin.
+- Couverture manquante ajoutée en cours de route : `FolderChildrenController` (aucun test dédié existant) et le fallback ownership d'`ExplorerController` (jamais testé), plus l'affichage conditionnel du lien de nav admin.
+- Tests : suite complète 1023/1023 verts (+6 tests ajoutés pendant le chantier).
 
 ## ✅ Messagerie directe admin + pile de notifications unifiée (2026-09-01, #373, branche `feat/373-direct-messages-admin`)
 
