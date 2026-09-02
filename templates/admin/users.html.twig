@@ -17,7 +17,7 @@
     <tbody>
         {% for row in rows %}
         <tr>
-            <td>{{ row.user.email }}</td>
+            <td><a href="{{ path('app_admin_user_show', {id: row.user.id}) }}">{{ row.user.email }}</a></td>
             <td>{{ row.user.createdAt|date('d/m/Y') }}</td>
             <td>Non trackée</td>
             <td>{{ row.storage }}</td>

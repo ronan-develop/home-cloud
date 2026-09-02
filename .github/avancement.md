@@ -2,9 +2,19 @@
 
 > Dernière mise à jour : 2026-09-01
 
-> **Status git :** branche `fix/391-exclude-guests-direct-message-form` (en cours de merge) — dernière PR mergée sur `main` #390 (exclusion invités /admin/users, #389)
+> **Status git :** branche `feature/375-admin-user-actions` (non mergée) — dernière PR mergée sur `main` #393 (exclusion invités message direct, #391)
 
 ---
+
+## ✅ Espace admin — actions de gestion user (2026-09-01, #375, branche `feature/375-admin-user-actions`)
+
+- Nouveau flag `User::isActive` (défaut `true`, migration `Version20260901133449`) + `UserAccountStatusChecker` (`UserCheckerInterface` custom) déclaré sur les firewalls `login`/`api`/`web` : bloque le login (`checkPreAuth`) et coupe l'accès API dès la requête suivante (`checkPostAuth`) pour un compte désactivé. Le JWT déjà émis (TTL 1h, non révocable individuellement) reste valide jusqu'à expiration — acceptable vu la volumétrie perso/familiale de l'app, décision actée avant implémentation.
+- Désactivation = flag `isActive` + révocation de tous les refresh tokens du user (`RefreshTokenRepository::deleteAllForUser`), sur une seule action admin (`/admin/users/{id}/deactivate`).
+- L'admin peut déclencher une réinitialisation de mot de passe. `PasswordResetInitiator` (génération du lien + envoi email) est extrait du contrôleur self-service. Il est réutilisé à l'identique par la nouvelle action `/admin/users/{id}/reset-password` — un seul flux à maintenir, comportement observable du self-service inchangé (limiteur de fréquence et message anti-énumération conservés, non appliqués à l'action admin car l'admin est déjà authentifié/whitelisté).
+- Nouvelle page `/admin/users/{id}` (`AdminUserShowWebController`) : statut, stockage total, détail par dossier racine avec cumul récursif (sous-dossiers inclus, via `FolderRepository::findDescendantIds` déjà existant + nouvelles `FolderRepository::findRootFolders`, `FileRepository::sumSizeByFolderIds`/`countByFolderIds`). Liée depuis `/admin/users`.
+- Même garde-fou RGPD que #389/#391 : `UserRepository::findOwnerById` renvoie `null` pour un invité ou un ID inconnu → 404 sur toutes les routes de détail/action, jamais 403 (ne révèle pas l'existence d'un compte invité).
+- Le "quota" du titre du ticket #375 n'apparaît dans aucun point de la description, aucun mécanisme de quota n'existe dans le code, et le stockage o2switch est illimité (cf. [[project_o2switch_unlimited_storage]]) — traité comme hors-scope, documenté en commentaire sur le ticket plutôt qu'inventé.
+- Tests : `UserAccountStatusCheckerTest`, `PasswordResetInitiatorTest`, `RefreshTokenRepositoryTest`, `AdminUserShowWebControllerTest`, `AdminUserActionsWebControllerTest`, + extensions `UserRepositoryTest`/`FolderRepositoryTest`/`FileRepositoryTest`/`AuthTest`/`AdminUsersWebControllerTest`. Suite complète : 1069/1069 verts.
 
 ## ✅ Audit vie privée espace admin — fix #391 (2026-09-01, branche `fix/391-exclude-guests-direct-message-form`)
 
