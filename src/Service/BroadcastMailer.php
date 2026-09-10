@@ -46,7 +46,7 @@ final readonly class BroadcastMailer implements BroadcastMailerInterface
             }
 
             $email = (new TemplatedEmail())
-                ->from(new Address('no-reply@homecloud.fr'))
+                ->from(new Address('no-reply@lenouvel.me'))
                 ->to($user->getEmail())
                 ->subject($subject)
                 ->htmlTemplate('emails/broadcast_message.html.twig')

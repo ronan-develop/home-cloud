@@ -33,7 +33,7 @@ final readonly class ShareNotificationMailer implements ShareNotificationMailerI
         $accessUrl = $this->resolveAccessUrl($share);
 
         $email = (new TemplatedEmail())
-            ->from(new Address('no-reply@homecloud.fr'))
+            ->from(new Address('no-reply@lenouvel.me'))
             ->to($share->getGuest()->getEmail())
             ->subject(sprintf('%s a partagé « %s » avec vous', $share->getOwner()->getDisplayName(), $resourceName))
             ->htmlTemplate('emails/share_notification.html.twig')

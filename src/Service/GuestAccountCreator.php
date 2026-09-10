@@ -51,7 +51,7 @@ final readonly class GuestAccountCreator
         );
 
         $invitationEmail = (new TemplatedEmail())
-            ->from(new Address('no-reply@homecloud.fr'))
+            ->from(new Address('no-reply@lenouvel.me'))
             ->to($user->getEmail())
             ->subject('Vous avez été invité(e) sur HomeCloud')
             ->htmlTemplate('reset_password/guest_invitation_email.html.twig')
