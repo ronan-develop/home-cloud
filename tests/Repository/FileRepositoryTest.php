@@ -128,4 +128,54 @@ final class FileRepositoryTest extends KernelTestCase
         $this->assertInstanceOf(\Generator::class, $result);
         $this->assertCount(2, iterator_to_array($result));
     }
+
+    public function testSumSizeByFolderIdsSumsAcrossMultipleFolders(): void
+    {
+        $owner = $this->createUser('owner-breakdown@example.com');
+        $root = new Folder('Photos', $owner);
+        $this->em->persist($root);
+        $sub = new Folder('Vacances', $owner, $root);
+        $this->em->persist($sub);
+        $this->em->flush();
+
+        $this->createFile($owner, $root, 'a.jpg', 1000);
+        $this->createFile($owner, $sub, 'b.jpg', 500);
+
+        $sum = $this->repository->sumSizeByFolderIds([
+            $root->getId()->toRfc4122(),
+            $sub->getId()->toRfc4122(),
+        ]);
+
+        $this->assertSame(1500, $sum);
+    }
+
+    public function testSumSizeByFolderIdsReturnsZeroForEmptyList(): void
+    {
+        $this->assertSame(0, $this->repository->sumSizeByFolderIds([]));
+    }
+
+    public function testCountByFolderIdsCountsAcrossMultipleFolders(): void
+    {
+        $owner = $this->createUser('owner-count-breakdown@example.com');
+        $root = new Folder('Photos', $owner);
+        $this->em->persist($root);
+        $sub = new Folder('Vacances', $owner, $root);
+        $this->em->persist($sub);
+        $this->em->flush();
+
+        $this->createFile($owner, $root, 'a.jpg', 1000);
+        $this->createFile($owner, $sub, 'b.jpg', 500);
+
+        $count = $this->repository->countByFolderIds([
+            $root->getId()->toRfc4122(),
+            $sub->getId()->toRfc4122(),
+        ]);
+
+        $this->assertSame(2, $count);
+    }
+
+    public function testCountByFolderIdsReturnsZeroForEmptyList(): void
+    {
+        $this->assertSame(0, $this->repository->countByFolderIds([]));
+    }
 }

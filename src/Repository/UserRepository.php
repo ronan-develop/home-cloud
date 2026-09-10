@@ -9,6 +9,7 @@ use App\Interface\UserRepositoryInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\LockMode;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * @extends ServiceEntityRepository<User>
@@ -50,5 +51,21 @@ class UserRepository extends ServiceEntityRepository implements UserRepositoryIn
             ->orderBy('u.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
+    }
+
+    /**
+     * Retourne null pour un compte invité ou un ID inconnu — même garde-fou
+     * RGPD que findOwnersOrderedByCreatedAt() (#389/#391), un invité n'est
+     * jamais accessible individuellement par l'admin.
+     */
+    public function findOwnerById(Uuid $id): ?User
+    {
+        return $this->createQueryBuilder('u')
+            ->andWhere('u.id = :id')
+            ->andWhere('u.accountType = :accountType')
+            ->setParameter('id', $id->toBinary())
+            ->setParameter('accountType', User::ACCOUNT_TYPE_FULL)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 }

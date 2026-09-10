@@ -148,6 +148,52 @@ class FileRepository extends ServiceEntityRepository implements FileRepositoryIn
         return $result !== null ? (int) $result : 0;
     }
 
+    /**
+     * Somme des tailles des fichiers appartenant à une liste de dossiers
+     * (#375, détail stockage admin — cumul récursif dossier racine +
+     * descendants, calculé par l'appelant via FolderRepository::findDescendantIds).
+     *
+     * @param string[] $folderIds UUIDs RFC4122
+     */
+    public function sumSizeByFolderIds(array $folderIds): int
+    {
+        if ($folderIds === []) {
+            return 0;
+        }
+
+        $binaryIds = array_map(static fn (string $id) => Uuid::fromString($id)->toBinary(), $folderIds);
+
+        $result = $this->createQueryBuilder('f')
+            ->select('SUM(f.size)')
+            ->andWhere('IDENTITY(f.folder) IN (:folderIds)')
+            ->setParameter('folderIds', $binaryIds)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $result !== null ? (int) $result : 0;
+    }
+
+    /**
+     * Nombre de fichiers appartenant à une liste de dossiers (#375).
+     *
+     * @param string[] $folderIds UUIDs RFC4122
+     */
+    public function countByFolderIds(array $folderIds): int
+    {
+        if ($folderIds === []) {
+            return 0;
+        }
+
+        $binaryIds = array_map(static fn (string $id) => Uuid::fromString($id)->toBinary(), $folderIds);
+
+        return (int) $this->createQueryBuilder('f')
+            ->select('COUNT(f.id)')
+            ->andWhere('IDENTITY(f.folder) IN (:folderIds)')
+            ->setParameter('folderIds', $binaryIds)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     public function findWithoutMedia(): iterable
     {
         return $this->createQueryBuilder('f')

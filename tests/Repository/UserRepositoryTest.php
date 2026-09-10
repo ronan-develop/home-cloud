@@ -8,6 +8,7 @@ use App\Entity\User;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Uid\Uuid;
 
 final class UserRepositoryTest extends KernelTestCase
 {
@@ -76,5 +77,27 @@ final class UserRepositoryTest extends KernelTestCase
             ['owner@example.com'],
             array_map(static fn (User $u) => $u->getEmail(), $result),
         );
+    }
+
+    public function testFindOwnerByIdReturnsOwner(): void
+    {
+        $owner = $this->createUser('owner@example.com', new \DateTimeImmutable('2026-01-01'));
+
+        $result = $this->repository->findOwnerById($owner->getId());
+
+        $this->assertNotNull($result);
+        $this->assertSame('owner@example.com', $result->getEmail());
+    }
+
+    public function testFindOwnerByIdReturnsNullForGuest(): void
+    {
+        $guest = $this->createUser('guest@example.com', new \DateTimeImmutable('2026-01-01'), guest: true);
+
+        $this->assertNull($this->repository->findOwnerById($guest->getId()));
+    }
+
+    public function testFindOwnerByIdReturnsNullForUnknownId(): void
+    {
+        $this->assertNull($this->repository->findOwnerById(Uuid::v7()));
     }
 }

@@ -1,0 +1,43 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}{{ targetUser.email }} — Administration{% endblock %}
+
+{% block content %}
+<a href="{{ path('app_admin_users') }}" class="hc-admin-back">&larr; Retour à la liste</a>
+
+<h1 class="hc-admin-page-title">{{ targetUser.email }}</h1>
+
+<p>Statut : {{ targetUser.active ? 'Actif' : 'Désactivé' }}</p>
+<p>Créé le {{ targetUser.createdAt|date('d/m/Y') }}</p>
+<p>Stockage total : {{ totalStorage }} ({{ totalFiles }} fichiers)</p>
+
+<form method="post" action="{{ path(targetUser.active ? 'app_admin_user_deactivate' : 'app_admin_user_reactivate', {id: targetUser.id}) }}">
+    <input type="hidden" name="_token" value="{{ csrf_token(targetUser.active ? 'admin-user-deactivate' : 'admin-user-reactivate') }}">
+    <button type="submit" class="hc-broadcast-submit">{{ targetUser.active ? 'Désactiver' : 'Réactiver' }}</button>
+</form>
+
+<form method="post" action="{{ path('app_admin_user_reset_password', {id: targetUser.id}) }}">
+    <input type="hidden" name="_token" value="{{ csrf_token('admin-user-reset-password') }}">
+    <button type="submit" class="hc-broadcast-submit">Envoyer un lien de réinitialisation</button>
+</form>
+
+<h2>Détail du stockage par dossier</h2>
+<table class="hc-admin-table">
+    <thead>
+        <tr>
+            <th>Dossier</th>
+            <th>Fichiers</th>
+            <th>Taille</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in breakdown %}
+        <tr>
+            <td>{{ row.folder.name }}</td>
+            <td>{{ row.fileCount }}</td>
+            <td>{{ row.size }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
