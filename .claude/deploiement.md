@@ -436,6 +436,28 @@ réel, à renseigner sur chaque instance (jamais dans git — SMTP o2switch injo
 depuis localhost, port 465 bloqué). Sans lui, le traitement se fait quand même,
 seul l'email de notification manque.
 
+**Piège domaine `From` / SPF** (vécu le 2026-09-10, #378) : un `MAILER_DSN`
+valide et une authentification SMTP réussie (`bin/console mailer:test` exit 0)
+**ne garantissent pas la réception**. Deux conditions supplémentaires, sinon
+rejet silencieux côté destinataire (ni inbox, ni spam, aucune erreur applicative) :
+
+- Le domaine du `From` (`no-reply@lenouvel.me` dans les 4 mailers — jamais un
+  autre domaine, même si "plus joli" pour le nom du projet) doit correspondre
+  au domaine qui héberge réellement l'app, pas un domaine tiers dont le
+  SPF/DKIM pointeraient vers une autre infra.
+- `lenouvel.me` doit avoir un enregistrement **SPF** en zone DNS
+  (cPanel → Domaines → Zone Editor → TXT) :
+  ```bash
+  v=spf1 mx a ~all
+  ```
+
+  Sans lui, Gmail (et d'autres providers) droppe silencieusement même un mail
+  correctement authentifié et envoyé depuis le bon domaine.
+
+**Diagnostic en cas de mail "non reçu"** : `mailer:test` exit 0 ne suffit pas —
+toujours faire confirmer la réception réelle (inbox + spam) avant de conclure
+qu'un fix mail fonctionne.
+
 ---
 
 ## Diagnostic — erreurs fréquentes
