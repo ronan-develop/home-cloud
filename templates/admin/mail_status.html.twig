@@ -1,0 +1,52 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Statut des emails — Administration{% endblock %}
+
+{% block content %}
+<h1 class="hc-admin-page-title">Statut des emails</h1>
+
+<table class="hc-admin-table">
+    <tbody>
+        <tr>
+            <th>MAILER_DSN</th>
+            <td>
+                {% if connectivity.isConfigured %}
+                    Configuré
+                {% else %}
+                    Non configuré
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <th>Connectivité SMTP</th>
+            <td>
+                {% if connectivity.isReachable is null %}
+                    Non testée
+                {% elseif connectivity.isReachable %}
+                    OK
+                {% else %}
+                    Échec — {{ connectivity.errorMessage }}
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <th>Messages en attente</th>
+            <td>{{ pendingCount }}</td>
+        </tr>
+        <tr>
+            <th>Plus ancien message en attente</th>
+            <td>
+                {% if oldestPending %}
+                    {{ oldestPending|date('d/m/Y H:i') }}
+                {% else %}
+                    —
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <th>Messages en échec</th>
+            <td>{{ failedCount }}</td>
+        </tr>
+    </tbody>
+</table>
+{% endblock %}

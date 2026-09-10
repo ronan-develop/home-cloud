@@ -92,6 +92,7 @@ services:
             string $currentInstance: '%env(BROADCAST_INSTANCE_NAME)%'
             string $configPath: '%kernel.project_dir%/config/broadcast_targets.php'
             string $githubToken: '%env(GITHUB_PAT)%'
+            string $mailerDsn: '%env(MAILER_DSN)%'
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
@@ -199,3 +200,17 @@ when@test:
         Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface:
             alias: security.token_storage
             public: true
+        # Rendre MessengerMessageRepository public en test (repository DBAL pur, pas ServiceEntityRepository)
+        App\Repository\MessengerMessageRepository:
+            autowire: true
+            public: true
+        # Rendre le prober SMTP substituable en test (éviter toute vraie I/O réseau)
+        App\Service\SmtpConnectivityProberInterface:
+            alias: App\Service\SmtpConnectivityProber
+            public: true
+        # Rendre MailerConnectivityChecker substituable en test (classe finale, non mockable directement)
+        App\Service\MailerConnectivityChecker:
+            autowire: true
+            public: true
+            bind:
+                string $mailerDsn: '%env(MAILER_DSN)%'
