@@ -2,9 +2,20 @@
 
 > Dernière mise à jour : 2026-09-10
 
-> **Status git :** branche `fix/396-cron-lve-contention` (non mergée) — dernière PR mergée sur `main` #394 (actions de gestion user, #375)
+> **Status git :** `main` à jour — dernière PR mergée #398 (fix domaine From mailer, #378)
 
 ---
+
+## ✅ Emails non reçus — 3 causes cumulées (2026-09-10, #378, branches `fix/378-mailer-from-domain-mismatch` + fix SSH/DNS hors-repo)
+
+- Diagnostic complet en SSH sur les 7 instances : `MAILER_DSN` correctement configuré partout (pas la piste initiale du ticket), cron `messenger:consume` actif partout.
+- **Cause 1** : compte mail `ronan@lenouvel.me` en échec d'authentification SMTP côté o2switch (`535 Incorrect authentication data`), mot de passe expiré/désynchronisé. Fix : mot de passe réinitialisé dans cPanel, propagé dans `.secrets`/`.env.local` des 7 instances. `mailer:test` passait déjà à exit 0 à cette étape, mais aucune réception réelle constatée — a révélé la cause 2.
+- **Cause 2** : les 4 mailers (`ShareNotificationMailer`, `BroadcastMailer`, `GuestAccountCreator`, `BatchCompletionNotifier`) envoyaient avec `From: no-reply@homecloud.fr`, un domaine tiers (SPF/DKIM configurés pour une infra OVH sans rapport avec le projet) — mismatch total avec le serveur SMTP réel (`lenouvel.me`, o2switch). Fix : PR #398, `From` remplacé par `no-reply@lenouvel.me` dans les 4 mailers, déployé sur les 7 instances.
+- **Cause 3** : `lenouvel.me` n'avait aucun enregistrement SPF en zone DNS, donc même avec le bon domaine `From`, Gmail rejetait silencieusement (ni inbox ni spam, aucune erreur applicative). Fix : ajout d'un TXT `v=spf1 mx a ~all` sur `lenouvel.me` (cPanel → Zone Editor).
+- **Validé par réception réelle** (pas seulement `mailer:test` exit 0, qui s'est révélé insuffisant à deux reprises pendant ce diagnostic) : mail de test reçu en inbox Gmail après propagation SPF.
+- Documentation ajoutée dans `.claude/deploiement.md` (section `MAILER_DSN`, piège domaine From/SPF) pour éviter la régression sur une future instance.
+- Piège annexe corrigé au passage : un guillemet non fermé dans `.secrets` cassait le parsing bash de toutes les variables suivantes — `bash -n .secrets` est le réflexe de vérification avant tout diagnostic si une variable semble vide.
+- Pas de test PHPUnit sur les causes 1/3 (config serveur/DNS, hors code). Suite complète (cause 2, PR #398) : 1069/1069 verts.
 
 ## ✅ Contention LVE crons multi-instances (2026-09-10, #395/#396, branche `fix/396-cron-lve-contention`)
 
