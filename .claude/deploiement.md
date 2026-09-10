@@ -333,6 +333,57 @@ la Galerie avec sa vignette en moins de 5 minutes.
 
 ---
 
+## Crons nocturnes — `purge-revoked` et `process-missing`
+
+Deux tâches quotidiennes tournent en plus du worker Messenger :
+
+- `app:share-link:purge-revoked` — purge les `ShareLink` révoqués (#244)
+- `app:media:process-missing` — rattrapage vignettes/EXIF pour les fichiers
+  sans `Media` (#365/#366)
+
+**Piège LVE mutualisé** (vécu le 2026-09-10, #395/#396) : le compte cPanel
+`ron2cuba` héberge les 7 instances sur un **seul** compte, donc une seule
+limite LVE (CPU/mémoire/process) partagée par toutes. Programmer les 7 crons
+d'une même tâche à la même minute fait tourner jusqu'à 14 process PHP
+simultanés (7 `purge-revoked`/`process-missing` + les `messenger:consume`
+déjà actifs en continu) — LVE peut alors throttler/tuer un process sans
+laisser de trace applicative (le log Symfony reste vide, le mail cron arrive
+sans stack trace exploitable). **Toujours étaler les horaires d'au moins 5
+minutes par instance**, y compris pour un futur 8ᵉ prénom.
+
+```bash
+0 3 * * *  flock -n /home9/ron2cuba/.purge-revoked-<prenom>.lock  /usr/local/bin/php /home9/ron2cuba/<prenom>.lenouvel.me/bin/console app:share-link:purge-revoked --env=prod >> /home9/ron2cuba/<prenom>.lenouvel.me/var/log/share-link-purge.log 2>&1
+30 3 * * * flock -n /home9/ron2cuba/.process-missing-<prenom>.lock /usr/local/bin/php /home9/ron2cuba/<prenom>.lenouvel.me/bin/console app:media:process-missing --env=prod   >> /home9/ron2cuba/<prenom>.lenouvel.me/var/log/media-process-missing.log 2>&1
+```
+
+`flock -n` (même pattern que `messenger:consume` ci-dessus) évite qu'une
+exécution encore en cours (rattrapage RAW volumineux) ne chevauche celle de
+la nuit suivante.
+
+Horaires actuels (étalés par pas de 5 min à partir de `0 3` /`30 3`) :
+
+| Instance | `purge-revoked` | `process-missing` |
+|----------|------------------|--------------------|
+| ronan    | `0 3`            | `30 3`             |
+| yannick  | `5 3`            | `35 3`             |
+| coralie  | `10 3`           | `40 3`             |
+| elea     | `15 3`           | `45 3`             |
+| corentin | `20 3`           | `50 3`             |
+| damien   | `25 3`           | `55 3`             |
+| baptiste | `30 3`           | `0 4`              |
+
+Diagnostic :
+
+```bash
+tail -20 var/log/media-process-missing.log   # dernier rattrapage
+tail -20 var/log/share-link-purge.log        # dernière purge
+```
+
+**Critère de bon fonctionnement** : les deux fichiers de log sont mis à jour
+chaque nuit sur les 7 instances, sans mail d'erreur cron.
+
+---
+
 ## Variables `.env.local` sur le serveur
 
 À créer manuellement sur chaque instance (jamais dans git) :
