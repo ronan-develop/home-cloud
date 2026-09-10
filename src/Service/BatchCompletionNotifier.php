@@ -39,7 +39,7 @@ final readonly class BatchCompletionNotifier implements BatchCompletionNotifierI
         $count = $batch->getExpectedCount();
 
         $email = (new TemplatedEmail())
-            ->from(new Address('no-reply@homecloud.fr'))
+            ->from(new Address('no-reply@lenouvel.me'))
             ->to($batch->getOwner()->getEmail())
             ->subject(sprintf(
                 '%d %s prêt%s dans votre galerie',
