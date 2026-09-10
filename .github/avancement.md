@@ -1,10 +1,18 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-09-01
+> Dernière mise à jour : 2026-09-10
 
-> **Status git :** branche `feature/375-admin-user-actions` (non mergée) — dernière PR mergée sur `main` #393 (exclusion invités message direct, #391)
+> **Status git :** branche `fix/396-cron-lve-contention` (non mergée) — dernière PR mergée sur `main` #394 (actions de gestion user, #375)
 
 ---
+
+## ✅ Contention LVE crons multi-instances (2026-09-10, #395/#396, branche `fix/396-cron-lve-contention`)
+
+- #395 (cron `app:media:process-missing` continue d'échouer malgré le fix OOM #366) diagnostiqué en SSH sur les 7 instances : fix #366 bien déployé partout (même commit), exécution manuelle sans erreur, mais `var/log/media-process-missing.log` figé depuis le 22-23 juillet sur 6 des 7 instances — le cron nocturne échoue avant tout logging applicatif.
+- Cause identifiée (#396) : les 7 crons `app:media:process-missing` (`30 3 * * *`) et les 7 `app:share-link:purge-revoked` (`0 3 * * *`) étaient tous programmés à la même minute sur le seul compte cPanel mutualisé `ron2cuba`, en plus des 7 `messenger:consume` déjà actifs en continu — jusqu'à 14 process PHP simultanés, throttlés/tués par les limites LVE du compte sans trace applicative exploitable.
+- Fix appliqué directement sur le crontab serveur (SSH, aucun code applicatif modifié) : horaires étalés par pas de 5 minutes par instance, `flock -n` ajouté sur `purge-revoked` et `process-missing` (même pattern que `messenger:consume`, un lock-file dédié par instance et par commande).
+- Documentation ajoutée dans `.claude/deploiement.md` (section « Crons nocturnes — purge-revoked et process-missing ») : horaires de référence, contrainte LVE mutualisé à respecter pour tout futur cron ou 8ᵉ instance.
+- Pas de test PHPUnit applicable — changement purement infra/ops. Vérification : suivi des logs et de l'absence de mail d'erreur sur plusieurs nuits consécutives.
 
 ## ✅ Espace admin — actions de gestion user (2026-09-01, #375, branche `feature/375-admin-user-actions`)
 
