@@ -113,6 +113,28 @@ final class GitHubChangelogFetcherTest extends TestCase
         $this->assertCount(101, $entries);
     }
 
+    /**
+     * #414 : mergedAt (timestamp complet) est nécessaire en aval
+     * (ChangelogNotificationNormalizer) pour comparer avec précision à
+     * lastChangelogViewedAt — un unset() après le tri interne l'avait
+     * retiré du tableau retourné, provoquant une 500 "Undefined array key
+     * mergedAt" une fois le normalizer mis à jour pour l'utiliser.
+     */
+    public function testKeepsMergedAtInReturnedEntries(): void
+    {
+        $prs = [
+            $this->pr(50, 'feat: une feature', '2026-07-20T10:00:00Z', ['feature']),
+        ];
+
+        $client = new MockHttpClient([new MockResponse(json_encode($prs))]);
+        $fetcher = new GitHubChangelogFetcher($client, new ArrayAdapter(), new PrTitleCleaner());
+
+        $entries = $fetcher->fetchEntries();
+
+        $this->assertArrayHasKey('mergedAt', $entries[0]);
+        $this->assertSame('2026-07-20T10:00:00Z', $entries[0]['mergedAt']);
+    }
+
     public function testResultIsCachedAndDoesNotTriggerASecondHttpCall(): void
     {
         $prs = [$this->pr(40, 'feat: une feature', '2026-07-20T10:00:00Z', ['feature'])];

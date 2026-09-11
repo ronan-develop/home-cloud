@@ -45,7 +45,7 @@ final class GitHubChangelogFetcher implements ChangelogFetcherInterface
     }
 
     /**
-     * @return list<array{number: int, title: string, date: string, url: string}>
+     * @return list<array{number: int, title: string, date: string, url: string, mergedAt: string}>
      */
     private function fetchFromGitHub(): array
     {
@@ -77,11 +77,7 @@ final class GitHubChangelogFetcher implements ChangelogFetcherInterface
 
         usort($entries, static fn (array $a, array $b): int => $b['mergedAt'] <=> $a['mergedAt']);
 
-        return array_map(static function (array $entry): array {
-            unset($entry['mergedAt']);
-
-            return $entry;
-        }, $entries);
+        return $entries;
     }
 
     /**
