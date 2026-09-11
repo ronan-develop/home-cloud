@@ -11,9 +11,11 @@ use App\Interface\NotificationNormalizerInterface;
 
 /**
  * Normalise les entrées changelog (éphémères, API GitHub) en NotificationItem
- * (#373). Reprend la logique de lu/non-lu de ChangelogGlobalsExtension
- * (comparaison de date, contrairement à DirectMessage qui a un readAt par
- * entité) — seul service à connaître le format des entrées changelog.
+ * (#373). Comparaison sur `mergedAt` (timestamp complet), pas `date` (tronqué
+ * au jour, réservé à l'affichage) — une entrée mergée le même jour mais après
+ * la dernière visite doit rester non lue (#414). Contrairement à DirectMessage
+ * qui a un readAt par entité — seul service à connaître le format des entrées
+ * changelog.
  *
  * Jamais visité (lastChangelogViewedAt === null) => tout marqué lu, pas
  * l'inverse : évite un faux badge géant pour tout utilisateur existant
@@ -28,7 +30,6 @@ final readonly class ChangelogNotificationNormalizer implements NotificationNorm
     public function normalize(User $user): array
     {
         $lastViewedAt = $user->getLastChangelogViewedAt();
-        $lastViewedDate = $lastViewedAt?->format('Y-m-d');
 
         $items = [];
 
@@ -38,7 +39,7 @@ final readonly class ChangelogNotificationNormalizer implements NotificationNorm
                 $entry['title'],
                 new \DateTimeImmutable($entry['date']),
                 $entry['url'],
-                $lastViewedDate === null || $entry['date'] <= $lastViewedDate,
+                $lastViewedAt === null || new \DateTimeImmutable($entry['mergedAt']) <= $lastViewedAt,
             );
         }
 
