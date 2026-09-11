@@ -2,9 +2,19 @@
 
 > Dernière mise à jour : 2026-09-11
 
-> **Status git :** `main` à jour — dernière PR mergée #407 (#404, barre de progression deploy-all) ; branche en cours `feature/388-admin-activity-stats` (non mergée)
+> **Status git :** `main` à jour — dernière PR mergée #410 (#388, statistiques d'activité) ; branche en cours `feature/387-admin-share-link-exposure` (non mergée)
 
 ---
+
+## 🚧 Espace admin — surface d'exposition des liens de partage publics (2026-09-11, #387, branche `feature/387-admin-share-link-exposure`)
+
+- Vue **lecture seule** listant les `ShareLink` actifs de l'instance (ressource, propriétaire, date de création, expiration) — décision actée en planification : pas d'action de révocation depuis cette vue admin, le owner reste seul à pouvoir révoquer son propre lien.
+- Mise en avant des liens actifs créés il y a plus de 30 jours (classe `.hc-admin-row-old`, fond teinté via `color-mix()` sur `--hc-warn`) — seuil aligné sur `ShareLink::PURGE_AFTER_DAYS` déjà utilisé ailleurs dans le projet (#244).
+- `ShareLinkRepository::findActiveOrderedByCreatedAt()` : nouvelle méthode de liste agrégée instance (tous owners), aucun équivalent n'existait (seul `findByOwner()` existait).
+- Résolution du nom de ressource pointée par le couple polymorphe `resourceType`/`resourceId` : réutilisation de `ResourceLocator` existant, avec le même pattern try/catch → fallback "Ressource supprimée" que `MyReceivedSharesWebController::resolveResourceName()` (pas de duplication de logique).
+- Contrairement à #388 (compteurs agrégés, aucune identité), ici l'email du owner est volontairement affiché — cohérent, l'admin doit savoir qui expose une ressource publiquement, ce n'est pas un invité soumis à la même contrainte RGPD.
+- Suite complète : 1136/1136 verts après chaque étape TDD (repository → controller → template/nav/CSS).
+- Reste à faire avant merge : revue utilisateur, `gh pr create` + label obligatoire, vérif CI verte.
 
 ## 🚧 Espace admin — statistiques d'activité de l'instance (2026-09-11, #388, branche `feature/388-admin-activity-stats`)
 
