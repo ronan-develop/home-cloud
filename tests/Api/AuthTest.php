@@ -210,6 +210,26 @@ final class AuthTest extends AuthenticatedApiTestCase
         $this->assertResponseStatusCodeSame(401);
     }
 
+    public function testLoginFailureResponseDoesNotRevealAccountExistence(): void
+    {
+        $this->createUserWithPassword('alice@example.com', 'password123');
+
+        $wrongPasswordResponse = static::createClient()->request('POST', '/api/v1/auth/login', [
+            'json' => ['email' => 'alice@example.com', 'password' => 'wrongpassword'],
+        ]);
+        $wrongPasswordStatus = $wrongPasswordResponse->getStatusCode();
+        $wrongPasswordBody = $wrongPasswordResponse->getContent(false);
+
+        $unknownEmailResponse = static::createClient()->request('POST', '/api/v1/auth/login', [
+            'json' => ['email' => 'nobody@example.com', 'password' => 'password123'],
+        ]);
+        $unknownEmailStatus = $unknownEmailResponse->getStatusCode();
+        $unknownEmailBody = $unknownEmailResponse->getContent(false);
+
+        $this->assertSame($wrongPasswordStatus, $unknownEmailStatus);
+        $this->assertSame($wrongPasswordBody, $unknownEmailBody);
+    }
+
     public function testLoginIsThrottledAfterFiveFailures(): void
     {
         $this->createUserWithPassword('throttle@example.com', 'password123');
