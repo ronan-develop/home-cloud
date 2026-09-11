@@ -2,11 +2,20 @@
 
 > Dernière mise à jour : 2026-09-11
 
-> **Status git :** `main` à jour — dernière PR mergée #410 (#388, statistiques d'activité) ; branche en cours `feature/387-admin-share-link-exposure` (non mergée)
+> **Status git :** `main` à jour — dernière PR mergée #412 (#387, surface d'exposition liens publics) ; branche en cours `fix/direct-message-recipient-query` (non mergée)
 
 ---
 
-## 🚧 Espace admin — surface d'exposition des liens de partage publics (2026-09-11, #387, branche `feature/387-admin-share-link-exposure`)
+## 🐛 Notifications de messages directs invisibles — DirectMessageRepository (2026-09-11, branche `fix/direct-message-recipient-query`)
+
+- Découvert en vérifiant manuellement (Playwright) le comportement de `markRead` pendant le travail sur #411 (assombrissement visuel des notifications lues) : `DirectMessageRepository::findForUser()` et `countUnreadForUser()` comparaient `dm.recipient` à un objet `User` passé nu en paramètre (`setParameter('user', $user)`), sans type `'uuid'` explicite — contrairement au pattern `getId(), 'uuid'` utilisé systématiquement partout ailleurs dans le projet (`ShareRepository`, `AlbumRepository`, etc.).
+- Doctrine ne résolvait pas correctement le type binaire pour cette comparaison : la requête ne matchait **jamais aucune ligne**, vérifié avec des UUID strictement identiques en base (comparaison hexadécimale confirmée). Conséquence en usage réel : les notifications de messages directs n'apparaissaient jamais dans la cloche topbar, ni leur badge de non-lus, quel que soit le nombre de messages reçus par un utilisateur.
+- Invisible jusqu'ici car le seul test existant (`DirectMessageNotificationNormalizerTest`) mocke le repository — le vrai DQL n'avait jamais tourné contre une vraie base.
+- Fix + `DirectMessageRepositoryTest` (5 tests d'intégration nouveaux) — cycle RED→GREEN vérifié explicitement en isolant le fix par `git stash` avant de le committer.
+- Suite complète : 1129/1129 verts.
+- Reste à faire avant merge : revue utilisateur, `gh pr create` + label obligatoire, vérif CI verte.
+
+## ✅ Espace admin — surface d'exposition des liens de partage publics (2026-09-11, #387, branche `feature/387-admin-share-link-exposure`)
 
 - Vue **lecture seule** listant les `ShareLink` actifs de l'instance (ressource, propriétaire, date de création, expiration) — décision actée en planification : pas d'action de révocation depuis cette vue admin, le owner reste seul à pouvoir révoquer son propre lien.
 - Mise en avant des liens actifs créés il y a plus de 30 jours (classe `.hc-admin-row-old`, fond teinté via `color-mix()` sur `--hc-warn`) — seuil aligné sur `ShareLink::PURGE_AFTER_DAYS` déjà utilisé ailleurs dans le projet (#244).
@@ -14,7 +23,6 @@
 - Résolution du nom de ressource pointée par le couple polymorphe `resourceType`/`resourceId` : réutilisation de `ResourceLocator` existant, avec le même pattern try/catch → fallback "Ressource supprimée" que `MyReceivedSharesWebController::resolveResourceName()` (pas de duplication de logique).
 - Contrairement à #388 (compteurs agrégés, aucune identité), ici l'email du owner est volontairement affiché — cohérent, l'admin doit savoir qui expose une ressource publiquement, ce n'est pas un invité soumis à la même contrainte RGPD.
 - Suite complète : 1136/1136 verts après chaque étape TDD (repository → controller → template/nav/CSS).
-- Reste à faire avant merge : revue utilisateur, `gh pr create` + label obligatoire, vérif CI verte.
 
 ## 🚧 Espace admin — statistiques d'activité de l'instance (2026-09-11, #388, branche `feature/388-admin-activity-stats`)
 
