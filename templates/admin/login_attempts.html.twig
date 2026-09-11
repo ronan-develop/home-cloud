@@ -1,0 +1,78 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Tentatives de connexion échouées — Administration{% endblock %}
+
+{% block content %}
+<h1 class="hc-admin-page-title">Tentatives de connexion échouées</h1>
+
+{% if suspiciousByEmailHash|length > 0 or suspiciousByIp|length > 0 %}
+<section class="hc-admin-suspicious">
+    <h2>Activité suspecte (15 dernières minutes)</h2>
+
+    {% if suspiciousByEmailHash|length > 0 %}
+    <table class="hc-admin-table">
+        <thead>
+            <tr>
+                <th>Compte visé (hash)</th>
+                <th>Tentatives</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in suspiciousByEmailHash %}
+            <tr>
+                <td>{{ row.emailHash|slice(0, 12) }}…</td>
+                <td>{{ row.count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    {% if suspiciousByIp|length > 0 %}
+    <table class="hc-admin-table">
+        <thead>
+            <tr>
+                <th>IP</th>
+                <th>Tentatives</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in suspiciousByIp %}
+            <tr>
+                <td>{{ row.ip }}</td>
+                <td>{{ row.count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</section>
+{% endif %}
+
+<h2>Tentatives récentes</h2>
+
+{% if recentAttempts|length == 0 %}
+    <p>Aucune tentative de connexion échouée enregistrée.</p>
+{% else %}
+<table class="hc-admin-table">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Compte visé (hash)</th>
+            <th>IP</th>
+            <th>User-agent</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for attempt in recentAttempts %}
+        <tr>
+            <td>{{ attempt.createdAt|date('d/m/Y H:i') }}</td>
+            <td>{{ attempt.emailHash|slice(0, 12) }}…</td>
+            <td>{{ attempt.ip ?? '—' }}</td>
+            <td>{{ attempt.userAgent ?? '—' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}
