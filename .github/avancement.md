@@ -2,9 +2,18 @@
 
 > Dernière mise à jour : 2026-09-11
 
-> **Status git :** `main` à jour — dernière PR mergée #401 (hash email logs auth, #392) ; branche en cours `feature/386-admin-failed-login-attempts` (non mergée)
+> **Status git :** `main` à jour — dernière PR mergée #403 (#386, tracking connexions échouées) ; branche en cours `feature/402-login-rate-limiting-doc` (non mergée)
 
 ---
+
+## ✅ Rate-limiting login déjà effectif — clôture documentaire (2026-09-11, #402, branche `feature/402-login-rate-limiting-doc`)
+
+- Investigation avant planification : #402 demandait de bloquer les connexions après échecs répétés, en présumant un lien avec la table `login_attempts` (#386, vue admin passive). Cette table ne sert qu'à l'affichage — le blocage réel passe par un mécanisme Symfony totalement indépendant, déjà en place depuis l'audit de sécurité initial (commit `99c362e`).
+- Confirmé : `login_throttling` natif (`config/packages/security.yaml`, firewall `login`) — 5 tentatives/15 min, limité à la fois par IP seule et par username+IP (`DefaultLoginRateLimiter`) ; `LoginThrottlingFailureListener` renvoie un 429 JSON propre (sinon le `failure_handler` Lexik JWT aurait masqué le blocage en 401) ; `tests/Api/AuthTest.php::testLoginIsThrottledAfterFiveFailures` couvrait déjà le blocage à la 6ᵉ tentative.
+- Ajout du test manquant pour verrouiller explicitement le critère "pas de fuite d'info" du ticket : `testLoginFailureResponseDoesNotRevealAccountExistence` — compare code HTTP **et** corps de réponse entre mauvais mot de passe et email inconnu, confirmé identiques (comportement `json_login` standard).
+- Aucun autre code applicatif modifié — pas de nouvelle brique, décision actée après lecture du code existant plutôt qu'une réimplémentation redondante.
+- Piste connexe évoquée en discussion (gardien centralisé sur `lenouvel.me` + DB dédiée pour un rate-limiting inter-instances) : **hors scope**, jugée oversized pour l'usage familial actuel des 7 instances — documentée et fermée en `wontfix` sur #405, à rouvrir explicitement si le projet passe en multi-tenant commercial.
+- Suite complète : 1112/1112 verts (après rebuild Tailwind, sans rapport avec ce changement).
 
 ## 🚧 Espace admin — tentatives de connexion échouées (2026-09-11, #386, branche `feature/386-admin-failed-login-attempts`)
 
