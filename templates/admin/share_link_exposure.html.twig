@@ -1,0 +1,32 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Liens publics actifs — Administration{% endblock %}
+
+{% block content %}
+<h1 class="hc-admin-page-title">Liens publics actifs</h1>
+
+{% if rows is empty %}
+<p>Aucun lien de partage public actif sur cette instance.</p>
+{% else %}
+<table class="hc-admin-table">
+    <thead>
+        <tr>
+            <th>Ressource</th>
+            <th>Propriétaire</th>
+            <th>Créé le</th>
+            <th>Expire le</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in rows %}
+        <tr class="{{ row.isOld ? 'hc-admin-row-old' : '' }}">
+            <td>{{ row.resourceName }}</td>
+            <td>{{ row.ownerEmail }}</td>
+            <td>{{ row.createdAt|date('d/m/Y H:i') }}</td>
+            <td>{{ row.expiresAt ? row.expiresAt|date('d/m/Y H:i') : 'Permanent' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}

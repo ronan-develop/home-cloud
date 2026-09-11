@@ -59,6 +59,12 @@ final class ShareLinkRepositoryTest extends KernelTestCase
         $ref->setValue($link, $revokedAt);
     }
 
+    private function setCreatedAt(ShareLink $link, \DateTimeImmutable $createdAt): void
+    {
+        $ref = new \ReflectionProperty(ShareLink::class, 'createdAt');
+        $ref->setValue($link, $createdAt);
+    }
+
     public function testDeleteRevokedOlderThanRemovesOldRevokedLinks(): void
     {
         $owner = $this->createUser('owner-sl-repo@example.com');
@@ -132,5 +138,60 @@ final class ShareLinkRepositoryTest extends KernelTestCase
         $this->em->flush();
 
         $this->assertSame(1, $this->repository->countActive());
+    }
+
+    public function testFindActiveOrderedByCreatedAtReturnsEmptyArrayWhenNoLinks(): void
+    {
+        $this->assertSame([], $this->repository->findActiveOrderedByCreatedAt());
+    }
+
+    public function testFindActiveOrderedByCreatedAtExcludesRevokedAndExpiredLinks(): void
+    {
+        $owner = $this->createUser('owner-sl-find-active@example.com');
+
+        $active = $this->createLink($owner, 'selectoractivefind0000000000000');
+
+        $revoked = $this->createLink($owner, 'selectorrevokedfind00000000000');
+        $revoked->revoke();
+
+        $expired = new ShareLink(
+            $owner,
+            Share::RESOURCE_FILE,
+            Uuid::v7(),
+            'selectorexpiredfind00000000000',
+            hash('sha256', 'plain-token'),
+            new \DateTimeImmutable('-1 day'),
+        );
+
+        $this->em->persist($active);
+        $this->em->persist($revoked);
+        $this->em->persist($expired);
+        $this->em->flush();
+
+        $result = $this->repository->findActiveOrderedByCreatedAt();
+
+        $this->assertCount(1, $result);
+        $this->assertTrue($result[0]->getId()->equals($active->getId()));
+    }
+
+    public function testFindActiveOrderedByCreatedAtOrdersOldestFirst(): void
+    {
+        $owner = $this->createUser('owner-sl-find-order@example.com');
+
+        $newer = $this->createLink($owner, 'selectornewerorder000000000000');
+        $older = $this->createLink($owner, 'selectorolderorder000000000000');
+        $this->em->persist($newer);
+        $this->em->persist($older);
+        $this->em->flush();
+
+        $this->setCreatedAt($newer, new \DateTimeImmutable('-1 day'));
+        $this->setCreatedAt($older, new \DateTimeImmutable('-10 days'));
+        $this->em->flush();
+
+        $result = $this->repository->findActiveOrderedByCreatedAt();
+
+        $this->assertCount(2, $result);
+        $this->assertTrue($result[0]->getId()->equals($older->getId()));
+        $this->assertTrue($result[1]->getId()->equals($newer->getId()));
     }
 }

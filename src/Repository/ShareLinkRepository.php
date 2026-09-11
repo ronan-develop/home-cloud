@@ -99,4 +99,21 @@ class ShareLinkRepository extends ServiceEntityRepository implements ShareLinkRe
             ->getQuery()
             ->getSingleScalarResult();
     }
+
+    /**
+     * Liste agrégée instance (tous owners) des liens actifs, plus anciens en
+     * premier, pour la vue admin de surface d'exposition (#387).
+     *
+     * @return ShareLink[]
+     */
+    public function findActiveOrderedByCreatedAt(): array
+    {
+        return $this->createQueryBuilder('sl')
+            ->where('sl.revokedAt IS NULL')
+            ->andWhere('sl.expiresAt IS NULL OR sl.expiresAt > :now')
+            ->setParameter('now', new \DateTimeImmutable())
+            ->orderBy('sl.createdAt', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }
