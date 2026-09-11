@@ -23,9 +23,9 @@ class DirectMessageRepository extends ServiceEntityRepository
     {
         return (int) $this->createQueryBuilder('dm')
             ->select('COUNT(dm.id)')
-            ->andWhere('dm.recipient = :user')
+            ->andWhere('dm.recipient = :userId')
             ->andWhere('dm.readAt IS NULL')
-            ->setParameter('user', $user)
+            ->setParameter('userId', $user->getId(), 'uuid')
             ->getQuery()
             ->getSingleScalarResult();
     }
@@ -34,8 +34,8 @@ class DirectMessageRepository extends ServiceEntityRepository
     public function findForUser(User $user): array
     {
         return $this->createQueryBuilder('dm')
-            ->andWhere('dm.recipient = :user')
-            ->setParameter('user', $user)
+            ->andWhere('dm.recipient = :userId')
+            ->setParameter('userId', $user->getId(), 'uuid')
             ->orderBy('dm.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
