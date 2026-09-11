@@ -58,14 +58,30 @@ final class AuthenticationFailureListenerTest extends TestCase
         ($this->listener)($this->buildEvent());
     }
 
-    public function testLogsEmailInContext(): void
+    public function testLogsHashedEmailInContext(): void
+    {
+        $expectedHash = substr(hash('sha256', 'attacker@evil.com'), 0, 12);
+
+        $this->logger
+            ->expects($this->once())
+            ->method('warning')
+            ->with(
+                $this->anything(),
+                $this->callback(fn (array $context) => $expectedHash === $context['email_hash'])
+            );
+
+        ($this->listener)($this->buildEvent(email: 'attacker@evil.com'));
+    }
+
+    public function testDoesNotLogPlainEmail(): void
     {
         $this->logger
             ->expects($this->once())
             ->method('warning')
             ->with(
                 $this->anything(),
-                $this->callback(fn (array $context) => 'attacker@evil.com' === $context['email'])
+                $this->callback(fn (array $context) => !\in_array('attacker@evil.com', $context, true)
+                    && !\array_key_exists('email', $context))
             );
 
         ($this->listener)($this->buildEvent(email: 'attacker@evil.com'));
