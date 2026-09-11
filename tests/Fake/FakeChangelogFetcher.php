@@ -21,11 +21,13 @@ final class FakeChangelogFetcher implements ChangelogFetcherInterface
         $entries = [];
         for ($i = 0; $i < $this->count; ++$i) {
             $number = 300 - $i;
+            $day = str_pad((string) max(1, 20 - $i % 20), 2, '0', \STR_PAD_LEFT);
             $entries[] = [
                 'number' => $number,
                 'title' => "Thème historique numéro {$i}",
-                'date' => '2026-07-' . str_pad((string) max(1, 20 - $i % 20), 2, '0', \STR_PAD_LEFT),
+                'date' => "2026-07-{$day}",
                 'url' => "https://github.com/ronan-develop/home-cloud/pull/{$number}",
+                'mergedAt' => "2026-07-{$day}T12:00:00Z",
             ];
         }
 
