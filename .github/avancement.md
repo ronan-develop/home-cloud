@@ -2,9 +2,19 @@
 
 > Dernière mise à jour : 2026-09-11
 
-> **Status git :** `main` à jour — dernière PR mergée #412 (#387, surface d'exposition liens publics) ; branche en cours `fix/direct-message-recipient-query` (non mergée)
+> **Status git :** `main` à jour — dernière PR mergée #413 (bugfix DirectMessageRepository) ; branche en cours `fix/changelog-badge-same-day-precision` (non mergée)
 
 ---
+
+## 🐛 Badge changelog masqué le jour même — ChangelogNotificationNormalizer (2026-09-11, #414, branche `fix/changelog-badge-same-day-precision`)
+
+- Découvert en vérifiant en prod l'effet du bugfix DirectMessage précédent : après avoir mergé 5 PR dans la journée, aucun badge de notification n'apparaissait malgré les nouvelles entrées bien visibles dans le dropdown changelog.
+- Cause : `ChangelogNotificationNormalizer::normalize()` comparait `lastChangelogViewedAt` et la date de l'entrée en tronquant les deux à `Y-m-d` — toute entrée mergée le même jour que la dernière visite était donc automatiquement marquée lue, même mergée après cette visite.
+- Fix : comparaison sur `mergedAt` (timestamp complet ISO, déjà produit par `GitHubChangelogFetcher` mais jusqu'ici ignoré par le normalizer) au lieu de `date` (tronqué au jour, réservé à l'affichage `|date('d/m/Y')`).
+- Contrat `ChangelogFetcherInterface::fetchEntries()` mis à jour pour déclarer `mergedAt` explicitement ; `FakeChangelogFetcher` (tests) adapté en conséquence.
+- Pas de régression sur le garde-fou existant (#293) : "jamais visité => tout marqué lu" reste inchangé, seule la comparaison à J identique change.
+- Suite complète : 1143/1143 verts (après rebuild Tailwind, sans rapport avec ce changement).
+- Reste à faire avant merge : revue utilisateur, `gh pr create` + label obligatoire, vérif CI verte.
 
 ## 🐛 Notifications de messages directs invisibles — DirectMessageRepository (2026-09-11, branche `fix/direct-message-recipient-query`)
 
