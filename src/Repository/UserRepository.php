@@ -68,4 +68,15 @@ class UserRepository extends ServiceEntityRepository implements UserRepositoryIn
             ->getQuery()
             ->getOneOrNullResult();
     }
+
+    /** Compte agrégé pour l'espace admin (#388) — jamais l'identité des invités. */
+    public function countGuests(): int
+    {
+        return (int) $this->createQueryBuilder('u')
+            ->select('COUNT(u.id)')
+            ->andWhere('u.accountType = :accountType')
+            ->setParameter('accountType', User::ACCOUNT_TYPE_GUEST)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }

@@ -1,0 +1,32 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Statistiques d'activité — Administration{% endblock %}
+
+{% block content %}
+<h1 class="hc-admin-page-title">Statistiques d'activité</h1>
+
+<table class="hc-admin-table">
+    <tbody>
+        <tr>
+            <th>Invités actifs</th>
+            <td>{{ guestCount }}</td>
+        </tr>
+        <tr>
+            <th>Fichiers</th>
+            <td>{{ fileCount }}</td>
+        </tr>
+        <tr>
+            <th>Albums</th>
+            <td>{{ albumCount }}</td>
+        </tr>
+        <tr>
+            <th>Partages actifs</th>
+            <td>{{ activeShareCount }}</td>
+        </tr>
+        <tr>
+            <th>Liens publics actifs</th>
+            <td>{{ activeLinkCount }}</td>
+        </tr>
+    </tbody>
+</table>
+{% endblock %}

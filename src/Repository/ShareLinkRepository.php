@@ -87,4 +87,16 @@ class ShareLinkRepository extends ServiceEntityRepository implements ShareLinkRe
             ->getQuery()
             ->execute();
     }
+
+    /** Compte agrégé instance (tous owners) pour l'espace admin (#388). */
+    public function countActive(): int
+    {
+        return (int) $this->createQueryBuilder('sl')
+            ->select('COUNT(sl.id)')
+            ->where('sl.revokedAt IS NULL')
+            ->andWhere('sl.expiresAt IS NULL OR sl.expiresAt > :now')
+            ->setParameter('now', new \DateTimeImmutable())
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }

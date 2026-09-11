@@ -2,9 +2,19 @@
 
 > Dernière mise à jour : 2026-09-11
 
-> **Status git :** `main` à jour — dernière PR mergée #403 (#386, tracking connexions échouées) ; branche en cours `feature/402-login-rate-limiting-doc` (non mergée)
+> **Status git :** `main` à jour — dernière PR mergée #407 (#404, barre de progression deploy-all) ; branche en cours `feature/388-admin-activity-stats` (non mergée)
 
 ---
+
+## 🚧 Espace admin — statistiques d'activité de l'instance (2026-09-11, #388, branche `feature/388-admin-activity-stats`)
+
+- Portée clarifiée en planification avant code : "partages actifs" du ticket recouvrait deux mécanismes distincts du domaine (`Share` = partage nominatif, `ShareLink` = lien public) — décision actée de deux compteurs séparés plutôt qu'un total agrégé, pour ne pas mélanger deux notions de risque différentes (cf. sujet connexe #387).
+- Définition d'"actif" réutilisée telle quelle depuis `Share::isActive()`/`ShareLink::isActive()` existants (ni révoqué, ni expiré) — pas de nouvelle notion introduite.
+- Nouvelles méthodes de comptage global instance (aucune n'existait, seules des variantes `*ByOwner`) : `UserRepository::countGuests()`, `ShareRepository::countActive()`, `ShareLinkRepository::countActive()`. Pour fichiers/albums, réutilisation du `count([])` natif Doctrine (`ServiceEntityRepository`) plutôt qu'une méthode custom redondante.
+- Nouvelle page `/admin/activity-stats` (`AdminActivityStatsWebController`, même garde `AdminVoter` que les autres écrans admin) : 5 compteurs (invités actifs, fichiers, albums, partages nominatifs actifs, liens publics actifs).
+- Contrainte vie privée du ticket vérifiée par un test dédié (`testNeverExposesGuestIdentityInResponse`) : aucune identité d'invité (email, nom) dans la réponse HTML, uniquement des compteurs agrégés.
+- Suite complète : 1124/1124 verts après chaque étape TDD (repositories → controller → template/nav).
+- Reste à faire avant merge : revue utilisateur, `gh pr create` + label obligatoire, vérif CI verte.
 
 ## ✅ Rate-limiting login déjà effectif — clôture documentaire (2026-09-11, #402, branche `feature/402-login-rate-limiting-doc`)
 

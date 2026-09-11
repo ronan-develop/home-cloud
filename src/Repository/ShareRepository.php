@@ -116,4 +116,16 @@ class ShareRepository extends ServiceEntityRepository implements ShareRepository
             ->getQuery()
             ->getSingleScalarResult();
     }
+
+    /** Compte agrégé instance (tous owners) pour l'espace admin (#388). */
+    public function countActive(): int
+    {
+        return (int) $this->createQueryBuilder('s')
+            ->select('COUNT(s.id)')
+            ->where('s.revokedAt IS NULL')
+            ->andWhere('s.expiresAt IS NULL OR s.expiresAt > :now')
+            ->setParameter('now', new \DateTimeImmutable())
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }

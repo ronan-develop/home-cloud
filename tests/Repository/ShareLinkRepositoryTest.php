@@ -102,4 +102,35 @@ final class ShareLinkRepositoryTest extends KernelTestCase
 
         $this->assertNotNull($this->repository->find($active->getId()));
     }
+
+    public function testCountActiveReturnsZeroWhenNoLinks(): void
+    {
+        $this->assertSame(0, $this->repository->countActive());
+    }
+
+    public function testCountActiveCountsOnlyActiveLinks(): void
+    {
+        $owner = $this->createUser('owner-sl-count-active@example.com');
+
+        $active = $this->createLink($owner, 'selectoractivecount000000000000');
+
+        $revoked = $this->createLink($owner, 'selectorrevokedcount00000000000');
+        $revoked->revoke();
+
+        $expired = new ShareLink(
+            $owner,
+            Share::RESOURCE_FILE,
+            Uuid::v7(),
+            'selectorexpiredcount00000000000',
+            hash('sha256', 'plain-token'),
+            new \DateTimeImmutable('-1 day'),
+        );
+
+        $this->em->persist($active);
+        $this->em->persist($revoked);
+        $this->em->persist($expired);
+        $this->em->flush();
+
+        $this->assertSame(1, $this->repository->countActive());
+    }
 }
