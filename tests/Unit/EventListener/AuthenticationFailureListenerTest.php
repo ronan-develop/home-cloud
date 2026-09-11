@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\EventListener;
 
+use App\Entity\LoginAttempt;
 use App\EventListener\AuthenticationFailureListener;
+use App\Repository\LoginAttemptRepository;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -15,12 +17,14 @@ use Symfony\Component\Security\Http\Event\LoginFailureEvent;
 final class AuthenticationFailureListenerTest extends TestCase
 {
     private LoggerInterface $logger;
+    private LoginAttemptRepository $loginAttemptRepository;
     private AuthenticationFailureListener $listener;
 
     protected function setUp(): void
     {
         $this->logger = $this->createMock(LoggerInterface::class);
-        $this->listener = new AuthenticationFailureListener($this->logger);
+        $this->loginAttemptRepository = $this->createMock(LoginAttemptRepository::class);
+        $this->listener = new AuthenticationFailureListener($this->logger, $this->loginAttemptRepository);
     }
 
     private function buildEvent(string $email = 'test@example.com', string $userAgent = 'TestAgent/1.0'): LoginFailureEvent
@@ -111,5 +115,34 @@ final class AuthenticationFailureListenerTest extends TestCase
             );
 
         ($this->listener)($this->buildEvent(userAgent: 'CustomBot/2.0'));
+    }
+
+    public function testPersistsLoginAttemptWithFullEmailHash(): void
+    {
+        $expectedHash = hash('sha256', 'attacker@evil.com');
+
+        $this->loginAttemptRepository
+            ->expects($this->once())
+            ->method('save')
+            ->with($this->callback(
+                fn (LoginAttempt $attempt) => $expectedHash === $attempt->getEmailHash()
+                    && '192.168.1.1' === $attempt->getIp()
+                    && 'TestAgent/1.0' === $attempt->getUserAgent()
+            ));
+
+        ($this->listener)($this->buildEvent(email: 'attacker@evil.com'));
+    }
+
+    public function testDoesNotBreakOnPersistenceFailure(): void
+    {
+        $this->loginAttemptRepository
+            ->method('save')
+            ->willThrowException(new \RuntimeException('DB down'));
+
+        $this->logger
+            ->expects($this->exactly(2))
+            ->method('warning');
+
+        ($this->listener)($this->buildEvent());
     }
 }

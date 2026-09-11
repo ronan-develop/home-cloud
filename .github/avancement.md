@@ -1,10 +1,20 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-09-10
+> Dernière mise à jour : 2026-09-11
 
-> **Status git :** `main` à jour — dernière PR mergée #398 (fix domaine From mailer, #378)
+> **Status git :** `main` à jour — dernière PR mergée #401 (hash email logs auth, #392) ; branche en cours `feature/386-admin-failed-login-attempts` (non mergée)
 
 ---
+
+## 🚧 Espace admin — tentatives de connexion échouées (2026-09-11, #386, branche `feature/386-admin-failed-login-attempts`)
+
+- Nouvelle entité UUID Doctrine `LoginAttempt` (table `login_attempts`, migration `Version20260911185136`) : email hashé SHA-256 **complet** (pas tronqué comme dans le log #392) pour un regroupement fiable par compte visé sans donnée personnelle exploitable, IP, user-agent, date.
+- `LoginAttemptRepository` : `countRecentByEmailHash`/`countRecentByIp` (fenêtre glissante) + `findSuspiciousByEmailHash`/`findSuspiciousByIp` (GROUP BY + seuil, défaut 5 tentatives/15 min) — pensé pour être réutilisé par #318 (rate-limiting reset-password) plutôt que dupliqué.
+- `AuthenticationFailureListener` (#392) étendu : persiste désormais une `LoginAttempt` en plus du log applicatif inchangé. Échec de persistance non bloquant (try/catch + log d'erreur) pour ne jamais casser le flux d'authentification.
+- Nouvelle page `/admin/login-attempts` (`AdminLoginAttemptsWebController`, même garde `AdminVoter` que les autres écrans admin) : liste des tentatives récentes + section dédiée aux répétitions suspectes par compte/IP.
+- Point de vigilance signalé et corrigé en cours de route — `make:migration` avait repéré un décalage de schéma préexistant sans rapport (table `broadcast_messages` et colonne `users.last_broadcast_seen_at` absentes du code mais encore en base) — retiré de la migration #386 pour ne pas mélanger les sujets ; à traiter séparément si besoin.
+- Suite complète : 1111/1111 verts après chaque étape TDD (entité → repository → listener → contrôleur admin).
+- Reste à faire avant merge : revue utilisateur, `gh pr create` + label obligatoire, vérif CI verte.
 
 ## ✅ Emails non reçus — 3 causes cumulées (2026-09-10, #378, branches `fix/378-mailer-from-domain-mismatch` + fix SSH/DNS hors-repo)
 

@@ -24,6 +24,11 @@
                class="hc-admin-nav-item {{ current_route == 'app_admin_mail_status' ? 'active' : '' }}">
                 Statut des emails
             </a>
+
+            <a href="{{ path('app_admin_login_attempts') }}"
+               class="hc-admin-nav-item {{ current_route == 'app_admin_login_attempts' ? 'active' : '' }}">
+                Connexions échouées
+            </a>
         </nav>
     </aside>
 
