@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Tests\Web;
 
+use App\Message\ShareNotificationMessage;
 use App\Service\MailerConnectivityChecker;
 use App\Service\SmtpConnectivityProberInterface;
 use App\Tests\Web\Fixtures\WebFixturesTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Messenger\Envelope;
 
 /**
  * TDD RED → GREEN : statut envoi d'emails dans l'espace admin (#385), suite
@@ -120,5 +122,63 @@ final class AdminMailStatusWebControllerTest extends WebTestCase
         $crawler = $this->client->request('GET', '/admin/mail-status');
 
         $this->assertStringContainsString('OK', $crawler->text());
+    }
+
+    private function insertMailMessage(
+        string $queueName,
+        \DateTimeImmutable $createdAt,
+        bool $delivered = false,
+    ): void {
+        $envelope = new Envelope(new ShareNotificationMessage('share-1', 'Album test'));
+
+        $this->em->getConnection()->insert('messenger_messages', [
+            'body' => serialize($envelope),
+            'headers' => '[]',
+            'queue_name' => $queueName,
+            'created_at' => $createdAt->format('Y-m-d H:i:s'),
+            'available_at' => $createdAt->format('Y-m-d H:i:s'),
+            'delivered_at' => $delivered ? $createdAt->format('Y-m-d H:i:s') : null,
+        ]);
+    }
+
+    public function testDisplaysPendingMailMessageCount(): void
+    {
+        $this->em->getConnection()->executeStatement('DELETE FROM messenger_messages');
+        $this->insertMailMessage('async', new \DateTimeImmutable());
+        $this->insertMailMessage('async', new \DateTimeImmutable());
+
+        $this->createWebUser($_ENV['BROADCAST_ADMIN_EMAIL'], 'secret123', 'Admin');
+        $this->loginAs($_ENV['BROADCAST_ADMIN_EMAIL']);
+
+        $crawler = $this->client->request('GET', '/admin/mail-status');
+
+        $this->assertStringContainsString('2', $crawler->filter('.hc-admin-table')->text());
+    }
+
+    public function testDisplaysOldestPendingMessageAge(): void
+    {
+        $this->em->getConnection()->executeStatement('DELETE FROM messenger_messages');
+        $oldest = new \DateTimeImmutable('2026-09-01 10:00:00');
+        $this->insertMailMessage('async', $oldest);
+
+        $this->createWebUser($_ENV['BROADCAST_ADMIN_EMAIL'], 'secret123', 'Admin');
+        $this->loginAs($_ENV['BROADCAST_ADMIN_EMAIL']);
+
+        $crawler = $this->client->request('GET', '/admin/mail-status');
+
+        $this->assertStringContainsString($oldest->format('d/m/Y'), $crawler->text());
+    }
+
+    public function testDisplaysFailedMailMessageCount(): void
+    {
+        $this->em->getConnection()->executeStatement('DELETE FROM messenger_messages');
+        $this->insertMailMessage('failed', new \DateTimeImmutable());
+
+        $this->createWebUser($_ENV['BROADCAST_ADMIN_EMAIL'], 'secret123', 'Admin');
+        $this->loginAs($_ENV['BROADCAST_ADMIN_EMAIL']);
+
+        $crawler = $this->client->request('GET', '/admin/mail-status');
+
+        $this->assertStringContainsString('1', $crawler->filter('.hc-admin-table')->text());
     }
 }
