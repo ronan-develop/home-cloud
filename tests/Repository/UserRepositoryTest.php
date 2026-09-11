@@ -100,4 +100,18 @@ final class UserRepositoryTest extends KernelTestCase
     {
         $this->assertNull($this->repository->findOwnerById(Uuid::v7()));
     }
+
+    public function testCountGuestsReturnsZeroWhenNoUsers(): void
+    {
+        $this->assertSame(0, $this->repository->countGuests());
+    }
+
+    public function testCountGuestsCountsOnlyGuestAccounts(): void
+    {
+        $this->createUser('owner-count-guests@example.com', new \DateTimeImmutable('2026-01-01'));
+        $this->createUser('guest-a-count@example.com', new \DateTimeImmutable('2026-01-01'), guest: true);
+        $this->createUser('guest-b-count@example.com', new \DateTimeImmutable('2026-01-01'), guest: true);
+
+        $this->assertSame(2, $this->repository->countGuests());
+    }
 }

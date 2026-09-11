@@ -162,4 +162,36 @@ final class ShareRepositoryTest extends KernelTestCase
         $this->assertTrue($result[0]->getId()->equals($newer->getId()));
         $this->assertTrue($result[1]->getId()->equals($older->getId()));
     }
+
+    public function testCountActiveReturnsZeroWhenNoShares(): void
+    {
+        $this->assertSame(0, $this->repository->countActive());
+    }
+
+    public function testCountActiveCountsOnlyActiveShares(): void
+    {
+        $owner = $this->createUser('owner-count-active@example.com');
+        $guest = $this->createUser('guest-count-active@example.com');
+
+        $active = new Share($owner, $guest, Share::RESOURCE_FOLDER, Uuid::v7(), Share::PERMISSION_READ);
+
+        $revoked = new Share($owner, $guest, Share::RESOURCE_FOLDER, Uuid::v7(), Share::PERMISSION_READ);
+        $revoked->revoke();
+
+        $expired = new Share(
+            $owner,
+            $guest,
+            Share::RESOURCE_FOLDER,
+            Uuid::v7(),
+            Share::PERMISSION_READ,
+            new \DateTimeImmutable('-1 day'),
+        );
+
+        $this->em->persist($active);
+        $this->em->persist($revoked);
+        $this->em->persist($expired);
+        $this->em->flush();
+
+        $this->assertSame(1, $this->repository->countActive());
+    }
 }
