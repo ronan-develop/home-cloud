@@ -37,6 +37,16 @@ warn()    { echo -e "${YELLOW}⚠${NC}  $*"; }
 error()   { echo -e "${RED}✖${NC}  $*" >&2; }
 title()   { echo -e "\n${BOLD}$*${NC}"; }
 
+# Barre de progression texte "[███░░░░] 3/7" — pas de dépendance externe (#404).
+progress_bar() {
+    local current="$1" total="$2" width=20
+    local filled=$((current * width / total))
+    local empty=$((width - filled))
+    printf -v bar '%*s' "$filled" ''; bar="${bar// /█}"
+    printf -v rest '%*s' "$empty" ''; rest="${rest// /░}"
+    echo -e "${BOLD}[${bar}${rest}] ${current}/${total}${NC}"
+}
+
 # ── Configuration fixe ────────────────────────────────────────────────────────
 SSH_USER="ron2cuba"
 SSH_HOST="lenouvel.me"
@@ -118,10 +128,13 @@ run_step() {
 }
 
 # ── Boucle sur les cibles ─────────────────────────────────────────────────────
+INSTANCE_INDEX=0
 for PRENOM in "${TARGETS[@]}"; do
+    INSTANCE_INDEX=$((INSTANCE_INDEX + 1))
     SUBDOMAIN="${PRENOM}.lenouvel.me"
     DEPLOY_PATH="${REMOTE_HOME}/${SUBDOMAIN}"
 
+    progress_bar "$INSTANCE_INDEX" "${#TARGETS[@]}"
     title "── ${SUBDOMAIN} ──────────────────────────────────"
 
     if [[ "$INIT_MODE" == true ]]; then
