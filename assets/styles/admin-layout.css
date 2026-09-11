@@ -108,6 +108,10 @@
   border-bottom: none;
 }
 
+.hc-admin-row-old {
+  background: color-mix(in srgb, var(--hc-warn) 10%, transparent);
+}
+
 @media (max-width: 767px) {
   .hc-admin-shell {
     grid-template-columns: 1fr;
