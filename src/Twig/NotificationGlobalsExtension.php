@@ -11,10 +11,10 @@ use Twig\Extension\AbstractExtension;
 use Twig\Extension\GlobalsInterface;
 
 /**
- * Injecte `notificationItems` (pile unifiée) et `notificationUnreadCount`
- * dans tous les templates Twig pour le dropdown de la cloche topbar (#373).
- * Remplace ChangelogGlobalsExtension, dont la logique de comptage a migré
- * dans ChangelogNotificationNormalizer.
+ * Injecte `notificationItems` (pile unifiée, non-lus uniquement — #411) et
+ * `notificationUnreadCount` dans tous les templates Twig pour le dropdown de
+ * la cloche topbar (#373). Remplace ChangelogGlobalsExtension, dont la
+ * logique de comptage a migré dans ChangelogNotificationNormalizer.
  */
 final class NotificationGlobalsExtension extends AbstractExtension implements GlobalsInterface
 {
@@ -31,9 +31,14 @@ final class NotificationGlobalsExtension extends AbstractExtension implements Gl
             return ['notificationItems' => [], 'notificationUnreadCount' => 0];
         }
 
-        $items = $this->notificationFeedProvider->getFeed($user);
-        $unreadCount = count(array_filter($items, static fn ($item) => !$item->isRead));
+        // #411 : les items lus disparaissent du dropdown — le changelog reste
+        // consultable sur /changelog, comportement uniforme avec les messages
+        // directs pour ne pas encombrer la pile au fil du temps.
+        $items = array_values(array_filter(
+            $this->notificationFeedProvider->getFeed($user),
+            static fn ($item) => !$item->isRead,
+        ));
 
-        return ['notificationItems' => $items, 'notificationUnreadCount' => $unreadCount];
+        return ['notificationItems' => $items, 'notificationUnreadCount' => count($items)];
     }
 }

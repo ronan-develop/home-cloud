@@ -23,10 +23,11 @@
         {% else %}
             {% for item in notificationItems %}
                 <a href="{{ item.link }}"
-                   class="hc-notif-item {{ item.isRead ? '' : 'hc-notif-item--unread' }}"
-                   {% if item.id is not null and not item.isRead %}
+                   class="hc-notif-item hc-notif-item--unread"
+                   {% if item.id is not null %}
                        data-action="click->notifications#markRead"
                        data-notifications-id-param="{{ item.id }}"
+                       data-notifications-target="item"
                    {% endif %}>
                     <span class="hc-notif-item-icon">
                         {% if item.type == 'direct_message' %}✉️{% else %}📣{% endif %}

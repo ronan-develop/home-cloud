@@ -39,13 +39,18 @@ export default class extends Controller {
     }
 
     markRead(event) {
+        // Le lien d'un message direct ne pointe vers aucune page réelle
+        // (pas de vue de détail) — seule l'action de lecture est utile ici.
+        event.preventDefault();
+
         const id = event.params.id;
         const item = event.currentTarget;
 
         fetch(`/direct-messages/${id}/read`, { method: 'POST' })
             .then(() => {
-                item.classList.remove('hc-notif-item--unread');
                 item.removeAttribute('data-action');
+                item.classList.add('hc-notif-item--removing');
+                item.addEventListener('transitionend', () => item.remove(), { once: true });
             })
             .catch(() => {});
     }
