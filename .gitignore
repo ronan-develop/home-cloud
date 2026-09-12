@@ -39,6 +39,20 @@ php.ini
 /templates/deploy-info.html.twig
 /.deploy-targets
 
+# Déploiement nocturne autonome (#421)
+# - .deployed-sha : état local à chaque instance, jamais partagé/committé
+# - app.built.css : SUIVI en git (exception à /var/ ci-dessus) — buildé par
+#   la CI sur push main et committé, pour que le cron nocturne le récupère
+#   par simple `git checkout` sans jamais builder Tailwind sur le serveur.
+#   Git n'évalue jamais les sous-règles d'un dossier déjà exclu : il faut
+#   ré-autoriser CHAQUE niveau du chemin, pas seulement le fichier final.
+/.deployed-sha
+!/var/
+/var/*
+!/var/tailwind/
+/var/tailwind/*
+!/var/tailwind/app.built.css
+
 # import pour test
 /import/*
 # Rapport d'audit sécurité — local uniquement (décrit des failles ouvertes)

@@ -10,13 +10,15 @@
 
 ## Déploiement
 
-**Manuel, pas automatique** — `bash bin/deploy-all.sh` après merge sur `main` (CI verte requise avant de lancer). o2switch bloque les IPs des runners GitHub Actions (whitelist SSH obligatoire), donc aucun déclenchement automatique n'est possible depuis GitHub aujourd'hui.
+**Nocturne et autonome depuis #421 (2026-09-12)** — un merge sur `main` (CI verte) déclenche, via un cron cPanel côté serveur, un déploiement automatique la nuit suivante (1h-2h30, heure de Paris). Le serveur **tire** depuis GitHub (`git fetch` + comparaison de SHA) ; GitHub ne pousse jamais vers les instances.
 
-Un webhook PHP (`public/deploy.php`) existe dans le repo mais est **cassé et inutilisé** (signature HMAC invalide depuis plusieurs jours au 2026-07-20) — ne pas s'y fier, ni supposer qu'un push sur `main` déploie quoi que ce soit automatiquement.
+`ronan.lenouvel.me` (instance personnelle, aucun autre utilisateur) se déploie immédiatement via `bash bin/deploy-all.sh` sans flag ; les 6 autres instances sont automatiquement différées à la nuit. `--now` force un déploiement immédiat des 7 en cas d'urgence, avec confirmation interactive obligatoire.
 
-Piste d'automatisation via GitHub Actions + l'API `SshWhitelist` d'o2switch (whitelist dynamique de l'IP du runner) : voir #288 (en pause, décision actée de rester en manuel pour l'instant).
+**o2switch bloque bien le SSH** pour les runners GitHub Actions (whitelist cPanel) — mais un test empirique (2026-09-12) a aussi révélé qu'un **WAF applicatif** coupe la connexion HTTPS d'un runner GitHub spécifiquement sur `public/deploy.php`, alors que le reste du domaine répond normalement à la même IP. Le webhook GitHub → instances a donc été écarté au profit du sens inverse (serveur → GitHub), qui ne dépend d'aucune connexion entrante. `public/deploy.php` reste dans le repo, désarmé (secret retiré), en attendant sa suppression après validation du nouveau flux.
 
-Détail complet : `.claude/deploiement.md`.
+Le ticket #288 (whitelist SSH dynamique pour un déclenchement GitHub → serveur) est donc **fermé** : la question qu'il posait est tranchée par une architecture différente, pas résolue dans le sens qu'il envisageait.
+
+Détail complet, crons, diagnostic : `.claude/deploiement.md`.
 
 ## Suivi d'avancement
 

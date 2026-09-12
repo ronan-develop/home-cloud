@@ -26,6 +26,8 @@ jobs:
 
   php:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # requis pour committer le CSS Tailwind buildé (#421)
 
     services:
       mysql:
@@ -95,6 +97,25 @@ jobs:
         env:
           APP_SECRET: ${{ secrets.APP_SECRET }}
         run: ./vendor/bin/phpunit --configuration phpunit.dist.xml --colors=always
+
+      # Déploiement nocturne autonome (#421) : le serveur ne build jamais
+      # Tailwind lui-même (mutualisé, résultat peu fiable) — le CSS minifié
+      # est buildé ici et committé sur main, récupéré ensuite par un simple
+      # `git checkout` côté serveur. [skip ci] obligatoire : sans lui, ce
+      # commit relancerait la CI, qui recommitterait, à l'infini.
+      - name: 🎨 Commit du CSS Tailwind buildé
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          php bin/console tailwind:build --minify
+          if git diff --quiet -- var/tailwind/app.built.css; then
+            echo "CSS inchangé, rien à committer."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add var/tailwind/app.built.css
+          git commit -m "🎨 chore(assets): rebuild Tailwind [skip ci]"
+          git push
 
   js:
     runs-on: ubuntu-latest
