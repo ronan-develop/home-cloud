@@ -59,6 +59,24 @@ jobs:
             echo "POST signé $H -> $BODY"
           done
 
+      - name: 🔎 HTTP/1.1 forcé
+        run: |
+          for H in ronan yannick; do
+            echo "--- $H (http1.1) ---"
+            curl -sS --http1.1 -o /dev/null -w 'code=%{http_code}\n' -m 25 "https://$H.lenouvel.me/deploy.php" || echo "ECHEC http1.1"
+          done
+      - name: 🔎 Avec User-Agent navigateur (http1.1)
+        run: |
+          for H in ronan yannick; do
+            echo "--- $H (UA navigateur) ---"
+            curl -sS --http1.1 -A 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120 Safari/537.36' \
+                 -o /dev/null -w 'code=%{http_code}\n' -m 25 "https://$H.lenouvel.me/deploy.php" || echo "ECHEC UA"
+          done
+      - name: 🔎 Page d'accueil (le site est-il joignable du tout ?)
+        run: |
+          for H in ronan yannick; do
+            curl -sS --http1.1 -o /dev/null -w "accueil $H code=%{http_code}\n" -m 25 "https://$H.lenouvel.me/" || echo "ECHEC accueil $H"
+          done
       - name: 📋 Verdict
         run: |
           echo "Attendu : GET 405, POST non signé 401, POST signé 200 'Skipped: not main branch'."
