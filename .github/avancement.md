@@ -2,7 +2,38 @@
 
 > Dernière mise à jour : 2026-09-12
 
-> **Status git :** `main` à jour — dernière PR mergée #418 (#377 santé cron) ; branche en cours `feature/376-admin-monitoring-multi-instances` (non mergée)
+> **Status git :** `main` à jour — dernière PR mergée #418 (#377 santé cron) ; branches en cours `feature/376-admin-monitoring-multi-instances`, `feature/421-deploiement-differe-nocturne`, `feature/422-detection-activite-instance` (aucune mergée)
+
+---
+
+## 🚧 Protection des users actifs pendant un déploiement — détection d'activité (2026-09-12, #422 étape 1/3, branche `feature/422-detection-activite-instance`)
+
+Premier étage du chantier #422 (lui-même dépendant de #421, déploiement nocturne). Objectif final : qu'une instance ne se fasse jamais déployer sous les pieds d'un utilisateur actif. Cette étape pose uniquement la **détection** — pas encore la popup ni le branchement dans un script de déploiement.
+
+- `ActivityTracker` (`src/Service/ActivityTracker.php`) écrit un timestamp Unix dans `var/last-activity.txt` à chaque requête authentifiée, avec un amortissement de 5 min pour éviter une écriture disque par page vue
+- **Fichier plat plutôt que DB** : lisible en bash (`stat`/`cat`) par un futur script de déploiement sans lancer de process PHP — coût nul sur le LVE partagé entre les 7 instances (cf. incident #395/#396)
+- `ActivityTrackerSubscriber` (`src/EventListener/`) déclenche l'écriture sur `kernel.request`, uniquement pour un token portant une vraie entité `App\Entity\User` — ignore les tokens `BroadcastTokenAuthenticator` (#283, `InMemoryUser`) et les sous-requêtes internes
+- Granularité **par instance**, pas par utilisateur (décision explicite, pas de migration Doctrine)
+- Seuil retenu pour la suite : 30 min d'inactivité = instance considérée vide
+- 15 tests (unitaires + intégration `WebTestCase`), suite complète 1186 tests toujours verte
+
+**Reste à faire (hors périmètre de cette étape)** : popup temps réel avec compte à rebours (nécessite un endpoint de polling, pas encore d'architecture temps réel dans le projet — les notifications actuelles sont rendues au chargement de page), couverture du cas `bash bin/deploy-all.sh --now`, branchement effectif dans `bin/deploy-nightly.sh` une fois #421 implémenté.
+
+Plan détaillé : `plan-422-detection-activite.md` à la racine du repo (non commité, à conserver hors historique git).
+
+---
+
+## 🚧 Déploiement nocturne autonome (2026-09-12, #421, branche `feature/421-deploiement-differe-nocturne`)
+
+Suite à un incident réel (déploiement en pleine journée ayant impacté un utilisateur actif), refonte complète du déploiement : `deploy-all` doit devenir autonome — un merge sur `main` aboutit à un déploiement nocturne (1h-2h30, heure de Paris) sans intervention humaine, poste local éteint.
+
+**Architecture retenue, tranchée empiriquement** : le serveur **tire** depuis GitHub (cron nocturne + `git fetch`/`checkout`), pas l'inverse. Un premier plan prévoyait un webhook (`public/deploy.php` existant) déclenché par GitHub Actions — **invalidé par un test réel** : un runner GitHub (IP Azure) voit sa connexion coupée sur cette URL précise (WAF o2switch), alors que la page d'accueil répond normalement au même instant depuis la même IP. Ce n'est pas le blocage SSH déjà documenté (#288, désormais fermé) — c'est un filtrage applicatif distinct, découvert cette session.
+
+Conséquence simplificatrice : sans webhook, plus besoin de pile de déploiement — un simple fichier `.deployed-sha` par instance, comparé au SHA de `main` par le cron, suffit.
+
+**Sécurité — point traité pendant cette session** : `public/deploy.php` a été temporairement réarmé (secret déposé) pour les tests de connectivité, puis **désarmé** immédiatement après (secret retiré des 7 instances + de GitHub) une fois le verdict obtenu. Le fichier reste dans le repo, inerte, en attendant la suppression prévue une fois #421 validé en conditions réelles (cf. mémoire `project_deployphp_a_supprimer`).
+
+Plan détaillé : `plan-421-deploiement-differe-nocturne.md` à la racine du repo (non commité).
 
 ---
 

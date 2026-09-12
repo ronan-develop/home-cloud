@@ -8,6 +8,10 @@
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
     app.storage_dir: '%kernel.project_dir%/var/storage'
+    # Fichier plat de dernière activité authentifiée (#422) — lu par un futur
+    # script bash de déploiement (#421), jamais par un process PHP lancé
+    # depuis un cron : coût nul sur le LVE partagé entre les 7 instances.
+    app.activity_tracker.file_path: '%kernel.project_dir%/var/last-activity.txt'
     app.encryption_key: '%env(base64:APP_ENCRYPTION_KEY)%'
     app.ffmpeg_bin: '%kernel.project_dir%/var/bin/ffmpeg'
     app.ffprobe_bin: '%kernel.project_dir%/var/bin/ffprobe'
@@ -38,6 +42,7 @@ services:
     App\Interface\BroadcastTargetProviderInterface: '@App\Service\BroadcastTargetProvider'
     App\Interface\BroadcastMailerInterface:       '@App\Service\BroadcastMailer'
     App\Interface\BroadcastOrchestratorInterface: '@App\Service\BroadcastOrchestrator'
+    App\Interface\ActivityTrackerInterface:       '@App\Service\ActivityTracker'
     App\Interface\InstanceMonitoringReporterInterface: '@App\Service\InstanceMonitoringReporter'
 
     App\State\AlbumProcessor:
@@ -141,6 +146,10 @@ services:
         arguments:
             $storageDir: '%app.storage_dir%'
 
+    App\Service\ActivityTracker:
+        arguments:
+            $filePath: '%app.activity_tracker.file_path%'
+
     App\Service\RawPreviewCache:
         arguments:
             $storageDir: '%app.storage_dir%'
@@ -215,6 +224,10 @@ when@test:
             public: true
             bind:
                 string $mailerDsn: '%env(MAILER_DSN)%'
+        # Rendre ActivityTrackerInterface public en test (lecture directe du fichier d'activité, #422)
+        App\Interface\ActivityTrackerInterface:
+            alias: App\Service\ActivityTracker
+            public: true
         # Rendre CronHealthReporter public en test (accès direct au transport failed)
         App\Service\CronHealthReporter:
             autowire: true
