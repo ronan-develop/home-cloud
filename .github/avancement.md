@@ -1,10 +1,20 @@
 # 📋 Avancement — HomeCloud API
 
-> Dernière mise à jour : 2026-09-11
+> Dernière mise à jour : 2026-09-12
 
-> **Status git :** `main` à jour — dernière PR mergée #413 (bugfix DirectMessageRepository) ; branche en cours `fix/changelog-badge-same-day-precision` (non mergée)
+> **Status git :** `main` à jour — dernière PR mergée #416 (hotfix mergedAt GitHubChangelogFetcher) ; branche en cours `feature/411-notifications-disappear-on-read` (non mergée)
 
 ---
+
+## 🚧 Notifications — les lues disparaissent du dropdown (2026-09-12, #411, branche `feature/411-notifications-disappear-on-read`)
+
+- Portée réévaluée en discussion : l'idée initiale (assombrir les notifications lues) devient un retrait complet du dropdown — liste plus courte, ne s'encombre pas au fil du temps pour de futurs types de notifications. Le changelog reste consultable sur `/changelog` (page dédiée existante) ; les messages directs n'ont pas d'équivalent mais le comportement uniforme est assumé.
+- `NotificationGlobalsExtension::getGlobals()` filtre désormais `notificationItems` pour ne transmettre que les items non lus — `notificationUnreadCount` devient simplement leur nombre, plus besoin d'un comptage séparé.
+- Retrait DOM immédiat avec animation (`hc-notif-item--removing`, transition opacité/hauteur) côté `notifications_controller.js` au clic sur un message direct, plutôt qu'attendre un rechargement de page.
+- **Bug préexistant découvert et corrigé au passage** en vérifiant manuellement (Playwright) : le lien d'un message direct (`/direct-messages/{id}`) pointe vers une route qui n'existe pas (aucune vue de détail) — le clic naviguait vers une 404 avant même que l'animation ait pu se jouer, invisible auparavant car l'item restait affiché atténué de toute façon. Fix : `event.preventDefault()` dans `markRead()`, puisque l'action utile est de marquer lu, pas de naviguer.
+- Vérifié manuellement en navigateur (Playwright, screenshots) : liste filtrée correctement (compteurs cohérents), animation de retrait isolée au bon item, pas de casse du reste de la liste.
+- Suite complète : 1146/1146 verts après chaque étape TDD (extension Twig → template/JS/CSS).
+- Reste à faire avant merge : revue utilisateur, `gh pr create` + label obligatoire, vérif CI verte.
 
 ## 🐛 Badge changelog masqué le jour même — ChangelogNotificationNormalizer (2026-09-11, #414, branche `fix/changelog-badge-same-day-precision`)
 
