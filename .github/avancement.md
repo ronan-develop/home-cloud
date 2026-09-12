@@ -2,24 +2,7 @@
 
 > Dernière mise à jour : 2026-09-12
 
-> **Status git :** `main` à jour — dernière PR mergée #418 (#377 santé cron) ; branches en cours `feature/376-admin-monitoring-multi-instances`, `feature/421-deploiement-differe-nocturne`, `feature/422-detection-activite-instance` (aucune mergée)
-
----
-
-## 🚧 Protection des users actifs pendant un déploiement — détection d'activité (2026-09-12, #422 étape 1/3, branche `feature/422-detection-activite-instance`)
-
-Premier étage du chantier #422 (lui-même dépendant de #421, déploiement nocturne). Objectif final : qu'une instance ne se fasse jamais déployer sous les pieds d'un utilisateur actif. Cette étape pose uniquement la **détection** — pas encore la popup ni le branchement dans un script de déploiement.
-
-- `ActivityTracker` (`src/Service/ActivityTracker.php`) écrit un timestamp Unix dans `var/last-activity.txt` à chaque requête authentifiée, avec un amortissement de 5 min pour éviter une écriture disque par page vue
-- **Fichier plat plutôt que DB** : lisible en bash (`stat`/`cat`) par un futur script de déploiement sans lancer de process PHP — coût nul sur le LVE partagé entre les 7 instances (cf. incident #395/#396)
-- `ActivityTrackerSubscriber` (`src/EventListener/`) déclenche l'écriture sur `kernel.request`, uniquement pour un token portant une vraie entité `App\Entity\User` — ignore les tokens `BroadcastTokenAuthenticator` (#283, `InMemoryUser`) et les sous-requêtes internes
-- Granularité **par instance**, pas par utilisateur (décision explicite, pas de migration Doctrine)
-- Seuil retenu pour la suite : 30 min d'inactivité = instance considérée vide
-- 15 tests (unitaires + intégration `WebTestCase`), suite complète 1186 tests toujours verte
-
-**Reste à faire (hors périmètre de cette étape)** : popup temps réel avec compte à rebours (nécessite un endpoint de polling, pas encore d'architecture temps réel dans le projet — les notifications actuelles sont rendues au chargement de page), couverture du cas `bash bin/deploy-all.sh --now`, branchement effectif dans `bin/deploy-nightly.sh` une fois #421 implémenté.
-
-Plan détaillé : `plan-422-detection-activite.md` à la racine du repo (non commité, à conserver hors historique git).
+> **Status git :** `main` à jour — dernière PR mergée #423 (#422 étape 1/3, détection d'activité) ; branches en cours `feature/376-admin-monitoring-multi-instances`, `feature/421-deploiement-differe-nocturne`
 
 ---
 
@@ -31,9 +14,36 @@ Suite à un incident réel (déploiement en pleine journée ayant impacté un ut
 
 Conséquence simplificatrice : sans webhook, plus besoin de pile de déploiement — un simple fichier `.deployed-sha` par instance, comparé au SHA de `main` par le cron, suffit.
 
+**Implémenté (4/6 étapes du plan) :**
+
+- `DeployNotificationMailer` + `app:deploy-queue:notify` : parse le fichier de rapport nocturne (`<prenom>|<statut>|<étape>|<sha>`), envoie un email récapitulatif unique, jamais si toutes les instances sont `skipped`
+- `bin/deploy-nightly.sh` : compare `origin/main` à `.deployed-sha`, déploie si différent, chaque étape dans son propre sous-shell (même principe que `run_step`, cf. incident OOM #395/#396). Échec → `.deployed-sha` inchangé, nouvelle tentative la nuit suivante
+- `ci.yml` committe le CSS Tailwind minifié sur `main` après CI verte (`[skip ci]`) — le serveur ne build plus jamais Tailwind
+- `deploy-all.sh` : sans flag, seule `ronan` (aucun autre user) se déploie immédiatement, les 6 autres différées à la nuit ; `--now` bypasse pour une urgence mais exige une confirmation interactive (`URGENT`) pour ne jamais bypasser par réflexe
+- Runner de tests bash minimal créé (`tests/bash/`, sans dépendance externe) — piège rencontré et documenté : un stub bash nommé `bash` avec `#!/usr/bin/env bash` se retrouve lui-même via le `PATH` modifié et boucle indéfiniment (corrigé en `#!/bin/bash`)
+
+**Reste à faire :** créer les 7 crons cPanel + le cron de rapport (documentés dans `.claude/deploiement.md`, jamais exécuté en réel), documentation (en cours), nettoyage.
+
 **Sécurité — point traité pendant cette session** : `public/deploy.php` a été temporairement réarmé (secret déposé) pour les tests de connectivité, puis **désarmé** immédiatement après (secret retiré des 7 instances + de GitHub) une fois le verdict obtenu. Le fichier reste dans le repo, inerte, en attendant la suppression prévue une fois #421 validé en conditions réelles (cf. mémoire `project_deployphp_a_supprimer`).
 
 Plan détaillé : `plan-421-deploiement-differe-nocturne.md` à la racine du repo (non commité).
+
+---
+
+## ✅ Protection des users actifs pendant un déploiement — détection d'activité (2026-09-12, #422 étape 1/3, PR #423 mergée)
+
+Premier étage du chantier #422 (lui-même dépendant de #421, déploiement nocturne). Objectif final : qu'une instance ne se fasse jamais déployer sous les pieds d'un utilisateur actif. Cette étape pose uniquement la **détection** — pas encore la popup ni le branchement dans un script de déploiement.
+
+- `ActivityTracker` (`src/Service/ActivityTracker.php`) écrit un timestamp Unix dans `var/last-activity.txt` à chaque requête authentifiée, avec un amortissement de 5 min pour éviter une écriture disque par page vue
+- **Fichier plat plutôt que DB** : lisible en bash (`stat`/`cat`) par un futur script de déploiement sans lancer de process PHP — coût nul sur le LVE partagé entre les 7 instances (cf. incident #395/#396)
+- `ActivityTrackerSubscriber` (`src/EventListener/`) déclenche l'écriture sur `kernel.request`, uniquement pour un token portant une vraie entité `App\Entity\User` — ignore les tokens `BroadcastTokenAuthenticator` (#283, `InMemoryUser`) et les sous-requêtes internes
+- Granularité **par instance**, pas par utilisateur (décision explicite, pas de migration Doctrine)
+- Seuil retenu pour la suite : 30 min d'inactivité = instance considérée vide
+- 15 tests (unitaires + intégration `WebTestCase`), suite complète toujours verte
+
+**Reste à faire (étapes 2/3 et 3/3, hors périmètre de cette PR)** : brancher la lecture de `var/last-activity.txt` dans `bin/deploy-nightly.sh` (reporter un déploiement si activité récente — coût quasi nul, pas de code front) ; popup temps réel avec compte à rebours (nécessite un endpoint de polling, pas encore d'architecture temps réel dans le projet) ; couverture du cas `bash bin/deploy-all.sh --now`.
+
+Plan détaillé : `plan-422-detection-activite.md` à la racine du repo (non commité, à conserver hors historique git).
 
 ---
 

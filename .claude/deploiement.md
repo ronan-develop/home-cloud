@@ -67,15 +67,19 @@ DB_PASSWORD_PRESET=<mot de passe MySQL de l'instance>
 
 ### Mise à jour de toutes les instances
 
-Après chaque merge sur `main` :
+> **Depuis #421 (2026-09-12), `deploy-all.sh` ne déploie plus immédiatement
+> toutes les instances par défaut.** Voir la section « Déploiement nocturne
+> autonome » plus bas — ce comportement historique reste documenté ci-dessous
+> car il s'applique toujours à `ronan.lenouvel.me` et au flag `--now`.
 
 ```bash
-bash bin/deploy-all.sh
+bash bin/deploy-all.sh          # ronan immédiat, les 6 autres différées à la nuit
+bash bin/deploy-all.sh --now    # les 7 immédiatement (urgence, confirmation requise)
 ```
 
-Chaîne exécutée sur chaque serveur, **une connexion SSH par étape** (depuis le
+Chaîne exécutée sur chaque serveur déployé immédiatement, **une connexion SSH par étape** (depuis le
 2026-07-23, cf. ci-dessous) :
-`git pull` → `composer install --no-dev --no-scripts` → `install-ffmpeg` → `cache:clear` → `assets:install` → `importmap:install` → `migrations` → `asset-map:compile` → `deploy-info`
+`git pull` → `composer install --no-dev --no-scripts` → `install-ffmpeg` → `cache:clear` → `assets:install` → `importmap:install` → `migrations` → `asset-map:compile` → `deploy-info` → `deployed-sha`
 
 `--no-scripts` évite l'exécution des scripts post-install Symfony Flex (`auto-scripts` : `cache:clear`, `assets:install %PUBLIC_DIR%`, `importmap:install`) pendant `composer install` — ajouté suite à des `Killed` (OOM) répétés sur le mutualisé o2switch pendant cette phase (2026-07-22), alors que le `composer install` en lui-même n'était pas en cause (`Nothing to install, update or remove`, dépendances déjà à jour). Les 3 commandes sautées sont rappelées explicitement ensuite, une par une — ne pas en retirer une sans vérifier qu'elle est bien redondante ailleurs dans le script.
 
@@ -460,39 +464,130 @@ qu'un fix mail fonctionne.
 
 ---
 
-## Détection d'activité (#422) — base du futur déploiement nocturne
+## Déploiement nocturne autonome (#421)
 
-Chaque requête HTTP authentifiée (firewall `web` ou `api`, mais pas les tokens
-service-to-service type `BroadcastTokenAuthenticator`) met à jour :
+### Principe
+
+`deploy-all.sh` ne déploie plus immédiatement les 7 instances par défaut — un
+déploiement en pleine journée a déjà impacté un utilisateur actif sur une
+instance autre que `ronan` (incident réel, pas un risque anticipé). Le
+serveur **tire** désormais depuis GitHub via un cron nocturne, plutôt que
+GitHub qui pousserait vers les instances (webhook testé et abandonné, cf.
+ci-dessous).
 
 ```text
-<prenom>.lenouvel.me/var/last-activity.txt
+Merge sur main → CI verte → commit du CSS Tailwind buildé (ci.yml, [skip ci])
+                                        │
+                          (rien ne se passe en journée)
+                                        │
+      ── nuit, cron cPanel, une instance à la fois, étalées de 5 min ──
+                                        │
+                                        ▼
+                        bin/deploy-nightly.sh <prenom>
+                     git fetch + compare à .deployed-sha
+                     différent → déploie, identique → skip
+                                        │
+                                        ▼
+                  2h45 : app:deploy-queue:notify → email récapitulatif
 ```
 
-Un simple timestamp Unix, réécrit au maximum une fois toutes les 5 minutes
-(`ActivityTracker`, amortissement pour éviter une écriture disque par requête).
-Fichier plat plutôt que DB : lisible en bash (`stat`/`cat`) sans lancer de
-process PHP — coût nul sur le LVE partagé entre les 7 instances (cf. incident
-#395/#396 ci-dessus).
+**Pourquoi pas un webhook GitHub → instances** (piste explorée puis
+abandonnée) : `public/deploy.php` existe dans le repo (webhook HTTPS signé
+HMAC), et depuis une IP française il répond normalement. Mais testé depuis un
+vrai runner GitHub (IP Azure), la connexion sur **cette URL précise** est
+coupée (`PROTOCOL_ERROR`) alors que la page d'accueil du même domaine répond
+`302` au même instant — un **WAF applicatif** cible spécifiquement
+`/deploy.php`, distinct du blocage SSH déjà documenté plus haut (#288, fermé).
+`public/deploy.php` reste dans le repo, **désarmé** (`DEPLOY_WEBHOOK_SECRET`
+retiré des 7 instances et de GitHub le 2026-09-12) — à supprimer une fois ce
+flux validé en conditions réelles.
 
-**Vérifier manuellement si une instance est considérée « active » :**
+### `bin/deploy-nightly.sh` — exécuté par le cron, sur le serveur
+
+```bash
+bash bin/deploy-nightly.sh <prenom> <chemin_instance> <chemin_rapport>
+```
+
+Compare `origin/main` à `.deployed-sha` (fichier à la racine de chaque
+instance, hors git) : identique → ne fait rien (statut `skipped`) ; différent
+→ `git checkout --force` sur le SHA distant, puis la même chaîne que
+`deploy-all.sh` (`composer install --no-dev --no-scripts`, `install-ffmpeg`,
+`cache:clear`, `assets:install`, `importmap:install`, `migrations`,
+`asset-map:compile`), **une connexion/sous-shell par étape** (même principe
+que `run_step`, cf. incident OOM ci-dessus). Le CSS Tailwind n'est **jamais**
+rebuildé côté serveur — il arrive déjà commité par la CI.
+
+Succès → `.deployed-sha` mis à jour, ligne `<prenom>|ok|-|<sha>` dans le
+rapport du jour. Échec → `.deployed-sha` **inchangé** (nouvelle tentative la
+nuit suivante), ligne `<prenom>|failed|<étape>|-`.
+
+**Vérifier l'état d'une instance :**
 
 ```bash
 ssh -i ~/.ssh/o2switch-new ron2cuba@lenouvel.me
 cd yannick.lenouvel.me
-LAST=$(stat -c %Y var/last-activity.txt 2>/dev/null || echo 0)
-echo "Dernière activité : $(date -d @$LAST)"
-echo "Il y a $(( ($(date +%s) - LAST) / 60 )) minutes"
+cat .deployed-sha                              # SHA actuellement déployé
+tail -20 var/log/deploy-nightly.log            # dernière tentative
 ```
 
-Absent → aucune activité connue depuis le dernier déploiement (fichier hors
-git, `.gitignore` via `/var/`). Ne fait planter aucune requête si corrompu ou
-manquant : dégradation silencieuse par construction.
+### Crons cPanel à créer (une fois, après le premier déploiement de ce code)
 
-**Pas encore branché à un script de déploiement** — c'est la brique de base
-pour #421 (le futur `bin/deploy-nightly.sh` lira ce fichier avant de décider
-de déployer ou de reporter à la nuit suivante). Voir #422 pour la suite
-(popup temps réel, cas `--now`).
+> **Toujours étaler de 5 min minimum** — même contrainte LVE que les crons
+> `purge-revoked`/`process-missing` (#395/#396) : les 7 instances partagent un
+> seul compte cPanel, donc une seule limite mémoire/process.
+
+| Instance | Horaire | Rôle |
+|----------|---------|------|
+| ronan | `0 1 * * *` | canari — révèle un déploiement cassé avant les 6 autres |
+| yannick | `5 2 * * *` | |
+| coralie | `10 2 * * *` | |
+| elea | `15 2 * * *` | |
+| corentin | `20 2 * * *` | |
+| damien | `25 2 * * *` | |
+| baptiste | `30 2 * * *` | |
+| *(rapport)* | `45 2 * * *` | envoi de l'email récapitulatif, depuis `ronan` |
+
+```bash
+0 1 * * * flock -n /home9/ron2cuba/.deploy-nightly-ronan.lock /bin/bash /home9/ron2cuba/ronan.lenouvel.me/bin/deploy-nightly.sh ronan /home9/ron2cuba/ronan.lenouvel.me /home9/ron2cuba/.deploy-report-$(date +\%Y-\%m-\%d).log >> /home9/ron2cuba/ronan.lenouvel.me/var/log/deploy-nightly.log 2>&1
+```
+
+```bash
+45 2 * * * flock -n /home9/ron2cuba/.deploy-report.lock /usr/local/bin/php /home9/ron2cuba/ronan.lenouvel.me/bin/console app:deploy-queue:notify --file=/home9/ron2cuba/.deploy-report-$(date +\%Y-\%m-\%d).log --env=prod >> /home9/ron2cuba/ronan.lenouvel.me/var/log/deploy-nightly.log 2>&1
+```
+
+> **Piège `%` en crontab** : non échappé, il est interprété comme un saut de
+> ligne et tronque la commande — d'où `\%Y-\%m-\%d`.
+
+> Fuseau serveur vérifié le 2026-09-12 : **CEST** (heure de Paris) — les
+> horaires ci-dessus sont directement corrects, sans conversion.
+
+> Comme le cron Messenger, **à ajouter pour chaque nouvelle instance**.
+
+### `--now` — bypass d'urgence, avec confirmation obligatoire
+
+```bash
+bash bin/deploy-all.sh --now
+```
+
+Déploie les 7 instances immédiatement, réservé à un fix critique/sécurité qui
+ne peut pas attendre la nuit. Demande une confirmation interactive (taper
+`URGENT`) — un `--now` tapé par réflexe ou erreur de copier-coller ne doit
+jamais déployer en pleine journée sans un geste conscient. Contournable en
+non-interactif (script, CI) via `DEPLOY_NOW_CONFIRM=URGENT`, jamais activé par
+défaut.
+
+### Détection d'activité (#422) — pas encore branchée ici
+
+`ActivityTracker` trace la dernière requête authentifiée dans
+`var/last-activity.txt` par instance (amorti à 5 min). **Ce fichier n'est pas
+encore lu par `deploy-nightly.sh`** — c'est l'étape suivante de #422 (reporter
+un déploiement si une activité récente est détectée, avant même d'envisager
+une popup d'avertissement). Vérifier manuellement :
+
+```bash
+LAST=$(stat -c %Y var/last-activity.txt 2>/dev/null || echo 0)
+echo "Il y a $(( ($(date +%s) - LAST) / 60 )) minutes"
+```
 
 ---
 

@@ -241,6 +241,8 @@ Dans le job `php`, **après** les tests et **uniquement** sur `push` vers `main`
 
 > **Conséquence sur le SHA déployé** : le commit du CSS arrive *après* le merge, donc `origin/main` avance une seconde fois. Ce n'est pas un problème — le cron nocturne lit `main` bien plus tard et récupère naturellement le dernier état, CSS inclus.
 
+> **Piège local découvert à l'implémentation** : `tests/Integration/TailwindBuildTest.php` attend **>1000 lignes** dans `var/tailwind/app.built.css` pour vérifier qu'il ne s'agit pas d'un placeholder. Un CSS **minifié** (`--minify`) tient sur une poignée de lignes même à 80+ Ko et fait échouer ce test. Comme le CSS commité par la CI sur `main` est minifié, un `git pull` en local peut ramener ce fichier minifié et casser la suite locale. **Rebuilder sans minification avant de lancer les tests en local** (`composer build-assets`, qui appelle `tailwind:build` sans `--minify`) — cohérent avec ce que ce script fait déjà. Ne pas "corriger" `TailwindBuildTest` pour accepter un CSS minifié : son rôle est de détecter un placeholder oublié, pas de valider un format de build.
+
 ### 6.3 `.gitignore`
 
 - **Retirer** `var/tailwind/app.built.css` (désormais suivi)
