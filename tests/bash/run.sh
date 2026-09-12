@@ -11,6 +11,7 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export DEPLOY_NIGHTLY_SCRIPT="${SCRIPT_DIR}/../../bin/deploy-nightly.sh"
+export PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 TOTAL=0
 FAILED=0

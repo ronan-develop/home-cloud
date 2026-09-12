@@ -2,8 +2,13 @@
 # =============================================================================
 # HomeCloud — Déploiement multi-instances sur o2switch
 # Usage :
-#   bash bin/deploy-all.sh           → Mise à jour de tous les targets (.deploy-targets)
+#   bash bin/deploy-all.sh           → ronan déployée immédiatement, les 6
+#                                       autres mises à jour la nuit (#421)
 #   bash bin/deploy-all.sh --init    → Premier déploiement de tous les targets
+#   bash bin/deploy-all.sh --now     → Déploiement immédiat des 7 instances,
+#                                       réservé aux urgences (fix critique/
+#                                       sécurité) — demande une confirmation
+#                                       explicite, cf. plus bas
 # =============================================================================
 
 set -euo pipefail
@@ -19,8 +24,29 @@ fi
 
 # ── Mode ──────────────────────────────────────────────────────────────────────
 INIT_MODE=false
-if [[ "${1:-}" == "--init" ]]; then
-    INIT_MODE=true
+NOW_MODE=false
+case "${1:-}" in
+    --init) INIT_MODE=true ;;
+    --now)  NOW_MODE=true ;;
+esac
+
+# ── Confirmation obligatoire pour --now (#421) ────────────────────────────────
+# Un déploiement en pleine journée impacte potentiellement 6 utilisateurs
+# actifs sur des instances distinctes de ronan — --now doit rester un choix
+# conscient, jamais un réflexe/une erreur de copier-coller. Contournable en
+# non-interactif (cron, CI) via DEPLOY_NOW_CONFIRM=URGENT, jamais par défaut.
+if [[ "$NOW_MODE" == true ]]; then
+    if [[ "${DEPLOY_NOW_CONFIRM:-}" != "URGENT" ]]; then
+        echo -e "\033[1;33m⚠️  --now déploie IMMÉDIATEMENT les 7 instances, y compris en pleine journée.\033[0m"
+        echo "   Les 6 instances autres que ronan ont potentiellement des utilisateurs actifs."
+        echo "   Réservé aux urgences (fix critique, sécurité) — pas un raccourci de confort."
+        echo ""
+        read -r -p "Tapez URGENT pour confirmer, autre chose pour annuler : " CONFIRM
+        if [[ "$CONFIRM" != "URGENT" ]]; then
+            echo "Déploiement annulé."
+            exit 1
+        fi
+    fi
 fi
 
 # ── Couleurs ──────────────────────────────────────────────────────────────────
@@ -127,8 +153,17 @@ run_step() {
     return 0
 }
 
+# ── Build Tailwind une seule fois, hors boucle (#421) ─────────────────────────
+# Le CSS est identique pour les 7 instances — le reconstruire à chaque
+# itération était un gaspillage pur, déjà vrai avant #421.
+if [[ "$INIT_MODE" == false ]]; then
+    info "Build Tailwind (local, une seule fois pour toutes les instances)…"
+    php bin/console tailwind:build --minify
+fi
+
 # ── Boucle sur les cibles ─────────────────────────────────────────────────────
 INSTANCE_INDEX=0
+DEFERRED=()
 for PRENOM in "${TARGETS[@]}"; do
     INSTANCE_INDEX=$((INSTANCE_INDEX + 1))
     SUBDOMAIN="${PRENOM}.lenouvel.me"
@@ -209,13 +244,18 @@ ENVEOF
         # Reset pour ne pas polluer l'instance suivante
         unset DB_PASSWORD_PRESET DB_PASSWORD APP_SECRET JWT_PASSPHRASE DATABASE_URL
 
-    else
-        # ── Mise à jour ───────────────────────────────────────────────────────
-        # Tailwind build en local puis scp : le binaire natif ne tourne pas de
-        # façon fiable sur o2switch (mutualisé), cf. bin/deploy.sh.
-        info "Build Tailwind (local)…"
-        php bin/console tailwind:build --minify
+    elif [[ "$NOW_MODE" == false && "$PRENOM" != "ronan" ]]; then
+        # ── Déploiement différé (#421) ─────────────────────────────────────────
+        # Sans --now, seule ronan (instance personnelle, aucun autre user) se
+        # déploie immédiatement. Les 6 autres attendent le cron nocturne
+        # (bin/deploy-nightly.sh), qui compare origin/main à .deployed-sha —
+        # rien à écrire ici, il lira l'état de main lui-même cette nuit.
+        info "Différé au déploiement nocturne (aucun impact utilisateur en journée)."
+        DEFERRED+=("$SUBDOMAIN")
 
+    else
+        # ── Mise à jour immédiate ────────────────────────────────────────────────
+        # Tailwind déjà buildé une fois avant la boucle (#421).
         info "Envoi de app.built.css…"
         ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" "mkdir -p ${DEPLOY_PATH}/var/tailwind"
         scp ${SSH_KEY_OPTS} -P "${SSH_PORT}" \
@@ -232,7 +272,11 @@ ENVEOF
         && run_step "importmap:install" "${PHP_BIN} bin/console importmap:install --env=prod" \
         && run_step "migrations"        "${PHP_BIN} bin/console doctrine:migrations:migrate --no-interaction --env=prod" \
         && run_step "asset-map:compile" "${PHP_BIN} bin/console asset-map:compile" \
-        && run_step "deploy-info"       "echo '${DEPLOY_INFO_LINE}' > templates/deploy-info.html.twig"; then
+        && run_step "deploy-info"       "echo '${DEPLOY_INFO_LINE}' > templates/deploy-info.html.twig" \
+        && run_step "deployed-sha"      "git rev-parse HEAD > .deployed-sha"; then
+            # .deployed-sha écrit après un déploiement manuel réussi (#421) :
+            # sans ça, le cron nocturne suivant redéploierait inutilement une
+            # instance déjà à jour.
             success "${SUBDOMAIN} — mise à jour OK"
             RESULTS_OK+=("$SUBDOMAIN")
         else
@@ -250,6 +294,9 @@ for d in "${RESULTS_OK[@]:-}"; do
 done
 for d in "${RESULTS_FAIL[@]:-}"; do
     [[ -n "$d" ]] && echo -e "  ${RED}❌${NC}  ${d}"
+done
+for d in "${DEFERRED[@]:-}"; do
+    [[ -n "$d" ]] && echo -e "  ${YELLOW}⏳${NC}  ${d} (différé au déploiement nocturne)"
 done
 echo ""
 
