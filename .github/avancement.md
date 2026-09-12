@@ -2,11 +2,22 @@
 
 > Dernière mise à jour : 2026-09-12
 
-> **Status git :** `main` à jour — dernière PR mergée #416 (hotfix mergedAt GitHubChangelogFetcher) ; branche en cours `feature/411-notifications-disappear-on-read` (non mergée)
+> **Status git :** `main` à jour — dernière PR mergée #417 (#411 notifications) ; branche en cours `feature/377-admin-cron-health` (non mergée)
 
 ---
 
-## 🚧 Notifications — les lues disparaissent du dropdown (2026-09-12, #411, branche `feature/411-notifications-disappear-on-read`)
+## 🚧 Espace admin — santé cron Messenger (2026-09-12, #377, branche `feature/377-admin-cron-health`)
+
+- Ticket recadré via son propre commentaire GitHub avant implémentation : plus de suivi de stockage (déjà couvert par #374/#376), périmètre réduit à cron Messenger + erreurs applicatives (fallback explicitement prévu par le ticket si aucun canal exploitable).
+- Confirmé en exploration : #376 (monitoring multi-instances) n'est pas implémenté et aucun canal de logs structuré n'existe (pas de `symfony/monolog-bundle`, pas de Sentry) — décision prise avec l'utilisateur : #377 reste mono-instance, erreurs applicatives hors périmètre pour ce ticket.
+- `CronHealthReporter` (nouveau service) lit le transport Messenger `failed` via `ListableReceiverInterface` (`messenger.transport.failed`), même mécanisme que la commande native `messenger:failed:show` (`ErrorDetailsStamp`, `RedeliveryStamp`) — délibérément pas de SQL brut sur `messenger_messages`, à la différence de `MessengerMessageRepository` (déjà existant, dédié au statut mail #385) qui doit parser `body` en PHP `serialize()` faute de `headers` exploitables pour ce cas d'usage.
+- Piège découvert en TDD : le transport `failed` utilise `SigningSerializer` — un insert SQL brut (`serialize($envelope)` direct, pattern utilisé par `MessengerMessageRepositoryIntegrationTest`) échoue au décodage (`InvalidMessageSignatureException`). Fix : le test envoie via le vrai `SenderInterface` (`messenger.transport.failed`) plutôt que d'insérer directement en base.
+- Écran `/admin/cron-health` (`AdminCronHealthWebController`) : compteur de messages en échec + liste des N derniers (classe, message d'erreur, date), entrée ajoutée à la nav admin.
+- Décision explicite avec l'utilisateur : pas de graphe Chart.js pour ce ticket — la table `failed` n'a pas d'historique temporel exploitable en l'état, seulement un état courant.
+- Suite complète : 1155/1155 verts (7 nouveaux tests).
+- Reste à faire avant merge : revue utilisateur, `gh pr create` + label obligatoire, vérif CI verte.
+
+## ✅ Notifications — les lues disparaissent du dropdown (2026-09-12, #411, PR #417 mergée)
 
 - Portée réévaluée en discussion : l'idée initiale (assombrir les notifications lues) devient un retrait complet du dropdown — liste plus courte, ne s'encombre pas au fil du temps pour de futurs types de notifications. Le changelog reste consultable sur `/changelog` (page dédiée existante) ; les messages directs n'ont pas d'équivalent mais le comportement uniforme est assumé.
 - `NotificationGlobalsExtension::getGlobals()` filtre désormais `notificationItems` pour ne transmettre que les items non lus — `notificationUnreadCount` devient simplement leur nombre, plus besoin d'un comptage séparé.
@@ -16,7 +27,8 @@
 - `lastChangelogViewedAt` étant global (pas par entrée), cliquer sur une seule entrée changelog marque tout le changelog comme lu — le JS retire donc toutes les entrées changelog du panel au clic, pas seulement celle cliquée, pour rester cohérent avec l'état serveur au prochain chargement.
 - Vérifié manuellement en navigateur (Playwright, screenshots) : liste filtrée correctement (compteurs cohérents), animation de retrait isolée au bon item pour les messages directs / à toutes les entrées changelog pour le changelog, nouvel onglet confirmé sans casser la page d'origine, cohérence badge+liste vérifiée après rechargement complet.
 - Suite complète : 1148/1148 verts après chaque étape TDD (extension Twig → template/JS/CSS → nouvelle route changelog).
-- Reste à faire avant merge : revue utilisateur, `gh pr create` + label obligatoire, vérif CI verte.
+- Cas limite identifié en test manuel et sciemment laissé non couvert sur demande explicite de l'utilisateur : un clic droit "ouvrir dans un nouvel onglet" sur un message direct ne déclenche pas `markRead` (l'événement `click` JS n'est jamais émis pour cette action navigateur — limitation non contournable).
+- PR #417 mergée (`--merge`, pas de squash), CI verte (php/js/GitGuardian/labels), branche supprimée.
 
 ## 🐛 Badge changelog masqué le jour même — ChangelogNotificationNormalizer (2026-09-11, #414, branche `fix/changelog-badge-same-day-precision`)
 
