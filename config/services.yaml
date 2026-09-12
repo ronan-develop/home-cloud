@@ -43,6 +43,7 @@ services:
     App\Interface\BroadcastMailerInterface:       '@App\Service\BroadcastMailer'
     App\Interface\BroadcastOrchestratorInterface: '@App\Service\BroadcastOrchestrator'
     App\Interface\ActivityTrackerInterface:       '@App\Service\ActivityTracker'
+    App\Interface\DeployNotificationMailerInterface: '@App\Service\DeployNotificationMailer'
     App\Interface\InstanceMonitoringReporterInterface: '@App\Service\InstanceMonitoringReporter'
 
     App\State\AlbumProcessor:
@@ -149,6 +150,10 @@ services:
     App\Service\ActivityTracker:
         arguments:
             $filePath: '%app.activity_tracker.file_path%'
+
+    App\Service\DeployNotificationMailer:
+        arguments:
+            $reportEmail: '%env(DEPLOY_REPORT_EMAIL)%'
 
     App\Service\RawPreviewCache:
         arguments:

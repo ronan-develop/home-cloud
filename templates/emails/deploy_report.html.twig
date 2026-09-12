@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Déploiement nocturne — HomeCloud</title>
+</head>
+<body style="margin:0; padding:0; background-color:#FAFAFA; font-family:Arial, Helvetica, sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#FAFAFA;">
+<tr>
+<td align="center" style="padding:32px 16px;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:480px; background-color:#FFFFFF; border-radius:12px; border:1px solid #e5e5e5;">
+
+<tr>
+<td align="center" style="padding:28px 32px 0 32px;">
+<span style="font-size:20px; font-weight:bold; color:{{ accentColor }};">HomeCloud</span>
+</td>
+</tr>
+
+<tr>
+<td style="padding:24px 32px 8px 32px; color:#0b1220; font-size:15px; line-height:1.5;">
+Déploiement nocturne terminé.
+</td>
+</tr>
+
+<tr>
+<td style="padding:0 32px 16px 32px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:14px; color:#0b1220;">
+<tr style="border-bottom:1px solid #e5e5e5;">
+<td style="padding:6px 4px; font-weight:bold;">Instance</td>
+<td style="padding:6px 4px; font-weight:bold;">Statut</td>
+<td style="padding:6px 4px; font-weight:bold;">Détail</td>
+</tr>
+{% for r in results %}
+<tr style="border-bottom:1px solid #f0f0f0;">
+<td style="padding:6px 4px;">{{ r.instance }}</td>
+<td style="padding:6px 4px;">
+{% if r.status == 'ok' %}✅ déployé
+{% elseif r.status == 'failed' %}❌ échec
+{% else %}⏭️ à jour
+{% endif %}
+</td>
+<td style="padding:6px 4px; color:#8a8f98;">
+{% if r.status == 'failed' %}étape « {{ r.step }} »
+{% elseif r.sha is not empty %}{{ r.sha }}
+{% else %}—
+{% endif %}
+</td>
+</tr>
+{% endfor %}
+</table>
+</td>
+</tr>
+
+<tr>
+<td style="padding:0 32px 28px 32px; border-top:1px solid #e5e5e5; padding-top:20px;">
+<span style="font-size:12px; color:#8a8f98;">
+Les instances en échec seront retentées automatiquement la nuit prochaine.
+</span>
+</td>
+</tr>
+
+</table>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:480px;">
+<tr>
+<td align="center" style="padding:16px 32px; color:#8a8f98; font-size:12px;">
+HomeCloud — votre cloud personnel
+<br>
+Solution entièrement développée par Ronan Lenouvel
+</td>
+</tr>
+</table>
+
+</td>
+</tr>
+</table>
+</body>
+</html>
