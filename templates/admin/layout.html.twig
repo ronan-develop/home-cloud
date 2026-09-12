@@ -39,6 +39,11 @@
                class="hc-admin-nav-item {{ current_route == 'app_admin_share_link_exposure' ? 'active' : '' }}">
                 Liens publics actifs
             </a>
+
+            <a href="{{ path('app_admin_cron_health') }}"
+               class="hc-admin-nav-item {{ current_route == 'app_admin_cron_health' ? 'active' : '' }}">
+                Santé cron
+            </a>
         </nav>
     </aside>
 
