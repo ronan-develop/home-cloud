@@ -1,0 +1,30 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Monitoring multi-instances — Administration{% endblock %}
+
+{% block content %}
+<h1 class="hc-admin-page-title">Monitoring multi-instances</h1>
+
+<table class="hc-admin-table">
+    <thead>
+        <tr>
+            <th>Instance</th>
+            <th>Statut</th>
+            <th>Utilisateurs</th>
+            <th>Stockage</th>
+            <th>Révision</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for instance, snapshot in snapshots %}
+            <tr>
+                <td>{{ instance }}</td>
+                <td>{{ snapshot.reachable ? '✅ Joignable' : '❌ Injoignable' }}</td>
+                <td>{{ snapshot.reachable ? snapshot.userCount : '—' }}</td>
+                <td>{{ snapshot.reachable ? (snapshot.totalStorageBytes / 1048576)|round(1) ~ ' Mo' : '—' }}</td>
+                <td>{{ snapshot.reachable ? snapshot.gitRevision : '—' }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
