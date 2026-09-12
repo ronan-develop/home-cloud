@@ -519,7 +519,9 @@ rebuildé côté serveur — il arrive déjà commité par la CI.
 
 Succès → `.deployed-sha` mis à jour, ligne `<prenom>|ok|-|<sha>` dans le
 rapport du jour. Échec → `.deployed-sha` **inchangé** (nouvelle tentative la
-nuit suivante), ligne `<prenom>|failed|<étape>|-`.
+nuit suivante), ligne `<prenom>|failed|<étape>|-`. Activité utilisateur
+récente détectée (#422, cf. section dédiée ci-dessous) → aucune étape
+exécutée, `.deployed-sha` inchangé, ligne `<prenom>|postponed`.
 
 **Vérifier l'état d'une instance :**
 
@@ -576,13 +578,24 @@ jamais déployer en pleine journée sans un geste conscient. Contournable en
 non-interactif (script, CI) via `DEPLOY_NOW_CONFIRM=URGENT`, jamais activé par
 défaut.
 
-### Détection d'activité (#422) — pas encore branchée ici
+### Détection d'activité (#422) — renoncement silencieux branché
 
 `ActivityTracker` trace la dernière requête authentifiée dans
-`var/last-activity.txt` par instance (amorti à 5 min). **Ce fichier n'est pas
-encore lu par `deploy-nightly.sh`** — c'est l'étape suivante de #422 (reporter
-un déploiement si une activité récente est détectée, avant même d'envisager
-une popup d'avertissement). Vérifier manuellement :
+`var/last-activity.txt` par instance (timestamp Unix brut, amorti à 5 min).
+`deploy-nightly.sh` lit ce fichier **avant** `git checkout` : si la dernière
+activité date de moins de 15 min (`ACTIVITY_THRESHOLD_SECONDS=900`), le
+déploiement est reporté sans exécuter aucune étape — statut `postponed`,
+`.deployed-sha` inchangé, nouvelle tentative la nuit suivante. Fichier absent
+ou illisible → comportement inchangé (déploiement normal), cas majoritaire
+sur une instance sans activité récente.
+
+Cette étape couvre le renoncement silencieux uniquement (étape 2/3 de #422,
+identifiée dans le ticket comme livrable indépendamment, coût très faible).
+La popup avec compte à rebours + canal temps réel pour un utilisateur déjà
+connecté au moment du déploiement (étape 3/3) reste à faire — ticket #422
+non fermé.
+
+Vérifier manuellement l'ancienneté de la dernière activité :
 
 ```bash
 LAST=$(stat -c %Y var/last-activity.txt 2>/dev/null || echo 0)

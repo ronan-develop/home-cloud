@@ -100,6 +100,25 @@ final class DeployNotificationMailerTest extends TestCase
         ]);
     }
 
+    public function testSendsEmailWhenAtLeastOneInstanceIsPostponed(): void
+    {
+        $mailer = $this->createMock(MailerInterface::class);
+        $context = null;
+        $mailer->expects(self::once())->method('send')->willReturnCallback(
+            function (TemplatedEmail $message) use (&$context) {
+                $context = $message->getContext();
+            }
+        );
+
+        $service = $this->makeService($mailer);
+        $service->sendDeployReport([
+            ['instance' => 'yannick', 'status' => 'postponed', 'step' => null, 'sha' => null],
+            ['instance' => 'coralie', 'status' => 'skipped', 'step' => null, 'sha' => null],
+        ]);
+
+        self::assertSame('postponed', $context['results'][0]['status']);
+    }
+
     public function testSendsNoEmailWithEmptyResults(): void
     {
         $mailer = $this->createMock(MailerInterface::class);

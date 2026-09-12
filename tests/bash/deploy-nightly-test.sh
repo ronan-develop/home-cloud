@@ -154,3 +154,54 @@ test_checkout_cible_le_sha_distant_pas_main() {
 
     _teardown_fixture
 }
+
+# ── Renoncement silencieux si activité récente (#422 étape 2/3) ─────────────
+
+test_activite_recente_reporte_le_deploiement() {
+    _setup_fixture
+    _write_all_success_stubs "new1111"
+    # Activité il y a 5 minutes (< seuil 15 min) : timestamp Unix brut, comme
+    # écrit par App\Service\ActivityTracker::recordActivity().
+    echo "$(($(date +%s) - 300))" > "${FIXTURE_DIR}/instance/var/last-activity.txt"
+
+    /usr/bin/bash "$DEPLOY_NIGHTLY_SCRIPT" yannick "${FIXTURE_DIR}/instance" "${FIXTURE_DIR}/report.log" > /dev/null 2>&1
+    local exit_code=$?
+
+    assert_equals "0" "$exit_code" "sortie attendue à 0 sur report d'activité"
+    assert_contains "$(cat "${FIXTURE_DIR}/report.log")" "yannick|postponed"
+    local composer_calls
+    composer_calls=$(grep -c "^composer " "$CALL_LOG" 2>/dev/null); composer_calls=${composer_calls:-0}
+    assert_equals "0" "$composer_calls" "composer ne doit pas être appelé si activité récente détectée"
+    assert_equals "" "$(cat "${FIXTURE_DIR}/instance/.deployed-sha" 2>/dev/null)" ".deployed-sha ne doit pas changer sur un report"
+
+    _teardown_fixture
+}
+
+test_activite_ancienne_ne_bloque_pas_le_deploiement() {
+    _setup_fixture
+    _write_all_success_stubs "new1111"
+    # Activité il y a 20 minutes (> seuil 15 min) : le déploiement doit se
+    # dérouler normalement.
+    echo "$(($(date +%s) - 1200))" > "${FIXTURE_DIR}/instance/var/last-activity.txt"
+
+    /usr/bin/bash "$DEPLOY_NIGHTLY_SCRIPT" yannick "${FIXTURE_DIR}/instance" "${FIXTURE_DIR}/report.log" > /dev/null 2>&1
+
+    assert_contains "$(cat "${FIXTURE_DIR}/report.log")" "yannick|ok"
+    assert_contains "$(cat "$CALL_LOG")" "git checkout"
+
+    _teardown_fixture
+}
+
+test_absence_de_fichier_activite_ne_bloque_pas_le_deploiement() {
+    _setup_fixture
+    _write_all_success_stubs "new1111"
+    # Pas de var/last-activity.txt : aucune activité tracée, le déploiement
+    # doit se dérouler normalement (comportement par défaut, cas majoritaire
+    # sur une instance jamais visitée récemment).
+
+    /usr/bin/bash "$DEPLOY_NIGHTLY_SCRIPT" yannick "${FIXTURE_DIR}/instance" "${FIXTURE_DIR}/report.log" > /dev/null 2>&1
+
+    assert_contains "$(cat "${FIXTURE_DIR}/report.log")" "yannick|ok"
+
+    _teardown_fixture
+}
