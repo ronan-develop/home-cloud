@@ -9,6 +9,11 @@ name: Probe o2switch
 
 on:
   workflow_dispatch:
+  # Déclencheur push limité à la branche du chantier : workflow_dispatch exige
+  # que le workflow existe déjà sur la branche par défaut, ce qui n'est pas le
+  # cas ici (et on ne veut pas polluer main pour un test jetable).
+  push:
+    branches: [feature/421-deploiement-differe-nocturne]
 
 jobs:
   probe:
