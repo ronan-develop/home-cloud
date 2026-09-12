@@ -1,0 +1,61 @@
+name: Probe o2switch
+
+# Workflow TEMPORAIRE (#421) — valide qu'un runner GitHub atteint bien le
+# webhook HTTPS des instances o2switch. À supprimer une fois la réponse obtenue.
+#
+# Le blocage documenté d'o2switch porte sur le SSH (port 22, whitelist cPanel).
+# Ce test vérifie que le port 443 est bien ouvert aux IPs Azure des runners,
+# ce qu'un curl depuis le poste local (IP française) ne peut pas prouver.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🌍 IP sortante du runner
+        run: curl -4 -sS https://ifconfig.me && echo
+
+      - name: 🔎 GET (attendu 405 Method Not Allowed)
+        run: |
+          for H in ronan yannick; do
+            CODE=$(curl -sS -o /dev/null -w '%{http_code}' -m 25 "https://$H.lenouvel.me/deploy.php" || echo "ECHEC")
+            echo "GET  $H -> $CODE"
+          done
+
+      - name: 🔎 POST sans signature (attendu 401 Invalid signature)
+        run: |
+          for H in ronan yannick; do
+            CODE=$(curl -sS -o /dev/null -w '%{http_code}' -m 25 \
+                   -X POST -H 'Content-Type: application/json' \
+                   --data '{"ref":"refs/heads/probe"}' \
+                   "https://$H.lenouvel.me/deploy.php" || echo "ECHEC")
+            echo "POST $H -> $CODE"
+          done
+
+      - name: ✅ POST signé, branche non-main (attendu 200 "Skipped")
+        env:
+          SECRET: ${{ secrets.DEPLOY_WEBHOOK_SECRET }}
+        run: |
+          if [ -z "$SECRET" ]; then
+            echo "::error::DEPLOY_WEBHOOK_SECRET absent des secrets du dépôt"
+            exit 1
+          fi
+          PAYLOAD='{"ref":"refs/heads/probe-not-main"}'
+          SIG="sha256=$(printf '%s' "$PAYLOAD" | openssl dgst -sha256 -hmac "$SECRET" | awk '{print $NF}')"
+          for H in ronan yannick; do
+            BODY=$(curl -sS -m 25 -X POST \
+                   -H 'Content-Type: application/json' \
+                   -H "X-Hub-Signature-256: $SIG" \
+                   --data "$PAYLOAD" \
+                   -w '|%{http_code}' \
+                   "https://$H.lenouvel.me/deploy.php" || echo "|ECHEC")
+            echo "POST signé $H -> $BODY"
+          done
+
+      - name: 📋 Verdict
+        run: |
+          echo "Attendu : GET 405, POST non signé 401, POST signé 200 'Skipped: not main branch'."
+          echo "Tout autre résultat (403 / 406 / 503 / timeout) = o2switch filtre les runners"
+          echo "→ basculer sur la solution de repli du plan (cron git ls-remote sortant)."
