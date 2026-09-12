@@ -23,11 +23,12 @@
         {% else %}
             {% for item in notificationItems %}
                 <a href="{{ item.link }}"
-                   class="hc-notif-item {{ item.isRead ? '' : 'hc-notif-item--unread' }}"
-                   {% if item.id is not null and not item.isRead %}
-                       data-action="click->notifications#markRead"
-                       data-notifications-id-param="{{ item.id }}"
-                   {% endif %}>
+                   class="hc-notif-item hc-notif-item--unread"
+                   {% if item.type == 'changelog' %}target="_blank" rel="noopener"{% endif %}
+                   data-action="click->notifications#markRead"
+                   data-notifications-type-param="{{ item.type }}"
+                   {% if item.id is not null %}data-notifications-id-param="{{ item.id }}"{% endif %}
+                   data-notifications-target="item">
                     <span class="hc-notif-item-icon">
                         {% if item.type == 'direct_message' %}✉️{% else %}📣{% endif %}
                     </span>
