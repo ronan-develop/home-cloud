@@ -149,6 +149,7 @@
             {# Zone droite : thème + avatar + logout #}
             <div class="hc-topbar-right">
                 {% include 'components/NotificationDropdown.html.twig' %}
+                {% include 'components/DeployWarningModal.html.twig' %}
 
                 <button class="btn btn-soft btn-icon" id="hc-theme-toggle" data-action="click->drawer-theme#toggleTheme" title="Basculer le thème" aria-label="Changer le thème">
                     <svg data-drawer-theme-target="sunIcon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

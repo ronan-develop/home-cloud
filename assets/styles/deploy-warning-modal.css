@@ -1,0 +1,13 @@
+/*
+ * assets/styles/deploy-warning-modal.css
+ * Styles pour la popup de préavis de déploiement (templates/components/DeployWarningModal.html.twig, #422)
+ */
+
+.hc-deploy-warning-card {
+  background: var(--hc-surface);
+  color: var(--hc-text);
+  border: 1px solid var(--hc-border);
+  border-radius: 1rem;
+  box-shadow: var(--hc-shadow-crisp);
+  margin: 1rem;
+}

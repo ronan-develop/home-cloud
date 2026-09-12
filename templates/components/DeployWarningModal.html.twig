@@ -1,0 +1,23 @@
+{# === DeployWarningModal component ===
+   Popup avec compte à rebours avertissant qu'un déploiement nocturne est
+   imminent (#422 étape 3/3). Poll /deploy-status en continu : s'ouvre
+   automatiquement quand un préavis est détecté (deploy-imminent.txt écrit
+   par bin/deploy-nightly.sh), se ferme si le préavis disparaît (déploiement
+   annulé/terminé/reporté suite à une reconnexion). Pas de bouton
+   déclencheur externe — s'ouvre d'elle-même via le polling. #}
+<div id="deploy-warning-modal"
+     data-controller="deploy-warning"
+     class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/45"
+     tabindex="-1"
+     aria-modal="true"
+     role="alertdialog"
+     aria-live="assertive">
+
+  <div class="hc-deploy-warning-card flex flex-col px-6 py-5 rounded-lg max-w-sm text-center">
+    <div class="text-3xl mb-2" aria-hidden="true">🌙</div>
+    <h2 class="text-base font-semibold m-0 mb-2">Mise à jour dans <span data-deploy-warning-target="countdown">--:--</span></h2>
+    <p class="text-sm m-0">
+      HomeCloud va être mis à jour automatiquement. Terminez vos envois en cours pour ne rien perdre.
+    </p>
+  </div>
+</div>

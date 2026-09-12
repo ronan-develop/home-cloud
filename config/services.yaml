@@ -12,6 +12,12 @@ parameters:
     # script bash de déploiement (#421), jamais par un process PHP lancé
     # depuis un cron : coût nul sur le LVE partagé entre les 7 instances.
     app.activity_tracker.file_path: '%kernel.project_dir%/var/last-activity.txt'
+    # Fichier plat de préavis de déploiement (#422 étape 3/3) — écrit par
+    # bin/deploy-nightly.sh au début du sleep de préavis, retiré une fois le
+    # déploiement terminé ou reporté. warning_seconds doit rester aligné sur
+    # DEPLOY_NIGHTLY_WARNING_SECONDS (défaut 600s côté script).
+    app.deploy_imminent.file_path: '%kernel.project_dir%/var/deploy-imminent.txt'
+    app.deploy_imminent.warning_seconds: 600
     app.encryption_key: '%env(base64:APP_ENCRYPTION_KEY)%'
     app.ffmpeg_bin: '%kernel.project_dir%/var/bin/ffmpeg'
     app.ffprobe_bin: '%kernel.project_dir%/var/bin/ffprobe'
