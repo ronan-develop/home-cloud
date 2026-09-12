@@ -460,6 +460,42 @@ qu'un fix mail fonctionne.
 
 ---
 
+## Détection d'activité (#422) — base du futur déploiement nocturne
+
+Chaque requête HTTP authentifiée (firewall `web` ou `api`, mais pas les tokens
+service-to-service type `BroadcastTokenAuthenticator`) met à jour :
+
+```text
+<prenom>.lenouvel.me/var/last-activity.txt
+```
+
+Un simple timestamp Unix, réécrit au maximum une fois toutes les 5 minutes
+(`ActivityTracker`, amortissement pour éviter une écriture disque par requête).
+Fichier plat plutôt que DB : lisible en bash (`stat`/`cat`) sans lancer de
+process PHP — coût nul sur le LVE partagé entre les 7 instances (cf. incident
+#395/#396 ci-dessus).
+
+**Vérifier manuellement si une instance est considérée « active » :**
+
+```bash
+ssh -i ~/.ssh/o2switch-new ron2cuba@lenouvel.me
+cd yannick.lenouvel.me
+LAST=$(stat -c %Y var/last-activity.txt 2>/dev/null || echo 0)
+echo "Dernière activité : $(date -d @$LAST)"
+echo "Il y a $(( ($(date +%s) - LAST) / 60 )) minutes"
+```
+
+Absent → aucune activité connue depuis le dernier déploiement (fichier hors
+git, `.gitignore` via `/var/`). Ne fait planter aucune requête si corrompu ou
+manquant : dégradation silencieuse par construction.
+
+**Pas encore branché à un script de déploiement** — c'est la brique de base
+pour #421 (le futur `bin/deploy-nightly.sh` lira ce fichier avant de décider
+de déployer ou de reporter à la nuit suivante). Voir #422 pour la suite
+(popup temps réel, cas `--now`).
+
+---
+
 ## Diagnostic — erreurs fréquentes
 
 | Symptôme                             | Cause                            | Solution                                                     |
