@@ -2,11 +2,21 @@
 
 > Dernière mise à jour : 2026-09-12
 
-> **Status git :** `main` à jour — dernière PR mergée #423 (#422 étape 1/3, détection d'activité) ; branches en cours `feature/376-admin-monitoring-multi-instances`, `feature/421-deploiement-differe-nocturne`
+> **Status git :** `main` à jour — dernière PR mergée #420 (#376 monitoring multi-instances) côté session courante ; #421 fermé (socle déploiement nocturne complet, PR #423-#427 mergées ailleurs) ; branche en cours `feature/422-postpone-on-active-user` (non mergée)
 
 ---
 
-## 🚧 Déploiement nocturne autonome (2026-09-12, #421, branche `feature/421-deploiement-differe-nocturne`)
+## 🚧 Protection utilisateurs actifs pendant un déploiement — étape 2/3 (2026-09-12, #422, branche `feature/422-postpone-on-active-user`)
+
+- Suite de l'étape 1/3 (détection d'activité, `ActivityTracker` + `ActivityTrackerSubscriber`, déjà mergée en #423) : `bin/deploy-nightly.sh` lit désormais `var/last-activity.txt` avant `git checkout` et renonce silencieusement au déploiement si l'activité date de moins de 15 minutes — nouveau statut `postponed`, `.deployed-sha` inchangé, nouvelle tentative la nuit suivante.
+- Portée volontairement limitée à ce renoncement silencieux (étape 2/3), conformément au ticket qui l'identifie explicitement comme "livrable indépendamment" à très faible coût, sans code front. L'étape 3/3 (popup avec compte à rebours + canal temps réel pour un utilisateur déjà connecté) reste à faire, ticket non fermé.
+- Seuil retenu : 15 minutes — marge confortable au-dessus des 5 minutes d'amortissement d'écriture déjà en place dans `ActivityTracker`.
+- Tests bash (`tests/bash/deploy-nightly-test.sh`, TDD RED→GREEN) : activité récente → report sans aucun appel composer/php, activité ancienne → déploiement normal, fichier absent → déploiement normal (cas majoritaire).
+- `DeployNotificationMailer` : `postponed` suit déjà la même règle que `ok`/`failed` (email envoyé dès qu'au moins une instance n'est pas `skipped`) — aucune modification de service nécessaire, seul le template `deploy_report.html.twig` a été complété (badge 🌙 dédié, compteur, encart explicatif jaune sur le modèle de l'encart rouge des échecs).
+- Suite complète : 1197/1197 verts (PHP) + 12/12 verts (bash) après rebuild Tailwind (piège connu, template email modifié).
+- Reste à faire avant merge : revue utilisateur, `gh pr create` + label obligatoire, vérif CI verte.
+
+## ✅ Déploiement nocturne autonome (2026-09-12, #421 fermé — socle complet, PR #423-#427 mergées)
 
 Suite à un incident réel (déploiement en pleine journée ayant impacté un utilisateur actif), refonte complète du déploiement : `deploy-all` doit devenir autonome — un merge sur `main` aboutit à un déploiement nocturne (1h-2h30, heure de Paris) sans intervention humaine, poste local éteint.
 
@@ -22,11 +32,9 @@ Conséquence simplificatrice : sans webhook, plus besoin de pile de déploiement
 - `deploy-all.sh` : sans flag, seule `ronan` (aucun autre user) se déploie immédiatement, les 6 autres différées à la nuit ; `--now` bypasse pour une urgence mais exige une confirmation interactive (`URGENT`) pour ne jamais bypasser par réflexe
 - Runner de tests bash minimal créé (`tests/bash/`, sans dépendance externe) — piège rencontré et documenté : un stub bash nommé `bash` avec `#!/usr/bin/env bash` se retrouve lui-même via le `PATH` modifié et boucle indéfiniment (corrigé en `#!/bin/bash`)
 
-**Reste à faire :** créer les 7 crons cPanel + le cron de rapport (documentés dans `.claude/deploiement.md`, jamais exécuté en réel), documentation (en cours), nettoyage.
-
 **Sécurité — point traité pendant cette session** : `public/deploy.php` a été temporairement réarmé (secret déposé) pour les tests de connectivité, puis **désarmé** immédiatement après (secret retiré des 7 instances + de GitHub) une fois le verdict obtenu. Le fichier reste dans le repo, inerte, en attendant la suppression prévue une fois #421 validé en conditions réelles (cf. mémoire `project_deployphp_a_supprimer`).
 
-Plan détaillé : `plan-421-deploiement-differe-nocturne.md` à la racine du repo (non commité).
+Ticket fermé : socle complet et mergé (PR #423 détection d'activité étape 1/3, #424 déploiement différé nocturne, #425 template rapport, #426 fix CI Tailwind, #427 rebuild Tailwind). #422 continue séparément, en s'appuyant sur ce socle.
 
 ---
 
