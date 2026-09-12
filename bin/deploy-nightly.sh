@@ -53,6 +53,24 @@ if [[ -n "$REMOTE_SHA" && "$REMOTE_SHA" == "$CURRENT_SHA" ]]; then
     exit 0
 fi
 
+# ── Renoncement silencieux si un utilisateur est actif (#422) ───────────────
+# Fichier écrit par App\Service\ActivityTracker::recordActivity() (timestamp
+# Unix brut, amorti à 5 min) — un déploiement différé d'une nuit est toujours
+# préférable à un upload interrompu en pleine nuit chez un noctambule.
+ACTIVITY_THRESHOLD_SECONDS=900
+ACTIVITY_FILE="var/last-activity.txt"
+if [[ -f "$ACTIVITY_FILE" ]]; then
+    LAST_ACTIVITY=$(cat "$ACTIVITY_FILE" 2>/dev/null || echo "")
+    if [[ "$LAST_ACTIVITY" =~ ^[0-9]+$ ]]; then
+        NOW=$(date +%s)
+        if (( NOW - LAST_ACTIVITY < ACTIVITY_THRESHOLD_SECONDS )); then
+            echo "${PRENOM} : activité récente détectée, déploiement reporté à la nuit prochaine."
+            report_line "postponed"
+            exit 0
+        fi
+    fi
+fi
+
 if run_step "git checkout"       git checkout --force "$REMOTE_SHA" \
 && run_step "composer install"   "$COMPOSER_BIN" install --no-interaction --prefer-dist --no-progress --no-dev --no-scripts \
 && run_step "install-ffmpeg"     bash bin/install-ffmpeg.sh \
