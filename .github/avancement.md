@@ -2,7 +2,7 @@
 
 > Dernière mise à jour : 2026-09-12
 
-> **Status git :** `main` à jour — dernière PR mergée #428 (#422 étape 2/3, renoncement silencieux) ; branche en cours `feature/422-deploy-warning-popup` (étape 3/3, non mergée) ; **crons cPanel du déploiement nocturne pas encore créés côté serveur** (script prêt, jamais exécuté en réel)
+> **Status git :** `main` à jour — dernière PR mergée #430 (#422 étape 3/3, popup préavis — ticket #422 fermé) ; **crons cPanel du déploiement nocturne vérifiés actifs en SSH le 2026-09-12 22h** (les 8 crons existaient déjà, jamais encore déclenchés — premier passage prévu cette nuit, `0 1` sur `ronan`)
 
 ---
 

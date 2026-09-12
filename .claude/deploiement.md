@@ -532,7 +532,12 @@ cat .deployed-sha                              # SHA actuellement déployé
 tail -20 var/log/deploy-nightly.log            # dernière tentative
 ```
 
-### Crons cPanel à créer (une fois, après le premier déploiement de ce code)
+### Crons cPanel — créés et actifs depuis le 2026-09-12
+
+> Vérifié en SSH le 2026-09-12 22h : les 8 crons ci-dessous sont bien
+> présents dans le crontab. Jamais encore déclenchés à cette date (premier
+> passage prévu la nuit du 2026-09-12 au 13, `0 1` sur `ronan`) —
+> `var/log/deploy-nightly.log` n'existe pas encore sur les instances.
 
 > **Toujours étaler de 5 min minimum** — même contrainte LVE que les crons
 > `purge-revoked`/`process-missing` (#395/#396) : les 7 instances partagent un
