@@ -2,11 +2,23 @@
 
 > Dernière mise à jour : 2026-09-12
 
-> **Status git :** `main` à jour — dernière PR mergée #420 (#376 monitoring multi-instances) côté session courante ; #421 fermé (socle déploiement nocturne complet, PR #423-#427 mergées ailleurs) ; branche en cours `feature/422-postpone-on-active-user` (non mergée)
+> **Status git :** `main` à jour — dernière PR mergée #428 (#422 étape 2/3, renoncement silencieux) ; branche en cours `feature/422-deploy-warning-popup` (étape 3/3, non mergée) ; **crons cPanel du déploiement nocturne pas encore créés côté serveur** (script prêt, jamais exécuté en réel)
 
 ---
 
-## 🚧 Protection utilisateurs actifs pendant un déploiement — étape 2/3 (2026-09-12, #422, branche `feature/422-postpone-on-active-user`)
+## 🚧 Protection utilisateurs actifs pendant un déploiement — étape 3/3 (2026-09-12, #422, branche `feature/422-deploy-warning-popup`)
+
+- Dernière étape de #422 : popup avec compte à rebours pour un utilisateur déjà connecté au moment où un déploiement devient imminent.
+- `bin/deploy-nightly.sh` restructuré : après avoir jugé l'activité "ancienne" (étape 2/3), écrit `var/deploy-imminent.txt` (timestamp du début du préavis) puis `sleep ${DEPLOY_NIGHTLY_WARNING_SECONDS:-600}` (10 min) avant de **revérifier l'activité une seconde fois** — une reconnexion pendant le préavis reporte le déploiement (statut `postponed`) au lieu de couper un upload qui viendrait de démarrer. Le fichier signal est retiré dans tous les cas de sortie (succès, échec, report).
+- `DeployImminentChecker` (nouveau service) lit ce fichier et calcule l'ETA ; `GET /deploy-status` (nouvel endpoint, accessible à tout utilisateur authentifié — pas réservé à l'admin) l'expose en JSON pour le polling front.
+- `DeployWarningModal` (nouveau composant) + contrôleur Stimulus `deploy-warning` : poll `/deploy-status` toutes les 30s, s'ouvre automatiquement si `imminent: true`, affiche un compte à rebours décrémenté chaque seconde côté client depuis l'ETA reçue, se referme si le préavis disparaît. Aucune action utilisateur requise, aucun bouton déclencheur (contrairement aux modales existantes du projet).
+- Vérifié visuellement en local (Playwright) : popup affichée correctement avec overlay, compte à rebours fonctionnel (capture à 9:41 sur une fenêtre de 10 min).
+- Tests bash (`tests/bash/deploy-nightly-test.sh`) : délai de préavis rendu configurable via `DEPLOY_NIGHTLY_WARNING_SECONDS` (0 par défaut en test pour ne jamais attendre réellement), signal écrit/retiré aux bons moments, reconnexion simulée pendant le sleep via un stub `sleep` qui écrit `last-activity.txt` à sa place.
+- Suite complète : 1203/1203 verts (PHP) + 17/17 verts (bash) après rebuild Tailwind (piège connu, composant Twig ajouté).
+- **Important avant que ce soit effectif en prod** : les 7 crons cPanel + le cron de rapport ne sont **jamais encore créés côté serveur** (uniquement documentés dans `.claude/deploiement.md`) — le déploiement nocturne autonome ne tournera pas tant que ces crons ne sont pas ajoutés en SSH sur chaque instance.
+- Reste à faire avant merge : revue utilisateur, `gh pr create` + label obligatoire (fermera #422 via "Closes #422"), vérif CI verte, **puis création effective des 7 crons + cron de rapport côté serveur** si l'objectif est une activation réelle cette nuit.
+
+## ✅ Protection utilisateurs actifs pendant un déploiement — étape 2/3 (2026-09-12, #422, PR #428 mergée)
 
 - Suite de l'étape 1/3 (détection d'activité, `ActivityTracker` + `ActivityTrackerSubscriber`, déjà mergée en #423) : `bin/deploy-nightly.sh` lit désormais `var/last-activity.txt` avant `git checkout` et renonce silencieusement au déploiement si l'activité date de moins de 15 minutes — nouveau statut `postponed`, `.deployed-sha` inchangé, nouvelle tentative la nuit suivante.
 - Portée volontairement limitée à ce renoncement silencieux (étape 2/3), conformément au ticket qui l'identifie explicitement comme "livrable indépendamment" à très faible coût, sans code front. L'étape 3/3 (popup avec compte à rebours + canal temps réel pour un utilisateur déjà connecté) reste à faire, ticket non fermé.

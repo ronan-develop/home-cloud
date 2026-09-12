@@ -578,7 +578,7 @@ jamais déployer en pleine journée sans un geste conscient. Contournable en
 non-interactif (script, CI) via `DEPLOY_NOW_CONFIRM=URGENT`, jamais activé par
 défaut.
 
-### Détection d'activité (#422) — renoncement silencieux branché
+### Détection d'activité + préavis (#422) — les 3 étapes sont branchées
 
 `ActivityTracker` trace la dernière requête authentifiée dans
 `var/last-activity.txt` par instance (timestamp Unix brut, amorti à 5 min).
@@ -589,11 +589,26 @@ déploiement est reporté sans exécuter aucune étape — statut `postponed`,
 ou illisible → comportement inchangé (déploiement normal), cas majoritaire
 sur une instance sans activité récente.
 
-Cette étape couvre le renoncement silencieux uniquement (étape 2/3 de #422,
-identifiée dans le ticket comme livrable indépendamment, coût très faible).
-La popup avec compte à rebours + canal temps réel pour un utilisateur déjà
-connecté au moment du déploiement (étape 3/3) reste à faire — ticket #422
-non fermé.
+**Préavis de 10 min (étape 3/3)** : une fois l'activité jugée ancienne, le
+script écrit `var/deploy-imminent.txt` (timestamp du début du préavis) puis
+`sleep ${DEPLOY_NIGHTLY_WARNING_SECONDS:-600}` avant de revérifier
+l'activité une seconde fois — une reconnexion pendant le préavis annule le
+déploiement comme une activité détectée en amont (statut `postponed`), pour
+ne jamais couper un upload qui vient de démarrer pendant la fenêtre
+d'avertissement. `var/deploy-imminent.txt` est retiré dans tous les cas de
+sortie (déploiement réussi, échoué, ou reporté).
+
+Côté front : `DeployImminentChecker` (lecture du fichier + calcul de l'ETA),
+endpoint `GET /deploy-status` (JSON `{imminent, etaSeconds}`, accessible à
+tout utilisateur authentifié), popup `DeployWarningModal` + contrôleur
+Stimulus `deploy-warning` qui poll `/deploy-status` toutes les 30s et
+affiche un compte à rebours mis à jour chaque seconde. S'ouvre et se ferme
+automatiquement, aucune action utilisateur requise.
+
+**Le sleep de 10 min allonge la durée de chaque invocation cron** — à
+vérifier en conditions réelles que le cron de rapport (`45 2 * * *`, 15 min
+après le dernier déploiement à `30 2`) laisse une marge suffisante une fois
+le préavis + le déploiement réel pris en compte.
 
 Vérifier manuellement l'ancienneté de la dernière activité :
 
