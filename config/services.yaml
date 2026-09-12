@@ -214,3 +214,7 @@ when@test:
             public: true
             bind:
                 string $mailerDsn: '%env(MAILER_DSN)%'
+        # Rendre CronHealthReporter public en test (accès direct au transport failed)
+        App\Service\CronHealthReporter:
+            autowire: true
+            public: true
