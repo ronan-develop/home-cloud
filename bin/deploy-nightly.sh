@@ -59,16 +59,40 @@ fi
 # préférable à un upload interrompu en pleine nuit chez un noctambule.
 ACTIVITY_THRESHOLD_SECONDS=900
 ACTIVITY_FILE="var/last-activity.txt"
-if [[ -f "$ACTIVITY_FILE" ]]; then
-    LAST_ACTIVITY=$(cat "$ACTIVITY_FILE" 2>/dev/null || echo "")
-    if [[ "$LAST_ACTIVITY" =~ ^[0-9]+$ ]]; then
-        NOW=$(date +%s)
-        if (( NOW - LAST_ACTIVITY < ACTIVITY_THRESHOLD_SECONDS )); then
-            echo "${PRENOM} : activité récente détectée, déploiement reporté à la nuit prochaine."
-            report_line "postponed"
-            exit 0
-        fi
+is_activity_recent() {
+    if [[ ! -f "$ACTIVITY_FILE" ]]; then
+        return 1
     fi
+    local last
+    last=$(cat "$ACTIVITY_FILE" 2>/dev/null || echo "")
+    if [[ ! "$last" =~ ^[0-9]+$ ]]; then
+        return 1
+    fi
+    (( $(date +%s) - last < ACTIVITY_THRESHOLD_SECONDS ))
+}
+
+if is_activity_recent; then
+    echo "${PRENOM} : activité récente détectée, déploiement reporté à la nuit prochaine."
+    report_line "postponed"
+    exit 0
+fi
+
+# ── Préavis avant déploiement (#422 étape 3/3) ───────────────────────────────
+# Signal lu en polling par un endpoint PHP pour avertir un utilisateur qui se
+# reconnecterait pendant la fenêtre de préavis — popup avec compte à rebours
+# côté front. À l'issue du sleep, l'activité est revérifiée : une
+# reconnexion pendant le préavis reporte le déploiement comme une activité
+# détectée en amont, plutôt que de couper un upload qui vient de démarrer.
+WARNING_SECONDS="${DEPLOY_NIGHTLY_WARNING_SECONDS:-600}"
+IMMINENT_FILE="var/deploy-imminent.txt"
+date +%s > "$IMMINENT_FILE"
+sleep "$WARNING_SECONDS"
+
+if is_activity_recent; then
+    rm -f "$IMMINENT_FILE"
+    echo "${PRENOM} : reconnexion pendant le préavis, déploiement reporté à la nuit prochaine."
+    report_line "postponed"
+    exit 0
 fi
 
 if run_step "git checkout"       git checkout --force "$REMOTE_SHA" \
@@ -79,12 +103,14 @@ if run_step "git checkout"       git checkout --force "$REMOTE_SHA" \
 && run_step "importmap:install"  "$PHP_BIN" bin/console importmap:install --env=prod \
 && run_step "migrations"         "$PHP_BIN" bin/console doctrine:migrations:migrate --no-interaction --env=prod \
 && run_step "asset-map:compile"  "$PHP_BIN" bin/console asset-map:compile; then
+    rm -f "$IMMINENT_FILE"
     echo "<!-- Deployed: $(date '+%Y-%m-%d %H:%M:%S') -->" > templates/deploy-info.html.twig
     echo "$REMOTE_SHA" > .deployed-sha
     echo "${PRENOM} : déployé (${REMOTE_SHA:0:7})."
     report_line "ok" "-" "${REMOTE_SHA:0:7}"
     exit 0
 else
+    rm -f "$IMMINENT_FILE"
     echo "${PRENOM} : échec du déploiement, .deployed-sha inchangé." >&2
     report_line "failed" "${FAILED_STEP:-inconnue}"
     exit 1
