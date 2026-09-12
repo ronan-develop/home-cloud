@@ -27,7 +27,8 @@ jobs:
   php:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # requis pour committer le CSS Tailwind buildé (#421)
+      contents: write       # requis pour pousser la branche de rebuild Tailwind (#421)
+      pull-requests: write  # requis pour ouvrir la PR de rebuild Tailwind (#421)
 
     services:
       mysql:
@@ -100,22 +101,34 @@ jobs:
 
       # Déploiement nocturne autonome (#421) : le serveur ne build jamais
       # Tailwind lui-même (mutualisé, résultat peu fiable) — le CSS minifié
-      # est buildé ici et committé sur main, récupéré ensuite par un simple
-      # `git checkout` côté serveur. [skip ci] obligatoire : sans lui, ce
-      # commit relancerait la CI, qui recommitterait, à l'infini.
-      - name: 🎨 Commit du CSS Tailwind buildé
+      # est buildé ici, récupéré ensuite par un simple `git checkout` côté
+      # serveur. La règle de protection de main interdit tout push direct
+      # (y compris depuis GITHUB_TOKEN, aucun bypass configuré ni souhaité,
+      # cf. CLAUDE.md « jamais de commit direct sur main ») : on ouvre donc
+      # une PR au lieu de push, à merger manuellement.
+      - name: 🎨 Proposer le rebuild du CSS Tailwind
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           php bin/console tailwind:build --minify
           if git diff --quiet -- var/tailwind/app.built.css; then
-            echo "CSS inchangé, rien à committer."
+            echo "CSS inchangé, rien à proposer."
             exit 0
           fi
+          BRANCH="chore/tailwind-rebuild-${GITHUB_SHA::7}"
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
           git add var/tailwind/app.built.css
-          git commit -m "🎨 chore(assets): rebuild Tailwind [skip ci]"
-          git push
+          git commit -m "🎨 chore(assets): rebuild Tailwind"
+          git push origin "$BRANCH"
+          gh pr create \
+            --title "🎨 chore(assets): rebuild Tailwind" \
+            --body "CSS Tailwind rebuildé automatiquement après le merge de ${GITHUB_SHA::7} sur main." \
+            --label ci \
+            --base main \
+            --head "$BRANCH"
 
   js:
     runs-on: ubuntu-latest
