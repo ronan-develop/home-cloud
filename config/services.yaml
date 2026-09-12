@@ -38,6 +38,7 @@ services:
     App\Interface\BroadcastTargetProviderInterface: '@App\Service\BroadcastTargetProvider'
     App\Interface\BroadcastMailerInterface:       '@App\Service\BroadcastMailer'
     App\Interface\BroadcastOrchestratorInterface: '@App\Service\BroadcastOrchestrator'
+    App\Interface\InstanceMonitoringReporterInterface: '@App\Service\InstanceMonitoringReporter'
 
     App\State\AlbumProcessor:
         arguments:
@@ -218,3 +219,14 @@ when@test:
         App\Service\CronHealthReporter:
             autowire: true
             public: true
+        # Rendre InstanceMonitoringReporter public en test
+        App\Service\InstanceMonitoringReporter:
+            autowire: true
+            public: true
+        # Substituer le HttpClient global en test : évite de vrais appels
+        # réseau sortants (timeout) dans les tests web qui passent par
+        # InstanceMonitoringOrchestrator (#376) sans mocker explicitement.
+        Symfony\Contracts\HttpClient\HttpClientInterface:
+            class: Symfony\Component\HttpClient\MockHttpClient
+            arguments:
+                $responseFactory: null

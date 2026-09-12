@@ -94,6 +94,28 @@ final class FileRepositoryTest extends KernelTestCase
         $this->assertSame([], iterator_to_array($this->repository->findWithoutMedia()));
     }
 
+    public function testSumTotalSizeReturnsZeroWhenNoFiles(): void
+    {
+        $this->assertSame(0, $this->repository->sumTotalSize());
+    }
+
+    public function testSumTotalSizeSumsFilesAcrossAllOwners(): void
+    {
+        $owner = $this->createUser('owner-total-1@example.com');
+        $other = $this->createUser('owner-total-2@example.com');
+
+        $ownerFolder = new Folder('Uploads', $owner);
+        $otherFolder = new Folder('Uploads', $other);
+        $this->em->persist($ownerFolder);
+        $this->em->persist($otherFolder);
+        $this->em->flush();
+
+        $this->createFile($owner, $ownerFolder, 'a.txt', 100);
+        $this->createFile($other, $otherFolder, 'b.txt', 250);
+
+        $this->assertSame(350, $this->repository->sumTotalSize());
+    }
+
     public function testFindWithoutMediaExcludesFilesThatAlreadyHaveMedia(): void
     {
         $owner = $this->createUser('owner-missing-media@example.com');

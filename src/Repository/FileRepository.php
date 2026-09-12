@@ -135,6 +135,17 @@ class FileRepository extends ServiceEntityRepository implements FileRepositoryIn
             ->getResult();
     }
 
+    /** Somme des tailles (octets) de tous les fichiers de l'instance, tous owners confondus (#376). */
+    public function sumTotalSize(): int
+    {
+        $result = $this->createQueryBuilder('f')
+            ->select('SUM(f.size)')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $result !== null ? (int) $result : 0;
+    }
+
     /** Somme des tailles (octets) de tous les fichiers d'un owner. */
     public function sumSizeByOwner(User $owner): int
     {

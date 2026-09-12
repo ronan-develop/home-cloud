@@ -44,6 +44,11 @@
                class="hc-admin-nav-item {{ current_route == 'app_admin_cron_health' ? 'active' : '' }}">
                 Santé cron
             </a>
+
+            <a href="{{ path('app_admin_monitoring') }}"
+               class="hc-admin-nav-item {{ current_route == 'app_admin_monitoring' ? 'active' : '' }}">
+                Monitoring multi-instances
+            </a>
         </nav>
     </aside>
 

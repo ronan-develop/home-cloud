@@ -33,6 +33,12 @@ security:
             custom_authenticators:
                 - App\Security\BroadcastTokenAuthenticator
 
+        monitoring_internal:
+            pattern: ^/internal/monitoring
+            stateless: true
+            custom_authenticators:
+                - App\Security\BroadcastTokenAuthenticator
+
         api:
             pattern: ^/api
             stateless: true
@@ -80,6 +86,7 @@ when@dev: &access_control
             # Auth par secret partagé gérée par BroadcastTokenAuthenticator,
             # pas par ROLE_USER JWT — doit précéder la règle catch-all ^/api.
             - { path: ^/internal/broadcast, roles: PUBLIC_ACCESS }
+            - { path: ^/internal/monitoring, roles: PUBLIC_ACCESS }
             - { path: ^/api, roles: ROLE_USER }
             # Partage par lien public : accessible sans compte, le secret est
             # dans (selector, token). Doit précéder toute règle catch-all ^/.
