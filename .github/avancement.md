@@ -2,11 +2,24 @@
 
 > Dernière mise à jour : 2026-09-12
 
-> **Status git :** `main` à jour — dernière PR mergée #417 (#411 notifications) ; branche en cours `feature/377-admin-cron-health` (non mergée)
+> **Status git :** `main` à jour — dernière PR mergée #418 (#377 santé cron) ; branche en cours `feature/376-admin-monitoring-multi-instances` (non mergée)
 
 ---
 
-## 🚧 Espace admin — santé cron Messenger (2026-09-12, #377, branche `feature/377-admin-cron-health`)
+## 🚧 Espace admin — monitoring multi-instances (2026-09-12, #376, branche `feature/376-admin-monitoring-multi-instances`)
+
+- Dernier ticket du chantier espace admin #374-#377 : #374/#375/#377 déjà clos, #376 restait seul ouvert.
+- Réutilisation quasi intégrale du pattern broadcast (#283) plutôt que d'inventer un nouveau mécanisme : `BroadcastTargetProviderInterface` (liste des 7 instances, déjà générique malgré son nom), `BroadcastTokenAuthenticator` (secret partagé, réutilisé tel quel pour un firewall dédié `monitoring_internal`), même structure orchestrateur local/distant que `BroadcastOrchestrator::dispatch`.
+- `FileRepository::sumTotalSize()` (nouvelle méthode, TDD) : somme du stockage toutes owners confondus, absente jusqu'ici (seul `sumSizeByOwner` existait, utilisé par #374/#388).
+- `InstanceMonitoringReporter` (snapshot local : nb users, stockage total, révision git via `Process` + `git rev-parse --short HEAD`) exposé derrière une nouvelle interface `InstanceMonitoringReporterInterface` — nécessaire pour le test de `InstanceMonitoringOrchestrator` : la classe concrète est `final readonly`, non doublable par PHPUnit (même piège que `MailerConnectivityChecker`, déjà rencontré sur #385).
+- `MonitoringInternalController` (`GET /internal/monitoring`) : même authentification que `/internal/broadcast`, firewall + access_control dupliqués dans `security.yaml` ET `test/security.yaml` (les deux fichiers doivent rester synchronisés, piège documenté en commentaire dans le premier).
+- `InstanceMonitoringOrchestrator::collectAll()` : instance courante traitée en local (pas d'aller-retour réseau), instances distantes interrogées en HTTP avec try/catch défensif — une instance injoignable renvoie `reachable: false` sans jamais bloquer l'affichage des autres.
+- **Bug de performance découvert en vérifiant le test web** : `AdminMonitoringWebControllerTest` mettait ~6s (au lieu de <1s) car il déclenchait de vrais appels HTTP sortants vers les 6 instances distantes depuis l'environnement de test. Double fix : timeout explicite de 3s sur les appels HTTP en prod (une instance lente ne doit jamais geler l'écran), et substitution globale de `HttpClientInterface` par un `MockHttpClient` en environnement `test` dans `services.yaml` — vérifié que ça n'affecte pas `GitHubChangelogFetcherTest`, qui construit déjà son propre `MockHttpClient` en direct sans passer par le container.
+- Vérifié manuellement en local (Playwright) : écran rendu correctement, 7 lignes "Injoignable" affichées proprement en ~2.8s — comportement attendu en dev, `BROADCAST_INSTANCE_NAME` y est vide (aucune instance locale ne correspond aux 7 cibles de prod), donc même l'instance "locale" passe par le chemin distant qui échoue vite. En prod, chaque instance a son `BROADCAST_INSTANCE_NAME` réglé (cf. `.claude/deploiement.md`) et se traitera en local sans appel réseau.
+- Suite complète : 1171/1171 verts (16 nouveaux tests) après rebuild Tailwind (piège connu, templates modifiés).
+- Reste à faire avant merge : revue utilisateur, `gh pr create` + label obligatoire, vérif CI verte.
+
+## ✅ Espace admin — santé cron Messenger (2026-09-12, #377, PR #418 mergée)
 
 - Ticket recadré via son propre commentaire GitHub avant implémentation : plus de suivi de stockage (déjà couvert par #374/#376), périmètre réduit à cron Messenger + erreurs applicatives (fallback explicitement prévu par le ticket si aucun canal exploitable).
 - Confirmé en exploration : #376 (monitoring multi-instances) n'est pas implémenté et aucun canal de logs structuré n'existe (pas de `symfony/monolog-bundle`, pas de Sentry) — décision prise avec l'utilisateur : #377 reste mono-instance, erreurs applicatives hors périmètre pour ce ticket.
@@ -15,7 +28,7 @@
 - Écran `/admin/cron-health` (`AdminCronHealthWebController`) : compteur de messages en échec + liste des N derniers (classe, message d'erreur, date), entrée ajoutée à la nav admin.
 - Décision explicite avec l'utilisateur : pas de graphe Chart.js pour ce ticket — la table `failed` n'a pas d'historique temporel exploitable en l'état, seulement un état courant.
 - Suite complète : 1155/1155 verts (7 nouveaux tests).
-- Reste à faire avant merge : revue utilisateur, `gh pr create` + label obligatoire, vérif CI verte.
+- PR #418 mergée (`--merge`, pas de squash), CI verte (php/js/GitGuardian/labels), branche supprimée. Déployé en production sur les 7 instances le 2026-09-12.
 
 ## ✅ Notifications — les lues disparaissent du dropdown (2026-09-12, #411, PR #417 mergée)
 
