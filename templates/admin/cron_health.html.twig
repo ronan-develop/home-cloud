@@ -1,0 +1,39 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Santé cron — Administration{% endblock %}
+
+{% block content %}
+<h1 class="hc-admin-page-title">Santé cron Messenger</h1>
+
+<table class="hc-admin-table">
+    <tbody>
+        <tr>
+            <th>Messages en échec</th>
+            <td>{{ report.failedCount }}</td>
+        </tr>
+    </tbody>
+</table>
+
+{% if report.recentFailures is not empty %}
+    <table class="hc-admin-table">
+        <thead>
+            <tr>
+                <th>Message</th>
+                <th>Erreur</th>
+                <th>Échoué le</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for failure in report.recentFailures %}
+                <tr>
+                    <td>{{ failure.messageClass|split('\\')|last }}</td>
+                    <td>{{ failure.errorMessage }}</td>
+                    <td>{{ failure.failedAt ? failure.failedAt|date('d/m/Y H:i') : '—' }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>Aucun message en échec.</p>
+{% endif %}
+{% endblock %}
