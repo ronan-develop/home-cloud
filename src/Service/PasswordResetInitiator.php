@@ -40,7 +40,10 @@ final class PasswordResetInitiator implements PasswordResetInitiatorInterface
             ->to($user->getEmail())
             ->subject('Réinitialisation de votre mot de passe')
             ->htmlTemplate('reset_password/reset_request_email.html.twig')
-            ->context(['resetUrl' => $resetUrl]);
+            ->context([
+                'resetUrl' => $resetUrl,
+                'accentColor' => EmailBranding::ACCENT_COLOR,
+            ]);
 
         $this->mailer->send($email);
     }
