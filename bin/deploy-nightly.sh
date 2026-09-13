@@ -19,8 +19,12 @@ PRENOM="${1:?Usage: deploy-nightly.sh <prenom> <chemin_instance> <chemin_rapport
 INSTANCE_PATH="${2:?chemin_instance manquant}"
 REPORT_FILE="${3:?chemin_rapport manquant}"
 
-PHP_BIN="${DEPLOY_NIGHTLY_PHP_BIN:-php}"
-COMPOSER_BIN="${DEPLOY_NIGHTLY_COMPOSER_BIN:-composer}"
+# Chemins absolus obligatoires : un cron cPanel s'exécute avec un PATH minimal
+# (pas celui du profil shell interactif) — "composer"/"php" seuls ne résolvent
+# à rien et font échouer le déploiement en silence (#421, échec réel constaté
+# la nuit du 2026-09-12 : « composer : commande introuvable »).
+PHP_BIN="${DEPLOY_NIGHTLY_PHP_BIN:-/usr/local/bin/php}"
+COMPOSER_BIN="${DEPLOY_NIGHTLY_COMPOSER_BIN:-/usr/local/bin/composer}"
 
 cd "$INSTANCE_PATH" || exit 1
 mkdir -p var/log
