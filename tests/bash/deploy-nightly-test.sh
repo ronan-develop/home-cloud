@@ -19,10 +19,18 @@ _setup_fixture() {
     hash -r  # bash met en cache la résolution des commandes ; sans ce reset,
              # "git"/"composer" continuent de pointer vers les vrais binaires
              # malgré le nouveau PATH, dans un shell persistant entre les tests.
+
+    # deploy-nightly.sh résout PHP/composer en chemin ABSOLU par défaut (un
+    # cron cPanel a un PATH minimal qui ne les contient pas) — les tests
+    # doivent donc pointer explicitement vers les stubs au lieu de compter
+    # sur $PATH pour les intercepter.
+    export DEPLOY_NIGHTLY_PHP_BIN="${STUB_BIN}/php"
+    export DEPLOY_NIGHTLY_COMPOSER_BIN="${STUB_BIN}/composer"
 }
 
 _teardown_fixture() {
     rm -rf "$FIXTURE_DIR"
+    unset DEPLOY_NIGHTLY_PHP_BIN DEPLOY_NIGHTLY_COMPOSER_BIN
     hash -r
 }
 
