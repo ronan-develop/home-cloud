@@ -42,6 +42,14 @@ export default class extends Controller {
         const type = event.params.type;
         const item = event.currentTarget;
 
+        // target="_blank" (entrée changelog) ouvre un nouvel onglet sans
+        // jamais faire remonter de "click" sur document dans l'onglet
+        // d'origine — _onDocumentClick n'a donc jamais l'occasion de fermer
+        // le panel, qui reste display:block indéfiniment (position:fixed,
+        // par-dessus la cloche elle-même) tant qu'on ne le referme pas ici
+        // explicitement. Bug réel signalé en prod le 2026-09-13.
+        this.closePanel();
+
         if (type === 'direct_message') {
             // Le lien d'un message direct ne pointe vers aucune page réelle
             // (pas de vue de détail) — seule l'action de lecture est utile ici.
@@ -65,7 +73,20 @@ export default class extends Controller {
                 items.forEach((item) => {
                     item.removeAttribute('data-action');
                     item.classList.add('hc-notif-item--removing');
-                    item.addEventListener('transitionend', () => item.remove(), { once: true });
+                    // Filet de sécurité : un navigateur suspend les transitions
+                    // CSS d'un onglet en arrière-plan (cas target="_blank" du
+                    // changelog) — transitionend ne se déclenche alors jamais
+                    // tant qu'on reste sur le nouvel onglet, laissant l'item
+                    // bloqué au DOM indéfiniment. Le timeout couvre ce cas
+                    // sans changer le comportement normal (transition ~0.2s).
+                    let removed = false;
+                    const remove = () => {
+                        if (removed) return;
+                        removed = true;
+                        item.remove();
+                    };
+                    item.addEventListener('transitionend', remove, { once: true });
+                    setTimeout(remove, 1000);
                 });
             })
             .catch(() => {});
