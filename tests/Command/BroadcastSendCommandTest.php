@@ -61,7 +61,7 @@ final class BroadcastSendCommandTest extends TestCase
 
     public function testReportsFailedInstancesInOutput(): void
     {
-        $orchestrator = $this->createMock(BroadcastOrchestratorInterface::class);
+        $orchestrator = $this->createStub(BroadcastOrchestratorInterface::class);
         $orchestrator->method('dispatch')->willReturn(['ronan' => true, 'yannick' => false]);
 
         $tester = $this->commandTester($orchestrator);

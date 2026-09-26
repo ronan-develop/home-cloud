@@ -42,9 +42,9 @@ class PasswordResetServiceTest extends TestCase
         $helper = $this->createMock(ResetPasswordHelperInterface::class);
         $helper->expects($this->once())
             ->method('validateTokenAndFetchUser')
-            ->willThrowException($this->createMock(ResetPasswordExceptionInterface::class));
+            ->willThrowException($this->createStub(ResetPasswordExceptionInterface::class));
 
-        $em = $this->createMock(EntityManagerInterface::class);
+        $em = $this->createStub(EntityManagerInterface::class);
         $service = new PasswordResetService($helper, $em);
 
         $this->expectException(ResetPasswordExceptionInterface::class);

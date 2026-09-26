@@ -48,7 +48,7 @@ final class UserAccountStatusCheckerTest extends TestCase
     {
         $checker = new UserAccountStatusChecker();
 
-        $checker->checkPreAuth($this->createMock(UserInterface::class));
+        $checker->checkPreAuth($this->createStub(UserInterface::class));
 
         $this->addToAssertionCount(1);
     }
