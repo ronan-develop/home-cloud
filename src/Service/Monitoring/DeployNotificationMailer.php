@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Monitoring;
 
-use App\Interface\DeployNotificationMailerInterface;
+use App\Interface\Monitoring\DeployNotificationMailerInterface;
+use App\Service\EmailBranding;
 use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\Mailer\MailerInterface;

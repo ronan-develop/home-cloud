@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Service;
 
 use App\Interface\Broadcast\BroadcastTargetProviderInterface;
-use App\Interface\InstanceMonitoringReporterInterface;
-use App\Service\InstanceMonitoringOrchestrator;
-use App\Service\InstanceMonitoringSnapshot;
+use App\Interface\Monitoring\InstanceMonitoringReporterInterface;
+use App\Service\Monitoring\InstanceMonitoringOrchestrator;
+use App\Service\Monitoring\InstanceMonitoringSnapshot;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpClient\Exception\TransportException;

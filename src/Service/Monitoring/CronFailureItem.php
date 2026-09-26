@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Monitoring;
 
 /**
  * Une entrée du transport Messenger "failed" (#377), résumée pour l'écran

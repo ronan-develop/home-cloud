@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Monitoring;
 
 /**
  * Rapport de santé du cron Messenger de l'instance courante (#377).

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Monitoring;
 
 /**
  * Snapshot de santé d'une instance HomeCloud pour le monitoring

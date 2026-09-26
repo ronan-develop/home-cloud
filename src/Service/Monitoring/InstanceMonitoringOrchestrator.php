@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Monitoring;
 
 use App\Interface\Broadcast\BroadcastTargetProviderInterface;
-use App\Interface\InstanceMonitoringReporterInterface;
+use App\Interface\Monitoring\InstanceMonitoringReporterInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 

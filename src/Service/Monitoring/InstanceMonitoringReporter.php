@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Monitoring;
 
-use App\Interface\InstanceMonitoringReporterInterface;
+use App\Interface\Monitoring\InstanceMonitoringReporterInterface;
 use App\Repository\FileRepository;
 use App\Repository\UserRepository;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
