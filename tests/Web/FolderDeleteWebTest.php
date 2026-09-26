@@ -6,6 +6,7 @@ namespace App\Tests\Web;
 
 use App\Entity\File;
 use App\Entity\Folder;
+use App\Entity\Share;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -189,6 +190,44 @@ final class FolderDeleteWebTest extends WebTestCase
         ]);
 
         $this->assertResponseRedirects('/explorer');
+    }
+
+    // ── #439 — parité avec FolderService::deleteFolder() ─────────────────────
+
+    /**
+     * #439 : FolderWebController::deleteRecursive() (avant refactor) ne
+     * nettoyait jamais les Share liés au dossier supprimé, contrairement à
+     * FolderService::deleteFolder() (chemin API) qui appelle
+     * SharedResourceCleaner::deleteByResource(). Un Share orphelin pointant
+     * vers un dossier supprimé est le même type d'incident que #237.
+     */
+    public function testDeleteFolderRemovesAssociatedShare(): void
+    {
+        $owner = $this->createUser('owner@example.com');
+        $guest = $this->createUser('guest@example.com');
+        $folder = $this->createFolder('Shared', $owner);
+        $folderId = $folder->getId();
+
+        $share = new Share($owner, $guest, Share::RESOURCE_FOLDER, $folderId, 'read');
+        $this->em->persist($share);
+        $this->em->flush();
+        $shareId = $share->getId();
+        $this->em->clear();
+
+        $this->login('owner@example.com');
+
+        $this->client->request('POST', '/folders/' . $folderId . '/delete', [
+            'delete_contents' => '1',
+            '_token' => $this->csrfToken(),
+        ]);
+
+        $this->assertResponseRedirects();
+        $this->em->clear();
+
+        $this->assertNull(
+            $this->em->getRepository(Share::class)->find($shareId),
+            'Le Share pointant vers le dossier supprimé doit être nettoyé'
+        );
     }
 
     // ── Sécurité ─────────────────────────────────────────────────────────────

@@ -247,6 +247,12 @@ when@test:
         App\Service\InstanceMonitoringReporter:
             autowire: true
             public: true
+        # Rendre FolderMoverInterface public en test (accès direct dans
+        # FolderMoverIntegrationTest depuis #439 — plus aucun autowiring
+        # implicite depuis que FolderWebController délègue à FolderService)
+        App\Interface\FolderMoverInterface:
+            alias: App\Service\FolderMover
+            public: true
         # Substituer le HttpClient global en test : évite de vrais appels
         # réseau sortants (timeout) dans les tests web qui passent par
         # InstanceMonitoringOrchestrator (#376) sans mocker explicitement.

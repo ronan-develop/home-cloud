@@ -4,16 +4,13 @@ declare(strict_types=1);
 
 namespace App\Controller\Web;
 
-use App\Entity\Folder;
 use App\Entity\Share;
 use App\Entity\User;
-use App\Interface\DefaultFolderServiceInterface;
-use App\Interface\FolderMoverInterface;
 use App\Interface\FolderZipArchiverInterface;
-use App\Interface\OwnershipCheckerInterface;
 use App\Repository\FolderRepository;
 use App\Security\ResourceAccessChecker;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Service\DefaultFolderService;
+use App\Service\FolderService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -35,12 +32,9 @@ final class FolderWebController extends AbstractController
 {
     public function __construct(
         private readonly FolderRepository $folderRepository,
-        private readonly DefaultFolderServiceInterface $defaultFolderService,
-        private readonly EntityManagerInterface $em,
-        private readonly \App\Interface\FolderMoverInterface $folderMover,
         private readonly ResourceAccessChecker $resourceAccessChecker,
         private readonly FolderZipArchiverInterface $folderZipArchiver,
-        private readonly OwnershipCheckerInterface $ownershipChecker,
+        private readonly FolderService $folderService,
     ) {}
 
     #[Route('/folders/{id}/download', name: 'app_folder_download', methods: ['GET'])]
@@ -78,53 +72,19 @@ final class FolderWebController extends AbstractController
             throw $this->createNotFoundException('Dossier introuvable.');
         }
 
-        $this->ownershipChecker->denyUnlessOwner($folder);
-
-        /** @var \App\Entity\User $user */
-        $user = $this->getUser();
+        $folderName = $folder->getName();
         $deleteContents = (bool) $request->request->get('delete_contents', '1');
 
-        $movedTo = null;
+        $this->folderService->deleteFolder($folder, $deleteContents);
+
+        $message = "Dossier « {$folderName} » supprimé.";
         if (!$deleteContents) {
-            $movedTo = $this->folderMover->moveContentsToUploads($folder, $user);
-        }
-
-        $this->deleteRecursive($folder);
-        $this->em->flush();
-
-        $message = "Dossier « {$folder->getName()} » supprimé.";
-        if ($movedTo !== null) {
-            $message .= " Tous les fichiers ont été déplacés vers \"" . $movedTo->getName() . "\".";
+            $message .= ' Tous les fichiers ont été déplacés vers "' . DefaultFolderService::DEFAULT_FOLDER_NAME . '".';
         }
         $this->addFlash('success', $message);
 
         $redirectFolderId = $request->request->get('redirect_folder_id');
 
         return $this->redirect($redirectFolderId ? '/explorer?folder=' . $redirectFolderId : '/explorer');
-    }
-
-    /**
-     * Déplace tous les fichiers du dossier (et de ses descendants) vers le dossier Uploads.
-     */
-
-
-    /**
-     * Supprime récursivement un dossier et tous ses descendants.
-     * Les fichiers directs sont cascade-removed par Doctrine (files collection).
-     */
-    private function deleteRecursive(Folder $folder): void
-    {
-        $descendantIds = $this->folderRepository->findDescendantIds($folder);
-
-        foreach ($descendantIds as $descId) {
-            $desc = $this->folderRepository->find($descId);
-            if ($desc !== null) {
-                $this->em->refresh($desc);
-                $this->em->remove($desc);
-            }
-        }
-
-        $this->em->refresh($folder);
-        $this->em->remove($folder);
     }
 }
