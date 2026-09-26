@@ -9,7 +9,7 @@ use App\Entity\Media;
 use App\Entity\UploadBatch;
 use App\Entity\User;
 use App\Handler\MediaProcessHandler;
-use App\Interface\MediaProcessorInterface;
+use App\Interface\Media\MediaProcessorInterface;
 use App\Interface\UploadBatchRepositoryInterface;
 use App\Message\MediaProcessMessage;
 use App\Repository\FileRepository;

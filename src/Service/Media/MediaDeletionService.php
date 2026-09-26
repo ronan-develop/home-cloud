@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Media;
 
 use App\Entity\Media;
-use App\Interface\MediaDeletionServiceInterface;
-use App\Interface\RawPreviewCacheInterface;
+use App\Interface\Media\MediaDeletionServiceInterface;
+use App\Interface\Media\RawPreviewCacheInterface;
 use App\Interface\StorageServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
 

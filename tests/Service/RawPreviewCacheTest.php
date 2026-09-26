@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Service;
 
-use App\Service\RawPreviewCache;
+use App\Service\Media\RawPreviewCache;
 use PHPUnit\Framework\TestCase;
 
 /**

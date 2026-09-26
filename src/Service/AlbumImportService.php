@@ -9,7 +9,7 @@ use App\Entity\User;
 use App\Interface\AlbumImportServiceInterface;
 use App\Interface\AlbumServiceInterface;
 use App\Interface\CreateFileServiceInterface;
-use App\Interface\MediaProcessorInterface;
+use App\Interface\Media\MediaProcessorInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**

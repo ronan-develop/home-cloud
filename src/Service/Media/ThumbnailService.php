@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Media;
 
 use App\Exception\Video\VideoThumbnailExtractionException;
-use App\Interface\ExifThumbnailExtractorInterface;
+use App\Interface\Media\ExifThumbnailExtractorInterface;
 use App\Interface\VideoThumbnailExtractorInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;

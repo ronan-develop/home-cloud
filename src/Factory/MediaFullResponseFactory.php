@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Factory;
 
-use App\Interface\RawPreviewCacheInterface;
+use App\Interface\Media\RawPreviewCacheInterface;
 use RonanLenouvel\RawPreviewExtractor\Exception\RawPreviewExtractorException;
 use RonanLenouvel\RawPreviewExtractor\ExtractedPreview;
 use RonanLenouvel\RawPreviewExtractor\Orientation;

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\EventListener;
 
-use App\Interface\MediaProcessorInterface;
+use App\Interface\Media\MediaProcessorInterface;
 use App\Repository\FileRepository;
-use App\Service\PendingMediaProcessingCollector;
+use App\Service\Media\PendingMediaProcessingCollector;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpKernel\Event\TerminateEvent;

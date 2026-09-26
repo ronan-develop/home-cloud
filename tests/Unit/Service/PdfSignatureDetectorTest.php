@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Service;
 
-use App\Service\PdfSignatureDetector;
+use App\Service\Media\PdfSignatureDetector;
 use PHPUnit\Framework\TestCase;
 
 /**

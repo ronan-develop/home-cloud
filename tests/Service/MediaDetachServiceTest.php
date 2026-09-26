@@ -11,7 +11,7 @@ use App\Entity\Share;
 use App\Entity\User;
 use App\Interface\SharedResourceCleanerInterface;
 use App\Interface\StorageServiceInterface;
-use App\Service\MediaDetachService;
+use App\Service\Media\MediaDetachService;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 

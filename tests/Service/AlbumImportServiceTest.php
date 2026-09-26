@@ -10,7 +10,7 @@ use App\Entity\Media;
 use App\Entity\User;
 use App\Interface\AlbumServiceInterface;
 use App\Interface\CreateFileServiceInterface;
-use App\Interface\MediaProcessorInterface;
+use App\Interface\Media\MediaProcessorInterface;
 use App\Service\AlbumImportService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;

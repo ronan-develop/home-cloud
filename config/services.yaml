@@ -161,13 +161,13 @@ services:
         arguments:
             $reportEmail: '%env(DEPLOY_REPORT_EMAIL)%'
 
-    App\Service\RawPreviewCache:
+    App\Service\Media\RawPreviewCache:
         arguments:
             $storageDir: '%app.storage_dir%'
 
-    App\Interface\RawPreviewCacheInterface: '@App\Service\RawPreviewCache'
+    App\Interface\Media\RawPreviewCacheInterface: '@App\Service\Media\RawPreviewCache'
 
-    App\Interface\ExifThumbnailExtractorInterface: '@App\Service\ExifThumbnailExtractor'
+    App\Interface\Media\ExifThumbnailExtractorInterface: '@App\Service\Media\ExifThumbnailExtractor'
 
     App\Service\Video\VideoDurationProbe:
         arguments:
@@ -181,11 +181,11 @@ services:
     App\Interface\VideoFrameGrabberInterface: '@App\Service\Video\VideoFrameGrabber'
     App\Interface\VideoThumbnailExtractorInterface: '@App\Service\Video\FfmpegVideoThumbnailExtractor'
 
-    App\Service\ThumbnailService:
+    App\Service\Media\ThumbnailService:
         arguments:
             $storageDir: '%app.storage_dir%'
             $rawPreviewExtractor: '@RonanLenouvel\RawPreviewExtractor\RawPreviewExtractorInterface'
-            $exifThumbnailExtractor: '@App\Interface\ExifThumbnailExtractorInterface'
+            $exifThumbnailExtractor: '@App\Interface\Media\ExifThumbnailExtractorInterface'
             $videoThumbnailExtractor: '@App\Interface\VideoThumbnailExtractorInterface'
 
     App\EventListener\SecurityHeadersListener:

@@ -6,7 +6,7 @@ namespace App\Handler;
 
 use App\Entity\UploadBatch;
 use App\Interface\BatchCompletionNotifierInterface;
-use App\Interface\MediaProcessorInterface;
+use App\Interface\Media\MediaProcessorInterface;
 use App\Interface\UploadBatchRepositoryInterface;
 use App\Message\MediaProcessMessage;
 use App\Repository\FileRepository;

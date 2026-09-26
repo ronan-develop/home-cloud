@@ -9,9 +9,9 @@ use App\Entity\Folder;
 use App\Entity\Media;
 use App\Entity\User;
 use App\Interface\StorageServiceInterface;
-use App\Service\MediaDeletionService;
-use App\Interface\RawPreviewCacheInterface;
-use App\Service\RawPreviewCache;
+use App\Service\Media\MediaDeletionService;
+use App\Interface\Media\RawPreviewCacheInterface;
+use App\Service\Media\RawPreviewCache;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 

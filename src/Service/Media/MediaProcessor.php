@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Media;
 
 use App\Entity\File;
 use App\Entity\Media;
-use App\Interface\MediaProcessorInterface;
+use App\Interface\Media\MediaProcessorInterface;
 use App\Interface\StorageServiceInterface;
 use App\Repository\MediaRepository;
 use Doctrine\ORM\EntityManagerInterface;

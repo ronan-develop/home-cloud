@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Tests\Service;
 
 use App\Exception\Video\FrameExtractionFailedException;
-use App\Interface\ExifThumbnailExtractorInterface;
+use App\Interface\Media\ExifThumbnailExtractorInterface;
 use App\Interface\VideoThumbnailExtractorInterface;
-use App\Service\ThumbnailService;
+use App\Service\Media\ThumbnailService;
 use App\Service\Video\ExtractedVideoFrame;
 use PHPUnit\Framework\TestCase;
 use RonanLenouvel\RawPreviewExtractor\RawPreviewExtractorInterface;

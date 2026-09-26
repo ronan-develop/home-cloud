@@ -6,10 +6,10 @@ namespace App\Controller\Web;
 
 use App\Entity\User;
 use App\Interface\AlbumRepositoryInterface;
-use App\Interface\MediaRepositoryInterface;
+use App\Interface\Media\MediaRepositoryInterface;
 use App\Interface\OwnershipCheckerInterface;
 use App\Interface\StorageServiceInterface;
-use App\Service\MediaCacheHeaders;
+use App\Service\Media\MediaCacheHeaders;
 use App\Factory\MediaFullResponseFactory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;

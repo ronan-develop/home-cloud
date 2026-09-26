@@ -8,7 +8,7 @@ use App\Entity\User;
 use App\Interface\AlbumImportServiceInterface;
 use App\Interface\AlbumRepositoryInterface;
 use App\Interface\AlbumServiceInterface;
-use App\Interface\MediaRepositoryInterface;
+use App\Interface\Media\MediaRepositoryInterface;
 use App\Security\AlbumVoter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;

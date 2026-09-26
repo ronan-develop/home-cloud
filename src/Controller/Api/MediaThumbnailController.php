@@ -9,7 +9,7 @@ use App\Entity\User;
 use App\Repository\MediaRepository;
 use App\Interface\StorageServiceInterface;
 use App\Security\ResourceAccessChecker;
-use App\Service\MediaCacheHeaders;
+use App\Service\Media\MediaCacheHeaders;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;

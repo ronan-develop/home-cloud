@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\UploadBatch;
-use App\Interface\MediaProcessorInterface;
+use App\Interface\Media\MediaProcessorInterface;
 
 /**
  * Décide, côté serveur, si un lot d'upload est traité immédiatement (après la

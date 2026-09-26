@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Factory;
 
 use App\Factory\MediaFullResponseFactory;
-use App\Service\RawPreviewCache;
+use App\Service\Media\RawPreviewCache;
 use PHPUnit\Framework\TestCase;
 use RonanLenouvel\RawPreviewExtractor\Exception\PreviewNotFoundException;
 use RonanLenouvel\RawPreviewExtractor\ExtractedPreview;

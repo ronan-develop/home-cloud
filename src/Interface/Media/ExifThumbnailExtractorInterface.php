@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Interface;
+namespace App\Interface\Media;
 
-use App\Service\ExifThumbnail;
+use App\Service\Media\ExifThumbnail;
 
 /**
  * Extrait la miniature embarquée dans les métadonnées EXIF d'un JPEG.

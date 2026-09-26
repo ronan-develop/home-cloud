@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Media;
 
-use App\Interface\ExifThumbnailExtractorInterface;
+use App\Interface\Media\ExifThumbnailExtractorInterface;
 use RonanLenouvel\RawPreviewExtractor\Orientation;
 
 /**

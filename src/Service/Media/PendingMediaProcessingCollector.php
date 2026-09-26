@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Media;
 
 /**
  * Fait le pont entre le contrôleur d'upload et le listener kernel.terminate.

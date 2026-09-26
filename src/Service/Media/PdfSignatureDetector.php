@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Media;
 
 /**
  * Détecte l'en-tête `%PDF-` en tolérant qu'il soit décalé dans le fichier,

@@ -10,7 +10,7 @@ use App\Entity\Folder;
 use App\Entity\Media;
 use App\Entity\User;
 use App\Interface\AlbumRepositoryInterface;
-use App\Interface\MediaRepositoryInterface;
+use App\Interface\Media\MediaRepositoryInterface;
 use App\Interface\SharedResourceCleanerInterface;
 use App\Security\GuestRestrictionChecker;
 use App\Service\AlbumService;

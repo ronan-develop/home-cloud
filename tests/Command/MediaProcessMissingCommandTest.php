@@ -8,7 +8,7 @@ use App\Command\MediaProcessMissingCommand;
 use App\Entity\File;
 use App\Entity\Media;
 use App\Interface\FileRepositoryInterface;
-use App\Interface\MediaProcessorInterface;
+use App\Interface\Media\MediaProcessorInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Application;

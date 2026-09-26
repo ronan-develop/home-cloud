@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Media;
 
 use App\Entity\Media;
 use App\Entity\Share;
-use App\Interface\MediaDetachServiceInterface;
+use App\Interface\Media\MediaDetachServiceInterface;
 use App\Interface\SharedResourceCleanerInterface;
 use App\Interface\StorageServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;

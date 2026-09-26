@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Media;
 
-use App\Interface\RawPreviewCacheInterface;
+use App\Interface\Media\RawPreviewCacheInterface;
 
 /**
  * Cache disque des previews de fichiers RAW, redressées et redimensionnées.
