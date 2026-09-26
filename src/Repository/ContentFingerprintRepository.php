@@ -39,4 +39,32 @@ class ContentFingerprintRepository extends ServiceEntityRepository
 
         return $count > 0;
     }
+
+    /**
+     * Vérifie en un seul aller-retour DB lesquels de $hashes existent déjà
+     * pour cet owner — indispensable pour un import de masse (#327, Google
+     * Takeout) où une requête par fichier serait un goulot d'étranglement
+     * sur plusieurs milliers d'entrées.
+     *
+     * @param string[] $hashes
+     * @return string[] Le sous-ensemble de $hashes déjà connu pour cet owner
+     */
+    public function findExistingHashes(User $owner, array $hashes): array
+    {
+        if ($hashes === []) {
+            return [];
+        }
+
+        return array_column(
+            $this->createQueryBuilder('cf')
+                ->select('cf.contentHash')
+                ->where('cf.owner = :owner')
+                ->andWhere('cf.contentHash IN (:hashes)')
+                ->setParameter('owner', $owner->getId(), 'uuid')
+                ->setParameter('hashes', $hashes)
+                ->getQuery()
+                ->getScalarResult(),
+            'contentHash',
+        );
+    }
 }

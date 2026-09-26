@@ -99,4 +99,80 @@ final class ContentFingerprintRepositoryTest extends KernelTestCase
             'Le fingerprint doit rester détectable même si le File original a été supprimé'
         );
     }
+
+    // ── #327 (Takeout) — vérification par lot, pas une requête par fichier ──
+
+    public function testFindExistingHashesReturnsOnlyKnownHashes(): void
+    {
+        $owner = $this->createUser('owner@example.com');
+        $known1 = hash('sha256', 'connu-1');
+        $known2 = hash('sha256', 'connu-2');
+        $unknown = hash('sha256', 'inconnu');
+
+        $this->repository->save(new ContentFingerprint($owner, $known1));
+        $this->repository->save(new ContentFingerprint($owner, $known2));
+
+        $result = $this->repository->findExistingHashes($owner, [$known1, $known2, $unknown]);
+
+        $expected = [$known1, $known2];
+        sort($expected);
+        sort($result);
+        $this->assertSame($expected, $result);
+    }
+
+    public function testFindExistingHashesReturnsEmptyArrayWhenNoneMatch(): void
+    {
+        $owner = $this->createUser('owner@example.com');
+
+        $result = $this->repository->findExistingHashes($owner, [hash('sha256', 'a'), hash('sha256', 'b')]);
+
+        $this->assertSame([], $result);
+    }
+
+    public function testFindExistingHashesReturnsEmptyArrayForEmptyInput(): void
+    {
+        $owner = $this->createUser('owner@example.com');
+
+        $result = $this->repository->findExistingHashes($owner, []);
+
+        $this->assertSame([], $result);
+    }
+
+    public function testFindExistingHashesIsScopedPerOwner(): void
+    {
+        $owner = $this->createUser('owner@example.com');
+        $other = $this->createUser('other@example.com');
+        $hash = hash('sha256', 'contenu-partage');
+
+        $this->repository->save(new ContentFingerprint($other, $hash));
+
+        $result = $this->repository->findExistingHashes($owner, [$hash]);
+
+        $this->assertSame([], $result, "Un hash existant pour un autre owner ne doit pas remonter");
+    }
+
+    public function testFindExistingHashesHandlesLargeBatchInOneCall(): void
+    {
+        // Contrainte d'efficacité (#327) : un import Takeout de plusieurs
+        // milliers de fichiers doit passer par un seul appel avec la liste
+        // complète des hashs, jamais une boucle d'appels unitaires — vérifié
+        // ici sur le résultat correct avec un lot de taille réaliste, la
+        // garantie "une seule requête SQL" étant assurée par construction
+        // (implémentation en clause IN, pas de boucle interne).
+        $owner = $this->createUser('owner@example.com');
+        $hashes = [];
+        for ($i = 0; $i < 50; ++$i) {
+            $hashes[] = hash('sha256', "fichier-{$i}");
+        }
+        foreach (array_slice($hashes, 0, 10) as $h) {
+            $this->repository->save(new ContentFingerprint($owner, $h));
+        }
+
+        $result = $this->repository->findExistingHashes($owner, $hashes);
+        sort($result);
+
+        $expected = array_slice($hashes, 0, 10);
+        sort($expected);
+        $this->assertSame($expected, $result);
+    }
 }

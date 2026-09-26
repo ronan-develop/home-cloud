@@ -70,6 +70,26 @@ describe('createBatchPoller', () => {
         expect(sched.hasPending()).toBe(false);
     });
 
+    // Import Google Photos Takeout (#327) : un import peut échouer
+    // (zip bomb, disque plein...) — le poller ne doit pas continuer
+    // indéfiniment sur une ressource qui ne passera jamais à "completed".
+    test('appelle onComplete et s\'arrête aussi quand le statut est failed', async () => {
+        const sched = manualScheduler();
+        const fetchStatus = jest.fn().mockResolvedValue({ status: 'failed', errorMessage: 'disque plein' });
+        const onComplete = jest.fn();
+
+        const poller = createBatchPoller({
+            batchId: 'b-2', fetchStatus, onComplete,
+            setTimeoutFn: sched.setTimeoutFn, clearTimeoutFn: sched.clearTimeoutFn,
+        });
+        poller.start();
+        await sched.run();
+
+        expect(onComplete).toHaveBeenCalledWith({ status: 'failed', errorMessage: 'disque plein' });
+        expect(poller.isStopped()).toBe(true);
+        expect(sched.hasPending()).toBe(false);
+    });
+
     test('reprogramme tant que le lot n\'est pas terminé (backoff)', async () => {
         const sched = manualScheduler();
         const delays = [];

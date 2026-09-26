@@ -1,0 +1,52 @@
+{% extends 'web/layout.html.twig' %}
+
+{% block title %}Import Google Photos — HomeCloud{% endblock %}
+
+{% block content %}
+
+<div class="max-w-2xl mx-auto flex flex-col gap-6" data-controller="takeout-import">
+
+    <div>
+        <h1 class="text-2xl font-bold" style="color: var(--hc-text)">Import Google Photos</h1>
+        <p style="color: var(--hc-text-secondary, var(--hc-text))">
+            Importez votre export Google Photos Takeout (un ou plusieurs fichiers ZIP).
+            Les photos sont rangées dans un dossier dédié, les métadonnées (date, position)
+            sont conservées, et les doublons déjà importés sont automatiquement ignorés.
+        </p>
+    </div>
+
+    <div class="settings-card flex flex-col gap-4" data-takeout-import-target="form">
+        <label class="flex flex-col items-center justify-center gap-2 p-8 border-2 border-dashed rounded-xl cursor-pointer"
+               style="border-color: var(--hc-border)"
+               data-action="click->takeout-import#triggerFilePicker">
+            <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color: var(--hc-text-secondary, var(--hc-text))">
+                <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
+                <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+            </svg>
+            <span style="color: var(--hc-text)">Cliquez pour choisir un ou plusieurs fichiers ZIP</span>
+            <input type="file" accept=".zip" multiple hidden
+                   data-takeout-import-target="input"
+                   data-action="change->takeout-import#onFilesSelected">
+        </label>
+
+        <button type="button" class="btn btn-primary self-end" disabled
+                data-takeout-import-target="submit"
+                data-action="click->takeout-import#submit">
+            Démarrer l'import
+        </button>
+
+        <p class="text-sm" style="color: #f87171" hidden data-takeout-import-target="error"></p>
+    </div>
+
+    <div class="settings-card flex flex-col gap-3" hidden data-takeout-import-target="progress">
+        <div class="takeout-progress-track" style="height: 8px; border-radius: 4px; overflow: hidden; background: var(--hc-border)">
+            <div class="takeout-progress-bar" style="height: 100%; width: 0%; background: var(--hc-accent); transition: width 0.4s ease"
+                 data-takeout-import-target="bar"></div>
+        </div>
+        <p class="font-medium" style="color: var(--hc-text)" data-takeout-import-target="status">En attente…</p>
+        <p class="text-sm" style="color: var(--hc-text-secondary, var(--hc-text))" data-takeout-import-target="counts"></p>
+    </div>
+
+</div>
+
+{% endblock %}
