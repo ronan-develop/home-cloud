@@ -22,8 +22,16 @@ final class AuthenticationFailureListenerTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->logger = $this->createMock(LoggerInterface::class);
-        $this->loginAttemptRepository = $this->createMock(LoginAttemptRepository::class);
+        // Stubs par défaut (aucune vérification d'appel) — un createMock()
+        // créé ici puis jamais vérifié (même réassigné ensuite) déclenche
+        // quand même le warning PHPUnit, car il est tracké dès sa création (#454).
+        $this->logger = $this->createStub(LoggerInterface::class);
+        $this->loginAttemptRepository = $this->createStub(LoginAttemptRepository::class);
+        $this->rebuild();
+    }
+
+    private function rebuild(): void
+    {
         $this->listener = new AuthenticationFailureListener($this->logger, $this->loginAttemptRepository);
     }
 
@@ -51,6 +59,7 @@ final class AuthenticationFailureListenerTest extends TestCase
 
     public function testLogsWarningOnFailedLogin(): void
     {
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->logger
             ->expects($this->once())
             ->method('warning')
@@ -58,6 +67,7 @@ final class AuthenticationFailureListenerTest extends TestCase
                 $this->stringContains('Authentication failure'),
                 $this->callback(fn (array $context) => true)
             );
+        $this->rebuild();
 
         ($this->listener)($this->buildEvent());
     }
@@ -66,6 +76,7 @@ final class AuthenticationFailureListenerTest extends TestCase
     {
         $expectedHash = substr(hash('sha256', 'attacker@evil.com'), 0, 12);
 
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->logger
             ->expects($this->once())
             ->method('warning')
@@ -73,12 +84,14 @@ final class AuthenticationFailureListenerTest extends TestCase
                 $this->anything(),
                 $this->callback(fn (array $context) => $expectedHash === $context['email_hash'])
             );
+        $this->rebuild();
 
         ($this->listener)($this->buildEvent(email: 'attacker@evil.com'));
     }
 
     public function testDoesNotLogPlainEmail(): void
     {
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->logger
             ->expects($this->once())
             ->method('warning')
@@ -87,12 +100,14 @@ final class AuthenticationFailureListenerTest extends TestCase
                 $this->callback(fn (array $context) => !\in_array('attacker@evil.com', $context, true)
                     && !\array_key_exists('email', $context))
             );
+        $this->rebuild();
 
         ($this->listener)($this->buildEvent(email: 'attacker@evil.com'));
     }
 
     public function testLogsIpInContext(): void
     {
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->logger
             ->expects($this->once())
             ->method('warning')
@@ -100,12 +115,14 @@ final class AuthenticationFailureListenerTest extends TestCase
                 $this->anything(),
                 $this->callback(fn (array $context) => '192.168.1.1' === $context['ip'])
             );
+        $this->rebuild();
 
         ($this->listener)($this->buildEvent());
     }
 
     public function testLogsUserAgentInContext(): void
     {
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->logger
             ->expects($this->once())
             ->method('warning')
@@ -113,6 +130,7 @@ final class AuthenticationFailureListenerTest extends TestCase
                 $this->anything(),
                 $this->callback(fn (array $context) => 'CustomBot/2.0' === $context['user_agent'])
             );
+        $this->rebuild();
 
         ($this->listener)($this->buildEvent(userAgent: 'CustomBot/2.0'));
     }
@@ -121,6 +139,7 @@ final class AuthenticationFailureListenerTest extends TestCase
     {
         $expectedHash = hash('sha256', 'attacker@evil.com');
 
+        $this->loginAttemptRepository = $this->createMock(LoginAttemptRepository::class);
         $this->loginAttemptRepository
             ->expects($this->once())
             ->method('save')
@@ -129,6 +148,7 @@ final class AuthenticationFailureListenerTest extends TestCase
                     && '192.168.1.1' === $attempt->getIp()
                     && 'TestAgent/1.0' === $attempt->getUserAgent()
             ));
+        $this->rebuild();
 
         ($this->listener)($this->buildEvent(email: 'attacker@evil.com'));
     }
@@ -139,9 +159,11 @@ final class AuthenticationFailureListenerTest extends TestCase
             ->method('save')
             ->willThrowException(new \RuntimeException('DB down'));
 
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->logger
             ->expects($this->exactly(2))
             ->method('warning');
+        $this->rebuild();
 
         ($this->listener)($this->buildEvent());
     }
