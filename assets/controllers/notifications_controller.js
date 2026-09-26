@@ -38,9 +38,30 @@ export default class extends Controller {
         return this.panelTarget.style.display === 'block';
     }
 
+    // Une entrée par type de notification : chacune sait comment se marquer
+    // lue (requête réseau) et si le clic doit être annulé (pas de navigation
+    // pour un message direct, qui n'a pas de page de détail). Ajouter un
+    // futur type de notification n'implique plus de faire grossir un
+    // if/else dans markRead(), seulement d'ajouter une entrée ici.
+    static markReadStrategies = {
+        direct_message: {
+            // Le lien d'un message direct ne pointe vers aucune page réelle
+            // (pas de vue de détail) — seule l'action de lecture est utile ici.
+            preventNavigation: true,
+            markAsRead: (event) => fetch(`/direct-messages/${event.params.id}/read`, { method: 'POST' }),
+        },
+        changelog: {
+            // target="_blank" ouvre la PR GitHub dans un nouvel onglet — le
+            // marquage se joue en fond dans l'onglet d'origine, laissant le
+            // temps de voir l'animation de retrait sans revenir sur la page.
+            preventNavigation: false,
+            markAsRead: () => fetch('/changelog/mark-viewed', { method: 'POST' }),
+        },
+    };
+
     markRead(event) {
-        const type = event.params.type;
         const item = event.currentTarget;
+        const strategy = this.constructor.markReadStrategies[event.params.type];
 
         // target="_blank" (entrée changelog) ouvre un nouvel onglet sans
         // jamais faire remonter de "click" sur document dans l'onglet
@@ -50,21 +71,17 @@ export default class extends Controller {
         // explicitement. Bug réel signalé en prod le 2026-09-13.
         this.closePanel();
 
-        if (type === 'direct_message') {
-            // Le lien d'un message direct ne pointe vers aucune page réelle
-            // (pas de vue de détail) — seule l'action de lecture est utile ici.
+        if (strategy.preventNavigation) {
             event.preventDefault();
-            this._removeAfter(fetch(`/direct-messages/${event.params.id}/read`, { method: 'POST' }), [item]);
-        } else {
-            // target="_blank" ouvre la PR GitHub dans un nouvel onglet — le
-            // marquage se joue en fond dans l'onglet d'origine, laissant le
-            // temps de voir l'animation de retrait sans revenir sur la page.
-            // lastChangelogViewedAt est global (pas par entrée) : cliquer sur
-            // une entrée marque tout le changelog lu, donc toutes les entrées
-            // changelog du panel doivent disparaître, pas seulement celle-ci.
-            const changelogItems = Array.from(this.panelTarget.querySelectorAll('[data-notifications-type-param="changelog"]'));
-            this._removeAfter(fetch('/changelog/mark-viewed', { method: 'POST' }), changelogItems);
         }
+
+        // lastChangelogViewedAt reste global côté serveur (met à jour le
+        // badge de comptage), mais l'affichage ne retire que l'entrée
+        // cliquée : puisqu'un clic redirige de toute façon vers GitHub, il
+        // n'y a pas besoin de vider les autres entrées non lues du panel
+        // pour rester cohérent avec cet état global (#450 — bug réel
+        // signalé : lire une entrée changelog vidait tout le panel).
+        this._removeAfter(strategy.markAsRead(event), [item]);
     }
 
     _removeAfter(fetchPromise, items) {
