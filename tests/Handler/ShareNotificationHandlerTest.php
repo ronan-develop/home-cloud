@@ -6,8 +6,8 @@ namespace App\Tests\Handler;
 
 use App\Entity\Share;
 use App\Handler\ShareNotificationHandler;
-use App\Interface\ShareNotificationMailerInterface;
-use App\Interface\ShareRepositoryInterface;
+use App\Interface\Share\ShareNotificationMailerInterface;
+use App\Interface\Share\ShareRepositoryInterface;
 use App\Message\ShareNotificationMessage;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Uid\Uuid;

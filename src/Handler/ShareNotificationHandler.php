@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Handler;
 
-use App\Interface\ShareNotificationMailerInterface;
-use App\Interface\ShareRepositoryInterface;
+use App\Interface\Share\ShareNotificationMailerInterface;
+use App\Interface\Share\ShareRepositoryInterface;
 use App\Message\ShareNotificationMessage;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Uid\Uuid;

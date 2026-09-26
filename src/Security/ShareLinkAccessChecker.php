@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Security;
 
 use App\Entity\ShareLink;
-use App\Interface\ShareLinkAccessCheckerInterface;
-use App\Interface\ShareLinkRepositoryInterface;
+use App\Interface\Share\ShareLinkAccessCheckerInterface;
+use App\Interface\Share\ShareLinkRepositoryInterface;
 
 /**
  * Vérifie si un couple (selector, token) désigne un lien de partage public actif.

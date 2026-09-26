@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Share;
 
 use App\Entity\Share;
-use App\Interface\ShareNotificationMailerInterface;
+use App\Interface\Share\ShareNotificationMailerInterface;
+use App\Service\EmailBranding;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;

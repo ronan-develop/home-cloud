@@ -7,7 +7,7 @@ namespace App\Tests\Unit\Service;
 use App\Entity\Folder;
 use App\Entity\Share;
 use App\Entity\User;
-use App\Service\ShareNotificationMailer;
+use App\Service\Share\ShareNotificationMailer;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;

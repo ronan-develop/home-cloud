@@ -13,7 +13,7 @@ use App\Interface\Folder\DefaultFolderServiceInterface;
 use App\Interface\File\FilenameValidatorInterface;
 use App\Interface\Folder\FolderRepositoryInterface;
 use App\Interface\OwnershipCheckerInterface;
-use App\Interface\SharedResourceCleanerInterface;
+use App\Interface\Share\SharedResourceCleanerInterface;
 use App\Security\GuestRestrictionChecker;
 use App\Service\Folder\FolderService;
 use Doctrine\ORM\EntityManagerInterface;

@@ -9,7 +9,7 @@ use App\Entity\Share;
 use App\Interface\File\FileDeletionServiceInterface;
 use App\Interface\Media\MediaDeletionServiceInterface;
 use App\Interface\Media\MediaDetachServiceInterface;
-use App\Interface\SharedResourceCleanerInterface;
+use App\Interface\Share\SharedResourceCleanerInterface;
 use App\Interface\File\StorageServiceInterface;
 use App\Repository\MediaRepository;
 use Doctrine\ORM\EntityManagerInterface;

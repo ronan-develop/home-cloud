@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Interface;
+namespace App\Interface\Share;
 
 use App\Entity\Share;
 use App\Entity\User;

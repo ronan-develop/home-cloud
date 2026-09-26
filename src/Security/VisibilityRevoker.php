@@ -7,7 +7,7 @@ namespace App\Security;
 use App\Entity\Album;
 use App\Entity\File;
 use App\Entity\Folder;
-use App\Interface\ShareLinkRepositoryInterface;
+use App\Interface\Share\ShareLinkRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**

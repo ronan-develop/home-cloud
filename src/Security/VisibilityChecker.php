@@ -8,7 +8,7 @@ use App\Entity\Album;
 use App\Entity\File;
 use App\Entity\Folder;
 use App\Exception\ResourceNotPubliclyShareableException;
-use App\Interface\VisibilityCheckerInterface;
+use App\Interface\Share\VisibilityCheckerInterface;
 
 /**
  * Verrou de partage par lien public : le serveur refuse de rendre une

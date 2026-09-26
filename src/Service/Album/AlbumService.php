@@ -11,7 +11,7 @@ use App\Entity\User;
 use App\Interface\Album\AlbumRepositoryInterface;
 use App\Interface\Album\AlbumServiceInterface;
 use App\Interface\Media\MediaRepositoryInterface;
-use App\Interface\SharedResourceCleanerInterface;
+use App\Interface\Share\SharedResourceCleanerInterface;
 use App\Security\GuestRestrictionChecker;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Uid\Uuid;

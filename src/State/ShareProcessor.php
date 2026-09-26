@@ -12,7 +12,7 @@ use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\ShareOutput;
 use App\Entity\Share;
 use App\Entity\User;
-use App\Interface\ShareRepositoryInterface;
+use App\Interface\Share\ShareRepositoryInterface;
 use App\Interface\UserRepositoryInterface;
 use App\Security\OwnershipChecker;
 use App\Security\ResourceLocator;

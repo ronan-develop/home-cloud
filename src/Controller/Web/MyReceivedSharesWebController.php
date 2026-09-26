@@ -9,7 +9,7 @@ use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\Share;
 use App\Entity\User;
-use App\Interface\ShareRepositoryInterface;
+use App\Interface\Share\ShareRepositoryInterface;
 use App\Security\ResourceLocator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;

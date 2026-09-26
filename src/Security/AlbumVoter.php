@@ -7,7 +7,7 @@ namespace App\Security;
 use App\Entity\Album;
 use App\Entity\Share;
 use App\Entity\User;
-use App\Interface\ResourceAccessCheckerInterface;
+use App\Interface\Share\ResourceAccessCheckerInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 

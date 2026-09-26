@@ -10,7 +10,7 @@ use App\Entity\Folder;
 use App\Http\ContentDispositionFactory;
 use App\Interface\File\FileRepositoryInterface;
 use App\Interface\Media\MediaRepositoryInterface;
-use App\Interface\ShareLinkAccessCheckerInterface;
+use App\Interface\Share\ShareLinkAccessCheckerInterface;
 use App\Interface\File\StorageServiceInterface;
 use App\Service\Media\MediaCacheHeaders;
 use App\Factory\MediaFullResponseFactory;

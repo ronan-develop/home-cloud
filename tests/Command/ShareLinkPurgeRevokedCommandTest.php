@@ -6,7 +6,7 @@ namespace App\Tests\Command;
 
 use App\Command\ShareLinkPurgeRevokedCommand;
 use App\Entity\ShareLink;
-use App\Interface\ShareLinkRepositoryInterface;
+use App\Interface\Share\ShareLinkRepositoryInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;

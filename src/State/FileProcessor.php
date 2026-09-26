@@ -17,7 +17,7 @@ use App\Repository\FileRepository;
 use App\Repository\MediaRepository;
 use App\Security\AuthenticationResolver;
 use App\Security\ResourceAccessChecker;
-use App\Interface\SharedResourceCleanerInterface;
+use App\Interface\Share\SharedResourceCleanerInterface;
 use App\Service\File\FileActionService;
 use App\Service\IriExtractor;
 use App\Interface\File\StorageServiceInterface;

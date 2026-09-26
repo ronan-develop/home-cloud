@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Security;
 
 use App\Entity\User;
-use App\Interface\ShareAccessCheckerInterface;
+use App\Interface\Share\ShareAccessCheckerInterface;
 use App\Repository\ShareRepository;
 use Symfony\Component\Uid\Uuid;
 
