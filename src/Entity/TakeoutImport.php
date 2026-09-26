@@ -49,6 +49,23 @@ class TakeoutImport
     #[ORM\Column(nullable: true)]
     private ?int $unrecognizedFilesCount = null;
 
+    /**
+     * Progress bar (#327) : total de médias détectés après le parsing de
+     * l'arborescence extraite — null tant que le statut n'a pas atteint
+     * "processing" (le total n'est connu qu'à ce moment).
+     */
+    #[ORM\Column(nullable: true)]
+    private ?int $totalMediaCount = null;
+
+    /**
+     * Progress bar (#327) : nombre de médias déjà traités (importés ou
+     * doublons confondus) — incrémenté au fil du Handler, jamais null
+     * (contrairement aux compteurs finaux qui restent null tant que
+     * l'import n'est pas terminé).
+     */
+    #[ORM\Column]
+    private int $processedCount = 0;
+
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
@@ -96,6 +113,21 @@ class TakeoutImport
         return $this->unrecognizedFilesCount;
     }
 
+    public function getTotalMediaCount(): ?int
+    {
+        return $this->totalMediaCount;
+    }
+
+    public function getProcessedCount(): int
+    {
+        return $this->processedCount;
+    }
+
+    public function incrementProcessedCount(): void
+    {
+        ++$this->processedCount;
+    }
+
     public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
@@ -116,9 +148,10 @@ class TakeoutImport
         $this->status = self::STATUS_EXTRACTING;
     }
 
-    public function markProcessing(): void
+    public function markProcessing(?int $totalMediaCount = null): void
     {
         $this->status = self::STATUS_PROCESSING;
+        $this->totalMediaCount = $totalMediaCount;
     }
 
     public function markCompleted(int $mediaImported, int $duplicatesSkipped, int $unrecognizedFiles): void

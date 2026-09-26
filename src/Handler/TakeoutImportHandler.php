@@ -83,6 +83,12 @@ final class TakeoutImportHandler
             $structure = $this->structureParser->parse($workDir);
             $unrecognizedFiles = $structure->ignoredCount;
 
+            // Progress bar (#327) : le total n'est connu qu'une fois le
+            // parsing terminé — mis à jour ici pour que le front puisse
+            // afficher processedCount/totalMediaCount dès ce stade.
+            $import->markProcessing(count($structure->mediaEntries));
+            $this->em->flush();
+
             $owner = $import->getOwner();
             $folderName = sprintf('Import Google Photos %s', $import->getCreatedAt()->format('Y-m-d'));
             $destinationFolder = $this->defaultFolderService->resolve(null, $folderName, $owner);
@@ -109,6 +115,7 @@ final class TakeoutImportHandler
                 } else {
                     ++$mediaImported;
                 }
+                $import->incrementProcessedCount();
 
                 if (++$processedSinceFlush >= self::FLUSH_BATCH_SIZE) {
                     $this->em->flush();

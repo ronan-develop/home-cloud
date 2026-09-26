@@ -52,14 +52,20 @@ class TakeoutMediaImporter
         }
 
         $originalName = basename($entry->mediaPath);
+        $originalSize = filesize($entry->mediaPath) ?: 0;
         $uploadedFile = new UploadedFile($entry->mediaPath, $originalName, null, null, true);
+
+        // store() déplace physiquement le fichier (UploadedFile::move()) : le
+        // mimeType et la taille doivent être lus avant cet appel, sans quoi
+        // $entry->mediaPath n'existe plus sur disque.
+        $mimeType = $uploadedFile->getMimeType() ?? 'application/octet-stream';
 
         $storeResult = $this->storageService->store($uploadedFile);
 
         $file = new File(
             originalName: $originalName,
-            mimeType: $uploadedFile->getMimeType() ?? 'application/octet-stream',
-            size: filesize($entry->mediaPath) ?: 0,
+            mimeType: $mimeType,
+            size: $originalSize,
             path: $storeResult['path'],
             folder: $destinationFolder,
             owner: $owner,

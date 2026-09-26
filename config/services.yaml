@@ -8,6 +8,10 @@
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
     app.storage_dir: '%kernel.project_dir%/var/storage'
+    # Stockage temporaire des ZIP Google Takeout entre l'upload et leur
+    # traitement asynchrone (#327) — distinct de app.storage_dir : ce ne sont
+    # jamais des fichiers finalisés, juste des conteneurs le temps du worker.
+    app.takeout_tmp_dir: '%kernel.project_dir%/var/takeout-tmp'
     # Fichier plat de dernière activité authentifiée (#422) — lu par un futur
     # script bash de déploiement (#421), jamais par un process PHP lancé
     # depuis un cron : coût nul sur le LVE partagé entre les 7 instances.
@@ -204,6 +208,10 @@ services:
         arguments:
             $resetPasswordRequestLimiter: '@limiter.reset_password_request'
             $resetPasswordSubmitLimiter: '@limiter.reset_password_submit'
+
+    App\Controller\Api\TakeoutImportUploadController:
+        arguments:
+            $takeoutTmpDir: '%app.takeout_tmp_dir%'
 
 when@dev:
     services:

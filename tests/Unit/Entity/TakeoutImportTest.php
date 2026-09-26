@@ -74,6 +74,38 @@ final class TakeoutImportTest extends TestCase
         $this->assertSame(TakeoutImport::STATUS_PROCESSING, $import->getStatus());
     }
 
+    /**
+     * Progress bar (#327) : le total de médias détectés n'est connu qu'après
+     * le parsing de l'arborescence extraite — markProcessing() le reçoit
+     * pour que le front puisse calculer processedCount/totalMediaCount.
+     */
+    public function testMarkProcessingSetsTotalMediaCount(): void
+    {
+        $import = new TakeoutImport(new User('owner@example.com', 'Owner'));
+
+        $import->markProcessing(totalMediaCount: 250);
+
+        $this->assertSame(250, $import->getTotalMediaCount());
+    }
+
+    public function testConstructorInitializesProcessedCountToZeroAndTotalToNull(): void
+    {
+        $import = new TakeoutImport(new User('owner@example.com', 'Owner'));
+
+        $this->assertSame(0, $import->getProcessedCount());
+        $this->assertNull($import->getTotalMediaCount());
+    }
+
+    public function testIncrementProcessedCountIncrementsByOne(): void
+    {
+        $import = new TakeoutImport(new User('owner@example.com', 'Owner'));
+
+        $import->incrementProcessedCount();
+        $import->incrementProcessedCount();
+
+        $this->assertSame(2, $import->getProcessedCount());
+    }
+
     public function testMarkCompletedSetsStatusCountersAndCompletedAt(): void
     {
         $import = new TakeoutImport(new User('owner@example.com', 'Owner'));
