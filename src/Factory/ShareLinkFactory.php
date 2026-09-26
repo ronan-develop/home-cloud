@@ -6,7 +6,7 @@ namespace App\Factory;
 
 use App\Entity\ShareLink;
 use App\Entity\User;
-use App\Interface\OwnershipCheckerInterface;
+use App\Interface\Auth\OwnershipCheckerInterface;
 use App\Interface\ResourceLocatorInterface;
 use App\Security\CreatedShareLink;
 use App\Security\ShareLinkTokenGenerator;

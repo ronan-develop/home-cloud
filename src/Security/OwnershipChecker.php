@@ -9,8 +9,8 @@ use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\Share;
 use App\Entity\ShareLink;
-use App\Interface\AuthenticationResolverInterface;
-use App\Interface\OwnershipCheckerInterface;
+use App\Interface\Auth\AuthenticationResolverInterface;
+use App\Interface\Auth\OwnershipCheckerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 

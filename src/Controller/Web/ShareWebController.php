@@ -15,7 +15,7 @@ use App\Interface\UserRepositoryInterface;
 use App\Message\ShareNotificationMessage;
 use App\Security\OwnershipChecker;
 use App\Security\ResourceLocator;
-use App\Service\GuestAccountCreator;
+use App\Service\Auth\GuestAccountCreator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Controller\Api;
 
 use App\Entity\User;
-use App\Interface\OwnershipCheckerInterface;
+use App\Interface\Auth\OwnershipCheckerInterface;
 use App\Repository\FolderRepository;
 use App\Repository\FileRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;

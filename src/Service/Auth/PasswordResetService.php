@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Service;
+namespace App\Service\Auth;
 
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use SymfonyCasts\Bundle\ResetPassword\Exception\ResetPasswordExceptionInterface;
 use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
 
-use App\Interface\PasswordResetServiceInterface;
+use App\Interface\Auth\PasswordResetServiceInterface;
 
 class PasswordResetService implements PasswordResetServiceInterface
 {

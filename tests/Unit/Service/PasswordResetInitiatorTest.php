@@ -6,7 +6,7 @@ namespace App\Tests\Unit\Service;
 
 use App\Entity\User;
 use App\Service\EmailBranding;
-use App\Service\PasswordResetInitiator;
+use App\Service\Auth\PasswordResetInitiator;
 use PHPUnit\Framework\TestCase;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\HttpFoundation\Request;

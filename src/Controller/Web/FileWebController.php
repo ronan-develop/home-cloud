@@ -7,7 +7,7 @@ namespace App\Controller\Web;
 use App\Interface\File\FileDeletionServiceInterface;
 use App\Interface\File\FileUploadServiceInterface;
 use App\Interface\Media\MediaProcessorInterface;
-use App\Interface\OwnershipCheckerInterface;
+use App\Interface\Auth\OwnershipCheckerInterface;
 use App\Interface\File\StorageServiceInterface;
 use App\Repository\FileRepository;
 use App\Security\GuestRestrictionChecker;

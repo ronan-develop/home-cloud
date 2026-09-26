@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace App\Interface;
+namespace App\Interface\Auth;
 
 use App\Entity\File;
 use App\Entity\Folder;

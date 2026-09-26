@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Controller\Api;
 
 use App\Entity\UploadBatch;
-use App\Interface\AuthenticationResolverInterface;
+use App\Interface\Auth\AuthenticationResolverInterface;
 use App\Interface\UploadBatchRepositoryInterface;
 use App\Service\File\UploadRoutingDecider;
 use Doctrine\ORM\EntityManagerInterface;

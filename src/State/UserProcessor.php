@@ -9,7 +9,7 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\State\ProcessorInterface;
 use ApiPlatform\Validator\ValidatorInterface;
 use App\ApiResource\UserOutput;
-use App\Interface\AuthenticationResolverInterface;
+use App\Interface\Auth\AuthenticationResolverInterface;
 use App\Interface\UserRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;

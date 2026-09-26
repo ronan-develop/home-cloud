@@ -6,7 +6,7 @@ namespace App\Tests\Service;
 use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\User;
-use App\Interface\AuthorizationCheckerInterface;
+use App\Interface\Auth\AuthorizationCheckerInterface;
 use App\Interface\File\FileRepositoryInterface;
 use App\Interface\File\StorageServiceInterface;
 use App\Service\File\FileActionService;
