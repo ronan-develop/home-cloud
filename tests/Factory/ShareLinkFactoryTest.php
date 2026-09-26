@@ -24,7 +24,7 @@ final class ShareLinkFactoryTest extends TestCase
 {
     private function makeFile(string $visibility, ?Folder $folder = null): File
     {
-        $file = $this->createMock(File::class);
+        $file = $this->createStub(File::class);
         $file->method('getId')->willReturn(Uuid::v7());
         $file->method('getVisibility')->willReturn($visibility);
         $file->method('getFolder')->willReturn($folder ?? $this->makeFolder(Folder::VISIBILITY_PRIVATE));
@@ -34,7 +34,7 @@ final class ShareLinkFactoryTest extends TestCase
 
     private function makeFolder(string $visibility, ?Folder $parent = null): Folder
     {
-        $folder = $this->createMock(Folder::class);
+        $folder = $this->createStub(Folder::class);
         $folder->method('getVisibility')->willReturn($visibility);
         $folder->method('getParent')->willReturn($parent);
 
@@ -45,10 +45,10 @@ final class ShareLinkFactoryTest extends TestCase
         File|Folder $resource,
         bool $isOwner = true,
     ): ShareLinkFactory {
-        $resourceLocator = $this->createMock(ResourceLocatorInterface::class);
+        $resourceLocator = $this->createStub(ResourceLocatorInterface::class);
         $resourceLocator->method('locate')->willReturn($resource);
 
-        $ownershipChecker = $this->createMock(OwnershipCheckerInterface::class);
+        $ownershipChecker = $this->createStub(OwnershipCheckerInterface::class);
         if ($isOwner) {
             $ownershipChecker->method('denyUnlessOwner');
         } else {
@@ -56,7 +56,7 @@ final class ShareLinkFactoryTest extends TestCase
                 ->willThrowException(new AccessDeniedHttpException('not owner'));
         }
 
-        $em = $this->createMock(EntityManagerInterface::class);
+        $em = $this->createStub(EntityManagerInterface::class);
         $em->method('persist');
         $em->method('flush');
 
@@ -72,7 +72,7 @@ final class ShareLinkFactoryTest extends TestCase
     public function testCreatesLinkForPubliclyShareableResource(): void
     {
         $file = $this->makeFile(File::VISIBILITY_LINK_ALLOWED);
-        $owner = $this->createMock(User::class);
+        $owner = $this->createStub(User::class);
         $factory = $this->makeFactory($file);
 
         $created = $factory->create($owner, Share::RESOURCE_FILE, $file->getId());
@@ -86,7 +86,7 @@ final class ShareLinkFactoryTest extends TestCase
         // Le test qui compte pour cette étape : le verrou posé à l'étape 0
         // doit être appelé ici, pas seulement exister dans le vide.
         $file = $this->makeFile(File::VISIBILITY_PRIVATE);
-        $owner = $this->createMock(User::class);
+        $owner = $this->createStub(User::class);
         $factory = $this->makeFactory($file);
 
         $this->expectException(ResourceNotPubliclyShareableException::class);
@@ -99,7 +99,7 @@ final class ShareLinkFactoryTest extends TestCase
         // l'autorisation de son dossier parent.
         $linkAllowedFolder = $this->makeFolder(Folder::VISIBILITY_LINK_ALLOWED);
         $file = $this->makeFile(File::VISIBILITY_PRIVATE, $linkAllowedFolder);
-        $owner = $this->createMock(User::class);
+        $owner = $this->createStub(User::class);
         $factory = $this->makeFactory($file);
 
         $created = $factory->create($owner, Share::RESOURCE_FILE, $file->getId());
@@ -111,7 +111,7 @@ final class ShareLinkFactoryTest extends TestCase
     {
         $privateFolder = $this->makeFolder(Folder::VISIBILITY_PRIVATE);
         $file = $this->makeFile(File::VISIBILITY_PRIVATE, $privateFolder);
-        $owner = $this->createMock(User::class);
+        $owner = $this->createStub(User::class);
         $factory = $this->makeFactory($file);
 
         $this->expectException(ResourceNotPubliclyShareableException::class);
@@ -121,7 +121,7 @@ final class ShareLinkFactoryTest extends TestCase
     public function testThrowsWhenNotOwner(): void
     {
         $file = $this->makeFile(File::VISIBILITY_LINK_ALLOWED);
-        $owner = $this->createMock(User::class);
+        $owner = $this->createStub(User::class);
         $factory = $this->makeFactory($file, isOwner: false);
 
         $this->expectException(AccessDeniedHttpException::class);
@@ -131,7 +131,7 @@ final class ShareLinkFactoryTest extends TestCase
     public function testDefaultsExpirationToSevenDaysWhenDurationOmitted(): void
     {
         $file = $this->makeFile(File::VISIBILITY_LINK_ALLOWED);
-        $owner = $this->createMock(User::class);
+        $owner = $this->createStub(User::class);
         $factory = $this->makeFactory($file);
 
         $created = $factory->create($owner, Share::RESOURCE_FILE, $file->getId());
@@ -143,7 +143,7 @@ final class ShareLinkFactoryTest extends TestCase
     public function testDurationOneDay(): void
     {
         $file = $this->makeFile(File::VISIBILITY_LINK_ALLOWED);
-        $owner = $this->createMock(User::class);
+        $owner = $this->createStub(User::class);
         $factory = $this->makeFactory($file);
 
         $created = $factory->create($owner, Share::RESOURCE_FILE, $file->getId(), '1d');
@@ -155,7 +155,7 @@ final class ShareLinkFactoryTest extends TestCase
     public function testDurationThirtyDays(): void
     {
         $file = $this->makeFile(File::VISIBILITY_LINK_ALLOWED);
-        $owner = $this->createMock(User::class);
+        $owner = $this->createStub(User::class);
         $factory = $this->makeFactory($file);
 
         $created = $factory->create($owner, Share::RESOURCE_FILE, $file->getId(), '30d');
@@ -167,7 +167,7 @@ final class ShareLinkFactoryTest extends TestCase
     public function testDurationPermanentLeavesExpiresAtNull(): void
     {
         $file = $this->makeFile(File::VISIBILITY_LINK_ALLOWED);
-        $owner = $this->createMock(User::class);
+        $owner = $this->createStub(User::class);
         $factory = $this->makeFactory($file);
 
         $created = $factory->create($owner, Share::RESOURCE_FILE, $file->getId(), 'permanent');
@@ -178,7 +178,7 @@ final class ShareLinkFactoryTest extends TestCase
     public function testUnknownDurationFallsBackToSevenDays(): void
     {
         $file = $this->makeFile(File::VISIBILITY_LINK_ALLOWED);
-        $owner = $this->createMock(User::class);
+        $owner = $this->createStub(User::class);
         $factory = $this->makeFactory($file);
 
         $created = $factory->create($owner, Share::RESOURCE_FILE, $file->getId(), 'not-a-real-duration');
