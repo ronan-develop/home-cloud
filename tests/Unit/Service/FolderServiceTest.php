@@ -17,7 +17,6 @@ use App\Interface\Share\SharedResourceCleanerInterface;
 use App\Security\GuestRestrictionChecker;
 use App\Service\Folder\FolderService;
 use Doctrine\ORM\EntityManagerInterface;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -26,22 +25,22 @@ use Symfony\Component\Stopwatch\Stopwatch;
 
 final class FolderServiceTest extends TestCase
 {
-    /** @var FolderRepositoryInterface&MockObject */
+    /** @var FolderRepositoryInterface&Stub */
     private FolderRepositoryInterface $folderRepository;
 
-    /** @var FilenameValidatorInterface&MockObject */
+    /** @var FilenameValidatorInterface&Stub */
     private FilenameValidatorInterface $filenameValidator;
 
-    /** @var OwnershipCheckerInterface&MockObject */
+    /** @var OwnershipCheckerInterface&Stub */
     private OwnershipCheckerInterface $ownershipChecker;
 
     /** @var AuthenticationResolverInterface&Stub */
     private AuthenticationResolverInterface $authResolver;
 
-    /** @var DefaultFolderServiceInterface&MockObject */
+    /** @var DefaultFolderServiceInterface&Stub */
     private DefaultFolderServiceInterface $defaultFolderService;
 
-    /** @var EntityManagerInterface&MockObject */
+    /** @var EntityManagerInterface&Stub */
     private EntityManagerInterface $em;
 
     /** @var SharedResourceCleanerInterface&Stub */
@@ -49,16 +48,28 @@ final class FolderServiceTest extends TestCase
 
     private FolderService $service;
 
+    /** @var LoggerInterface&Stub */
+    private LoggerInterface $logger;
+
     protected function setUp(): void
     {
-        $this->folderRepository    = $this->createMock(FolderRepositoryInterface::class);
-        $this->filenameValidator   = $this->createMock(FilenameValidatorInterface::class);
-        $this->ownershipChecker    = $this->createMock(OwnershipCheckerInterface::class);
+        // Stubs par défaut (aucune vérification d'appel) — chaque test qui a
+        // besoin de vérifier un appel précis (expects()) réassigne la
+        // propriété concernée avec un createMock() local puis rebuild() (#454).
+        $this->folderRepository    = $this->createStub(FolderRepositoryInterface::class);
+        $this->filenameValidator   = $this->createStub(FilenameValidatorInterface::class);
+        $this->ownershipChecker    = $this->createStub(OwnershipCheckerInterface::class);
         $this->authResolver        = $this->createStub(AuthenticationResolverInterface::class);
-        $this->defaultFolderService = $this->createMock(DefaultFolderServiceInterface::class);
-        $this->em                  = $this->createMock(EntityManagerInterface::class);
+        $this->defaultFolderService = $this->createStub(DefaultFolderServiceInterface::class);
+        $this->em                  = $this->createStub(EntityManagerInterface::class);
         $this->sharedResourceCleaner = $this->createStub(SharedResourceCleanerInterface::class);
+        $this->logger              = $this->createStub(LoggerInterface::class);
 
+        $this->rebuild();
+    }
+
+    private function rebuild(): void
+    {
         $this->service = new FolderService(
             folderRepository:      $this->folderRepository,
             filenameValidator:     $this->filenameValidator,
@@ -66,7 +77,7 @@ final class FolderServiceTest extends TestCase
             authResolver:          $this->authResolver,
             defaultFolderService:  $this->defaultFolderService,
             em:                    $this->em,
-            logger:                $this->createMock(LoggerInterface::class),
+            logger:                $this->logger,
             stopwatch:             new Stopwatch(),
             sharedResourceCleaner: $this->sharedResourceCleaner,
             guestRestrictionChecker: new GuestRestrictionChecker(),
@@ -78,10 +89,13 @@ final class FolderServiceTest extends TestCase
     public function testCreateFolderValidatesFilename(): void
     {
         $owner = new User('owner@example.com', 'Owner');
+        $this->filenameValidator = $this->createMock(FilenameValidatorInterface::class);
         $this->filenameValidator->expects($this->once())->method('validate')->with('mon-dossier');
         $this->folderRepository->method('findOneBy')->willReturn(null);
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->once())->method('persist');
         $this->em->expects($this->once())->method('flush');
+        $this->rebuild();
 
         $this->service->createFolder($owner, 'mon-dossier', null, FolderMediaType::General);
     }
@@ -109,8 +123,10 @@ final class FolderServiceTest extends TestCase
     {
         $owner = new User('owner@example.com', 'Owner');
         $this->folderRepository->method('findOneBy')->willReturn(null);
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->once())->method('persist')->with($this->isInstanceOf(Folder::class));
         $this->em->expects($this->once())->method('flush');
+        $this->rebuild();
 
         $folder = $this->service->createFolder($owner, 'test', null, FolderMediaType::General);
         $this->assertInstanceOf(Folder::class, $folder);
@@ -123,8 +139,9 @@ final class FolderServiceTest extends TestCase
     {
         $owner  = new User('owner@example.com', 'Owner');
         $folder = new Folder('old-name', $owner);
+        $this->ownershipChecker = $this->createMock(OwnershipCheckerInterface::class);
         $this->ownershipChecker->expects($this->once())->method('denyUnlessOwner')->with($folder);
-        $this->em->method('flush');
+        $this->rebuild();
 
         $this->service->updateFolder($folder, '', null, false, null);
     }
@@ -133,9 +150,10 @@ final class FolderServiceTest extends TestCase
     {
         $owner  = new User('owner@example.com', 'Owner');
         $folder = new Folder('old-name', $owner);
+        $this->filenameValidator = $this->createMock(FilenameValidatorInterface::class);
         $this->filenameValidator->expects($this->once())->method('validate')->with('new-name');
         $this->folderRepository->method('findOneBy')->willReturn(null);
-        $this->em->method('flush');
+        $this->rebuild();
 
         $this->service->updateFolder($folder, 'new-name', null, false, null);
         $this->assertSame('new-name', $folder->getName());
@@ -145,8 +163,9 @@ final class FolderServiceTest extends TestCase
     {
         $owner  = new User('owner@example.com', 'Owner');
         $folder = new Folder('old-name', $owner);
+        $this->filenameValidator = $this->createMock(FilenameValidatorInterface::class);
         $this->filenameValidator->expects($this->never())->method('validate');
-        $this->em->method('flush');
+        $this->rebuild();
 
         $this->service->updateFolder($folder, '', null, false, null);
         $this->assertSame('old-name', $folder->getName());
@@ -190,7 +209,9 @@ final class FolderServiceTest extends TestCase
         $owner  = new User('owner@example.com', 'Owner');
         $parent = new Folder('parent', $owner);
         $folder = new Folder('child', $owner, $parent);
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->once())->method('flush');
+        $this->rebuild();
 
         $this->service->updateFolder($folder, '', null, true, null);
         $this->assertNull($folder->getParent());
@@ -200,7 +221,9 @@ final class FolderServiceTest extends TestCase
     {
         $owner  = new User('owner@example.com', 'Owner');
         $folder = new Folder('folder', $owner);
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->once())->method('flush');
+        $this->rebuild();
 
         $this->service->updateFolder($folder, '', null, false, null);
     }
@@ -211,9 +234,9 @@ final class FolderServiceTest extends TestCase
     {
         $owner  = new User('owner@example.com', 'Owner');
         $folder = new Folder('to-delete', $owner);
+        $this->ownershipChecker = $this->createMock(OwnershipCheckerInterface::class);
         $this->ownershipChecker->expects($this->once())->method('denyUnlessOwner')->with($folder);
-        $this->em->method('remove');
-        $this->em->method('flush');
+        $this->rebuild();
 
         $this->service->deleteFolder($folder, true);
     }
@@ -222,8 +245,10 @@ final class FolderServiceTest extends TestCase
     {
         $owner  = new User('owner@example.com', 'Owner');
         $folder = new Folder('to-delete', $owner);
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->once())->method('remove')->with($folder);
         $this->em->expects($this->atLeast(1))->method('flush');
+        $this->rebuild();
 
         $this->service->deleteFolder($folder, true);
     }
@@ -237,10 +262,13 @@ final class FolderServiceTest extends TestCase
         $folder->getFiles()->add($file);
 
         $this->authResolver->method('getAuthenticatedUser')->willReturn($owner);
+        $this->defaultFolderService = $this->createMock(DefaultFolderServiceInterface::class);
         $this->defaultFolderService->expects($this->once())->method('resolve')->willReturn($uploads);
         $this->folderRepository->method('findDescendantIds')->willReturn([]);
         $this->folderRepository->method('find')->willReturn(null);
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->atLeast(2))->method('flush');
+        $this->rebuild();
 
         $this->service->deleteFolder($folder, false);
 

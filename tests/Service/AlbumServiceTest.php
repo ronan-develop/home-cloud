@@ -33,9 +33,17 @@ final class AlbumServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->repository = $this->createMock(AlbumRepositoryInterface::class);
-        $this->mediaRepository = $this->createMock(MediaRepositoryInterface::class);
-        $this->sharedResourceCleaner = $this->createMock(SharedResourceCleanerInterface::class);
+        // Stubs par défaut (aucune vérification d'appel) — chaque test qui a
+        // besoin de vérifier un appel précis (expects()) réassigne la
+        // propriété concernée avec un createMock() local puis rebuild().
+        $this->repository = $this->createStub(AlbumRepositoryInterface::class);
+        $this->mediaRepository = $this->createStub(MediaRepositoryInterface::class);
+        $this->sharedResourceCleaner = $this->createStub(SharedResourceCleanerInterface::class);
+        $this->rebuild();
+    }
+
+    private function rebuild(): void
+    {
         $this->service = new AlbumService(
             $this->repository,
             $this->mediaRepository,
@@ -63,7 +71,9 @@ final class AlbumServiceTest extends TestCase
     public function testCreateReturnsAlbumWithCorrectName(): void
     {
         $user = $this->makeUser();
+        $this->repository = $this->createMock(AlbumRepositoryInterface::class);
         $this->repository->expects($this->once())->method('save');
+        $this->rebuild();
 
         $album = $this->service->create('Vacances', $user);
 
@@ -74,7 +84,9 @@ final class AlbumServiceTest extends TestCase
     public function testCreateSetsOwner(): void
     {
         $user = $this->makeUser();
+        $this->repository = $this->createMock(AlbumRepositoryInterface::class);
         $this->repository->expects($this->once())->method('save');
+        $this->rebuild();
 
         $album = $this->service->create('Mon Album', $user);
 
@@ -84,10 +96,12 @@ final class AlbumServiceTest extends TestCase
     public function testCreateCallsRepositorySave(): void
     {
         $user = $this->makeUser();
+        $this->repository = $this->createMock(AlbumRepositoryInterface::class);
         $this->repository
             ->expects($this->once())
             ->method('save')
             ->with($this->isInstanceOf(Album::class));
+        $this->rebuild();
 
         $this->service->create('Test', $user);
     }
@@ -95,7 +109,9 @@ final class AlbumServiceTest extends TestCase
     public function testCreateWithEmptyNameThrowsException(): void
     {
         $user = $this->makeUser();
+        $this->repository = $this->createMock(AlbumRepositoryInterface::class);
         $this->repository->expects($this->never())->method('save');
+        $this->rebuild();
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('nom');
@@ -106,7 +122,9 @@ final class AlbumServiceTest extends TestCase
     public function testCreateWithWhitespaceOnlyNameThrowsException(): void
     {
         $user = $this->makeUser();
+        $this->repository = $this->createMock(AlbumRepositoryInterface::class);
         $this->repository->expects($this->never())->method('save');
+        $this->rebuild();
 
         $this->expectException(\InvalidArgumentException::class);
 
@@ -118,13 +136,16 @@ final class AlbumServiceTest extends TestCase
         $user  = $this->makeUser();
         $media = $this->makeMedia($user);
 
+        $this->mediaRepository = $this->createMock(MediaRepositoryInterface::class);
         $this->mediaRepository
             ->expects($this->once())
             ->method('findById')
             ->with($media->getId())
             ->willReturn($media);
 
+        $this->repository = $this->createMock(AlbumRepositoryInterface::class);
         $this->repository->expects($this->once())->method('save');
+        $this->rebuild();
 
         $album = $this->service->create('Vacances', $user, [$media->getId()->toRfc4122()]);
 
@@ -137,12 +158,15 @@ final class AlbumServiceTest extends TestCase
         $otherUser  = new User('other@example.com', 'Other');
         $otherMedia = $this->makeMedia($otherUser);
 
+        $this->mediaRepository = $this->createMock(MediaRepositoryInterface::class);
         $this->mediaRepository
             ->expects($this->once())
             ->method('findById')
             ->willReturn($otherMedia);
 
+        $this->repository = $this->createMock(AlbumRepositoryInterface::class);
         $this->repository->expects($this->once())->method('save');
+        $this->rebuild();
 
         $album = $this->service->create('Vacances', $user, [$otherMedia->getId()->toRfc4122()]);
 
@@ -153,12 +177,15 @@ final class AlbumServiceTest extends TestCase
     {
         $user = $this->makeUser();
 
+        $this->mediaRepository = $this->createMock(MediaRepositoryInterface::class);
         $this->mediaRepository
             ->expects($this->once())
             ->method('findById')
             ->willReturn(null);
 
+        $this->repository = $this->createMock(AlbumRepositoryInterface::class);
         $this->repository->expects($this->once())->method('save');
+        $this->rebuild();
 
         $album = $this->service->create('Vacances', $user, ['019f5700-0000-7000-8000-000000000000']);
 
@@ -168,8 +195,11 @@ final class AlbumServiceTest extends TestCase
     public function testCreateWithoutMediaIdsCreatesEmptyAlbum(): void
     {
         $user = $this->makeUser();
+        $this->mediaRepository = $this->createMock(MediaRepositoryInterface::class);
         $this->mediaRepository->expects($this->never())->method('findById');
+        $this->repository = $this->createMock(AlbumRepositoryInterface::class);
         $this->repository->expects($this->once())->method('save');
+        $this->rebuild();
 
         $album = $this->service->create('Vacances', $user);
 
@@ -180,6 +210,10 @@ final class AlbumServiceTest extends TestCase
     {
         $guest = new User('guest@example.com', 'Guest');
         $guest->markAsGuest();
+
+        $this->repository = $this->createMock(AlbumRepositoryInterface::class);
+        $this->repository->expects($this->never())->method('save');
+        $this->rebuild();
 
         $this->expectException(\App\Exception\GuestNotAllowedException::class);
         $this->service->create('Vacances', $guest);
@@ -194,10 +228,12 @@ final class AlbumServiceTest extends TestCase
         $media = $this->makeMedia($user);
         $album->addMedia($media);
 
+        $this->repository = $this->createMock(AlbumRepositoryInterface::class);
         $this->repository
             ->expects($this->once())
             ->method('save')
             ->with($album);
+        $this->rebuild();
 
         $this->service->setCoverMedia($album, $media);
 
@@ -210,7 +246,9 @@ final class AlbumServiceTest extends TestCase
         $album        = new Album('Vacances', $user);
         $foreignMedia = $this->makeMedia($user);
 
+        $this->repository = $this->createMock(AlbumRepositoryInterface::class);
         $this->repository->expects($this->never())->method('save');
+        $this->rebuild();
 
         $this->expectException(\InvalidArgumentException::class);
 
@@ -224,10 +262,12 @@ final class AlbumServiceTest extends TestCase
         $user  = $this->makeUser();
         $album = new Album('Ancien nom', $user);
 
+        $this->repository = $this->createMock(AlbumRepositoryInterface::class);
         $this->repository
             ->expects($this->once())
             ->method('save')
             ->with($album);
+        $this->rebuild();
 
         $this->service->rename($album, 'Nouveau nom');
 
@@ -259,7 +299,9 @@ final class AlbumServiceTest extends TestCase
         $user  = $this->makeUser();
         $album = new Album('Ancien nom', $user);
 
+        $this->repository = $this->createMock(AlbumRepositoryInterface::class);
         $this->repository->expects($this->never())->method('save');
+        $this->rebuild();
 
         try {
             $this->service->rename($album, '');
@@ -274,10 +316,12 @@ final class AlbumServiceTest extends TestCase
         $user = $this->makeUser();
         $album = new Album('À supprimer', $user);
 
+        $this->repository = $this->createMock(AlbumRepositoryInterface::class);
         $this->repository
             ->expects($this->once())
             ->method('remove')
             ->with($album);
+        $this->rebuild();
 
         $this->service->delete($album);
     }

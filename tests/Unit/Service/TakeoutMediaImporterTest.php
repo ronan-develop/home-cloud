@@ -30,12 +30,25 @@ final class TakeoutMediaImporterTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->storageService = $this->createMock(StorageServiceInterface::class);
-        $this->mediaProcessor = $this->createMock(MediaProcessorInterface::class);
-        $this->dateResolver = $this->createMock(MediaDateResolverInterface::class);
-        $this->fingerprintRepository = $this->createMock(ContentFingerprintRepository::class);
-        $this->em = $this->createMock(EntityManagerInterface::class);
+        // Stubs par défaut (aucune vérification d'appel) — chaque test qui a
+        // besoin de vérifier un appel précis (expects()) réassigne la
+        // propriété concernée avec un createMock() local.
+        $this->storageService = $this->createStub(StorageServiceInterface::class);
+        $this->mediaProcessor = $this->createStub(MediaProcessorInterface::class);
+        $this->dateResolver = $this->createStub(MediaDateResolverInterface::class);
+        $this->fingerprintRepository = $this->createStub(ContentFingerprintRepository::class);
+        $this->em = $this->createStub(EntityManagerInterface::class);
 
+        $this->rebuildImporter();
+    }
+
+    /**
+     * À rappeler après toute réassignation de propriété (ex: createMock()
+     * local pour un test qui a besoin d'un expects()) — le constructeur
+     * capture les références au moment de l'instanciation.
+     */
+    private function rebuildImporter(): void
+    {
         $this->importer = new TakeoutMediaImporter(
             $this->storageService,
             $this->mediaProcessor,
@@ -62,8 +75,11 @@ final class TakeoutMediaImporterTest extends TestCase
 
         $entry = new TakeoutMediaEntry($extractedPath, null);
 
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->never())->method('persist');
+        $this->mediaProcessor = $this->createMock(MediaProcessorInterface::class);
         $this->mediaProcessor->expects($this->never())->method('process');
+        $this->rebuildImporter();
 
         $outcome = $this->importer->import($entry, null, $folder, $owner, [$hash]);
 
@@ -81,6 +97,7 @@ final class TakeoutMediaImporterTest extends TestCase
 
         $entry = new TakeoutMediaEntry($extractedPath, null);
 
+        $this->storageService = $this->createMock(StorageServiceInterface::class);
         $this->storageService->expects($this->once())
             ->method('store')
             ->willReturn(['path' => '2026/09/uuid.jpg', 'neutralized' => false]);
@@ -89,21 +106,25 @@ final class TakeoutMediaImporterTest extends TestCase
             new File('photo.jpg', 'image/jpeg', 10, '2026/09/uuid.jpg', $folder, $owner),
             'photo',
         );
+        $this->mediaProcessor = $this->createMock(MediaProcessorInterface::class);
         $this->mediaProcessor->expects($this->once())
             ->method('process')
             ->willReturn($media);
 
+        $this->dateResolver = $this->createMock(MediaDateResolverInterface::class);
         $this->dateResolver->expects($this->once())
             ->method('resolve')
             ->with(null, null)
             ->willReturn(null);
 
         $persistedTypes = [];
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->exactly(2))->method('persist')
             ->willReturnCallback(function (object $entity) use (&$persistedTypes): void {
                 $persistedTypes[] = $entity::class;
             });
         $this->em->expects($this->never())->method('flush');
+        $this->rebuildImporter();
 
         $outcome = $this->importer->import($entry, null, $folder, $owner, []);
 
@@ -133,10 +154,12 @@ final class TakeoutMediaImporterTest extends TestCase
         $this->mediaProcessor->method('process')->willReturn($media);
 
         $resolvedDate = new \DateTimeImmutable('2020-05-01');
+        $this->dateResolver = $this->createMock(MediaDateResolverInterface::class);
         $this->dateResolver->expects($this->once())
             ->method('resolve')
             ->with($media->getTakenAt(), $metadata->takenAt)
             ->willReturn($resolvedDate);
+        $this->rebuildImporter();
 
         $outcome = $this->importer->import($entry, $metadata, $folder, $owner, []);
 
@@ -156,7 +179,9 @@ final class TakeoutMediaImporterTest extends TestCase
 
         $this->storageService->method('store')->willReturn(['path' => '2026/09/uuid.json', 'neutralized' => false]);
         $this->mediaProcessor->method('process')->willReturn(null);
+        $this->dateResolver = $this->createMock(MediaDateResolverInterface::class);
         $this->dateResolver->expects($this->never())->method('resolve');
+        $this->rebuildImporter();
 
         $outcome = $this->importer->import($entry, null, $folder, $owner, []);
 
