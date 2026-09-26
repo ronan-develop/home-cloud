@@ -498,9 +498,11 @@ vrai runner GitHub (IP Azure), la connexion sur **cette URL précise** est
 coupée (`PROTOCOL_ERROR`) alors que la page d'accueil du même domaine répond
 `302` au même instant — un **WAF applicatif** cible spécifiquement
 `/deploy.php`, distinct du blocage SSH déjà documenté plus haut (#288, fermé).
-`public/deploy.php` reste dans le repo, **désarmé** (`DEPLOY_WEBHOOK_SECRET`
-retiré des 7 instances et de GitHub le 2026-09-12) — à supprimer une fois ce
-flux validé en conditions réelles.
+`public/deploy.php` a été **désarmé** (`DEPLOY_WEBHOOK_SECRET` retiré des 7
+instances et de GitHub le 2026-09-12), puis **supprimé** du repo le
+2026-09-26 une fois ce flux validé en conditions réelles (7 instances
+synchronisées et convergentes pendant deux semaines sans intervention
+manuelle).
 
 ### `bin/deploy-nightly.sh` — exécuté par le cron, sur le serveur
 

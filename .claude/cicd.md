@@ -14,7 +14,7 @@
 
 `ronan.lenouvel.me` (instance personnelle, aucun autre utilisateur) se déploie immédiatement via `bash bin/deploy-all.sh` sans flag ; les 6 autres instances sont automatiquement différées à la nuit. `--now` force un déploiement immédiat des 7 en cas d'urgence, avec confirmation interactive obligatoire.
 
-**o2switch bloque bien le SSH** pour les runners GitHub Actions (whitelist cPanel) — mais un test empirique (2026-09-12) a aussi révélé qu'un **WAF applicatif** coupe la connexion HTTPS d'un runner GitHub spécifiquement sur `public/deploy.php`, alors que le reste du domaine répond normalement à la même IP. Le webhook GitHub → instances a donc été écarté au profit du sens inverse (serveur → GitHub), qui ne dépend d'aucune connexion entrante. `public/deploy.php` reste dans le repo, désarmé (secret retiré), en attendant sa suppression après validation du nouveau flux.
+**o2switch bloque bien le SSH** pour les runners GitHub Actions (whitelist cPanel) — mais un test empirique (2026-09-12) a aussi révélé qu'un **WAF applicatif** coupe la connexion HTTPS d'un runner GitHub spécifiquement sur `public/deploy.php`, alors que le reste du domaine répond normalement à la même IP. Le webhook GitHub → instances a donc été écarté au profit du sens inverse (serveur → GitHub), qui ne dépend d'aucune connexion entrante. `public/deploy.php` a été désarmé (secret retiré) puis supprimé du repo le 2026-09-26, une fois le nouveau flux validé en conditions réelles.
 
 Le ticket #288 (whitelist SSH dynamique pour un déclenchement GitHub → serveur) est donc **fermé** : la question qu'il posait est tranchée par une architecture différente, pas résolue dans le sens qu'il envisageait.
 
