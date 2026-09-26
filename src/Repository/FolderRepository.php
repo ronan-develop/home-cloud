@@ -6,7 +6,7 @@ namespace App\Repository;
 
 use App\Entity\Folder;
 use App\Entity\User;
-use App\Interface\FolderRepositoryInterface;
+use App\Interface\Folder\FolderRepositoryInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\LockMode;
 use Doctrine\Persistence\ManagerRegistry;

@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Folder;
 
 use App\Entity\Folder;
 use App\Entity\User;
-use App\Interface\DefaultFolderServiceInterface;
+use App\Interface\Folder\DefaultFolderServiceInterface;
 use App\Repository\FolderRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
-final class FolderMover implements \App\Interface\FolderMoverInterface
+final class FolderMover implements \App\Interface\Folder\FolderMoverInterface
 {
     public function __construct(
         private readonly FolderRepository $folderRepository,

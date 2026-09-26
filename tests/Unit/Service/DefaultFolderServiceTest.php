@@ -7,7 +7,7 @@ namespace App\Tests\Unit\Service;
 use App\Entity\Folder;
 use App\Entity\User;
 use App\Repository\FolderRepository;
-use App\Service\DefaultFolderService;
+use App\Service\Folder\DefaultFolderService;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;

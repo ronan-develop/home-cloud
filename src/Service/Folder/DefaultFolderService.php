@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Folder;
 
 use App\Entity\Folder;
 use App\Entity\User;
-use App\Interface\DefaultFolderServiceInterface;
+use App\Interface\Folder\DefaultFolderServiceInterface;
 use App\Repository\FolderRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;

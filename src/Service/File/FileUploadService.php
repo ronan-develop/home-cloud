@@ -7,7 +7,7 @@ namespace App\Service\File;
 use App\Entity\ContentFingerprint;
 use App\Entity\File;
 use App\Entity\User;
-use App\Interface\DefaultFolderServiceInterface;
+use App\Interface\Folder\DefaultFolderServiceInterface;
 use App\Interface\File\FileUploadServiceInterface;
 use App\Interface\File\StorageServiceInterface;
 use App\Repository\ContentFingerprintRepository;

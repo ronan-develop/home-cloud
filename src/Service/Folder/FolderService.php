@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Folder;
 
 use App\Entity\Folder;
 use App\Entity\Share;
 use App\Entity\User;
 use App\Enum\FolderMediaType;
 use App\Interface\AuthenticationResolverInterface;
-use App\Interface\DefaultFolderServiceInterface;
+use App\Interface\Folder\DefaultFolderServiceInterface;
 use App\Interface\File\FilenameValidatorInterface;
-use App\Interface\FolderRepositoryInterface;
+use App\Interface\Folder\FolderRepositoryInterface;
 use App\Interface\OwnershipCheckerInterface;
 use App\Interface\SharedResourceCleanerInterface;
 use App\Security\GuestRestrictionChecker;

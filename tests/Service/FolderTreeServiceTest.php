@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Service;
 
 use PHPUnit\Framework\TestCase;
-use App\Service\FolderTreeService;
+use App\Service\Folder\FolderTreeService;
 use App\Entity\Folder;
 use App\Entity\User;
 use Symfony\Component\Uid\Uuid;

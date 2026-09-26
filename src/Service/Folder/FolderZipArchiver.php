@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Folder;
 
 use App\Entity\Folder;
-use App\Interface\FolderZipArchiverInterface;
+use App\Interface\Folder\FolderZipArchiverInterface;
 use App\Interface\File\StorageServiceInterface;
 
 /**

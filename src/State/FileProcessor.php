@@ -10,7 +10,7 @@ use ApiPlatform\Metadata\Delete;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\FileOutput;
 use App\Entity\Share;
-use App\Interface\DefaultFolderServiceInterface;
+use App\Interface\Folder\DefaultFolderServiceInterface;
 use App\Interface\Media\MediaDeletionServiceInterface;
 use App\Interface\Media\MediaDetachServiceInterface;
 use App\Repository\FileRepository;

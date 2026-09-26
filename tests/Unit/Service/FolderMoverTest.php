@@ -7,9 +7,9 @@ namespace App\Tests\Unit\Service;
 use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\User;
-use App\Interface\DefaultFolderServiceInterface;
+use App\Interface\Folder\DefaultFolderServiceInterface;
 use App\Repository\FolderRepository;
-use App\Interface\FolderMoverInterface;
+use App\Interface\Folder\FolderMoverInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 
@@ -26,7 +26,7 @@ final class FolderMoverTest extends TestCase
         $this->defaultFolderService = $this->createMock(DefaultFolderServiceInterface::class);
         $this->em = $this->createMock(EntityManagerInterface::class);
 
-        $this->mover = new \App\Service\FolderMover($this->repo, $this->defaultFolderService, $this->em);
+        $this->mover = new \App\Service\Folder\FolderMover($this->repo, $this->defaultFolderService, $this->em);
     }
 
     public function testMoveContentsToUploadsMovesFilesAndReturnsUploads(): void

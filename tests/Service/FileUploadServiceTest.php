@@ -6,7 +6,7 @@ namespace App\Tests\Service;
 
 use App\Entity\Folder;
 use App\Entity\User;
-use App\Interface\DefaultFolderServiceInterface;
+use App\Interface\Folder\DefaultFolderServiceInterface;
 use App\Interface\File\StorageServiceInterface;
 use App\Repository\ContentFingerprintRepository;
 use App\Service\File\FileUploadService;

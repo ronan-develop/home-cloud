@@ -29,7 +29,7 @@ parameters:
 services:
     # Bindings interfaces → implémentations (Dependency Inversion Principle)
     App\Interface\AlbumRepositoryInterface:       '@App\Repository\AlbumRepository'
-    App\Interface\FolderRepositoryInterface:      '@App\Repository\FolderRepository'
+    App\Interface\Folder\FolderRepositoryInterface: '@App\Repository\FolderRepository'
     App\Interface\UserRepositoryInterface:        '@App\Repository\UserRepository'
     App\Interface\ShareRepositoryInterface:       '@App\Repository\ShareRepository'
     App\Interface\ChangelogFetcherInterface:      '@App\Service\GitHubChangelogFetcher'
@@ -44,7 +44,7 @@ services:
     App\Interface\UploadBatchRepositoryInterface: '@App\Repository\UploadBatchRepository'
     App\Interface\BatchCompletionNotifierInterface: '@App\Service\BatchCompletionNotifier'
     App\Interface\ShareNotificationMailerInterface: '@App\Service\ShareNotificationMailer'
-    App\Interface\FolderZipArchiverInterface:     '@App\Service\FolderZipArchiver'
+    App\Interface\Folder\FolderZipArchiverInterface: '@App\Service\Folder\FolderZipArchiver'
     App\Interface\BroadcastTargetProviderInterface: '@App\Service\BroadcastTargetProvider'
     App\Interface\BroadcastMailerInterface:       '@App\Service\BroadcastMailer'
     App\Interface\BroadcastOrchestratorInterface: '@App\Service\BroadcastOrchestrator'
@@ -68,7 +68,7 @@ services:
             $mediaRepository: '@App\Repository\MediaRepository'
             $storageService: '@App\Service\File\StorageService'
             $authResolver: '@App\Security\AuthenticationResolver'
-            $defaultFolderService: '@App\Service\DefaultFolderService'
+            $defaultFolderService: '@App\Service\Folder\DefaultFolderService'
             $fileActionService: '@App\Service\File\FileActionService'
             $requestStack: '@request_stack'
             $iriExtractor: '@App\Service\IriExtractor'
@@ -91,7 +91,7 @@ services:
     App\Service\File\CreateFileService:
         arguments:
             $storageService: '@App\Service\File\StorageService'
-            $defaultFolderService: '@App\Service\DefaultFolderService'
+            $defaultFolderService: '@App\Service\Folder\DefaultFolderService'
             $em: '@doctrine.orm.entity_manager'
             $userRepository: '@App\Repository\UserRepository'
 
@@ -131,20 +131,20 @@ services:
     # Déclaration explicite du FolderProcessor pour garantir l'injection
     App\State\FolderProcessor:
         arguments:
-            $folderService:    '@App\Service\FolderService'
-            $folderRepository: '@App\Interface\FolderRepositoryInterface'
+            $folderService:    '@App\Service\Folder\FolderService'
+            $folderRepository: '@App\Interface\Folder\FolderRepositoryInterface'
             $userRepository:   '@App\Interface\UserRepositoryInterface'
             $provider:         '@App\State\FolderProvider'
             $requestStack:     '@request_stack'
             $iriExtractor:     '@App\Service\IriExtractor'
 
-    App\Service\FolderService:
+    App\Service\Folder\FolderService:
         arguments:
-            $folderRepository:     '@App\Interface\FolderRepositoryInterface'
+            $folderRepository:     '@App\Interface\Folder\FolderRepositoryInterface'
             $filenameValidator:    '@App\Interface\File\FilenameValidatorInterface'
             $ownershipChecker:     '@App\Interface\OwnershipCheckerInterface'
             $authResolver:         '@App\Interface\AuthenticationResolverInterface'
-            $defaultFolderService: '@App\Service\DefaultFolderService'
+            $defaultFolderService: '@App\Service\Folder\DefaultFolderService'
             $em:                   '@doctrine.orm.entity_manager'
             $logger:               '@logger'
             $stopwatch:            '@debug.stopwatch'
@@ -250,8 +250,8 @@ when@test:
         # Rendre FolderMoverInterface public en test (accès direct dans
         # FolderMoverIntegrationTest depuis #439 — plus aucun autowiring
         # implicite depuis que FolderWebController délègue à FolderService)
-        App\Interface\FolderMoverInterface:
-            alias: App\Service\FolderMover
+        App\Interface\Folder\FolderMoverInterface:
+            alias: App\Service\Folder\FolderMover
             public: true
         # Substituer le HttpClient global en test : évite de vrais appels
         # réseau sortants (timeout) dans les tests web qui passent par
