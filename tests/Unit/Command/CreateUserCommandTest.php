@@ -18,7 +18,7 @@ final class CreateUserCommandTest extends TestCase
 {
     private function makeHasherStub(): UserPasswordHasherInterface
     {
-        $stub = $this->createMock(UserPasswordHasherInterface::class);
+        $stub = $this->createStub(UserPasswordHasherInterface::class);
         $stub->method('hashPassword')->willReturnCallback(
             fn (User $user, string $plainPassword) => 'hashed-' . $plainPassword,
         );
@@ -28,7 +28,7 @@ final class CreateUserCommandTest extends TestCase
 
     private function makeResetPasswordHelperStub(): ResetPasswordHelperInterface
     {
-        $stub = $this->createMock(ResetPasswordHelperInterface::class);
+        $stub = $this->createStub(ResetPasswordHelperInterface::class);
         $stub->method('generateResetToken')
             ->willReturn(new ResetPasswordToken('fake-token', new \DateTimeImmutable('+1 hour'), time()));
 
@@ -37,7 +37,7 @@ final class CreateUserCommandTest extends TestCase
 
     private function makeUrlGeneratorStub(): UrlGeneratorInterface
     {
-        $stub = $this->createMock(UrlGeneratorInterface::class);
+        $stub = $this->createStub(UrlGeneratorInterface::class);
         $stub->method('generate')->willReturn('https://prenom.lenouvel.me/reset-password/fake-token');
 
         return $stub;
@@ -49,7 +49,7 @@ final class CreateUserCommandTest extends TestCase
         ?ResetPasswordHelperInterface $resetPasswordHelper = null,
         ?UrlGeneratorInterface $urlGenerator = null,
     ): CreateUserCommand {
-        $em ??= $this->createMock(EntityManagerInterface::class);
+        $em ??= $this->createStub(EntityManagerInterface::class);
         $hasher ??= $this->makeHasherStub();
         $resetPasswordHelper ??= $this->makeResetPasswordHelperStub();
         $urlGenerator ??= $this->makeUrlGeneratorStub();

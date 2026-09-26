@@ -25,16 +25,16 @@ final class MediaProcessMissingCommandTest extends TestCase
 {
     public function testProcessesEachFileWithoutMedia(): void
     {
-        $photo = $this->createMock(File::class);
-        $pdf = $this->createMock(File::class);
+        $photo = $this->createStub(File::class);
+        $pdf = $this->createStub(File::class);
 
-        $fileRepository = $this->createMock(FileRepositoryInterface::class);
+        $fileRepository = $this->createStub(FileRepositoryInterface::class);
         $fileRepository->method('findWithoutMedia')->willReturn($this->toGenerator([$photo, $pdf]));
 
         $mediaProcessor = $this->createMock(MediaProcessorInterface::class);
         $mediaProcessor->expects($this->exactly(2))
             ->method('process')
-            ->willReturnCallback(fn (File $file) => $file === $photo ? $this->createMock(Media::class) : null);
+            ->willReturnCallback(fn (File $file) => $file === $photo ? $this->createStub(Media::class) : null);
 
         $tester = $this->commandTester($fileRepository, $mediaProcessor);
         $tester->execute([]);
@@ -46,7 +46,7 @@ final class MediaProcessMissingCommandTest extends TestCase
 
     public function testReportsNothingToDoWhenNoFileIsMissingMedia(): void
     {
-        $fileRepository = $this->createMock(FileRepositoryInterface::class);
+        $fileRepository = $this->createStub(FileRepositoryInterface::class);
         $fileRepository->method('findWithoutMedia')->willReturn($this->toGenerator([]));
 
         $mediaProcessor = $this->createMock(MediaProcessorInterface::class);
@@ -68,13 +68,13 @@ final class MediaProcessMissingCommandTest extends TestCase
      */
     public function testClearsEntityManagerAfterEachProcessedFile(): void
     {
-        $files = [$this->createMock(File::class), $this->createMock(File::class), $this->createMock(File::class)];
+        $files = [$this->createStub(File::class), $this->createStub(File::class), $this->createStub(File::class)];
 
-        $fileRepository = $this->createMock(FileRepositoryInterface::class);
+        $fileRepository = $this->createStub(FileRepositoryInterface::class);
         $fileRepository->method('findWithoutMedia')->willReturn($this->toGenerator($files));
 
-        $mediaProcessor = $this->createMock(MediaProcessorInterface::class);
-        $mediaProcessor->method('process')->willReturn($this->createMock(Media::class));
+        $mediaProcessor = $this->createStub(MediaProcessorInterface::class);
+        $mediaProcessor->method('process')->willReturn($this->createStub(Media::class));
 
         $entityManager = $this->createMock(EntityManagerInterface::class);
         $entityManager->expects($this->exactly(3))->method('clear');
@@ -98,7 +98,7 @@ final class MediaProcessMissingCommandTest extends TestCase
         MediaProcessorInterface $mediaProcessor,
         ?EntityManagerInterface $entityManager = null,
     ): CommandTester {
-        $command = new MediaProcessMissingCommand($fileRepository, $mediaProcessor, $entityManager ?? $this->createMock(EntityManagerInterface::class));
+        $command = new MediaProcessMissingCommand($fileRepository, $mediaProcessor, $entityManager ?? $this->createStub(EntityManagerInterface::class));
         $application = new Application();
         $application->addCommand($command);
 
