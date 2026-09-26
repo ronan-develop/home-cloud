@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Album;
 
 use App\Entity\Album;
 use App\Entity\Media;
 use App\Entity\Share;
 use App\Entity\User;
-use App\Interface\AlbumRepositoryInterface;
-use App\Interface\AlbumServiceInterface;
+use App\Interface\Album\AlbumRepositoryInterface;
+use App\Interface\Album\AlbumServiceInterface;
 use App\Interface\Media\MediaRepositoryInterface;
 use App\Interface\SharedResourceCleanerInterface;
 use App\Security\GuestRestrictionChecker;

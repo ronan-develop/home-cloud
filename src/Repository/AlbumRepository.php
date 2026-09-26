@@ -7,7 +7,7 @@ namespace App\Repository;
 use App\Entity\Album;
 use App\Entity\AlbumMedia;
 use App\Entity\User;
-use App\Interface\AlbumRepositoryInterface;
+use App\Interface\Album\AlbumRepositoryInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Uid\Uuid;

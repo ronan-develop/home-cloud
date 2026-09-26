@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Album;
 
 use App\Entity\Album;
 use App\Entity\User;
-use App\Interface\AlbumImportServiceInterface;
-use App\Interface\AlbumServiceInterface;
+use App\Interface\Album\AlbumImportServiceInterface;
+use App\Interface\Album\AlbumServiceInterface;
 use App\Interface\File\CreateFileServiceInterface;
 use App\Interface\Media\MediaProcessorInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;

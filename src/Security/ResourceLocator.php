@@ -8,7 +8,7 @@ use App\Entity\Album;
 use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\Share;
-use App\Interface\AlbumRepositoryInterface;
+use App\Interface\Album\AlbumRepositoryInterface;
 use App\Interface\File\FileRepositoryInterface;
 use App\Interface\Folder\FolderRepositoryInterface;
 use App\Interface\ResourceLocatorInterface;

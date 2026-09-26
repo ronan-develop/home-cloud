@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Controller\Api;
 
 use App\Entity\User;
-use App\Interface\AlbumRepositoryInterface;
+use App\Interface\Album\AlbumRepositoryInterface;
 use App\Repository\MediaRepository;
 use App\Security\AlbumVoter;
 use App\State\AlbumProvider;

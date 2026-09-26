@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Interface;
+namespace App\Interface\Album;
 
 use App\Entity\Album;
 use App\Entity\Media;
