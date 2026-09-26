@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Takeout;
 
 /**
  * Parse un fichier <nom>.supplemental-metadata.json d'un export Google

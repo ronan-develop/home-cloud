@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Service;
 
-use App\Service\TakeoutMetadataReader;
+use App\Service\Takeout\TakeoutMetadataReader;
 use PHPUnit\Framework\TestCase;
 
 /**

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Takeout;
 
 /**
  * Résultat du parcours d'une arborescence extraite d'un export Google

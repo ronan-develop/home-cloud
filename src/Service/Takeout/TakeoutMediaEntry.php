@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Takeout;
 
 /**
  * Un média trouvé dans l'arborescence extraite d'un export Google Takeout,

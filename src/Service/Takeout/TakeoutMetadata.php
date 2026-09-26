@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Takeout;
 
 /**
  * Résultat du parsing d'un fichier <nom>.supplemental-metadata.json

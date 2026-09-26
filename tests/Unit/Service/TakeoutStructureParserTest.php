@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Service;
 
-use App\Service\TakeoutStructureParser;
+use App\Service\Takeout\TakeoutStructureParser;
 use PHPUnit\Framework\TestCase;
 
 /**
