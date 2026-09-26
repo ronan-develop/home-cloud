@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Notification;
 
 use App\Dto\NotificationItem;
 use App\Entity\User;
-use App\Interface\NotificationNormalizerInterface;
+use App\Interface\Notification\NotificationNormalizerInterface;
 use App\Repository\DirectMessageRepository;
 
 /**

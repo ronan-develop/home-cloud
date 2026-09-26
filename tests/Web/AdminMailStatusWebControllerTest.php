@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Tests\Web;
 
 use App\Message\ShareNotificationMessage;
-use App\Service\MailerConnectivityChecker;
-use App\Service\SmtpConnectivityProberInterface;
+use App\Service\Notification\MailerConnectivityChecker;
+use App\Interface\Notification\SmtpConnectivityProberInterface;
 use App\Tests\Web\Fixtures\WebFixturesTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;

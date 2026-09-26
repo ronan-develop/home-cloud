@@ -6,7 +6,7 @@ namespace App\Controller\Web;
 
 use App\Repository\MessengerMessageRepository;
 use App\Security\AdminVoter;
-use App\Service\MailerConnectivityChecker;
+use App\Service\Notification\MailerConnectivityChecker;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;

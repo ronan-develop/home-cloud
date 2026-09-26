@@ -13,7 +13,7 @@ use App\Interface\Media\MediaProcessorInterface;
 use App\Interface\UploadBatchRepositoryInterface;
 use App\Message\MediaProcessMessage;
 use App\Repository\FileRepository;
-use App\Interface\BatchCompletionNotifierInterface;
+use App\Interface\Notification\BatchCompletionNotifierInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;

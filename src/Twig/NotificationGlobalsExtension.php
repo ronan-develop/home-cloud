@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Twig;
 
 use App\Entity\User;
-use App\Service\NotificationFeedProvider;
+use App\Service\Notification\NotificationFeedProvider;
 use Symfony\Bundle\SecurityBundle\Security;
 use Twig\Extension\AbstractExtension;
 use Twig\Extension\GlobalsInterface;

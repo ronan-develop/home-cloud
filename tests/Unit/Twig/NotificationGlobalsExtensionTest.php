@@ -6,8 +6,8 @@ namespace App\Tests\Unit\Twig;
 
 use App\Dto\NotificationItem;
 use App\Entity\User;
-use App\Interface\NotificationNormalizerInterface;
-use App\Service\NotificationFeedProvider;
+use App\Interface\Notification\NotificationNormalizerInterface;
+use App\Service\Notification\NotificationFeedProvider;
 use App\Twig\NotificationGlobalsExtension;
 use PHPUnit\Framework\TestCase;
 use Symfony\Bundle\SecurityBundle\Security;

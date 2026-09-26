@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Notification;
 
+use App\Interface\Notification\SmtpConnectivityProberInterface;
 use Symfony\Component\Mailer\Transport;
 use Symfony\Component\Mailer\Transport\Smtp\SmtpTransport;
 

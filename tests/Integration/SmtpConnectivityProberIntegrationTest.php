@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration;
 
-use App\Service\SmtpConnectivityProber;
+use App\Service\Notification\SmtpConnectivityProber;
 use PHPUnit\Framework\TestCase;
 
 final class SmtpConnectivityProberIntegrationTest extends TestCase

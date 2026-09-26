@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Notification;
+
+use App\Interface\Notification\SmtpConnectivityProberInterface;
 
 /**
  * Vérifie l'état du mailer pour l'espace admin (#385, suite à #378 où un

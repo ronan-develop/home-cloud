@@ -7,7 +7,7 @@ namespace App\Tests\Unit\Service;
 use App\Dto\NotificationItem;
 use App\Entity\User;
 use App\Interface\ChangelogFetcherInterface;
-use App\Service\ChangelogNotificationNormalizer;
+use App\Service\Notification\ChangelogNotificationNormalizer;
 use PHPUnit\Framework\TestCase;
 
 final class ChangelogNotificationNormalizerTest extends TestCase

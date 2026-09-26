@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Service;
 
-use App\Service\MailerConnectivityChecker;
-use App\Service\SmtpConnectivityProberInterface;
+use App\Service\Notification\MailerConnectivityChecker;
+use App\Interface\Notification\SmtpConnectivityProberInterface;
 use PHPUnit\Framework\TestCase;
 
 final class MailerConnectivityCheckerTest extends TestCase

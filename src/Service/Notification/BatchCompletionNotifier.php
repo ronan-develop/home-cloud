@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Notification;
 
 use App\Entity\UploadBatch;
-use App\Interface\BatchCompletionNotifierInterface;
+use App\Interface\Notification\BatchCompletionNotifierInterface;
+use App\Service\EmailBranding;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;

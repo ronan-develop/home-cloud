@@ -42,7 +42,7 @@ services:
     App\Interface\Auth\OwnershipCheckerInterface: '@App\Security\OwnershipChecker'
     App\Interface\Auth\AuthenticationResolverInterface: '@App\Security\AuthenticationResolver'
     App\Interface\UploadBatchRepositoryInterface: '@App\Repository\UploadBatchRepository'
-    App\Interface\BatchCompletionNotifierInterface: '@App\Service\BatchCompletionNotifier'
+    App\Interface\Notification\BatchCompletionNotifierInterface: '@App\Service\Notification\BatchCompletionNotifier'
     App\Interface\Share\ShareNotificationMailerInterface: '@App\Service\Share\ShareNotificationMailer'
     App\Interface\Folder\FolderZipArchiverInterface: '@App\Service\Folder\FolderZipArchiver'
     App\Interface\Broadcast\BroadcastTargetProviderInterface: '@App\Service\Broadcast\BroadcastTargetProvider'
@@ -124,9 +124,9 @@ services:
         arguments:
             $deferredThresholdBytes: '%hc.upload.deferred_threshold_bytes%'
 
-    App\Service\NotificationFeedProvider:
+    App\Service\Notification\NotificationFeedProvider:
         arguments:
-            $normalizers: !tagged_iterator App\Interface\NotificationNormalizerInterface
+            $normalizers: !tagged_iterator App\Interface\Notification\NotificationNormalizerInterface
 
     # Déclaration explicite du FolderProcessor pour garantir l'injection
     App\State\FolderProcessor:
@@ -226,11 +226,11 @@ when@test:
             autowire: true
             public: true
         # Rendre le prober SMTP substituable en test (éviter toute vraie I/O réseau)
-        App\Service\SmtpConnectivityProberInterface:
-            alias: App\Service\SmtpConnectivityProber
+        App\Interface\Notification\SmtpConnectivityProberInterface:
+            alias: App\Service\Notification\SmtpConnectivityProber
             public: true
         # Rendre MailerConnectivityChecker substituable en test (classe finale, non mockable directement)
-        App\Service\MailerConnectivityChecker:
+        App\Service\Notification\MailerConnectivityChecker:
             autowire: true
             public: true
             bind:
