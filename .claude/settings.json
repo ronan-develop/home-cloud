@@ -7,5 +7,21 @@
       "Bash(gh run list *)",
       "Bash(gh pr checks *)"
     ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/scripts/pr-watch-trigger.sh",
+            "if": "Bash(gh pr create*)",
+            "async": true,
+            "statusMessage": "Surveillance CI de la PR en arrière-plan..."
+          }
+        ]
+      }
+    ]
   }
 }
