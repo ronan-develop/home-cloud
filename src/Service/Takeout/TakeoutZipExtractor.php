@@ -19,7 +19,7 @@ use App\Exception\Takeout\ZipBombDetectedException;
  * se fait donc entièrement sur les métadonnées de l'archive, jamais après
  * avoir écrit quoi que ce soit sur disque.
  */
-final class TakeoutZipExtractor
+class TakeoutZipExtractor
 {
     public function __construct(
         private readonly int $maxTotalUncompressedBytes = 20 * 1024 * 1024 * 1024, // 20 Go

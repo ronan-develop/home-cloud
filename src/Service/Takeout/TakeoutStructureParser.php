@@ -14,7 +14,7 @@ namespace App\Service\Takeout;
  * "classification" suivi d'un passage "lecture" qui relirait deux fois
  * l'arborescence potentiellement volumineuse d'un export complet.
  */
-final class TakeoutStructureParser
+class TakeoutStructureParser
 {
     private const IGNORED_FILENAMES = [
         'metadata.json',

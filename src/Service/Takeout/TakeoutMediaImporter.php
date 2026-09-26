@@ -25,7 +25,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
  * (ContentFingerprintRepository::findExistingHashes) — cette méthode ne fait
  * qu'une comparaison en mémoire, jamais de requête DB par fichier.
  */
-final class TakeoutMediaImporter
+class TakeoutMediaImporter
 {
     public function __construct(
         private readonly StorageServiceInterface $storageService,

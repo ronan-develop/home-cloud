@@ -9,7 +9,7 @@ namespace App\Service\Takeout;
  * Takeout — jamais bloquant : absence ou malformation renvoie null,
  * l'EXIF embarqué reste le filet de sécurité (cf. MediaDateResolver).
  */
-final class TakeoutMetadataReader
+class TakeoutMetadataReader
 {
     public function read(string $jsonPath): ?TakeoutMetadata
     {
