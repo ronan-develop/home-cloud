@@ -150,3 +150,15 @@ Toujours L — ce plan ne réduit pas la complexité annoncée dans le ticket or
 ## Hors scope (reste hors ticket même après ce plan)
 
 - Détection de doublons *entre* deux médias du même ZIP (seulement doublon contre l'historique déjà importé, pas dédoublonnage interne à l'archive elle-même)
+
+## Progress bar frontend (ajout post-plan, demandé explicitement)
+
+Le plan initial s'arrêtait au contrat API (GET exposant le statut). Ajout demandé après les 9 étapes : suivi visuel de la progression pendant le traitement asynchrone.
+
+- `TakeoutImport::totalMediaCount`/`processedCount` : le premier posé par `markProcessing()` une fois le parsing terminé, le second incrémenté à chaque média traité (import ou doublon) dans la boucle du Handler
+- Migration `Version20260926215944` : ALTER TABLE ajoutant ces deux colonnes
+- Endpoint `GET /api/v1/takeout-imports/{id}` (`TakeoutImportProvider`) expose les deux compteurs
+- Page web `/import/takeout` (`TakeoutImportWebController` + `templates/web/takeout_import.html.twig`) : sélection de fichier(s) ZIP, upload multipart, barre de progression
+- `assets/controllers/takeout_import_controller.js` : Stimulus controller réutilisant `createBatchPoller` (déjà existant pour le suivi de lot d'upload classique) plutôt que d'inventer un second mécanisme de polling
+- `createBatchPoller` étendu pour s'arrêter aussi sur le statut `failed` (pas seulement `completed`) — nécessaire pour Takeout qui peut échouer (zip bomb, disque plein), contrairement à `UploadBatch` qui n'a pas cet état
+- Barre "indéterminée" (animation CSS striée) tant que `totalMediaCount` est `null` (extraction en cours, avant la fin du parsing)

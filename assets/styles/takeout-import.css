@@ -1,0 +1,18 @@
+/* Import Google Photos Takeout (#327) : barre de progression indéterminée
+ * tant que le total de médias n'est pas encore connu (avant la fin du
+ * parsing côté serveur). */
+.takeout-progress-bar--indeterminate {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--hc-accent),
+    var(--hc-accent) 10px,
+    var(--hc-border) 10px,
+    var(--hc-border) 20px
+  );
+  animation: takeout-progress-stripes 1s linear infinite;
+}
+
+@keyframes takeout-progress-stripes {
+  from { background-position: 0 0; }
+  to { background-position: 28px 0; }
+}

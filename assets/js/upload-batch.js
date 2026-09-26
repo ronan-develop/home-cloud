@@ -100,7 +100,10 @@ export function createBatchPoller({
         try {
             const status = await fetchStatus(batchId);
             if (stopped) return;
-            if (status && status.status === 'completed') {
+            // "failed" (#327, import Google Photos) : terminal comme
+            // "completed" — le lot ne progressera plus, inutile de
+            // continuer à poller jusqu'au timeout.
+            if (status && (status.status === 'completed' || status.status === 'failed')) {
                 stop();
                 onComplete?.(status);
                 return;
