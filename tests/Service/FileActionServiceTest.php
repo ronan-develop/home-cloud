@@ -25,16 +25,26 @@ class FileActionServiceTest extends TestCase
     private EntityManagerInterface $em;
     private LoggerInterface $logger;
 
+    private FileRepositoryInterface $fileRepository;
+
     protected function setUp(): void
     {
-        // Create mocks for interfaces (DIP: depend on abstractions, not implementations)
-        $this->storageService = $this->createMock(StorageServiceInterface::class);
-        $this->authChecker = $this->createMock(AuthorizationCheckerInterface::class);
-        $this->em = $this->createMock(EntityManagerInterface::class);
-        $this->logger = $this->createMock(LoggerInterface::class);
+        // Stubs par défaut (aucune vérification d'appel) — chaque test qui a
+        // besoin de vérifier un appel précis (expects()) réassigne la
+        // propriété concernée avec un createMock() local puis rebuild() (#454).
+        $this->storageService = $this->createStub(StorageServiceInterface::class);
+        $this->authChecker = $this->createStub(AuthorizationCheckerInterface::class);
+        $this->em = $this->createStub(EntityManagerInterface::class);
+        $this->logger = $this->createStub(LoggerInterface::class);
+        $this->fileRepository = $this->createStub(FileRepositoryInterface::class);
 
+        $this->rebuild();
+    }
+
+    private function rebuild(): void
+    {
         $this->service = new FileActionService(
-            $this->createMock(FileRepositoryInterface::class),
+            $this->fileRepository,
             $this->storageService,
             $this->authChecker,
             $this->em,
@@ -83,8 +93,10 @@ class FileActionServiceTest extends TestCase
         $file = new File('old.txt', 'text/plain', 100, '/path/old.txt', $folder, $owner);
 
         // Expect flush to be called
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->once())
             ->method('flush');
+        $this->rebuild();
 
         // Act
         $this->service->rename($file, 'new.txt');
@@ -103,10 +115,12 @@ class FileActionServiceTest extends TestCase
         $file = new File('test.txt', 'text/plain', 100, '/path/test.txt', $folder1, $owner1);
 
         // Expect authChecker to reject file ownership (first call)
+        $this->authChecker = $this->createMock(AuthorizationCheckerInterface::class);
         $this->authChecker->expects($this->once())
             ->method('assertOwns')
             ->with($file, $owner2)
             ->willThrowException(new AccessDeniedHttpException('do not own'));
+        $this->rebuild();
 
         // Assert
         $this->expectException(AccessDeniedHttpException::class);
@@ -125,12 +139,14 @@ class FileActionServiceTest extends TestCase
         $file = new File('test.txt', 'text/plain', 100, '/path/test.txt', $source, $owner);
 
         // Setup authChecker: pass file check, fail folder check
+        $this->authChecker = $this->createMock(AuthorizationCheckerInterface::class);
         $this->authChecker->expects($this->exactly(2))
             ->method('assertOwns')
             ->willReturnOnConsecutiveCalls(
                 null, // First call (file) passes
                 $this->throwException(new AccessDeniedHttpException('do not own')) // Second call (folder) fails
             );
+        $this->rebuild();
 
         // Assert
         $this->expectException(AccessDeniedHttpException::class);
@@ -149,6 +165,7 @@ class FileActionServiceTest extends TestCase
         $file = new File('test.txt', 'text/plain', 100, '/path/test.txt', $a, $owner);
 
         // authChecker passes ownership checks
+        $this->authChecker = $this->createMock(AuthorizationCheckerInterface::class);
         $this->authChecker->expects($this->exactly(2))
             ->method('assertOwns');
 
@@ -157,6 +174,7 @@ class FileActionServiceTest extends TestCase
             ->method('wouldCreateCycle')
             ->with($a, $c)
             ->willReturn(true);
+        $this->rebuild();
 
         // Assert
         $this->expectException(BadRequestHttpException::class);
@@ -175,6 +193,7 @@ class FileActionServiceTest extends TestCase
         $file = new File('test.txt', 'text/plain', 100, '/path/test.txt', $source, $owner);
 
         // authChecker passes all checks
+        $this->authChecker = $this->createMock(AuthorizationCheckerInterface::class);
         $this->authChecker->expects($this->exactly(2))
             ->method('assertOwns');
         $this->authChecker->expects($this->once())
@@ -182,8 +201,10 @@ class FileActionServiceTest extends TestCase
             ->willReturn(false);
 
         // Expect flush
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->once())
             ->method('flush');
+        $this->rebuild();
 
         // Act
         $this->service->move($file, $target, $owner);
@@ -200,11 +221,13 @@ class FileActionServiceTest extends TestCase
         $file = new File('test.jpg', 'image/jpeg', 5000, '/path/test.jpg', $folder, $owner);
 
         // storageService deletes file
+        $this->storageService = $this->createMock(StorageServiceInterface::class);
         $this->storageService->expects($this->once())
             ->method('delete')
             ->with('/path/test.jpg');
 
         // em removes entity and flushes
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->once())
             ->method('remove')
             ->with($file);
@@ -212,7 +235,9 @@ class FileActionServiceTest extends TestCase
             ->method('flush');
 
         // Happy path : rien à signaler, pas de log
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->logger->expects($this->never())->method('warning');
+        $this->rebuild();
 
         // Act
         $this->service->delete($file);
@@ -228,11 +253,13 @@ class FileActionServiceTest extends TestCase
         $file = new File('test.jpg', 'image/jpeg', 5000, '/path/test.jpg', $folder, $owner);
 
         // storageService throws but we continue
+        $this->storageService = $this->createMock(StorageServiceInterface::class);
         $this->storageService->expects($this->once())
             ->method('delete')
             ->willThrowException(new \Exception('File not found'));
 
         // em still removes entity (graceful)
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->once())
             ->method('remove')
             ->with($file);
@@ -240,12 +267,14 @@ class FileActionServiceTest extends TestCase
             ->method('flush');
 
         // L'échec de suppression disque doit être loggé (pas juste avalé silencieusement)
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->logger->expects($this->once())
             ->method('warning')
             ->with(
                 $this->stringContains('test.jpg'),
                 $this->callback(fn (array $context) => ($context['path'] ?? null) === '/path/test.jpg'),
             );
+        $this->rebuild();
 
         // Act & Assert (no exception thrown, graceful)
         $this->service->delete($file);
