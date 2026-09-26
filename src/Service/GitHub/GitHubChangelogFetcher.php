@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\GitHub;
 
-use App\Interface\ChangelogFetcherInterface;
-use App\Interface\PrTitleCleanerInterface;
+use App\Interface\GitHub\ChangelogFetcherInterface;
+use App\Interface\GitHub\PrTitleCleanerInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;

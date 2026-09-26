@@ -22,6 +22,6 @@ when@test:
 
         App\Tests\Fake\FakeChangelogFetcher: ~
 
-        App\Interface\ChangelogFetcherInterface:
+        App\Interface\GitHub\ChangelogFetcherInterface:
             alias: App\Tests\Fake\FakeChangelogFetcher
             public: true

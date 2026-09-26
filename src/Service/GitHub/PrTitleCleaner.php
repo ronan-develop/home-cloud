@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\GitHub;
 
-use App\Interface\PrTitleCleanerInterface;
+use App\Interface\GitHub\PrTitleCleanerInterface;
 
 /**
  * Nettoie un titre de PR GitHub pour un affichage lisible côté utilisateur

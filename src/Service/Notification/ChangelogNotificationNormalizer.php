@@ -6,7 +6,7 @@ namespace App\Service\Notification;
 
 use App\Dto\NotificationItem;
 use App\Entity\User;
-use App\Interface\ChangelogFetcherInterface;
+use App\Interface\GitHub\ChangelogFetcherInterface;
 use App\Interface\Notification\NotificationNormalizerInterface;
 
 /**
