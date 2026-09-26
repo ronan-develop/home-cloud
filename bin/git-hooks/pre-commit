@@ -1,0 +1,64 @@
+#!/bin/bash
+# Pre-commit hook — vérifier les bonnes pratiques de commit du projet
+#
+# Ce fichier est versionné (bin/git-hooks/pre-commit) et copié dans
+# .git/hooks/pre-commit par bin/install-git-hooks.sh (lancé automatiquement
+# après composer install/update). .git/hooks/ n'est jamais versionné par
+# git — sans ce mécanisme, le hook n'existerait que sur la machine où il a
+# été écrit à la main.
+
+echo "🔍 Vérification des bonnes pratiques de commit..."
+
+# 1. Vérifier aucun secret en stage.
+#    On cherche un secret qui a une VALEUR (CLE=valeur_reelle), pas un fichier
+#    qui parle de secrets. L'ancienne version grepait les mots « password|secret
+#    |token » n'importe où : un document de sécurité qui EXPLIQUE le mécanisme
+#    des tokens déclenchait un faux positif systématique, sans jamais attraper
+#    un vrai secret comme APP_SECRET=<32 caractères hexadécimaux> (qui,
+#    lui, ne contient même pas le mot "secret" dans sa valeur).
+#    Ignorés : valeurs vides, placeholders, ${VAR}, %param%, ${{ secrets.* }},
+#    et les mots de passe factices des fixtures de test.
+ADDED=$(git diff --cached --diff-filter=ACMR -U0 | grep '^+' | grep -v '^+++')
+NOT_A_SECRET='CHANGE_ME|CHANGEME|your_|YOUR_|xxx+|\.\.\.|<[^>]+>|\$\{|%[a-z_.]+%|null://|example\.com|password123|secret123|wrongpassword|pwd12345|irrelevant-hash|::class\b|::[A-Za-z_]+\(|['"'"'"]@[a-zA-Z_][a-zA-Z0-9_.]*['"'"'"]'
+LEAK=$(echo "$ADDED" \
+    | grep -iE '(pass(wd|word)?|secret|api[_-]?key|access[_-]?key|auth[_-]?token|private[_-]?key)[a-z_]*["'"'"']?[[:space:]]*[:=][[:space:]]*["'"'"']?[^"'"'"' ,;<>${}%]{8,}' \
+    | grep -v '\${{ secrets\.' \
+    | grep -viE "$NOT_A_SECRET" \
+    | grep -vE ':[[:space:]]*[a-zA-Z_$][a-zA-Z0-9_]*[[:space:]]*[,)}]*[;]?[[:space:]]*$' \
+    | grep -vE '=[[:space:]]*(this\.|\$)[a-zA-Z_][a-zA-Z0-9_.]*[[:space:]]*[,)}]*[;]?[[:space:]]*$')
+PEM=$(echo "$ADDED" | grep -E 'BEGIN (RSA |EC |OPENSSH |PGP )?PRIVATE KEY')
+if [ -n "$LEAK" ] || [ -n "$PEM" ]; then
+    echo "❌ ERREUR : secret potentiel détecté dans les changements stagés :"
+    echo ""
+    [ -n "$LEAK" ] && echo "$LEAK" | sed 's/^/    /'
+    [ -n "$PEM" ]  && echo "$PEM"  | sed 's/^/    /'
+    echo ""
+    echo "Si c'est un faux positif, affiner le motif ci-dessus plutôt que --no-verify."
+    exit 1
+fi
+
+# 2. Vérifier pas de Co-Authored-By dans le message (sera fait lors du commit)
+# (ce hook ne peut pas accéder au message de commit avant que git commit demande)
+
+# 3. Vérifier pas de fichiers sensibles
+if git diff --cached --name-only | grep -E '(\.env\.local|\.env\.test\.local|config/secrets)' > /dev/null; then
+    echo "❌ ERREUR : Fichiers sensibles en stage (.env.local, secrets/...)"
+    exit 1
+fi
+
+# 4. Rebuild Tailwind si un .twig ou un fichier de style a été touché dans ce
+#    commit. Évite le piège récurrent : TailwindBuildTest échoue en local
+#    parce que var/tailwind/app.built.css n'a pas été régénéré après une
+#    modif de template — jamais commité (la CI génère sa propre version
+#    minifiée), mais doit rester à jour pour que la suite de tests soit
+#    fiable en local sans y penser à chaque fois.
+if git diff --cached --name-only | grep -qE '\.twig$|assets/styles/.*\.css$'; then
+    echo "🎨 Templates/styles modifiés — rebuild Tailwind..."
+    if ! composer build-assets > /tmp/claude-tailwind-rebuild.log 2>&1; then
+        echo "❌ ERREUR : rebuild Tailwind a échoué, voir /tmp/claude-tailwind-rebuild.log"
+        exit 1
+    fi
+fi
+
+echo "✅ Vérifications passed. Tu peux continuer."
+exit 0

@@ -89,11 +89,16 @@
             "@build-assets",
             "./vendor/bin/phpunit --configuration phpunit.dist.xml"
         ],
+        "install-git-hooks": [
+            "bash bin/install-git-hooks.sh"
+        ],
         "post-install-cmd": [
-            "@auto-scripts"
+            "@auto-scripts",
+            "@install-git-hooks"
         ],
         "post-update-cmd": [
-            "@auto-scripts"
+            "@auto-scripts",
+            "@install-git-hooks"
         ]
     },
     "conflict": {
