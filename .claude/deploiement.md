@@ -476,7 +476,11 @@ GitHub qui pousserait vers les instances (webhook testé et abandonné, cf.
 ci-dessous).
 
 ```text
-Merge sur main → CI verte → commit du CSS Tailwind buildé (ci.yml, [skip ci])
+Merge sur main → CI verte → rebuild Tailwind minifié (ci.yml)
+                             diff détecté → PR automatique (github-actions[bot])
+                                        │
+                     ⚠ merge manuel requis (protection de branche —
+                       le bot ne peut pas push directement sur main)
                                         │
                           (rien ne se passe en journée)
                                         │
@@ -490,6 +494,56 @@ Merge sur main → CI verte → commit du CSS Tailwind buildé (ci.yml, [skip ci
                                         ▼
                   2h45 : app:deploy-queue:notify → email récapitulatif
 ```
+
+### Séquence complète d'une mise à jour, étape par étape
+
+1. **Développement sur une branche dédiée** (`feature/...`, `fix/...`,
+   `chore/...`) — jamais de commit direct sur `main`.
+2. **Ouverture d'une PR** → déclenche la CI (PHPUnit, Jest, vérification de
+   label). Aucun déploiement à ce stade, juste la validation du code.
+3. **Merge sur `main`** — toujours manuel (confirmation explicite), jamais
+   automatique. C'est le seul geste humain requis dans tout le cycle.
+4. **Rien ne se passe côté serveur dans l'immédiat.** Les 7 instances
+   continuent de tourner sur leur ancien code jusqu'à la nuit suivante — c'est
+   le point central de #421 : plus de déploiement en pleine journée
+   susceptible de gêner un utilisateur actif.
+5. **CI post-merge** : si le CSS Tailwind rebuildé diffère de celui déjà
+   commité, le bot ouvre une PR dédiée (`chore/tailwind-rebuild-<sha>`) —
+   **elle aussi nécessite un merge manuel** (et parfois une approbation
+   manuelle du run si GitHub le marque "Action required", cf. §diagnostic).
+6. **Fenêtre nocturne (1h–2h30, heure de Paris)** : chaque instance a son
+   propre cron, espacé de 5 min des autres (contrainte LVE partagée,
+   #395/#396). `bin/deploy-nightly.sh` compare le SHA d'`origin/main` à son
+   `.deployed-sha` local :
+   - **identique** → rien ne se passe, juste une ligne de log
+     `à jour, rien à déployer`
+   - **différent** → déroule la chaîne complète (`git checkout --force`,
+     `composer install`, `cache:clear`, migrations, assets), chaque étape
+     dans son propre sous-shell (évite l'accumulation mémoire qui a causé des
+     `Killed` OOM sur ce LVE partagé)
+   - **avant de déployer**, vérifie qu'aucun utilisateur n'est actif sur
+     l'instance (#422) — sinon reporte à la nuit suivante sans forcer
+7. **Écriture de `.deployed-sha`** — uniquement si le déploiement complet
+   réussit. En cas d'échec à une étape quelconque, le fichier reste
+   inchangé : la nuit suivante retente automatiquement la chaîne complète,
+   sans jamais laisser une instance dans un état à moitié à jour.
+8. **Rapport email (2h45)** — `app:deploy-queue:notify` envoie un
+   récapitulatif sur `ronan@lenouvel.me` (statut par instance : déployée /
+   échec / reportée / déjà à jour), jamais envoyé si toutes les instances
+   sont simplement "à jour" (pas de bruit quotidien inutile).
+9. **Bypass d'urgence** : `bin/deploy-all.sh --now` force un déploiement
+   immédiat sur toutes les instances (fix critique/sécurité), avec
+   confirmation interactive obligatoire (`DEPLOY_NOW_CONFIRM=URGENT`).
+
+**Conséquence pratique** : n'importe quel nombre de PR mergées dans la
+journée s'accumulent sur `main` sans jamais déclencher de déploiement
+immédiat — elles sont toutes embarquées ensemble au prochain passage
+nocturne, comme un seul lot. Un échec sur ce lot laisse `.deployed-sha`
+inchangé (jamais d'état partiel), et la nuit suivante retente le même lot
+complet. Validé en conditions réelles du 2026-09-12 au 2026-09-26 : les 7
+instances sont restées synchronisées sur le même SHA, sans intervention
+manuelle après les deux correctifs du 13/09 (chemins absolus php/composer
+sous cron, mot de passe SMTP).
 
 **Pourquoi pas un webhook GitHub → instances** (piste explorée puis
 abandonnée) : `public/deploy.php` existe dans le repo (webhook HTTPS signé
@@ -638,3 +692,6 @@ echo "Il y a $(( ($(date +%s) - LAST) / 60 )) minutes"
 | Pas de vignette/EXIF dans la Galerie | Worker Messenger absent          | Vérifier la tâche cron (voir « Worker Messenger » ci-dessus) |
 | Messages Messenger jamais consommés (`messenger:stats` ne baisse jamais) | `var/log/` absent sur le serveur | Le cron redirige vers `var/log/messenger.log` (`>>`) : si le dossier n'existe pas, la redirection échoue et **la commande PHP ne s'exécute jamais**, sans erreur visible. `mkdir -p var/log` (corrigé dans `bin/deploy-all.sh` depuis le 2026-07-18, mais les instances déployées avant cette date doivent l'avoir manuellement). |
 | Une seule instance en `❌` sur un `deploy-all.sh`, différente à chaque run, sans message d'erreur clair | Instabilité SSH transitoire (timeout/latence ponctuelle sur le mutualisé, distincte du piège OOM/LVE déjà documenté ci-dessus) | Relancer simplement `bash bin/deploy-all.sh` une seconde fois — le script est idempotent (`git pull`/`composer install`/migrations ne font rien si déjà à jour) ; vécu le 2026-07-23 sur `yannick.lenouvel.me`, résolu au 2ᵉ run sans autre action. Si l'échec persiste sur la même instance après 2 essais, chercher la cause précise (cf. ligne OOM/LVE ci-dessus) plutôt que de continuer à relancer en boucle. |
+| PR de rebuild Tailwind ouverte par `github-actions[bot]` reste en statut « Action required », checks jamais déclenchés | Protection GitHub anti-abus par défaut sur une PR ouverte par un bot/premier contributeur — indépendante du réglage « Allow GitHub Actions to create and approve pull requests » | Identifier le run : `gh api repos/ronan-develop/home-cloud/actions/runs --jq '.workflow_runs[] \| select(.head_sha=="<sha>") \| {id, conclusion}'`, puis l'approuver : `gh api -X POST repos/ronan-develop/home-cloud/actions/runs/<id>/approve`. À refaire à chaque nouvelle PR de ce type — pas une configuration à activer une fois pour toutes. |
+| `composer: commande introuvable` dans `var/log/deploy-nightly.log` | Un cron cPanel s'exécute avec un `PATH` minimal, sans `/usr/local/bin` (contrairement à une session SSH interactive) | Déjà corrigé dans `bin/deploy-nightly.sh` (chemins absolus `/usr/local/bin/php`, `/usr/local/bin/composer`, overridables via `DEPLOY_NIGHTLY_PHP_BIN`/`DEPLOY_NIGHTLY_COMPOSER_BIN`) — vécu et corrigé le 2026-09-13, premier vrai passage nocturne. |
+| Rapport de déploiement jamais reçu par email, même en cas d'échec | Mot de passe SMTP expiré côté cPanel (rotation externe, pas liée au code) — `mailer:test` ne le révèle pas toujours | Vérifier : `uapi Email verify_password email=ronan domain=lenouvel.me password='<mdp actuel>'` (`data: 0` = invalide). Régénérer via `uapi Email passwd_pop email=ronan password='<nouveau>' domain=lenouvel.me`, mettre à jour `MAILER_DSN` dans `.env.local` des 7 instances (mot de passe **toujours quoté** dans `.secrets` local — un `@`/`#` non quoté casse le `source` du fichier). Vécu et corrigé le 2026-09-13. |
