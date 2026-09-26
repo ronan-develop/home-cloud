@@ -70,10 +70,10 @@ final class ThumbnailServiceRawTest extends TestCase
      */
     private function service(RawPreviewExtractorInterface $rawExtractor): ThumbnailService
     {
-        $exifExtractor = $this->createMock(ExifThumbnailExtractorInterface::class);
+        $exifExtractor = $this->createStub(ExifThumbnailExtractorInterface::class);
         $exifExtractor->method('extract')->willReturn(null);
 
-        $videoExtractor = $this->createMock(\App\Interface\VideoThumbnailExtractorInterface::class);
+        $videoExtractor = $this->createStub(\App\Interface\VideoThumbnailExtractorInterface::class);
         $videoExtractor->method('supports')->willReturn(false);
 
         return new ThumbnailService($this->storageDir, $rawExtractor, $exifExtractor, $videoExtractor);
@@ -112,7 +112,7 @@ final class ThumbnailServiceRawTest extends TestCase
     {
         $rawPath = $this->makeRawFile();
 
-        $extractor = $this->createMock(RawPreviewExtractorInterface::class);
+        $extractor = $this->createStub(RawPreviewExtractorInterface::class);
         $extractor->method('supports')->willReturn(true);
         $extractor->method('extract')->willThrowException(new PreviewNotFoundException('no preview'));
 
@@ -131,7 +131,7 @@ final class ThumbnailServiceRawTest extends TestCase
         // portrait. L'assertion est dimensionnelle, pas visuelle — elle échoue
         // franchement sans rotation, et un imagerotate() du mauvais signe
         // (180° au lieu de 90°) ne la trompe pas non plus.
-        $extractor = $this->createMock(RawPreviewExtractorInterface::class);
+        $extractor = $this->createStub(RawPreviewExtractorInterface::class);
         $extractor->method('supports')->willReturn(true);
         $extractor->method('extract')->willReturn(
             new ExtractedPreview($this->makeJpeg(900, 600), 900, 600, Format::NEF, Orientation::Rotate90),
@@ -160,7 +160,7 @@ final class ThumbnailServiceRawTest extends TestCase
         // dépasse MAX_IMAGE_DIMENSION (10000px). La hauteur de 1px garde le
         // test rapide et léger en mémoire : c'est le seuil qui est testé, pas
         // le comportement de GD sur une image réellement énorme.
-        $extractor = $this->createMock(RawPreviewExtractorInterface::class);
+        $extractor = $this->createStub(RawPreviewExtractorInterface::class);
         $extractor->method('supports')->willReturn(true);
         $extractor->method('extract')->willReturn(
             new ExtractedPreview($this->makeJpeg(10001, 1), 10001, 1, Format::NEF),

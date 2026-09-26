@@ -40,14 +40,17 @@ final class TakeoutImportHandlerTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->importRepository = $this->createMock(TakeoutImportRepository::class);
-        $this->zipExtractor = $this->createMock(TakeoutZipExtractor::class);
-        $this->structureParser = $this->createMock(TakeoutStructureParser::class);
-        $this->metadataReader = $this->createMock(TakeoutMetadataReader::class);
-        $this->mediaImporter = $this->createMock(TakeoutMediaImporter::class);
-        $this->defaultFolderService = $this->createMock(DefaultFolderServiceInterface::class);
-        $this->fingerprintRepository = $this->createMock(ContentFingerprintRepository::class);
-        $this->em = $this->createMock(EntityManagerInterface::class);
+        // Stubs par défaut (aucune vérification d'appel) — chaque test qui a
+        // besoin de vérifier un appel précis (expects()) réassigne la
+        // propriété concernée avec un createMock() local avant handler().
+        $this->importRepository = $this->createStub(TakeoutImportRepository::class);
+        $this->zipExtractor = $this->createStub(TakeoutZipExtractor::class);
+        $this->structureParser = $this->createStub(TakeoutStructureParser::class);
+        $this->metadataReader = $this->createStub(TakeoutMetadataReader::class);
+        $this->mediaImporter = $this->createStub(TakeoutMediaImporter::class);
+        $this->defaultFolderService = $this->createStub(DefaultFolderServiceInterface::class);
+        $this->fingerprintRepository = $this->createStub(ContentFingerprintRepository::class);
+        $this->em = $this->createStub(EntityManagerInterface::class);
     }
 
     /** @var string[] Fichiers temporaires créés par les tests, nettoyés en tearDown */
@@ -91,6 +94,7 @@ final class TakeoutImportHandlerTest extends TestCase
     public function testHandlerDoesNothingWhenImportNotFound(): void
     {
         $this->importRepository->method('find')->willReturn(null);
+        $this->zipExtractor = $this->createMock(TakeoutZipExtractor::class);
         $this->zipExtractor->expects($this->never())->method('extract');
 
         $this->handler()(new TakeoutImportMessage('missing-id', ['/tmp/whatever.zip']));
@@ -104,16 +108,19 @@ final class TakeoutImportHandlerTest extends TestCase
 
         $this->importRepository->method('find')->willReturn($import);
 
+        $this->zipExtractor = $this->createMock(TakeoutZipExtractor::class);
         $this->zipExtractor->expects($this->once())->method('extract');
 
         $entry = new TakeoutMediaEntry($this->makeExtractedFile(), null);
         $this->structureParser->method('parse')
             ->willReturn(new TakeoutStructureResult([$entry], 2));
 
+        $this->fingerprintRepository = $this->createMock(ContentFingerprintRepository::class);
         $this->fingerprintRepository->expects($this->once())
             ->method('findExistingHashes')
             ->willReturn([]);
 
+        $this->defaultFolderService = $this->createMock(DefaultFolderServiceInterface::class);
         $this->defaultFolderService->expects($this->once())
             ->method('resolve')
             ->willReturn($folder);
@@ -122,11 +129,13 @@ final class TakeoutImportHandlerTest extends TestCase
             new File('photo.jpg', 'image/jpeg', 10, '2026/09/uuid.jpg', $folder, $owner),
             'photo',
         );
+        $this->mediaImporter = $this->createMock(TakeoutMediaImporter::class);
         $this->mediaImporter->expects($this->once())
             ->method('import')
             ->with($entry, null, $folder, $owner, [])
             ->willReturn(TakeoutImportOutcome::imported($media));
 
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->atLeastOnce())->method('flush');
 
         $this->handler()(new TakeoutImportMessage((string) $import->getId(), ['/tmp/takeout.zip']));
@@ -187,11 +196,13 @@ final class TakeoutImportHandlerTest extends TestCase
         $this->defaultFolderService->method('resolve')->willReturn($folder);
 
         $metadata = new TakeoutMetadata(new \DateTimeImmutable('2020-01-01'), null, null);
+        $this->metadataReader = $this->createMock(TakeoutMetadataReader::class);
         $this->metadataReader->expects($this->once())
             ->method('read')
             ->with($entry->metadataPath)
             ->willReturn($metadata);
 
+        $this->mediaImporter = $this->createMock(TakeoutMediaImporter::class);
         $this->mediaImporter->expects($this->once())
             ->method('import')
             ->with($entry, $metadata, $folder, $owner, [])

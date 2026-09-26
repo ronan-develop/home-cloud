@@ -23,7 +23,7 @@ final class ShareNotificationMailerTest extends TestCase
         ?MailerInterface $mailer = null,
         ?UrlGeneratorInterface $urlGenerator = null,
     ): ShareNotificationMailer {
-        $mailer ??= $this->createMock(MailerInterface::class);
+        $mailer ??= $this->createStub(MailerInterface::class);
         $urlGenerator ??= $this->makeUrlGeneratorStub();
 
         return new ShareNotificationMailer($mailer, $urlGenerator);

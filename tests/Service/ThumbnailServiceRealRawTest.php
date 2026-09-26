@@ -70,10 +70,10 @@ final class ThumbnailServiceRealRawTest extends TestCase
 
     public function testGeneratesUprightThumbnailFromRealNef(): void
     {
-        $exifExtractor = $this->createMock(ExifThumbnailExtractorInterface::class);
+        $exifExtractor = $this->createStub(ExifThumbnailExtractorInterface::class);
         $exifExtractor->method('extract')->willReturn(null);
 
-        $videoExtractor = $this->createMock(\App\Interface\VideoThumbnailExtractorInterface::class);
+        $videoExtractor = $this->createStub(\App\Interface\VideoThumbnailExtractorInterface::class);
         $videoExtractor->method('supports')->willReturn(false);
 
         $service = new ThumbnailService(

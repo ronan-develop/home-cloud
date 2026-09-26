@@ -32,12 +32,20 @@ final class FileUploadServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->storageService = $this->createMock(StorageServiceInterface::class);
-        $this->defaultFolderService = $this->createMock(DefaultFolderServiceInterface::class);
-        $this->em = $this->createMock(EntityManagerInterface::class);
-        $this->contentFingerprintRepository = $this->createMock(ContentFingerprintRepository::class);
+        // Stubs par défaut (aucune vérification d'appel) — chaque test qui a
+        // besoin de vérifier un appel précis (expects()) réassigne la
+        // propriété concernée avec un createMock() local puis rebuild() (#454).
+        $this->storageService = $this->createStub(StorageServiceInterface::class);
+        $this->defaultFolderService = $this->createStub(DefaultFolderServiceInterface::class);
+        $this->em = $this->createStub(EntityManagerInterface::class);
+        $this->contentFingerprintRepository = $this->createStub(ContentFingerprintRepository::class);
         $this->contentFingerprintRepository->method('existsForOwner')->willReturn(false);
 
+        $this->rebuild();
+    }
+
+    private function rebuild(): void
+    {
         $this->service = new FileUploadService(
             $this->storageService,
             $this->defaultFolderService,
@@ -75,16 +83,20 @@ final class FileUploadServiceTest extends TestCase
         $owner = new User('owner@example.com', 'Owner');
         $folder = new Folder('Root', $owner);
 
+        $this->defaultFolderService = $this->createMock(DefaultFolderServiceInterface::class);
         $this->defaultFolderService->expects($this->once())
             ->method('resolve')
             ->willReturn($folder);
 
+        $this->storageService = $this->createMock(StorageServiceInterface::class);
         $this->storageService->expects($this->once())
             ->method('store')
             ->willReturn(['path' => '/path/file.txt', 'neutralized' => false]);
 
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->once())->method('persist');
         $this->em->expects($this->once())->method('flush');
+        $this->rebuild();
 
         $file = $this->service->createFromUpload($uploadedFile, $owner);
 
@@ -104,17 +116,21 @@ final class FileUploadServiceTest extends TestCase
         $targetFolder = new Folder('Documents', $owner);
         $folderId = (string) $targetFolder->getId();
 
+        $this->defaultFolderService = $this->createMock(DefaultFolderServiceInterface::class);
         $this->defaultFolderService->expects($this->once())
             ->method('resolve')
             ->with($folderId, null, $owner)
             ->willReturn($targetFolder);
 
+        $this->storageService = $this->createMock(StorageServiceInterface::class);
         $this->storageService->expects($this->once())
             ->method('store')
             ->willReturn(['path' => '/path/document.pdf', 'neutralized' => false]);
 
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->once())->method('persist');
         $this->em->expects($this->once())->method('flush');
+        $this->rebuild();
 
         $file = $this->service->createFromUpload($uploadedFile, $owner, $folderId);
 
@@ -130,16 +146,20 @@ final class FileUploadServiceTest extends TestCase
         $owner = new User('owner@example.com', 'Owner');
         $folder = new Folder('Root', $owner);
 
+        $this->defaultFolderService = $this->createMock(DefaultFolderServiceInterface::class);
         $this->defaultFolderService->expects($this->once())
             ->method('resolve')
             ->willReturn($folder);
 
+        $this->storageService = $this->createMock(StorageServiceInterface::class);
         $this->storageService->expects($this->once())
             ->method('store')
             ->willReturn(['path' => '/2026/03/uuid.txt', 'neutralized' => false]);
 
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->once())->method('persist');
         $this->em->expects($this->once())->method('flush');
+        $this->rebuild();
 
         $file = $this->service->createFromUpload($uploadedFile, $owner);
 
@@ -159,16 +179,20 @@ final class FileUploadServiceTest extends TestCase
         $owner = new User('owner@example.com', 'Owner');
         $folder = new Folder('Root', $owner);
 
+        $this->defaultFolderService = $this->createMock(DefaultFolderServiceInterface::class);
         $this->defaultFolderService->expects($this->once())
             ->method('resolve')
             ->willReturn($folder);
 
+        $this->storageService = $this->createMock(StorageServiceInterface::class);
         $this->storageService->expects($this->once())
             ->method('store')
             ->willReturn(['path' => '/2026/03/uuid.bin', 'neutralized' => true]);
 
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->once())->method('persist');
         $this->em->expects($this->once())->method('flush');
+        $this->rebuild();
 
         $file = $this->service->createFromUpload($uploadedFile, $owner);
 
@@ -189,15 +213,11 @@ final class FileUploadServiceTest extends TestCase
             ->with($owner, hash_file('sha256', $tmpFile))
             ->willReturn(true);
 
-        $this->service = new FileUploadService(
-            $this->storageService,
-            $this->defaultFolderService,
-            $this->em,
-            $this->contentFingerprintRepository,
-        );
-
+        $this->storageService = $this->createMock(StorageServiceInterface::class);
         $this->storageService->expects($this->never())->method('store');
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->never())->method('persist');
+        $this->rebuild();
 
         $this->expectException(BadRequestHttpException::class);
         $this->expectExceptionMessage('Ce fichier a déjà été importé.');
@@ -227,13 +247,7 @@ final class FileUploadServiceTest extends TestCase
                 return $fingerprint->getOwner() === $owner
                     && $fingerprint->getContentHash() === $expectedHash;
             }));
-
-        $this->service = new FileUploadService(
-            $this->storageService,
-            $this->defaultFolderService,
-            $this->em,
-            $this->contentFingerprintRepository,
-        );
+        $this->rebuild();
 
         $this->service->createFromUpload($uploadedFile, $owner);
     }

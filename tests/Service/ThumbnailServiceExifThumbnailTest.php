@@ -66,10 +66,10 @@ final class ThumbnailServiceExifThumbnailTest extends TestCase
 
     private function service(ExifThumbnailExtractorInterface $exifExtractor): ThumbnailService
     {
-        $rawExtractor = $this->createMock(RawPreviewExtractorInterface::class);
+        $rawExtractor = $this->createStub(RawPreviewExtractorInterface::class);
         $rawExtractor->method('supports')->willReturn(false);
 
-        $videoExtractor = $this->createMock(\App\Interface\VideoThumbnailExtractorInterface::class);
+        $videoExtractor = $this->createStub(\App\Interface\VideoThumbnailExtractorInterface::class);
         $videoExtractor->method('supports')->willReturn(false);
 
         return new ThumbnailService($this->storageDir, $rawExtractor, $exifExtractor, $videoExtractor);
@@ -94,7 +94,7 @@ final class ThumbnailServiceExifThumbnailTest extends TestCase
     {
         $path = $this->makePlainFile();
 
-        $exifExtractor = $this->createMock(ExifThumbnailExtractorInterface::class);
+        $exifExtractor = $this->createStub(ExifThumbnailExtractorInterface::class);
         $exifExtractor->method('extract')->willReturn(null);
 
         $thumb = $this->service($exifExtractor)->generate($path);
@@ -108,7 +108,7 @@ final class ThumbnailServiceExifThumbnailTest extends TestCase
 
         // Miniature stockée couchée (téléphone tenu à la verticale) : la
         // vignette finale doit ressortir en portrait, comme pour les RAW.
-        $exifExtractor = $this->createMock(ExifThumbnailExtractorInterface::class);
+        $exifExtractor = $this->createStub(ExifThumbnailExtractorInterface::class);
         $exifExtractor->method('extract')->willReturn(
             new ExifThumbnail($this->makeJpeg(160, 120), Orientation::Rotate90),
         );

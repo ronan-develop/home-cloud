@@ -28,10 +28,18 @@ final class AlbumImportServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->createFileService = $this->createMock(CreateFileServiceInterface::class);
-        $this->mediaProcessor    = $this->createMock(MediaProcessorInterface::class);
+        // Stubs par défaut (aucune vérification d'appel) — chaque test qui a
+        // besoin de vérifier un appel précis (expects()) réassigne la
+        // propriété concernée avec un createMock() local puis rebuild() (#454).
+        $this->createFileService = $this->createStub(CreateFileServiceInterface::class);
+        $this->mediaProcessor    = $this->createStub(MediaProcessorInterface::class);
         $this->albumService      = $this->createMock(AlbumServiceInterface::class);
 
+        $this->rebuild();
+    }
+
+    private function rebuild(): void
+    {
         $this->service = new AlbumImportService(
             $this->createFileService,
             $this->mediaProcessor,
@@ -52,8 +60,8 @@ final class AlbumImportServiceTest extends TestCase
         $owner = new User('test@example.com', 'Test');
         $album = new Album('Vacances', $owner);
 
-        $file1 = $this->createMock(File::class);
-        $file2 = $this->createMock(File::class);
+        $file1 = $this->createStub(File::class);
+        $file2 = $this->createStub(File::class);
 
         $folder = new \App\Entity\Folder('Photos', $owner);
         $mediaFile1 = new File('a.jpg', 'image/jpeg', 1, 'a.jpg', $folder, $owner);
@@ -82,7 +90,7 @@ final class AlbumImportServiceTest extends TestCase
         $owner = new User('test@example.com', 'Test');
         $album = new Album('Vacances', $owner);
 
-        $file = $this->createMock(File::class);
+        $file = $this->createStub(File::class);
         $this->createFileService->method('createFromUpload')->willReturn($file);
         $this->mediaProcessor->method('process')->willReturn(null);
 
@@ -99,8 +107,10 @@ final class AlbumImportServiceTest extends TestCase
         $owner = new User('test@example.com', 'Test');
         $album = new Album('Vacances', $owner);
 
+        $this->createFileService = $this->createMock(CreateFileServiceInterface::class);
         $this->createFileService->expects($this->never())->method('createFromUpload');
         $this->albumService->expects($this->never())->method('addMedias');
+        $this->rebuild();
 
         $this->service->import($album, [], $owner);
     }

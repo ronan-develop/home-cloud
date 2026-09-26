@@ -21,9 +21,9 @@ final class GuestAccountCreatorTest extends TestCase
         ?MailerInterface $mailer = null,
         ?UrlGeneratorInterface $urlGenerator = null,
     ): GuestAccountCreator {
-        $em ??= $this->createMock(EntityManagerInterface::class);
+        $em ??= $this->createStub(EntityManagerInterface::class);
         $resetPasswordHelper ??= $this->makeResetPasswordHelperStub();
-        $mailer ??= $this->createMock(MailerInterface::class);
+        $mailer ??= $this->createStub(MailerInterface::class);
         $urlGenerator ??= $this->makeUrlGeneratorStub();
 
         return new GuestAccountCreator($em, $resetPasswordHelper, $mailer, $urlGenerator);

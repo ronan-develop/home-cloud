@@ -20,9 +20,17 @@ final class DefaultFolderServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->repo = $this->createMock(FolderRepository::class);
-        $this->em = $this->createMock(EntityManagerInterface::class);
+        // Stubs par défaut (aucune vérification d'appel) — chaque test qui a
+        // besoin de vérifier un appel précis (expects()) réassigne la
+        // propriété concernée avec un createMock() local puis rebuild() (#454).
+        $this->repo = $this->createStub(FolderRepository::class);
+        $this->em = $this->createStub(EntityManagerInterface::class);
 
+        $this->rebuild();
+    }
+
+    private function rebuild(): void
+    {
         $this->service = new DefaultFolderService($this->repo, $this->em);
     }
 
@@ -31,10 +39,12 @@ final class DefaultFolderServiceTest extends TestCase
         $owner = new User('owner@example.com', 'Owner');
         $folder = new Folder('MyFolder', $owner);
 
+        $this->repo = $this->createMock(FolderRepository::class);
         $this->repo->expects($this->once())
             ->method('find')
             ->with('existing-id')
             ->willReturn($folder);
+        $this->rebuild();
 
         $result = $this->service->resolve('existing-id', null, $owner);
 
@@ -45,9 +55,11 @@ final class DefaultFolderServiceTest extends TestCase
     {
         $owner = new User('u@example.com', 'User');
 
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->once())
             ->method('persist')
             ->with($this->callback(fn($f) => $f instanceof Folder && $f->getName() === 'NewFolder'));
+        $this->rebuild();
 
         $result = $this->service->resolve(null, 'NewFolder', $owner);
 
@@ -60,10 +72,12 @@ final class DefaultFolderServiceTest extends TestCase
         $owner = new User('u2@example.com', 'User2');
         $uploads = new Folder(DefaultFolderService::DEFAULT_FOLDER_NAME, $owner);
 
+        $this->repo = $this->createMock(FolderRepository::class);
         $this->repo->expects($this->once())
             ->method('findOneBy')
             ->with(['name' => DefaultFolderService::DEFAULT_FOLDER_NAME, 'owner' => $owner])
             ->willReturn($uploads);
+        $this->rebuild();
 
         $result = $this->service->resolve(null, null, $owner);
 
@@ -74,14 +88,17 @@ final class DefaultFolderServiceTest extends TestCase
     {
         $owner = new User('u3@example.com', 'User3');
 
+        $this->repo = $this->createMock(FolderRepository::class);
         $this->repo->expects($this->once())
             ->method('findOneBy')
             ->with(['name' => DefaultFolderService::DEFAULT_FOLDER_NAME, 'owner' => $owner])
             ->willReturn(null);
 
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->once())
             ->method('persist')
             ->with($this->isInstanceOf(Folder::class));
+        $this->rebuild();
 
         $result = $this->service->resolve(null, null, $owner);
 
@@ -97,10 +114,12 @@ final class DefaultFolderServiceTest extends TestCase
         $other = new User('owner-b@example.com', 'B');
         $folder = new Folder('OtherFolder', $other);
 
+        $this->repo = $this->createMock(FolderRepository::class);
         $this->repo->expects($this->once())
             ->method('find')
             ->with('some-id')
             ->willReturn($folder);
+        $this->rebuild();
 
         $this->service->resolve('some-id', null, $owner);
     }
@@ -110,15 +129,18 @@ final class DefaultFolderServiceTest extends TestCase
         $owner = new User('owner-rel@example.com', 'Owner');
         $target = new Folder('Archives', $owner);
 
+        $this->repo = $this->createMock(FolderRepository::class);
         $this->repo->expects($this->once())
             ->method('find')
             ->with('target-id')
             ->willReturn($target);
-
         // ensureSubfolderPath cherche un enfant existant nommé '2026-07-10-BMA' — absent
         $this->repo->method('findOneBy')->willReturn(null);
+
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->once())->method('persist');
         $this->em->expects($this->once())->method('flush');
+        $this->rebuild();
 
         $result = $this->service->resolve('target-id', null, $owner, '2026-07-10-BMA');
 
@@ -131,11 +153,14 @@ final class DefaultFolderServiceTest extends TestCase
         $owner = new User('owner-norel@example.com', 'Owner');
         $target = new Folder('Archives', $owner);
 
+        $this->repo = $this->createMock(FolderRepository::class);
         $this->repo->expects($this->once())
             ->method('find')
             ->with('target-id')
             ->willReturn($target);
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->never())->method('persist');
+        $this->rebuild();
 
         $result = $this->service->resolve('target-id', null, $owner, null);
 
@@ -155,8 +180,10 @@ final class DefaultFolderServiceTest extends TestCase
                 return null; // pas de sous-dossier existant
             });
 
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->once())->method('persist');
         $this->em->expects($this->once())->method('flush');
+        $this->rebuild();
 
         $result = $this->service->resolve(null, null, $owner, 'Photos2026');
 
@@ -174,12 +201,14 @@ final class DefaultFolderServiceTest extends TestCase
             ->willReturn(null);
 
         // Expect two persists for A and B
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->exactly(2))
             ->method('persist')
             ->with($this->callback(fn($f) => $f instanceof Folder));
 
         $this->em->expects($this->once())
             ->method('flush');
+        $this->rebuild();
 
         $result = $this->service->ensureSubfolderPath($parent, 'A/B', $owner);
 

@@ -57,7 +57,7 @@ final class MediaFullResponseFactoryTest extends TestCase
         file_put_contents($rawPath, 'raw-bytes');
         $previewData = $this->makeJpeg();
 
-        $extractor = $this->createMock(RawPreviewExtractorInterface::class);
+        $extractor = $this->createStub(RawPreviewExtractorInterface::class);
         $extractor->method('supports')->willReturn(true);
         $extractor->method('extract')->willReturn(
             new ExtractedPreview($previewData, 60, 40, Format::NEF),
@@ -79,7 +79,7 @@ final class MediaFullResponseFactoryTest extends TestCase
         $rawPath = $this->tmpDir . '/portrait.nef';
         file_put_contents($rawPath, 'raw-bytes');
 
-        $extractor = $this->createMock(RawPreviewExtractorInterface::class);
+        $extractor = $this->createStub(RawPreviewExtractorInterface::class);
         $extractor->method('supports')->willReturn(true);
         $extractor->method('extract')->willReturn(
             // Paysage 90x60 à l'horizontale, mais pris en portrait.
@@ -107,7 +107,7 @@ final class MediaFullResponseFactoryTest extends TestCase
         file_put_contents($rawPath, 'raw-bytes');
         $previewData = $this->makeJpeg(90, 60);
 
-        $extractor = $this->createMock(RawPreviewExtractorInterface::class);
+        $extractor = $this->createStub(RawPreviewExtractorInterface::class);
         $extractor->method('supports')->willReturn(true);
         $extractor->method('extract')->willReturn(
             new ExtractedPreview($previewData, 90, 60, Format::NEF, Orientation::Normal),
@@ -127,7 +127,7 @@ final class MediaFullResponseFactoryTest extends TestCase
         $rawPath = $this->tmpDir . '/grande.nef';
         file_put_contents($rawPath, 'raw-bytes');
 
-        $extractor = $this->createMock(RawPreviewExtractorInterface::class);
+        $extractor = $this->createStub(RawPreviewExtractorInterface::class);
         $extractor->method('supports')->willReturn(true);
         $extractor->method('extract')->willReturn(
             new ExtractedPreview($this->makeJpeg(6000, 4000), 6000, 4000, Format::NEF),
@@ -149,7 +149,7 @@ final class MediaFullResponseFactoryTest extends TestCase
         file_put_contents($rawPath, 'raw-bytes');
         $previewData = $this->makeJpeg(1200, 800);
 
-        $extractor = $this->createMock(RawPreviewExtractorInterface::class);
+        $extractor = $this->createStub(RawPreviewExtractorInterface::class);
         $extractor->method('supports')->willReturn(true);
         $extractor->method('extract')->willReturn(
             new ExtractedPreview($previewData, 1200, 800, Format::NEF),
@@ -184,7 +184,7 @@ final class MediaFullResponseFactoryTest extends TestCase
         $rawPath = $this->tmpDir . '/photo.nef';
         file_put_contents($rawPath, 'raw-bytes');
 
-        $extractor = $this->createMock(RawPreviewExtractorInterface::class);
+        $extractor = $this->createStub(RawPreviewExtractorInterface::class);
         $extractor->method('supports')->willReturn(true);
         $extractor->method('extract')->willThrowException(new PreviewNotFoundException('none'));
 
@@ -227,7 +227,7 @@ final class MediaFullResponseFactoryTest extends TestCase
         $rawPath = $this->tmpDir . '/photo.nef';
         file_put_contents($rawPath, 'raw-bytes');
 
-        $extractor = $this->createMock(RawPreviewExtractorInterface::class);
+        $extractor = $this->createStub(RawPreviewExtractorInterface::class);
         $extractor->method('supports')->willReturn(true);
         $extractor->method('extract')->willReturn(
             new ExtractedPreview($this->makeJpeg(90, 60), 90, 60, Format::NEF),
@@ -244,7 +244,7 @@ final class MediaFullResponseFactoryTest extends TestCase
         $rawPath = $this->tmpDir . '/photo.nef';
         file_put_contents($rawPath, 'raw-bytes');
 
-        $extractor = $this->createMock(RawPreviewExtractorInterface::class);
+        $extractor = $this->createStub(RawPreviewExtractorInterface::class);
         $extractor->method('supports')->willReturn(true);
         $extractor->method('extract')->willReturn(
             new ExtractedPreview($this->makeJpeg(), 60, 40, Format::NEF),

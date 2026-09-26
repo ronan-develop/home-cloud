@@ -39,10 +39,9 @@ final class MediaDeletionServiceTest extends TestCase
         $storage->expects($this->once())->method('delete')->with('2026/02/photo.jpg');
 
         $em = $this->createMock(EntityManagerInterface::class);
-        $em->method('remove');
         $em->expects($this->once())->method('flush');
 
-        $service = new MediaDeletionService($storage, $em, $this->createMock(RawPreviewCacheInterface::class));
+        $service = new MediaDeletionService($storage, $em, $this->createStub(RawPreviewCacheInterface::class));
         $service->delete($media);
     }
 
@@ -63,9 +62,9 @@ final class MediaDeletionServiceTest extends TestCase
         $em->expects($this->once())->method('flush');
 
         $service = new MediaDeletionService(
-            $this->createMock(StorageServiceInterface::class),
+            $this->createStub(StorageServiceInterface::class),
             $em,
-            $this->createMock(RawPreviewCacheInterface::class),
+            $this->createStub(RawPreviewCacheInterface::class),
         );
         $service->delete($media);
     }
@@ -102,11 +101,9 @@ final class MediaDeletionServiceTest extends TestCase
                 $this->assertContains($path, $expected);
             });
 
-        $em = $this->createMock(EntityManagerInterface::class);
-        $em->method('remove');
-        $em->method('flush');
+        $em = $this->createStub(EntityManagerInterface::class);
 
-        $service = new MediaDeletionService($storage, $em, $this->createMock(RawPreviewCacheInterface::class));
+        $service = new MediaDeletionService($storage, $em, $this->createStub(RawPreviewCacheInterface::class));
         $service->delete($media);
     }
 
@@ -117,11 +114,9 @@ final class MediaDeletionServiceTest extends TestCase
         $storage = $this->createMock(StorageServiceInterface::class);
         $storage->expects($this->once())->method('delete')->with('2026/02/photo.jpg');
 
-        $em = $this->createMock(EntityManagerInterface::class);
-        $em->method('remove');
-        $em->method('flush');
+        $em = $this->createStub(EntityManagerInterface::class);
 
-        $service = new MediaDeletionService($storage, $em, $this->createMock(RawPreviewCacheInterface::class));
+        $service = new MediaDeletionService($storage, $em, $this->createStub(RawPreviewCacheInterface::class));
         $service->delete($media);
     }
 
@@ -131,8 +126,8 @@ final class MediaDeletionServiceTest extends TestCase
         // suppression laisserait un orphelin sur le disque.
         $media = $this->makeMedia();
 
-        $storage = $this->createMock(StorageServiceInterface::class);
-        $em = $this->createMock(EntityManagerInterface::class);
+        $storage = $this->createStub(StorageServiceInterface::class);
+        $em = $this->createStub(EntityManagerInterface::class);
 
         $cache = $this->createMock(RawPreviewCacheInterface::class);
         $cache->expects($this->once())->method('evict')->with('2026/02/photo.jpg');
@@ -145,14 +140,13 @@ final class MediaDeletionServiceTest extends TestCase
     {
         $media = $this->makeMedia();
 
-        $storage = $this->createMock(StorageServiceInterface::class);
+        $storage = $this->createStub(StorageServiceInterface::class);
         $storage->method('delete')->willThrowException(new \RuntimeException('File not found'));
 
         $em = $this->createMock(EntityManagerInterface::class);
-        $em->method('remove');
         $em->expects($this->once())->method('flush');
 
-        $service = new MediaDeletionService($storage, $em, $this->createMock(RawPreviewCacheInterface::class));
+        $service = new MediaDeletionService($storage, $em, $this->createStub(RawPreviewCacheInterface::class));
         $service->delete($media);
     }
 }

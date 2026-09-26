@@ -52,10 +52,10 @@ class ThumbnailServiceVideoTest extends TestCase
 
     private function service(VideoThumbnailExtractorInterface $videoExtractor): ThumbnailService
     {
-        $rawExtractor = $this->createMock(RawPreviewExtractorInterface::class);
+        $rawExtractor = $this->createStub(RawPreviewExtractorInterface::class);
         $rawExtractor->method('supports')->willReturn(false);
 
-        $exifExtractor = $this->createMock(ExifThumbnailExtractorInterface::class);
+        $exifExtractor = $this->createStub(ExifThumbnailExtractorInterface::class);
         $exifExtractor->method('extract')->willReturn(null);
 
         return new ThumbnailService($this->storageDir, $rawExtractor, $exifExtractor, $videoExtractor);
@@ -65,7 +65,7 @@ class ThumbnailServiceVideoTest extends TestCase
     {
         $videoPath = $this->makeVideoFile();
 
-        $videoExtractor = $this->createMock(VideoThumbnailExtractorInterface::class);
+        $videoExtractor = $this->createStub(VideoThumbnailExtractorInterface::class);
         $videoExtractor->method('supports')->willReturn(true);
         $videoExtractor->method('extract')
             ->willReturn(new ExtractedVideoFrame($this->makeJpeg(640, 480)));
@@ -88,7 +88,7 @@ class ThumbnailServiceVideoTest extends TestCase
     {
         $videoPath = $this->makeVideoFile();
 
-        $videoExtractor = $this->createMock(VideoThumbnailExtractorInterface::class);
+        $videoExtractor = $this->createStub(VideoThumbnailExtractorInterface::class);
         $videoExtractor->method('supports')->willReturn(true);
         $videoExtractor->method('extract')
             ->willThrowException(new FrameExtractionFailedException('ffmpeg failed'));
@@ -119,7 +119,7 @@ class ThumbnailServiceVideoTest extends TestCase
     {
         $videoPath = $this->makeVideoFile();
 
-        $videoExtractor = $this->createMock(VideoThumbnailExtractorInterface::class);
+        $videoExtractor = $this->createStub(VideoThumbnailExtractorInterface::class);
         $videoExtractor->method('supports')->willReturn(true);
         $videoExtractor->method('extract')
             ->willReturn(new ExtractedVideoFrame($this->makeJpeg(320, 240)));

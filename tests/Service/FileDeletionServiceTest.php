@@ -35,13 +35,21 @@ final class FileDeletionServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->storage = $this->createMock(StorageServiceInterface::class);
-        $this->em = $this->createMock(EntityManagerInterface::class);
-        $this->sharedResourceCleaner = $this->createMock(SharedResourceCleanerInterface::class);
-        $this->mediaRepository = $this->createMock(MediaRepository::class);
-        $this->mediaDetachService = $this->createMock(MediaDetachServiceInterface::class);
-        $this->mediaDeletionService = $this->createMock(MediaDeletionServiceInterface::class);
+        // Stubs par défaut (aucune vérification d'appel) — chaque test qui a
+        // besoin de vérifier un appel précis (expects()) réassigne la
+        // propriété concernée avec un createMock() local puis rebuild() (#454).
+        $this->storage = $this->createStub(StorageServiceInterface::class);
+        $this->em = $this->createStub(EntityManagerInterface::class);
+        $this->sharedResourceCleaner = $this->createStub(SharedResourceCleanerInterface::class);
+        $this->mediaRepository = $this->createStub(MediaRepository::class);
+        $this->mediaDetachService = $this->createStub(MediaDetachServiceInterface::class);
+        $this->mediaDeletionService = $this->createStub(MediaDeletionServiceInterface::class);
 
+        $this->rebuild();
+    }
+
+    private function rebuild(): void
+    {
         $this->service = new FileDeletionService(
             $this->storage,
             $this->em,
@@ -64,21 +72,26 @@ final class FileDeletionServiceTest extends TestCase
     {
         $file = $this->makeFile();
 
+        $this->mediaRepository = $this->createMock(MediaRepository::class);
         $this->mediaRepository->expects($this->once())
             ->method('findByFile')
             ->with($file)
             ->willReturn(null);
 
+        $this->storage = $this->createMock(StorageServiceInterface::class);
         $this->storage->expects($this->once())
             ->method('delete')
             ->with($file->getPath());
 
+        $this->sharedResourceCleaner = $this->createMock(SharedResourceCleanerInterface::class);
         $this->sharedResourceCleaner->expects($this->once())
             ->method('deleteByResource')
             ->with(Share::RESOURCE_FILE, $file->getId());
 
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->once())->method('remove')->with($file);
         $this->em->expects($this->once())->method('flush');
+        $this->rebuild();
 
         $keptInAlbums = $this->service->deleteFile($file, false);
 
@@ -90,17 +103,22 @@ final class FileDeletionServiceTest extends TestCase
         $file = $this->makeFile();
         $media = new Media($file, 'photo');
 
+        $this->mediaRepository = $this->createMock(MediaRepository::class);
         $this->mediaRepository->expects($this->once())
             ->method('findByFile')
             ->with($file)
             ->willReturn($media);
 
+        $this->mediaDetachService = $this->createMock(MediaDetachServiceInterface::class);
         $this->mediaDetachService->expects($this->once())
             ->method('detachAndDeleteFile')
             ->with($media);
 
+        $this->mediaDeletionService = $this->createMock(MediaDeletionServiceInterface::class);
         $this->mediaDeletionService->expects($this->never())->method('delete');
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->never())->method('remove');
+        $this->rebuild();
 
         $keptInAlbums = $this->service->deleteFile($file, true);
 
@@ -112,26 +130,33 @@ final class FileDeletionServiceTest extends TestCase
         $file = $this->makeFile();
         $media = new Media($file, 'photo');
 
+        $this->mediaRepository = $this->createMock(MediaRepository::class);
         $this->mediaRepository->expects($this->once())
             ->method('findByFile')
             ->with($file)
             ->willReturn($media);
 
+        $this->mediaDeletionService = $this->createMock(MediaDeletionServiceInterface::class);
         $this->mediaDeletionService->expects($this->once())
             ->method('delete')
             ->with($media);
 
+        $this->mediaDetachService = $this->createMock(MediaDetachServiceInterface::class);
         $this->mediaDetachService->expects($this->never())->method('detachAndDeleteFile');
+        $this->storage = $this->createMock(StorageServiceInterface::class);
         $this->storage->expects($this->never())->method('delete');
 
+        $this->sharedResourceCleaner = $this->createMock(SharedResourceCleanerInterface::class);
         $this->sharedResourceCleaner->expects($this->once())
             ->method('deleteByResource')
             ->with(Share::RESOURCE_FILE, $file->getId());
 
         // Media::$file passé à onDelete: SET NULL (#246) : le File n'est pas
         // supprimé en cascade, MediaDeletionService le fait lui-même.
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->never())->method('remove');
         $this->em->expects($this->once())->method('flush');
+        $this->rebuild();
 
         $keptInAlbums = $this->service->deleteFile($file, false);
 
@@ -143,10 +168,13 @@ final class FileDeletionServiceTest extends TestCase
         $file = $this->makeFile();
 
         $this->mediaRepository->method('findByFile')->willReturn(null);
+        $this->storage = $this->createStub(StorageServiceInterface::class);
         $this->storage->method('delete')->willThrowException(new \RuntimeException('Disque hors service'));
 
+        $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->never())->method('remove');
         $this->em->expects($this->never())->method('flush');
+        $this->rebuild();
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Disque hors service');
