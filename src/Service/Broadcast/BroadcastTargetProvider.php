@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Broadcast;
 
-use App\Interface\BroadcastTargetProviderInterface;
+use App\Interface\Broadcast\BroadcastTargetProviderInterface;
 
 final readonly class BroadcastTargetProvider implements BroadcastTargetProviderInterface
 {

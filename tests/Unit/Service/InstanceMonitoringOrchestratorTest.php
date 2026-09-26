@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Service;
 
-use App\Interface\BroadcastTargetProviderInterface;
+use App\Interface\Broadcast\BroadcastTargetProviderInterface;
 use App\Interface\InstanceMonitoringReporterInterface;
 use App\Service\InstanceMonitoringOrchestrator;
 use App\Service\InstanceMonitoringSnapshot;

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Broadcast;
 
-use App\Interface\BroadcastMailerInterface;
-use App\Interface\BroadcastOrchestratorInterface;
-use App\Interface\BroadcastTargetProviderInterface;
+use App\Interface\Broadcast\BroadcastMailerInterface;
+use App\Interface\Broadcast\BroadcastOrchestratorInterface;
+use App\Interface\Broadcast\BroadcastTargetProviderInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 

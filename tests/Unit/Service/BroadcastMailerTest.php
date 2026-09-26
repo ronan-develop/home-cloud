@@ -6,7 +6,7 @@ namespace App\Tests\Unit\Service;
 
 use App\Entity\User;
 use App\Interface\UserRepositoryInterface;
-use App\Service\BroadcastMailer;
+use App\Service\Broadcast\BroadcastMailer;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Mailer\MailerInterface;

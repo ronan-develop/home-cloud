@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use App\Interface\BroadcastTargetProviderInterface;
+use App\Interface\Broadcast\BroadcastTargetProviderInterface;
 use App\Interface\InstanceMonitoringReporterInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;

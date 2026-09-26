@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\Broadcast;
 
-use App\Interface\BroadcastMailerInterface;
+use App\Interface\Broadcast\BroadcastMailerInterface;
 use App\Interface\UserRepositoryInterface;
+use App\Service\EmailBranding;
 use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\Mailer\MailerInterface;
