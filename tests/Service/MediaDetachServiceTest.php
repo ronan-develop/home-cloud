@@ -33,8 +33,8 @@ final class MediaDetachServiceTest extends TestCase
         $storage = $this->createMock(StorageServiceInterface::class);
         $storage->expects($this->once())->method('delete')->with('2026/02/photo.jpg');
 
-        $em = $this->createMock(EntityManagerInterface::class);
-        $sharedResourceCleaner = $this->createMock(SharedResourceCleanerInterface::class);
+        $em = $this->createStub(EntityManagerInterface::class);
+        $sharedResourceCleaner = $this->createStub(SharedResourceCleanerInterface::class);
 
         $service = new MediaDetachService($storage, $sharedResourceCleaner, $em);
         $service->detachAndDeleteFile($media);
@@ -45,8 +45,8 @@ final class MediaDetachServiceTest extends TestCase
         $media = $this->makeMedia();
         $fileId = $media->getFile()->getId();
 
-        $storage = $this->createMock(StorageServiceInterface::class);
-        $em = $this->createMock(EntityManagerInterface::class);
+        $storage = $this->createStub(StorageServiceInterface::class);
+        $em = $this->createStub(EntityManagerInterface::class);
 
         $sharedResourceCleaner = $this->createMock(SharedResourceCleanerInterface::class);
         $sharedResourceCleaner->expects($this->once())
@@ -62,9 +62,9 @@ final class MediaDetachServiceTest extends TestCase
         $media = $this->makeMedia();
 
         $service = new MediaDetachService(
-            $this->createMock(StorageServiceInterface::class),
-            $this->createMock(SharedResourceCleanerInterface::class),
-            $this->createMock(EntityManagerInterface::class),
+            $this->createStub(StorageServiceInterface::class),
+            $this->createStub(SharedResourceCleanerInterface::class),
+            $this->createStub(EntityManagerInterface::class),
         );
         $service->detachAndDeleteFile($media);
 
@@ -81,8 +81,8 @@ final class MediaDetachServiceTest extends TestCase
         $em->expects($this->once())->method('flush');
 
         $service = new MediaDetachService(
-            $this->createMock(StorageServiceInterface::class),
-            $this->createMock(SharedResourceCleanerInterface::class),
+            $this->createStub(StorageServiceInterface::class),
+            $this->createStub(SharedResourceCleanerInterface::class),
             $em,
         );
         $service->detachAndDeleteFile($media);
@@ -92,7 +92,7 @@ final class MediaDetachServiceTest extends TestCase
     {
         $media = $this->makeMedia();
 
-        $storage = $this->createMock(StorageServiceInterface::class);
+        $storage = $this->createStub(StorageServiceInterface::class);
         $storage->method('delete')->willThrowException(new \RuntimeException('File not found'));
 
         $em = $this->createMock(EntityManagerInterface::class);
@@ -101,7 +101,7 @@ final class MediaDetachServiceTest extends TestCase
 
         $service = new MediaDetachService(
             $storage,
-            $this->createMock(SharedResourceCleanerInterface::class),
+            $this->createStub(SharedResourceCleanerInterface::class),
             $em,
         );
         $service->detachAndDeleteFile($media);
@@ -115,9 +115,9 @@ final class MediaDetachServiceTest extends TestCase
         $media->detach();
 
         $service = new MediaDetachService(
-            $this->createMock(StorageServiceInterface::class),
-            $this->createMock(SharedResourceCleanerInterface::class),
-            $this->createMock(EntityManagerInterface::class),
+            $this->createStub(StorageServiceInterface::class),
+            $this->createStub(SharedResourceCleanerInterface::class),
+            $this->createStub(EntityManagerInterface::class),
         );
 
         $this->expectException(\LogicException::class);
