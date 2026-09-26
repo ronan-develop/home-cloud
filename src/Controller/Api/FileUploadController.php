@@ -57,7 +57,6 @@ final class FileUploadController extends AbstractController
      *
      * Champs form attendus :
      *   file           (fichier binaire, obligatoire)
-     *   ownerId        (UUID utilisateur, obligatoire)
      *   folderId       (UUID folder existant, optionnel)
      *   newFolderName  (nom du nouveau folder à créer, optionnel)
      *   relativePath   (sous-arborescence à recréer sous le folder cible,
@@ -73,10 +72,9 @@ final class FileUploadController extends AbstractController
             throw new BadRequestHttpException('A file must be uploaded (multipart field: "file")');
         }
 
-        $ownerId = $request->request->get('ownerId');
-        if (empty($ownerId)) {
-            throw new BadRequestHttpException('ownerId is required');
-        }
+        // #441 : ownerId ne doit jamais venir du client (IDOR) — toujours
+        // l'utilisateur authentifié, jamais un champ de formulaire falsifiable.
+        $ownerId = (string) $this->getUser()->getId();
 
         // Déléguer à CreateFileService (validation, stockage, persistance)
         $file = $this->createFileService->createFromUpload(
