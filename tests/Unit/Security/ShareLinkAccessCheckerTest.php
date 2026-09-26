@@ -7,7 +7,7 @@ namespace App\Tests\Unit\Security;
 use App\Entity\Share;
 use App\Entity\ShareLink;
 use App\Entity\User;
-use App\Interface\ShareLinkRepositoryInterface;
+use App\Interface\Share\ShareLinkRepositoryInterface;
 use App\Security\ShareLinkAccessChecker;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Uid\Uuid;

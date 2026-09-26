@@ -6,8 +6,8 @@ namespace App\Security;
 
 use App\Entity\Share;
 use App\Entity\User;
-use App\Interface\ResourceAccessCheckerInterface;
-use App\Interface\ShareAccessCheckerInterface;
+use App\Interface\Share\ResourceAccessCheckerInterface;
+use App\Interface\Share\ShareAccessCheckerInterface;
 use Symfony\Component\Uid\Uuid;
 
 /**

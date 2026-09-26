@@ -9,12 +9,12 @@ use App\Entity\Folder;
 use App\Entity\Media;
 use App\Entity\Share;
 use App\Entity\User;
-use App\Interface\MediaDeletionServiceInterface;
-use App\Interface\MediaDetachServiceInterface;
-use App\Interface\SharedResourceCleanerInterface;
-use App\Interface\StorageServiceInterface;
+use App\Interface\Media\MediaDeletionServiceInterface;
+use App\Interface\Media\MediaDetachServiceInterface;
+use App\Interface\Share\SharedResourceCleanerInterface;
+use App\Interface\File\StorageServiceInterface;
 use App\Repository\MediaRepository;
-use App\Service\FileDeletionService;
+use App\Service\File\FileDeletionService;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 

@@ -8,7 +8,7 @@ use App\Dto\NotificationItem;
 use App\Entity\DirectMessage;
 use App\Entity\User;
 use App\Repository\DirectMessageRepository;
-use App\Service\DirectMessageNotificationNormalizer;
+use App\Service\Notification\DirectMessageNotificationNormalizer;
 use PHPUnit\Framework\TestCase;
 
 final class DirectMessageNotificationNormalizerTest extends TestCase

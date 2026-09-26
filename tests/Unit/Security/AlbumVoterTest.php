@@ -6,7 +6,7 @@ namespace App\Tests\Unit\Security;
 
 use App\Entity\Album;
 use App\Entity\User;
-use App\Interface\ResourceAccessCheckerInterface;
+use App\Interface\Share\ResourceAccessCheckerInterface;
 use App\Security\AlbumVoter;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;

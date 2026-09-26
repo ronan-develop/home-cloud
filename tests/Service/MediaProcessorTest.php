@@ -6,11 +6,11 @@ namespace App\Tests\Service;
 
 use App\Entity\File;
 use App\Entity\Media;
-use App\Interface\StorageServiceInterface;
+use App\Interface\File\StorageServiceInterface;
 use App\Repository\MediaRepository;
-use App\Service\ExifService;
-use App\Service\MediaProcessor;
-use App\Service\ThumbnailService;
+use App\Service\Media\ExifService;
+use App\Service\Media\MediaProcessor;
+use App\Service\Media\ThumbnailService;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;

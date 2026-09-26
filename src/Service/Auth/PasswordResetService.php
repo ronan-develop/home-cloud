@@ -1,0 +1,32 @@
+<?php
+
+namespace App\Service\Auth;
+
+use App\Entity\User;
+use Doctrine\ORM\EntityManagerInterface;
+use SymfonyCasts\Bundle\ResetPassword\Exception\ResetPasswordExceptionInterface;
+use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
+
+use App\Interface\Auth\PasswordResetServiceInterface;
+
+class PasswordResetService implements PasswordResetServiceInterface
+{
+    public function __construct(
+        private ResetPasswordHelperInterface $resetPasswordHelper,
+        private EntityManagerInterface $entityManager,
+    ) {}
+
+    /**
+     * Valide le token et met à jour le mot de passe de l'utilisateur.
+     * @throws ResetPasswordExceptionInterface
+     */
+    public function resetPassword(string $token, string $newPassword): User
+    {
+        $user = $this->resetPasswordHelper->validateTokenAndFetchUser($token);
+        $user->setPassword(password_hash($newPassword, PASSWORD_BCRYPT));
+        $this->entityManager->flush();
+        $this->resetPasswordHelper->removeResetRequest($token);
+
+        return $user;
+    }
+}

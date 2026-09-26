@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Controller\Web;
 
 use App\Entity\User;
-use App\Interface\ChangelogFetcherInterface;
+use App\Interface\GitHub\ChangelogFetcherInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;

@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Controller\Web;
 
 use App\Entity\User;
-use App\Interface\AlbumRepositoryInterface;
-use App\Interface\MediaRepositoryInterface;
-use App\Interface\OwnershipCheckerInterface;
-use App\Interface\StorageServiceInterface;
-use App\Service\MediaCacheHeaders;
+use App\Interface\Album\AlbumRepositoryInterface;
+use App\Interface\Media\MediaRepositoryInterface;
+use App\Interface\Auth\OwnershipCheckerInterface;
+use App\Interface\File\StorageServiceInterface;
+use App\Service\Media\MediaCacheHeaders;
 use App\Factory\MediaFullResponseFactory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;

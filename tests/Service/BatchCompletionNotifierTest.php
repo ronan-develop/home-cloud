@@ -6,7 +6,7 @@ namespace App\Tests\Service;
 
 use App\Entity\UploadBatch;
 use App\Entity\User;
-use App\Service\BatchCompletionNotifier;
+use App\Service\Notification\BatchCompletionNotifier;
 use PHPUnit\Framework\TestCase;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\Mailer\MailerInterface;

@@ -5,12 +5,12 @@ namespace App\Tests\Service;
 
 use App\Entity\Folder;
 use App\Entity\User;
-use App\Interface\DefaultFolderServiceInterface;
-use App\Interface\StorageServiceInterface;
+use App\Interface\Folder\DefaultFolderServiceInterface;
+use App\Interface\File\StorageServiceInterface;
 use App\Repository\ContentFingerprintRepository;
 use App\Repository\UserRepository;
 use App\Security\GuestRestrictionChecker;
-use App\Service\CreateFileService;
+use App\Service\File\CreateFileService;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\File\UploadedFile;

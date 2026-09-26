@@ -6,7 +6,7 @@ namespace App\Tests\Unit\Security;
 
 use App\Entity\Share;
 use App\Entity\User;
-use App\Interface\ShareAccessCheckerInterface;
+use App\Interface\Share\ShareAccessCheckerInterface;
 use App\Security\ResourceAccessChecker;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Uid\Uuid;

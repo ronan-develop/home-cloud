@@ -8,7 +8,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use App\Repository\FolderRepository;
 use App\Repository\UserRepository;
 use App\Entity\Folder;
-use App\Service\FolderTreeService;
+use App\Service\Folder\FolderTreeService;
 
 class FolderBrowserController extends AbstractController
 {

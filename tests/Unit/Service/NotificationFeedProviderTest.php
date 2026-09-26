@@ -6,8 +6,8 @@ namespace App\Tests\Unit\Service;
 
 use App\Dto\NotificationItem;
 use App\Entity\User;
-use App\Interface\NotificationNormalizerInterface;
-use App\Service\NotificationFeedProvider;
+use App\Interface\Notification\NotificationNormalizerInterface;
+use App\Service\Notification\NotificationFeedProvider;
 use PHPUnit\Framework\TestCase;
 
 final class NotificationFeedProviderTest extends TestCase

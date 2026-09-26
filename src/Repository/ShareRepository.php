@@ -6,7 +6,7 @@ namespace App\Repository;
 
 use App\Entity\Share;
 use App\Entity\User;
-use App\Interface\ShareRepositoryInterface;
+use App\Interface\Share\ShareRepositoryInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\LockMode;
 use Doctrine\Persistence\ManagerRegistry;

@@ -11,7 +11,7 @@ use App\Entity\ShareLink;
 use App\Entity\User;
 use App\Exception\ResourceNotPubliclyShareableException;
 use App\Factory\ShareLinkFactory;
-use App\Interface\OwnershipCheckerInterface;
+use App\Interface\Auth\OwnershipCheckerInterface;
 use App\Interface\ResourceLocatorInterface;
 use App\Security\ShareLinkTokenGenerator;
 use App\Security\VisibilityChecker;

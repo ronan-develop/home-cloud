@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Service;
 
-use App\Service\GitHubChangelogFetcher;
-use App\Service\PrTitleCleaner;
+use App\Service\GitHub\GitHubChangelogFetcher;
+use App\Service\GitHub\PrTitleCleaner;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\HttpClient\MockHttpClient;

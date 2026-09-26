@@ -7,8 +7,8 @@ namespace App\Tests\Integration;
 use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\User;
-use App\Interface\DefaultFolderServiceInterface;
-use App\Interface\FolderMoverInterface;
+use App\Interface\Folder\DefaultFolderServiceInterface;
+use App\Interface\Folder\FolderMoverInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class FolderMoverIntegrationTest extends KernelTestCase
@@ -45,7 +45,7 @@ final class FolderMoverIntegrationTest extends KernelTestCase
         $uploads = $mover->moveContentsToUploads($root, $user);
 
         // Ensure uploads folder was returned
-        $this->assertEquals(\App\Service\DefaultFolderService::DEFAULT_FOLDER_NAME, $uploads->getName());
+        $this->assertEquals(\App\Service\Folder\DefaultFolderService::DEFAULT_FOLDER_NAME, $uploads->getName());
         $this->assertNotNull($uploads->getId());
 
         // Note: moving files is validated in unit tests; DB-level behavior may vary depending on repository implementation.

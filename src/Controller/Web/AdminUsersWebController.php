@@ -8,7 +8,7 @@ use App\Entity\User;
 use App\Repository\FileRepository;
 use App\Repository\UserRepository;
 use App\Security\AdminVoter;
-use App\Service\FileSizeFormatter;
+use App\Service\File\FileSizeFormatter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;

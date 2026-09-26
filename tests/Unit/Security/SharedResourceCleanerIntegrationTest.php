@@ -80,7 +80,7 @@ final class SharedResourceCleanerIntegrationTest extends AuthenticatedApiTestCas
         $this->em->flush();
         $this->makeLink($owner, Share::RESOURCE_ALBUM, $album->getId());
 
-        $albumService = static::getContainer()->get(\App\Service\AlbumService::class);
+        $albumService = static::getContainer()->get(\App\Service\Album\AlbumService::class);
         $albumService->delete($album);
 
         $this->em->clear();

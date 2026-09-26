@@ -10,7 +10,7 @@ use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\Media;
 use App\Entity\User;
-use App\Interface\StorageServiceInterface;
+use App\Interface\File\StorageServiceInterface;
 use App\Tests\Web\Fixtures\WebFixturesTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -136,7 +136,7 @@ final class FileDeleteWebTest extends WebTestCase
                 throw new \RuntimeException('not used');
             }
         };
-        static::getContainer()->set(\App\Service\StorageService::class, $failingStorage);
+        static::getContainer()->set(\App\Service\File\StorageService::class, $failingStorage);
 
         $this->client->request('POST', '/files/' . $fileId . '/delete', ['_token' => $token]);
         $this->client->followRedirect();

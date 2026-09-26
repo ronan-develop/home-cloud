@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Service;
 
-use App\Interface\ExifThumbnailExtractorInterface;
-use App\Service\ExifThumbnail;
-use App\Service\ThumbnailService;
+use App\Interface\Media\ExifThumbnailExtractorInterface;
+use App\Service\Media\ExifThumbnail;
+use App\Service\Media\ThumbnailService;
 use PHPUnit\Framework\TestCase;
 use RonanLenouvel\RawPreviewExtractor\Orientation;
 use RonanLenouvel\RawPreviewExtractor\RawPreviewExtractorInterface;

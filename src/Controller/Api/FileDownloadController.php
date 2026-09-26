@@ -8,7 +8,7 @@ use App\Entity\Share;
 use App\Entity\User;
 use App\Http\ContentDispositionFactory;
 use App\Repository\FileRepository;
-use App\Interface\StorageServiceInterface;
+use App\Interface\File\StorageServiceInterface;
 use App\Security\ResourceAccessChecker;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Tests\Service;
 
 use App\Exception\Video\FrameExtractionFailedException;
-use App\Interface\ExifThumbnailExtractorInterface;
+use App\Interface\Media\ExifThumbnailExtractorInterface;
 use App\Interface\VideoThumbnailExtractorInterface;
-use App\Service\ThumbnailService;
+use App\Service\Media\ThumbnailService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;

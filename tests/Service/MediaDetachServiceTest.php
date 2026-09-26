@@ -9,9 +9,9 @@ use App\Entity\Folder;
 use App\Entity\Media;
 use App\Entity\Share;
 use App\Entity\User;
-use App\Interface\SharedResourceCleanerInterface;
-use App\Interface\StorageServiceInterface;
-use App\Service\MediaDetachService;
+use App\Interface\Share\SharedResourceCleanerInterface;
+use App\Interface\File\StorageServiceInterface;
+use App\Service\Media\MediaDetachService;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 

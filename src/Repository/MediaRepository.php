@@ -7,7 +7,7 @@ namespace App\Repository;
 use App\Entity\File;
 use App\Entity\Media;
 use App\Entity\User;
-use App\Interface\MediaRepositoryInterface;
+use App\Interface\Media\MediaRepositoryInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Uid\Uuid;

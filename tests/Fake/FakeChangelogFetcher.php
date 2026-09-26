@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Fake;
 
-use App\Interface\ChangelogFetcherInterface;
+use App\Interface\GitHub\ChangelogFetcherInterface;
 
 /**
  * Double de test pour ChangelogFetcherInterface — évite tout appel réseau

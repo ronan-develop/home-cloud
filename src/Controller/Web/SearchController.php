@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Controller\Web;
 
 use App\Entity\User;
-use App\Interface\MediaRepositoryInterface;
+use App\Interface\Media\MediaRepositoryInterface;
 use App\Repository\FileRepository;
 use App\Repository\FolderRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;

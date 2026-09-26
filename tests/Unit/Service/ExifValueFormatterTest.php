@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Service;
 
-use App\Service\ExifValueFormatter;
+use App\Service\Media\ExifValueFormatter;
 use PHPUnit\Framework\TestCase;
 
 /**

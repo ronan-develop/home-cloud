@@ -7,7 +7,7 @@ namespace App\Repository;
 use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\User;
-use App\Interface\FileRepositoryInterface;
+use App\Interface\File\FileRepositoryInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\LockMode;
 use Doctrine\Persistence\ManagerRegistry;

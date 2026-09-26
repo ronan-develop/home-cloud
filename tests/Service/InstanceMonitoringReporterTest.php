@@ -7,7 +7,7 @@ namespace App\Tests\Service;
 use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\User;
-use App\Service\InstanceMonitoringReporter;
+use App\Service\Monitoring\InstanceMonitoringReporter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 

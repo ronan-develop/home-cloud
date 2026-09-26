@@ -8,7 +8,7 @@ use App\Entity\Album;
 use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\Share;
-use App\Interface\OwnershipCheckerInterface;
+use App\Interface\Auth\OwnershipCheckerInterface;
 use App\Security\ResourceLocator;
 use App\Security\VisibilityRevoker;
 use Doctrine\ORM\EntityManagerInterface;

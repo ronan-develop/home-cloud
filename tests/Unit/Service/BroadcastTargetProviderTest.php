@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Service;
 
-use App\Service\BroadcastTargetProvider;
+use App\Service\Broadcast\BroadcastTargetProvider;
 use PHPUnit\Framework\TestCase;
 
 /**

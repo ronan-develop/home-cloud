@@ -3,7 +3,7 @@
 namespace App\Tests\Service;
 
 use App\Entity\User;
-use App\Service\PasswordResetService;
+use App\Service\Auth\PasswordResetService;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 use SymfonyCasts\Bundle\ResetPassword\Exception\ResetPasswordExceptionInterface;

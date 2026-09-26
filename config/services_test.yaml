@@ -11,17 +11,17 @@ when@test:
             tags:
                 - { name: kernel.event_subscriber }
 
-        App\Service\StorageService:
+        App\Service\File\StorageService:
             public: true
             arguments:
                 $storageDir: '%app.storage_dir%'
 
-        App\Interface\StorageServiceInterface:
-            alias: App\Service\StorageService
+        App\Interface\File\StorageServiceInterface:
+            alias: App\Service\File\StorageService
             public: true
 
         App\Tests\Fake\FakeChangelogFetcher: ~
 
-        App\Interface\ChangelogFetcherInterface:
+        App\Interface\GitHub\ChangelogFetcherInterface:
             alias: App\Tests\Fake\FakeChangelogFetcher
             public: true

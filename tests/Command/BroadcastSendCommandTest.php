@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Command;
 
 use App\Command\BroadcastSendCommand;
-use App\Interface\BroadcastOrchestratorInterface;
+use App\Interface\Broadcast\BroadcastOrchestratorInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;

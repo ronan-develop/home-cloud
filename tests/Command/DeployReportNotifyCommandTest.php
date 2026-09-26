@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Command;
 
 use App\Command\DeployReportNotifyCommand;
-use App\Interface\DeployNotificationMailerInterface;
+use App\Interface\Monitoring\DeployNotificationMailerInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Application;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Service;
 
-use App\Service\FileSizeFormatter;
+use App\Service\File\FileSizeFormatter;
 use PHPUnit\Framework\TestCase;
 
 final class FileSizeFormatterTest extends TestCase

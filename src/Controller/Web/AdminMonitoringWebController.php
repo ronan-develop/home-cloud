@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Controller\Web;
 
 use App\Security\AdminVoter;
-use App\Service\InstanceMonitoringOrchestrator;
+use App\Service\Monitoring\InstanceMonitoringOrchestrator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;

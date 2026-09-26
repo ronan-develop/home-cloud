@@ -7,7 +7,7 @@ namespace App\Security;
 use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\User;
-use App\Interface\AuthorizationCheckerInterface;
+use App\Interface\Auth\AuthorizationCheckerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 /**

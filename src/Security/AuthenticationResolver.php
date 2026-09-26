@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Security;
 
 use App\Entity\User;
-use App\Interface\AuthenticationResolverInterface;
+use App\Interface\Auth\AuthenticationResolverInterface;
 use App\Repository\UserRepository;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;

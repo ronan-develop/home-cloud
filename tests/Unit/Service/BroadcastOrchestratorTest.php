@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Service;
 
-use App\Interface\BroadcastMailerInterface;
-use App\Interface\BroadcastTargetProviderInterface;
-use App\Service\BroadcastOrchestrator;
+use App\Interface\Broadcast\BroadcastMailerInterface;
+use App\Interface\Broadcast\BroadcastTargetProviderInterface;
+use App\Service\Broadcast\BroadcastOrchestrator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpClient\Exception\TransportException;

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Security;
 
-use App\Interface\ShareLinkRepositoryInterface;
-use App\Interface\SharedResourceCleanerInterface;
-use App\Interface\ShareRepositoryInterface;
+use App\Interface\Share\ShareLinkRepositoryInterface;
+use App\Interface\Share\SharedResourceCleanerInterface;
+use App\Interface\Share\ShareRepositoryInterface;
 use Symfony\Component\Uid\Uuid;
 
 /**

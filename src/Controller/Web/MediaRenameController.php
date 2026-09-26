@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller\Web;
 
-use App\Interface\FileActionServiceInterface;
-use App\Interface\MediaRepositoryInterface;
+use App\Interface\File\FileActionServiceInterface;
+use App\Interface\Media\MediaRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;

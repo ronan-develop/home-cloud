@@ -6,11 +6,11 @@ namespace App\Controller\Web;
 
 use App\Entity\Share;
 use App\Entity\User;
-use App\Interface\FolderZipArchiverInterface;
+use App\Interface\Folder\FolderZipArchiverInterface;
 use App\Repository\FolderRepository;
 use App\Security\ResourceAccessChecker;
-use App\Service\DefaultFolderService;
-use App\Service\FolderService;
+use App\Service\Folder\DefaultFolderService;
+use App\Service\Folder\FolderService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Request;

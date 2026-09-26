@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Controller\Web;
 
 use App\Entity\User;
-use App\Interface\PasswordResetInitiatorInterface;
+use App\Interface\Auth\PasswordResetInitiatorInterface;
 use App\Repository\RefreshTokenRepository;
 use App\Repository\UserRepository;
 use App\Security\AdminVoter;

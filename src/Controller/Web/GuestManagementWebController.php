@@ -6,7 +6,7 @@ namespace App\Controller\Web;
 
 use App\Entity\User;
 use App\Interface\UserRepositoryInterface;
-use App\Service\GuestAccountCreator;
+use App\Service\Auth\GuestAccountCreator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;

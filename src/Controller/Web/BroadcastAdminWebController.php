@@ -6,7 +6,7 @@ namespace App\Controller\Web;
 
 use App\Dto\BroadcastMessageInput;
 use App\Form\BroadcastMessageFormType;
-use App\Interface\BroadcastOrchestratorInterface;
+use App\Interface\Broadcast\BroadcastOrchestratorInterface;
 use App\Security\AdminVoter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;

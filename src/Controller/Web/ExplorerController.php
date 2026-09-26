@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Controller\Web;
 
 use App\Entity\User;
-use App\Interface\AlbumRepositoryInterface;
-use App\Interface\OwnershipCheckerInterface;
+use App\Interface\Album\AlbumRepositoryInterface;
+use App\Interface\Auth\OwnershipCheckerInterface;
 use App\Repository\FileRepository;
 use App\Repository\FolderRepository;
 use App\Repository\MediaRepository;

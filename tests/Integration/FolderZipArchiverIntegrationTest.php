@@ -7,8 +7,8 @@ namespace App\Tests\Integration;
 use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\User;
-use App\Interface\FolderZipArchiverInterface;
-use App\Interface\StorageServiceInterface;
+use App\Interface\Folder\FolderZipArchiverInterface;
+use App\Interface\File\StorageServiceInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class FolderZipArchiverIntegrationTest extends KernelTestCase

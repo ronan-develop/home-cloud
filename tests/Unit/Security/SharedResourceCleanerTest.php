@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Security;
 
 use App\Entity\Share;
-use App\Interface\ShareLinkRepositoryInterface;
-use App\Interface\ShareRepositoryInterface;
+use App\Interface\Share\ShareLinkRepositoryInterface;
+use App\Interface\Share\ShareRepositoryInterface;
 use App\Security\SharedResourceCleaner;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Uid\Uuid;

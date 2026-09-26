@@ -3,7 +3,7 @@
 namespace App\Controller\Api;
 
 use App\Entity\User;
-use App\Interface\PasswordResetInitiatorInterface;
+use App\Interface\Auth\PasswordResetInitiatorInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,7 +17,7 @@ class ResetPasswordController extends AbstractController
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private \App\Interface\PasswordResetServiceInterface $passwordResetService,
+        private \App\Interface\Auth\PasswordResetServiceInterface $passwordResetService,
         private RateLimiterFactory $resetPasswordRequestLimiter,
         private RateLimiterFactory $resetPasswordSubmitLimiter,
         private PasswordResetInitiatorInterface $passwordResetInitiator,

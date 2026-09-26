@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Command;
 
-use App\Interface\FileRepositoryInterface;
-use App\Interface\MediaProcessorInterface;
+use App\Interface\File\FileRepositoryInterface;
+use App\Interface\Media\MediaProcessorInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;

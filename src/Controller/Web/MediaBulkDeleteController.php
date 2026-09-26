@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller\Web;
 
-use App\Interface\MediaDeletionServiceInterface;
-use App\Interface\MediaRepositoryInterface;
+use App\Interface\Media\MediaDeletionServiceInterface;
+use App\Interface\Media\MediaRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
