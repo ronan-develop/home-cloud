@@ -55,15 +55,15 @@ final class ThumbnailServiceLoggingTest extends TestCase
     {
         $videoPath = $this->makeVideoFile();
 
-        $videoExtractor = $this->createMock(VideoThumbnailExtractorInterface::class);
+        $videoExtractor = $this->createStub(VideoThumbnailExtractorInterface::class);
         $videoExtractor->method('supports')->willReturn(true);
         $videoExtractor->method('extract')
             ->willThrowException(new FrameExtractionFailedException('ffmpeg a échoué : exit 1'));
 
-        $rawExtractor = $this->createMock(RawPreviewExtractorInterface::class);
+        $rawExtractor = $this->createStub(RawPreviewExtractorInterface::class);
         $rawExtractor->method('supports')->willReturn(false);
 
-        $exifExtractor = $this->createMock(ExifThumbnailExtractorInterface::class);
+        $exifExtractor = $this->createStub(ExifThumbnailExtractorInterface::class);
         $exifExtractor->method('extract')->willReturn(null);
 
         $logger = $this->createMock(LoggerInterface::class);
@@ -88,15 +88,15 @@ final class ThumbnailServiceLoggingTest extends TestCase
         $rawPath = $this->storageDir.'/photo.nef';
         file_put_contents($rawPath, 'not-a-real-raw');
 
-        $rawExtractor = $this->createMock(RawPreviewExtractorInterface::class);
+        $rawExtractor = $this->createStub(RawPreviewExtractorInterface::class);
         $rawExtractor->method('supports')->willReturn(true);
         $rawExtractor->method('extract')
             ->willThrowException(new PreviewNotFoundException('no preview'));
 
-        $exifExtractor = $this->createMock(ExifThumbnailExtractorInterface::class);
+        $exifExtractor = $this->createStub(ExifThumbnailExtractorInterface::class);
         $exifExtractor->method('extract')->willReturn(null);
 
-        $videoExtractor = $this->createMock(VideoThumbnailExtractorInterface::class);
+        $videoExtractor = $this->createStub(VideoThumbnailExtractorInterface::class);
         $videoExtractor->method('supports')->willReturn(false);
 
         $logger = $this->createMock(LoggerInterface::class);
@@ -118,13 +118,13 @@ final class ThumbnailServiceLoggingTest extends TestCase
     {
         $videoPath = $this->makeVideoFile();
 
-        $videoExtractor = $this->createMock(VideoThumbnailExtractorInterface::class);
+        $videoExtractor = $this->createStub(VideoThumbnailExtractorInterface::class);
         $videoExtractor->method('supports')->willReturn(false);
 
-        $rawExtractor = $this->createMock(RawPreviewExtractorInterface::class);
+        $rawExtractor = $this->createStub(RawPreviewExtractorInterface::class);
         $rawExtractor->method('supports')->willReturn(false);
 
-        $exifExtractor = $this->createMock(ExifThumbnailExtractorInterface::class);
+        $exifExtractor = $this->createStub(ExifThumbnailExtractorInterface::class);
         $exifExtractor->method('extract')->willReturn(null);
 
         $logger = $this->createMock(LoggerInterface::class);
@@ -148,13 +148,13 @@ final class ThumbnailServiceLoggingTest extends TestCase
     {
         // Rétrocompatibilité : les sites d'instanciation existants (tests,
         // services.yaml sans binding explicite) ne doivent pas casser.
-        $rawExtractor = $this->createMock(RawPreviewExtractorInterface::class);
+        $rawExtractor = $this->createStub(RawPreviewExtractorInterface::class);
         $rawExtractor->method('supports')->willReturn(false);
 
-        $exifExtractor = $this->createMock(ExifThumbnailExtractorInterface::class);
+        $exifExtractor = $this->createStub(ExifThumbnailExtractorInterface::class);
         $exifExtractor->method('extract')->willReturn(null);
 
-        $videoExtractor = $this->createMock(VideoThumbnailExtractorInterface::class);
+        $videoExtractor = $this->createStub(VideoThumbnailExtractorInterface::class);
         $videoExtractor->method('supports')->willReturn(false);
 
         $service = new ThumbnailService($this->storageDir, $rawExtractor, $exifExtractor, $videoExtractor);
