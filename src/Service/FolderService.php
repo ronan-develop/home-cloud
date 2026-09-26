@@ -10,7 +10,7 @@ use App\Entity\User;
 use App\Enum\FolderMediaType;
 use App\Interface\AuthenticationResolverInterface;
 use App\Interface\DefaultFolderServiceInterface;
-use App\Interface\FilenameValidatorInterface;
+use App\Interface\File\FilenameValidatorInterface;
 use App\Interface\FolderRepositoryInterface;
 use App\Interface\OwnershipCheckerInterface;
 use App\Interface\SharedResourceCleanerInterface;

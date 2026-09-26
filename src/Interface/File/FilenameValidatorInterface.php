@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Interface;
+namespace App\Interface\File;
 
 /**
  * Contrat de validation des noms de fichiers et dossiers.

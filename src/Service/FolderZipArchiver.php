@@ -6,7 +6,7 @@ namespace App\Service;
 
 use App\Entity\Folder;
 use App\Interface\FolderZipArchiverInterface;
-use App\Interface\StorageServiceInterface;
+use App\Interface\File\StorageServiceInterface;
 
 /**
  * Construit une archive zip d'un dossier et de tout son contenu (récursif).

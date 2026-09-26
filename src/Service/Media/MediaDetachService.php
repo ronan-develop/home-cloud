@@ -8,7 +8,7 @@ use App\Entity\Media;
 use App\Entity\Share;
 use App\Interface\Media\MediaDetachServiceInterface;
 use App\Interface\SharedResourceCleanerInterface;
-use App\Interface\StorageServiceInterface;
+use App\Interface\File\StorageServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**

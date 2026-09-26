@@ -38,7 +38,7 @@ services:
     App\Interface\ShareLinkAccessCheckerInterface: '@App\Security\ShareLinkAccessChecker'
     App\Interface\ResourceLocatorInterface:       '@App\Security\ResourceLocator'
     App\Interface\SharedResourceCleanerInterface: '@App\Security\SharedResourceCleaner'
-    App\Interface\FilenameValidatorInterface:     '@App\Service\FilenameValidator'
+    App\Interface\File\FilenameValidatorInterface: '@App\Service\File\FilenameValidator'
     App\Interface\OwnershipCheckerInterface:      '@App\Security\OwnershipChecker'
     App\Interface\AuthenticationResolverInterface: '@App\Security\AuthenticationResolver'
     App\Interface\UploadBatchRepositoryInterface: '@App\Repository\UploadBatchRepository'
@@ -58,7 +58,7 @@ services:
             $albumRepository: '@App\Interface\AlbumRepositoryInterface'
             $userRepository: '@App\Interface\UserRepositoryInterface'
             $provider: '@App\State\AlbumProvider'
-            $filenameValidator: '@App\Service\FilenameValidator'
+            $filenameValidator: '@App\Service\File\FilenameValidator'
             $ownershipChecker: '@App\Security\OwnershipChecker'
 
     App\State\FileProcessor:
@@ -66,10 +66,10 @@ services:
             $em: '@doctrine.orm.entity_manager'
             $fileRepository: '@App\Repository\FileRepository'
             $mediaRepository: '@App\Repository\MediaRepository'
-            $storageService: '@App\Service\StorageService'
+            $storageService: '@App\Service\File\StorageService'
             $authResolver: '@App\Security\AuthenticationResolver'
             $defaultFolderService: '@App\Service\DefaultFolderService'
-            $fileActionService: '@App\Service\FileActionService'
+            $fileActionService: '@App\Service\File\FileActionService'
             $requestStack: '@request_stack'
             $iriExtractor: '@App\Service\IriExtractor'
     
@@ -81,16 +81,16 @@ services:
 
     App\Security\AuthorizationChecker: ~
 
-    App\Service\FileActionService:
+    App\Service\File\FileActionService:
         arguments:
             $fileRepository: '@App\Repository\FileRepository'
-            $storageService: '@App\Service\StorageService'
+            $storageService: '@App\Service\File\StorageService'
             $authChecker: '@App\Security\AuthorizationChecker'
             $em: '@doctrine.orm.entity_manager'
 
-    App\Service\CreateFileService:
+    App\Service\File\CreateFileService:
         arguments:
-            $storageService: '@App\Service\StorageService'
+            $storageService: '@App\Service\File\StorageService'
             $defaultFolderService: '@App\Service\DefaultFolderService'
             $em: '@doctrine.orm.entity_manager'
             $userRepository: '@App\Repository\UserRepository'
@@ -120,7 +120,7 @@ services:
             $userRepository: '@App\Repository\UserRepository'
             $em: '@doctrine.orm.entity_manager'
 
-    App\Service\UploadRoutingDecider:
+    App\Service\File\UploadRoutingDecider:
         arguments:
             $deferredThresholdBytes: '%hc.upload.deferred_threshold_bytes%'
 
@@ -141,7 +141,7 @@ services:
     App\Service\FolderService:
         arguments:
             $folderRepository:     '@App\Interface\FolderRepositoryInterface'
-            $filenameValidator:    '@App\Interface\FilenameValidatorInterface'
+            $filenameValidator:    '@App\Interface\File\FilenameValidatorInterface'
             $ownershipChecker:     '@App\Interface\OwnershipCheckerInterface'
             $authResolver:         '@App\Interface\AuthenticationResolverInterface'
             $defaultFolderService: '@App\Service\DefaultFolderService'
@@ -149,7 +149,7 @@ services:
             $logger:               '@logger'
             $stopwatch:            '@debug.stopwatch'
 
-    App\Service\StorageService:
+    App\Service\File\StorageService:
         arguments:
             $storageDir: '%app.storage_dir%'
 

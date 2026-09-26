@@ -7,7 +7,7 @@ namespace App\Service\Media;
 use App\Entity\Media;
 use App\Interface\Media\MediaDeletionServiceInterface;
 use App\Interface\Media\RawPreviewCacheInterface;
-use App\Interface\StorageServiceInterface;
+use App\Interface\File\StorageServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**

@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\File;
 
 use App\Entity\ContentFingerprint;
 use App\Entity\File;
 use App\Entity\User;
-use App\Interface\CreateFileServiceInterface;
+use App\Interface\File\CreateFileServiceInterface;
 use App\Interface\DefaultFolderServiceInterface;
-use App\Interface\StorageServiceInterface;
+use App\Interface\File\StorageServiceInterface;
 use App\Repository\ContentFingerprintRepository;
 use App\Repository\UserRepository;
 use App\Security\GuestRestrictionChecker;

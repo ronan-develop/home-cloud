@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\File;
 
-use App\Interface\StorageServiceInterface;
+use App\Interface\File\StorageServiceInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**

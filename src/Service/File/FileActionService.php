@@ -1,16 +1,16 @@
 <?php
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\File;
 
 use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\User;
 use App\Interface\AuthorizationCheckerInterface;
-use App\Interface\FileActionServiceInterface;
-use App\Interface\FileRepositoryInterface;
-use App\Interface\StorageServiceInterface;
-use App\Service\FilenameValidator;
+use App\Interface\File\FileActionServiceInterface;
+use App\Interface\File\FileRepositoryInterface;
+use App\Interface\File\StorageServiceInterface;
+use App\Service\File\FilenameValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;

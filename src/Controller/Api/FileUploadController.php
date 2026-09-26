@@ -9,7 +9,7 @@ use App\Interface\Media\MediaProcessorInterface;
 use App\Interface\UploadBatchRepositoryInterface;
 use App\Message\MediaProcessMessage;
 use App\Entity\UploadBatch;
-use App\Service\CreateFileService;
+use App\Service\File\CreateFileService;
 use App\Service\Media\PendingMediaProcessingCollector;
 use App\State\FileProvider;
 use Doctrine\ORM\EntityManagerInterface;

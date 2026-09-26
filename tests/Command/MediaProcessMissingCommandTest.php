@@ -7,7 +7,7 @@ namespace App\Tests\Command;
 use App\Command\MediaProcessMissingCommand;
 use App\Entity\File;
 use App\Entity\Media;
-use App\Interface\FileRepositoryInterface;
+use App\Interface\File\FileRepositoryInterface;
 use App\Interface\Media\MediaProcessorInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;

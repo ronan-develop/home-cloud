@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Service;
 
 use App\Entity\UploadBatch;
-use App\Interface\StorageServiceInterface;
+use App\Interface\File\StorageServiceInterface;
 use App\Repository\MediaRepository;
 use App\Service\Media\ExifService;
 use App\Service\Media\MediaProcessor;
 use App\Service\Media\ThumbnailService;
-use App\Service\UploadRoutingDecider;
+use App\Service\File\UploadRoutingDecider;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 use RonanLenouvel\RawPreviewExtractor\RawPreviewExtractorInterface;

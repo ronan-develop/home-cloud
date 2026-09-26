@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\File;
 
 use App\Entity\ContentFingerprint;
 use App\Entity\File;
 use App\Entity\User;
 use App\Interface\DefaultFolderServiceInterface;
-use App\Interface\FileUploadServiceInterface;
-use App\Interface\StorageServiceInterface;
+use App\Interface\File\FileUploadServiceInterface;
+use App\Interface\File\StorageServiceInterface;
 use App\Repository\ContentFingerprintRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;

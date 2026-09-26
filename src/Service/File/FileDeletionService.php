@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\File;
 
 use App\Entity\File;
 use App\Entity\Share;
-use App\Interface\FileDeletionServiceInterface;
+use App\Interface\File\FileDeletionServiceInterface;
 use App\Interface\Media\MediaDeletionServiceInterface;
 use App\Interface\Media\MediaDetachServiceInterface;
 use App\Interface\SharedResourceCleanerInterface;
-use App\Interface\StorageServiceInterface;
+use App\Interface\File\StorageServiceInterface;
 use App\Repository\MediaRepository;
 use Doctrine\ORM\EntityManagerInterface;
 

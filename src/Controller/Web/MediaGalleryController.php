@@ -8,7 +8,7 @@ use App\Entity\User;
 use App\Interface\AlbumRepositoryInterface;
 use App\Interface\Media\MediaRepositoryInterface;
 use App\Interface\OwnershipCheckerInterface;
-use App\Interface\StorageServiceInterface;
+use App\Interface\File\StorageServiceInterface;
 use App\Service\Media\MediaCacheHeaders;
 use App\Factory\MediaFullResponseFactory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;

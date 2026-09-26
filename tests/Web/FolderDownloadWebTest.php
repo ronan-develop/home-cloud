@@ -73,7 +73,7 @@ final class FolderDownloadWebTest extends WebTestCase
         file_put_contents($tmp, 'contenu de test');
 
         $relativePath = 'test-storage/' . uniqid() . '.txt';
-        $storage = static::getContainer()->get(\App\Interface\StorageServiceInterface::class);
+        $storage = static::getContainer()->get(\App\Interface\File\StorageServiceInterface::class);
         $absolutePath = $storage->getAbsolutePath($relativePath);
         @mkdir(dirname($absolutePath), 0777, true);
         copy($tmp, $absolutePath);

@@ -9,7 +9,7 @@ use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\Share;
 use App\Interface\AlbumRepositoryInterface;
-use App\Interface\FileRepositoryInterface;
+use App\Interface\File\FileRepositoryInterface;
 use App\Interface\FolderRepositoryInterface;
 use App\Interface\ResourceLocatorInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;

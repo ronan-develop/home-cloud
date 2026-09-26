@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Controller\Web;
 
-use App\Interface\FileDeletionServiceInterface;
-use App\Interface\FileUploadServiceInterface;
+use App\Interface\File\FileDeletionServiceInterface;
+use App\Interface\File\FileUploadServiceInterface;
 use App\Interface\Media\MediaProcessorInterface;
 use App\Interface\OwnershipCheckerInterface;
-use App\Interface\StorageServiceInterface;
+use App\Interface\File\StorageServiceInterface;
 use App\Repository\FileRepository;
 use App\Security\GuestRestrictionChecker;
 use App\Service\Media\PdfSignatureDetector;

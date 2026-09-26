@@ -7,7 +7,7 @@ namespace App\Service\Media;
 use App\Entity\File;
 use App\Entity\Media;
 use App\Interface\Media\MediaProcessorInterface;
-use App\Interface\StorageServiceInterface;
+use App\Interface\File\StorageServiceInterface;
 use App\Repository\MediaRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use RonanLenouvel\RawPreviewExtractor\RawPreviewExtractorInterface;

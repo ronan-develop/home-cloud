@@ -14,7 +14,7 @@ use App\Interface\AlbumRepositoryInterface;
 use App\Interface\UserRepositoryInterface;
 use App\Security\OwnershipChecker;
 use App\Service\AlbumService;
-use App\Service\FilenameValidator;
+use App\Service\File\FilenameValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;

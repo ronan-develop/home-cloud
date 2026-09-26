@@ -7,7 +7,7 @@ namespace App\Controller\Api;
 use App\Entity\UploadBatch;
 use App\Interface\AuthenticationResolverInterface;
 use App\Interface\UploadBatchRepositoryInterface;
-use App\Service\UploadRoutingDecider;
+use App\Service\File\UploadRoutingDecider;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;

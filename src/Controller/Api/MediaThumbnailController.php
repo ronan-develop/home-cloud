@@ -7,7 +7,7 @@ namespace App\Controller\Api;
 use App\Entity\Share;
 use App\Entity\User;
 use App\Repository\MediaRepository;
-use App\Interface\StorageServiceInterface;
+use App\Interface\File\StorageServiceInterface;
 use App\Security\ResourceAccessChecker;
 use App\Service\Media\MediaCacheHeaders;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;

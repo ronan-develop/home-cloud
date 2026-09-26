@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Service;
+namespace App\Service\File;
 
-use App\Interface\FilenameValidatorInterface;
+use App\Interface\File\FilenameValidatorInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 /**

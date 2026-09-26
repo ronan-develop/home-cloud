@@ -6,7 +6,7 @@ namespace App\Tests\Service;
 
 use App\Entity\File;
 use App\Entity\Media;
-use App\Interface\StorageServiceInterface;
+use App\Interface\File\StorageServiceInterface;
 use App\Repository\MediaRepository;
 use App\Service\Media\ExifService;
 use App\Service\Media\MediaProcessor;
