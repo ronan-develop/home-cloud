@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Entity\ContentFingerprint;
 use App\Entity\File;
 use App\Entity\User;
 use App\Interface\DefaultFolderServiceInterface;
 use App\Interface\FileUploadServiceInterface;
 use App\Interface\StorageServiceInterface;
+use App\Repository\ContentFingerprintRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -19,6 +21,10 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
  *
  * Extrait de FileWebController::upload() : validation d'extension bloquée
  * et nettoyage de nom de fichier, jusqu'ici en dur dans le Controller.
+ *
+ * #327 — rejette aussi les doublons via fingerprint persistant (hash SHA-256
+ * du contenu, scope par owner) : voir ContentFingerprint pour le détail des
+ * garanties (survit à la suppression du File).
  */
 final class FileUploadService implements FileUploadServiceInterface
 {
@@ -36,6 +42,7 @@ final class FileUploadService implements FileUploadServiceInterface
         private readonly StorageServiceInterface $storageService,
         private readonly DefaultFolderServiceInterface $defaultFolderService,
         private readonly EntityManagerInterface $em,
+        private readonly ContentFingerprintRepository $contentFingerprintRepository,
     ) {}
 
     public function createFromUpload(
@@ -48,6 +55,13 @@ final class FileUploadService implements FileUploadServiceInterface
             throw new BadRequestHttpException(
                 sprintf('File type ".%s" is not allowed.', $ext)
             );
+        }
+
+        // Hashé avant store() : store() peut déplacer/renommer le fichier
+        // (le tmp de $uploadedFile n'existe plus après un move_uploaded_file).
+        $contentHash = hash_file('sha256', $uploadedFile->getPathname());
+        if ($this->contentFingerprintRepository->existsForOwner($owner, $contentHash)) {
+            throw new BadRequestHttpException('Ce fichier a déjà été importé.');
         }
 
         $folder = $this->defaultFolderService->resolve($folderId, null, $owner);
@@ -73,6 +87,8 @@ final class FileUploadService implements FileUploadServiceInterface
 
         $this->em->persist($file);
         $this->em->flush();
+
+        $this->contentFingerprintRepository->save(new ContentFingerprint($owner, $contentHash));
 
         return $file;
     }

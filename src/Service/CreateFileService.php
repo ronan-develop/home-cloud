@@ -3,11 +3,13 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Entity\ContentFingerprint;
 use App\Entity\File;
 use App\Entity\User;
 use App\Interface\CreateFileServiceInterface;
 use App\Interface\DefaultFolderServiceInterface;
 use App\Interface\StorageServiceInterface;
+use App\Repository\ContentFingerprintRepository;
 use App\Repository\UserRepository;
 use App\Security\GuestRestrictionChecker;
 use Doctrine\ORM\EntityManagerInterface;
@@ -49,6 +51,7 @@ final class CreateFileService implements CreateFileServiceInterface
         private readonly EntityManagerInterface $em,
         private readonly UserRepository $userRepository,
         private readonly GuestRestrictionChecker $guestRestrictionChecker,
+        private readonly ContentFingerprintRepository $contentFingerprintRepository,
     ) {}
 
     /**
@@ -81,6 +84,12 @@ final class CreateFileService implements CreateFileServiceInterface
 
         $this->guestRestrictionChecker->denyUnlessFullAccount($owner);
 
+        // 2b. Doublon (#327) : hashé avant store() (peut déplacer le fichier)
+        $contentHash = hash_file('sha256', $uploadedFile->getPathname());
+        if ($this->contentFingerprintRepository->existsForOwner($owner, $contentHash)) {
+            throw new BadRequestHttpException('Ce fichier a déjà été importé.');
+        }
+
         // 3. Folder resolution: folderId > newFolderName > Uploads, puis relativePath
         $folder = $this->defaultFolderService->resolve($folderId, $newFolderName, $owner, $relativePath);
 
@@ -104,6 +113,9 @@ final class CreateFileService implements CreateFileServiceInterface
         // 7. Persist
         $this->em->persist($file);
         $this->em->flush();
+
+        // 7b. Enregistrer le fingerprint (#327) — après succès, jamais avant
+        $this->contentFingerprintRepository->save(new ContentFingerprint($owner, $contentHash));
 
         // 8. Dispatch async: media processing (image EXIF, thumbnail, etc.)
         // TODO: Implement media dispatcher when needed

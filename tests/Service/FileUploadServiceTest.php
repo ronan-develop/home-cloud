@@ -8,6 +8,7 @@ use App\Entity\Folder;
 use App\Entity\User;
 use App\Interface\DefaultFolderServiceInterface;
 use App\Interface\StorageServiceInterface;
+use App\Repository\ContentFingerprintRepository;
 use App\Service\FileUploadService;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
@@ -18,6 +19,8 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
  * #440 — FileUploadService : symétrique à CreateFileService côté web.
  * Absorbe la validation d'extension bloquée et le nettoyage de nom
  * jusqu'ici en dur dans FileWebController::upload().
+ *
+ * #327 — absorbe aussi la détection de doublons par fingerprint persistant.
  */
 final class FileUploadServiceTest extends TestCase
 {
@@ -25,17 +28,21 @@ final class FileUploadServiceTest extends TestCase
     private StorageServiceInterface $storageService;
     private DefaultFolderServiceInterface $defaultFolderService;
     private EntityManagerInterface $em;
+    private ContentFingerprintRepository $contentFingerprintRepository;
 
     protected function setUp(): void
     {
         $this->storageService = $this->createMock(StorageServiceInterface::class);
         $this->defaultFolderService = $this->createMock(DefaultFolderServiceInterface::class);
         $this->em = $this->createMock(EntityManagerInterface::class);
+        $this->contentFingerprintRepository = $this->createMock(ContentFingerprintRepository::class);
+        $this->contentFingerprintRepository->method('existsForOwner')->willReturn(false);
 
         $this->service = new FileUploadService(
             $this->storageService,
             $this->defaultFolderService,
             $this->em,
+            $this->contentFingerprintRepository,
         );
     }
 
@@ -166,5 +173,68 @@ final class FileUploadServiceTest extends TestCase
         $file = $this->service->createFromUpload($uploadedFile, $owner);
 
         $this->assertTrue($file->isNeutralized());
+    }
+
+    public function testCreateFromUploadRejectsDuplicateContentForSameOwner(): void
+    {
+        $tmpFile = tempnam(sys_get_temp_dir(), 'test');
+        file_put_contents($tmpFile, 'contenu déjà importé');
+        $uploadedFile = new UploadedFile($tmpFile, 'doublon.txt', 'text/plain', null, true);
+
+        $owner = new User('owner@example.com', 'Owner');
+
+        $this->contentFingerprintRepository = $this->createMock(ContentFingerprintRepository::class);
+        $this->contentFingerprintRepository->expects($this->once())
+            ->method('existsForOwner')
+            ->with($owner, hash_file('sha256', $tmpFile))
+            ->willReturn(true);
+
+        $this->service = new FileUploadService(
+            $this->storageService,
+            $this->defaultFolderService,
+            $this->em,
+            $this->contentFingerprintRepository,
+        );
+
+        $this->storageService->expects($this->never())->method('store');
+        $this->em->expects($this->never())->method('persist');
+
+        $this->expectException(BadRequestHttpException::class);
+        $this->expectExceptionMessage('Ce fichier a déjà été importé.');
+
+        $this->service->createFromUpload($uploadedFile, $owner);
+    }
+
+    public function testCreateFromUploadRecordsFingerprintAfterSuccessfulUpload(): void
+    {
+        $tmpFile = tempnam(sys_get_temp_dir(), 'test');
+        file_put_contents($tmpFile, 'contenu nouveau');
+        $uploadedFile = new UploadedFile($tmpFile, 'nouveau.txt', 'text/plain', null, true);
+
+        $owner = new User('owner@example.com', 'Owner');
+        $folder = new Folder('Root', $owner);
+
+        $this->defaultFolderService->method('resolve')->willReturn($folder);
+        $this->storageService->method('store')->willReturn(['path' => '/path/nouveau.txt', 'neutralized' => false]);
+
+        $expectedHash = hash_file('sha256', $tmpFile);
+
+        $this->contentFingerprintRepository = $this->createMock(ContentFingerprintRepository::class);
+        $this->contentFingerprintRepository->method('existsForOwner')->willReturn(false);
+        $this->contentFingerprintRepository->expects($this->once())
+            ->method('save')
+            ->with($this->callback(function (\App\Entity\ContentFingerprint $fingerprint) use ($owner, $expectedHash): bool {
+                return $fingerprint->getOwner() === $owner
+                    && $fingerprint->getContentHash() === $expectedHash;
+            }));
+
+        $this->service = new FileUploadService(
+            $this->storageService,
+            $this->defaultFolderService,
+            $this->em,
+            $this->contentFingerprintRepository,
+        );
+
+        $this->service->createFromUpload($uploadedFile, $owner);
     }
 }
