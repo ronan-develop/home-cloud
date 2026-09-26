@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller\Web;
 
-use App\Entity\File;
 use App\Entity\Share;
+use App\Interface\FileUploadServiceInterface;
 use App\Interface\MediaDeletionServiceInterface;
 use App\Interface\MediaDetachServiceInterface;
 use App\Interface\MediaProcessorInterface;
@@ -13,7 +13,6 @@ use App\Interface\OwnershipCheckerInterface;
 use App\Interface\StorageServiceInterface;
 use App\Repository\FileRepository;
 use App\Repository\MediaRepository;
-use App\Interface\DefaultFolderServiceInterface;
 use App\Interface\SharedResourceCleanerInterface;
 use App\Security\GuestRestrictionChecker;
 use App\Service\PdfSignatureDetector;
@@ -35,19 +34,8 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_USER')]
 final class FileWebController extends AbstractController
 {
-    private const BLOCKED_EXTENSIONS = [
-        'php', 'php3', 'php4', 'php5', 'php7', 'php8', 'phtml', 'phar', 'phps',
-        'exe', 'msi', 'com', 'bat', 'cmd', 'ps1', 'psm1', 'psd1', 'scr', 'pif',
-        'vbs', 'vbe', 'wsf', 'wsh', 'gadget', 'msc', 'msp', 'mst',
-        'run', 'elf', 'appimage', 'deb', 'rpm',
-        'dmg', 'pkg', 'app',
-        'jar', 'jnlp',
-        'asp', 'aspx', 'jsp', 'cfm',
-    ];
-
     public function __construct(
         private readonly StorageServiceInterface $storage,
-        private readonly DefaultFolderServiceInterface $folderService,
         private readonly FileRepository $fileRepository,
         private readonly EntityManagerInterface $em,
         private readonly SharedResourceCleanerInterface $sharedResourceCleaner,
@@ -59,6 +47,7 @@ final class FileWebController extends AbstractController
         private readonly MediaDetachServiceInterface $mediaDetachService,
         private readonly MediaDeletionServiceInterface $mediaDeletionService,
         private readonly OwnershipCheckerInterface $ownershipChecker,
+        private readonly FileUploadServiceInterface $fileUploadService,
     ) {}
 
     #[Route('/files/{id}/download', name: 'app_file_download', methods: ['GET'])]
@@ -139,36 +128,7 @@ final class FileWebController extends AbstractController
             return $this->redirect($folderId ? '/explorer?folder=' . $folderId : '/explorer');
         }
 
-        $ext = strtolower($uploadedFile->getClientOriginalExtension() ?? '');
-        if (in_array($ext, self::BLOCKED_EXTENSIONS, true)) {
-            throw new BadRequestHttpException(
-                sprintf('File type ".%s" is not allowed.', $ext)
-            );
-        }
-
-        $folder = $this->folderService->resolve($folderId, null, $user);
-
-        // Retire les caractères de contrôle ET < > (neutralise le XSS stocké si ce nom
-        // est un jour affiché sans échappement côté client — défense en profondeur, cf.
-        // FilenameValidator qui rejette ces mêmes caractères sur les autres chemins).
-        $originalName = preg_replace('/[\x00-\x1F\x7F<>]/u', '', $uploadedFile->getClientOriginalName());
-        $mimeType = $uploadedFile->getClientMimeType();
-        $size = $uploadedFile->getSize();  // Avant store() qui déplace le fichier
-
-        ['path' => $path, 'neutralized' => $neutralized] = $this->storage->store($uploadedFile);
-
-        $file = new File(
-            $originalName,
-            $mimeType,
-            $size,
-            $path,
-            $folder,
-            $user,
-            $neutralized,
-        );
-
-        $this->em->persist($file);
-        $this->em->flush();
+        $file = $this->fileUploadService->createFromUpload($uploadedFile, $user, $folderId);
 
         // Route web (un seul fichier par requête, pas de notion de lot) : le
         // traitement média se fait toujours juste après la réponse HTTP
@@ -176,11 +136,11 @@ final class FileWebController extends AbstractController
         // worker — celui-ci est réservé aux lots lourds déclarés par l'API.
         // supports() couvre aussi les RAW en application/octet-stream (reconnus
         // par extension).
-        if ($this->mediaProcessor->supports($mimeType, $originalName)) {
+        if ($this->mediaProcessor->supports($file->getMimeType(), $file->getOriginalName())) {
             $this->pendingMediaProcessingCollector->add((string) $file->getId());
         }
 
-        $this->addFlash('success', "Fichier « {$originalName} » uploadé avec succès.");
+        $this->addFlash('success', "Fichier « {$file->getOriginalName()} » uploadé avec succès.");
 
         $redirectUrl = '/explorer';
         if ($folderId) {
