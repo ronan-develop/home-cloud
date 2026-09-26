@@ -4,20 +4,15 @@ declare(strict_types=1);
 
 namespace App\Controller\Web;
 
-use App\Entity\Share;
+use App\Interface\FileDeletionServiceInterface;
 use App\Interface\FileUploadServiceInterface;
-use App\Interface\MediaDeletionServiceInterface;
-use App\Interface\MediaDetachServiceInterface;
 use App\Interface\MediaProcessorInterface;
 use App\Interface\OwnershipCheckerInterface;
 use App\Interface\StorageServiceInterface;
 use App\Repository\FileRepository;
-use App\Repository\MediaRepository;
-use App\Interface\SharedResourceCleanerInterface;
 use App\Security\GuestRestrictionChecker;
 use App\Service\PdfSignatureDetector;
 use App\Service\PendingMediaProcessingCollector;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -37,17 +32,13 @@ final class FileWebController extends AbstractController
     public function __construct(
         private readonly StorageServiceInterface $storage,
         private readonly FileRepository $fileRepository,
-        private readonly EntityManagerInterface $em,
-        private readonly SharedResourceCleanerInterface $sharedResourceCleaner,
         private readonly GuestRestrictionChecker $guestRestrictionChecker,
         private readonly PendingMediaProcessingCollector $pendingMediaProcessingCollector,
         private readonly MediaProcessorInterface $mediaProcessor,
         private readonly PdfSignatureDetector $pdfSignatureDetector,
-        private readonly MediaRepository $mediaRepository,
-        private readonly MediaDetachServiceInterface $mediaDetachService,
-        private readonly MediaDeletionServiceInterface $mediaDeletionService,
         private readonly OwnershipCheckerInterface $ownershipChecker,
         private readonly FileUploadServiceInterface $fileUploadService,
+        private readonly FileDeletionServiceInterface $fileDeletionService,
     ) {}
 
     #[Route('/files/{id}/download', name: 'app_file_download', methods: ['GET'])]
@@ -165,49 +156,21 @@ final class FileWebController extends AbstractController
 
         $this->ownershipChecker->denyUnlessOwner($file);
 
-        /** @var \App\Entity\User $user */
-        $user = $this->getUser();
         $folderId = $request->request->get('folder_id');
         $keepInAlbums = (bool) $request->request->get('keep_in_albums', '0');
-        $media = $this->mediaRepository->findByFile($file);
-
-        if ($media !== null && $keepInAlbums) {
-            try {
-                $this->mediaDetachService->detachAndDeleteFile($media);
-            } catch (\Throwable) {
-                $this->addFlash('error', "Erreur lors de la suppression du fichier « {$file->getOriginalName()} ».");
-
-                return $this->redirect($folderId ? '/explorer?folder=' . $folderId : '/explorer');
-            }
-
-            $this->addFlash('success', "Fichier « {$file->getOriginalName()} » supprimé, conservé dans vos albums.");
-
-            return $this->redirect($folderId ? '/explorer?folder=' . $folderId : '/explorer');
-        }
 
         try {
-            if ($media !== null) {
-                // Media::$file est désormais onDelete: SET NULL (#246, plus de
-                // CASCADE) : la suppression complète doit retirer le Media
-                // explicitement, sinon il devient orphelin (file_id NULL) sans
-                // que l'utilisateur ait choisi de le conserver.
-                $this->mediaDeletionService->delete($media);
-            } else {
-                $this->storage->delete($file->getPath());
-            }
+            $keptInAlbums = $this->fileDeletionService->deleteFile($file, $keepInAlbums);
         } catch (\Throwable) {
             $this->addFlash('error', "Erreur lors de la suppression du fichier « {$file->getOriginalName()} ».");
 
             return $this->redirect($folderId ? '/explorer?folder=' . $folderId : '/explorer');
         }
 
-        $this->sharedResourceCleaner->deleteByResource(Share::RESOURCE_FILE, $file->getId());
-        if ($media === null) {
-            $this->em->remove($file);
-        }
-        $this->em->flush();
-
-        $this->addFlash('success', "Fichier « {$file->getOriginalName()} » supprimé.");
+        $message = $keptInAlbums
+            ? "Fichier « {$file->getOriginalName()} » supprimé, conservé dans vos albums."
+            : "Fichier « {$file->getOriginalName()} » supprimé.";
+        $this->addFlash('success', $message);
 
         return $this->redirect($folderId ? '/explorer?folder=' . $folderId : '/explorer');
     }
