@@ -10,6 +10,8 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model;
 use App\Controller\Api\TakeoutImportCreateController;
 use App\Controller\Api\TakeoutImportFileUploadController;
+use App\Controller\Api\TakeoutImportFilesStatusController;
+use App\Controller\Api\TakeoutImportFindPendingController;
 use App\Controller\Api\TakeoutImportStartController;
 use App\State\TakeoutImportProvider;
 
@@ -29,6 +31,25 @@ use App\State\TakeoutImportProvider;
 #[ApiResource(
     shortName: 'TakeoutImport',
     operations: [
+        new Get(
+            uriTemplate: '/v1/takeout-imports/pending',
+            controller: TakeoutImportFindPendingController::class,
+            read: false,
+            openapi: new Model\Operation(
+                summary: 'Retrouve l\'import Google Photos Takeout en attente le plus récent de l\'utilisateur courant.',
+                description: 'À appeler avant de créer un nouvel import (#481) : si l\'utilisateur a fermé l\'onglet en cours d\'upload, cet import existant doit être repris. Retourne 404 si aucun import "pending" n\'existe.',
+            ),
+        ),
+        new Get(
+            uriTemplate: '/v1/takeout-imports/{id}/files/status',
+            controller: TakeoutImportFilesStatusController::class,
+            read: false,
+            output: false,
+            openapi: new Model\Operation(
+                summary: 'Liste les fichiers déjà partiellement uploadés pour un import en attente.',
+                description: 'Retourne pour chaque fichier son dernier chunkIndex confirmé et le hash SHA-256 de son premier chunk déjà écrit, pour permettre au front de reprendre l\'upload au bon endroit sans risquer une corruption (#481).',
+            ),
+        ),
         new Get(
             uriTemplate: '/v1/takeout-imports/{id}',
             openapi: new Model\Operation(

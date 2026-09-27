@@ -1,5 +1,5 @@
 import { jest, describe, test, expect } from '@jest/globals';
-import { uploadFileInChunks, CHUNK_SIZE_BYTES } from '../js/chunked-upload.js';
+import { uploadFileInChunks, hashChunk, CHUNK_SIZE_BYTES } from '../js/chunked-upload.js';
 
 /**
  * TDD RED → GREEN (#466) : un ZIP Google Photos Takeout peut dépasser 512M
@@ -93,5 +93,47 @@ describe('uploadFileInChunks', () => {
         ).rejects.toThrow('413');
 
         expect(onChunkUploaded).toHaveBeenCalledTimes(1);
+    });
+
+    // #481 (reprise après fermeture d'onglet) : resumeFromChunkIndex permet
+    // de reprendre un fichier déjà partiellement uploadé sans renvoyer les
+    // chunks déjà confirmés par le serveur.
+    test('reprend à resumeFromChunkIndex au lieu de renvoyer depuis 0', async () => {
+        const file = makeFile('A'.repeat(25));
+        const uploadChunk = jest.fn().mockResolvedValue(undefined);
+
+        await uploadFileInChunks(file, uploadChunk, { chunkSizeBytes: 10, resumeFromChunkIndex: 1 });
+
+        // 3 chunks au total (25/10), les chunks 1 et 2 seulement sont envoyés.
+        expect(uploadChunk).toHaveBeenCalledTimes(2);
+        expect(uploadChunk.mock.calls[0][1]).toEqual({ filename: 'takeout-001.zip', chunkIndex: 1, totalChunks: 3 });
+        expect(uploadChunk.mock.calls[1][1]).toEqual({ filename: 'takeout-001.zip', chunkIndex: 2, totalChunks: 3 });
+    });
+
+    test('sans resumeFromChunkIndex, envoie depuis 0 comme avant (comportement par défaut inchangé)', async () => {
+        const file = makeFile('A'.repeat(15));
+        const uploadChunk = jest.fn().mockResolvedValue(undefined);
+
+        await uploadFileInChunks(file, uploadChunk, { chunkSizeBytes: 10 });
+
+        expect(uploadChunk.mock.calls[0][1].chunkIndex).toBe(0);
+    });
+});
+
+describe('hashChunk', () => {
+    test('calcule un hash SHA-256 hexadécimal du contenu du blob', async () => {
+        const blob = new Blob(['AAA']);
+
+        const hash = await hashChunk(blob);
+
+        // Référence : php -r "echo hash('sha256', 'AAA');"
+        expect(hash).toBe('cb1ad2119d8fafb69566510ee712661f9f14b83385006ef92aec47f523a38358');
+    });
+
+    test('produit des hashs différents pour des contenus différents', async () => {
+        const hashA = await hashChunk(new Blob(['AAA']));
+        const hashB = await hashChunk(new Blob(['BBB']));
+
+        expect(hashA).not.toBe(hashB);
     });
 });

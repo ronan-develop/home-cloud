@@ -217,6 +217,10 @@ services:
         arguments:
             $takeoutTmpDir: '%app.takeout_tmp_dir%'
 
+    App\Controller\Api\TakeoutImportFilesStatusController:
+        arguments:
+            $takeoutTmpDir: '%app.takeout_tmp_dir%'
+
 when@dev:
     services:
         App\DataFixtures\AppFixtures:

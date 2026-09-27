@@ -82,6 +82,8 @@ describe('takeout-import controller (#458)', () => {
         setInputFiles([makeFile('takeout-001.zip')]);
 
         global.fetch = jest.fn()
+            // GET /api/v1/takeout-imports/pending (aucune reprise en cours)
+            .mockResolvedValueOnce({ ok: false, status: 404 })
             // POST /api/v1/takeout-imports (création, sans fichier)
             .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'pending' }) })
             // POST /api/v1/takeout-imports/import-1/files (1 ZIP)
@@ -116,6 +118,7 @@ describe('takeout-import controller (#458)', () => {
         setInputFiles([makeFile('takeout-001.zip'), makeFile('takeout-002.zip')]);
 
         global.fetch = jest.fn()
+            .mockResolvedValueOnce({ ok: false, status: 404 }) // GET pending
             .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'pending' }) })
             .mockResolvedValueOnce({ ok: true })
             .mockResolvedValueOnce({ ok: true })
@@ -128,6 +131,7 @@ describe('takeout-import controller (#458)', () => {
 
         const calls = global.fetch.mock.calls.map((c) => c[0]);
         expect(calls).toEqual([
+            '/api/v1/takeout-imports/pending',
             '/api/v1/takeout-imports',
             '/api/v1/takeout-imports/import-1/files',
             '/api/v1/takeout-imports/import-1/files',
@@ -148,6 +152,7 @@ describe('takeout-import controller (#458)', () => {
         setInputFiles([makeFile('takeout-001.zip'), makeFile('takeout-002.zip')]);
 
         global.fetch = jest.fn()
+            .mockResolvedValueOnce({ ok: false, status: 404 }) // GET pending
             .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'pending' }) })
             .mockResolvedValueOnce({ ok: true }) // upload fichier 1
             .mockResolvedValueOnce({ ok: true }) // upload fichier 2
@@ -162,9 +167,14 @@ describe('takeout-import controller (#458)', () => {
 
         button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
-        // Micro-attente : juste après le clic, avant que le premier upload
-        // ne soit résolu, la zone de progression doit déjà être visible.
-        await Promise.resolve();
+        // La recherche d'un import à reprendre (GET pending, 404 ici) se
+        // résout d'abord, avant que l'affichage de la progression ne soit
+        // à son tour écrasé par la suite de l'upload — attendre l'état
+        // "progression visible" plutôt qu'un nombre fixe de microtâches,
+        // fragile face au nombre exact d'await internes à _resolveResumePlan.
+        for (let i = 0; i < 20 && progress.hidden; i += 1) {
+            await Promise.resolve();
+        }
         expect(progress.hidden).toBe(false);
         expect(status.textContent).toBe('Envoi de 1 / 2 fichiers…');
 
@@ -181,6 +191,7 @@ describe('takeout-import controller (#458)', () => {
         setInputFiles([makeFile('takeout-001.zip')]);
 
         global.fetch = jest.fn()
+            .mockResolvedValueOnce({ ok: false, status: 404 }) // GET pending
             .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'pending' }) })
             .mockResolvedValueOnce({ ok: true })
             .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'pending' }) })
@@ -190,7 +201,13 @@ describe('takeout-import controller (#458)', () => {
         const patienceMessage = document.querySelector('[data-takeout-import-target="patienceMessage"]');
 
         button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-        await Promise.resolve();
+        // La recherche d'un import à reprendre (GET pending, 404 ici) se
+        // résout d'abord, avant l'affichage du message de patience —
+        // attendre l'état "message affiché" plutôt qu'un nombre fixe de
+        // microtâches, fragile face au nombre exact d'await internes.
+        for (let i = 0; i < 20 && patienceMessage.textContent === ''; i += 1) {
+            await Promise.resolve();
+        }
 
         const firstMessage = patienceMessage.textContent;
         expect(firstMessage).not.toBe('');
@@ -207,6 +224,7 @@ describe('takeout-import controller (#458)', () => {
         setInputFiles([makeFile('takeout-001.zip')]);
 
         global.fetch = jest.fn()
+            .mockResolvedValueOnce({ ok: false, status: 404 }) // GET pending
             .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'pending' }) })
             .mockResolvedValueOnce({ ok: true })
             .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'pending' }) })
@@ -228,6 +246,7 @@ describe('takeout-import controller (#458)', () => {
         setInputFiles([makeFile('takeout-001.zip')]);
 
         global.fetch = jest.fn()
+            .mockResolvedValueOnce({ ok: false, status: 404 }) // GET pending
             .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'pending' }) })
             .mockResolvedValueOnce({ ok: false, status: 413 });
 
@@ -236,11 +255,102 @@ describe('takeout-import controller (#458)', () => {
         await jest.advanceTimersByTimeAsync(0);
 
         const calls = global.fetch.mock.calls.map((c) => c[0]);
-        expect(calls).toEqual(['/api/v1/takeout-imports', '/api/v1/takeout-imports/import-1/files']);
+        expect(calls).toEqual(['/api/v1/takeout-imports/pending', '/api/v1/takeout-imports', '/api/v1/takeout-imports/import-1/files']);
 
         const error = document.querySelector('[data-takeout-import-target="error"]');
         expect(error.hidden).toBe(false);
 
         jest.useRealTimers();
+    });
+
+    // #481 : reprise d'un upload interrompu par fermeture d'onglet — un
+    // import "pending" existant doit être réutilisé (pas de nouvel import
+    // créé), et un fichier déjà partiellement uploadé (nom + hash du premier
+    // chunk correspondants) doit reprendre à partir du bon chunkIndex.
+    describe('reprise d\'un import interrompu', () => {
+        function makeFile(name, content = 'contenu') {
+            return new File([content], name, { type: 'application/zip' });
+        }
+
+        test('réutilise l\'import pending existant au lieu d\'en créer un nouveau', async () => {
+            jest.useFakeTimers({ doNotFake: ['nextTick', 'queueMicrotask'] });
+            setInputFiles([makeFile('takeout-001.zip')]);
+
+            global.fetch = jest.fn()
+                // GET pending : un import existe déjà
+                .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-existing', status: 'pending' }) })
+                // GET files/status : aucun fichier encore uploadé pour cet import
+                .mockResolvedValueOnce({ ok: true, json: async () => [] })
+                .mockResolvedValueOnce({ ok: true }) // upload complet du fichier
+                .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-existing', status: 'pending' }) }) // start
+                .mockResolvedValueOnce({ ok: true, json: async () => ({ status: 'pending', processedCount: 0, totalMediaCount: null }) });
+
+            const button = document.querySelector('[data-takeout-import-target="submit"]');
+            button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            await jest.advanceTimersByTimeAsync(0);
+
+            const calls = global.fetch.mock.calls.map((c) => c[0]);
+            expect(calls).not.toContain('/api/v1/takeout-imports'); // pas de POST de création
+            expect(calls).toContain('/api/v1/takeout-imports/import-existing/files');
+            expect(calls).toContain('/api/v1/takeout-imports/import-existing/start');
+
+            jest.useRealTimers();
+        });
+
+        // Pas de fake timers ici : crypto.subtle.digest() (utilisé par
+        // hashChunk pour vérifier l'intégrité avant reprise) délègue à un
+        // thread pool natif Node, hors de la portée des fake timers de
+        // Jest — advanceTimersByTimeAsync/setTimeout(0) ne suffisent pas à
+        // attendre cette étape ; un vrai délai (50ms, largement suffisant
+        // pour un digest SHA-256 sur quelques octets de test) est requis.
+        test('reprend un fichier déjà partiellement uploadé quand le hash du premier chunk correspond', async () => {
+            const file = makeFile('takeout-001.zip', 'AAA');
+            setInputFiles([file]);
+
+            // Référence : php -r "echo hash('sha256', 'AAA');"
+            const hashOfAAA = 'cb1ad2119d8fafb69566510ee712661f9f14b83385006ef92aec47f523a38358';
+
+            global.fetch = jest.fn()
+                .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-existing', status: 'pending' }) })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => [{ filename: 'takeout-001.zip', chunkIndex: 0, hashOfFirstChunk: hashOfAAA }],
+                })
+                .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-existing', status: 'pending' }) }) // start
+                .mockResolvedValueOnce({ ok: true, json: async () => ({ status: 'pending', processedCount: 0, totalMediaCount: null }) });
+
+            const button = document.querySelector('[data-takeout-import-target="submit"]');
+            button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            await new Promise((resolve) => setTimeout(resolve, 50));
+
+            // Le fichier tient en un seul chunk (petit contenu de test) déjà
+            // confirmé chunkIndex=0 : plus aucun chunk à envoyer, donc aucun
+            // POST .../files — directement le start.
+            const calls = global.fetch.mock.calls.map((c) => c[0]);
+            expect(calls).not.toContain('/api/v1/takeout-imports/import-existing/files');
+            expect(calls).toContain('/api/v1/takeout-imports/import-existing/start');
+        });
+
+        test('renvoie depuis 0 si le hash du premier chunk ne correspond pas (fichier différent)', async () => {
+            const file = makeFile('takeout-001.zip', 'AAA');
+            setInputFiles([file]);
+
+            global.fetch = jest.fn()
+                .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-existing', status: 'pending' }) })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => [{ filename: 'takeout-001.zip', chunkIndex: 0, hashOfFirstChunk: 'hash-different' }],
+                })
+                .mockResolvedValueOnce({ ok: true }) // upload complet du fichier, depuis 0
+                .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-existing', status: 'pending' }) }) // start
+                .mockResolvedValueOnce({ ok: true, json: async () => ({ status: 'pending', processedCount: 0, totalMediaCount: null }) });
+
+            const button = document.querySelector('[data-takeout-import-target="submit"]');
+            button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            await new Promise((resolve) => setTimeout(resolve, 50));
+
+            const calls = global.fetch.mock.calls.map((c) => c[0]);
+            expect(calls).toContain('/api/v1/takeout-imports/import-existing/files');
+        });
     });
 });
