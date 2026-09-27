@@ -32,6 +32,7 @@ describe('takeout-import controller (#458)', () => {
                         <div data-takeout-import-target="fileBar"></div>
                         <p data-takeout-import-target="fileStatus"></p>
                     </div>
+                    <p data-takeout-import-target="patienceMessage"></p>
                 </div>
             </div>
         `;
@@ -168,6 +169,56 @@ describe('takeout-import controller (#458)', () => {
         expect(status.textContent).toBe('Envoi de 1 / 2 fichiers…');
 
         await jest.advanceTimersByTimeAsync(0);
+
+        jest.useRealTimers();
+    });
+
+    // #481 : upload potentiellement long (plusieurs minutes avec un gros
+    // ZIP en chunks) — un message qui tourne rassure sur le fait que rien
+    // n'est bloqué et rappelle de garder l'onglet ouvert.
+    test('affiche un message de patience dès le début de l\'upload, qui change au fil du temps', async () => {
+        jest.useFakeTimers({ doNotFake: ['nextTick', 'queueMicrotask'] });
+        setInputFiles([makeFile('takeout-001.zip')]);
+
+        global.fetch = jest.fn()
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'pending' }) })
+            .mockResolvedValueOnce({ ok: true })
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'pending' }) })
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ status: 'pending', processedCount: 0, totalMediaCount: null }) });
+
+        const button = document.querySelector('[data-takeout-import-target="submit"]');
+        const patienceMessage = document.querySelector('[data-takeout-import-target="patienceMessage"]');
+
+        button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        await Promise.resolve();
+
+        const firstMessage = patienceMessage.textContent;
+        expect(firstMessage).not.toBe('');
+
+        await jest.advanceTimersByTimeAsync(4000);
+        expect(patienceMessage.textContent).not.toBe(firstMessage);
+
+        await jest.advanceTimersByTimeAsync(0);
+        jest.useRealTimers();
+    });
+
+    test('arrête le message de patience une fois l\'upload terminé (passage au polling)', async () => {
+        jest.useFakeTimers({ doNotFake: ['nextTick', 'queueMicrotask'] });
+        setInputFiles([makeFile('takeout-001.zip')]);
+
+        global.fetch = jest.fn()
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'pending' }) })
+            .mockResolvedValueOnce({ ok: true })
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'pending' }) })
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ status: 'pending', processedCount: 0, totalMediaCount: null }) });
+
+        const button = document.querySelector('[data-takeout-import-target="submit"]');
+        const patienceMessage = document.querySelector('[data-takeout-import-target="patienceMessage"]');
+
+        button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        await jest.advanceTimersByTimeAsync(0);
+
+        expect(patienceMessage.textContent).toBe('');
 
         jest.useRealTimers();
     });

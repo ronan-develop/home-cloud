@@ -58,6 +58,13 @@
             </div>
             <p class="text-xs" style="color: var(--hc-text-secondary, var(--hc-text))" data-takeout-import-target="fileStatus"></p>
         </div>
+
+        <!-- Message d'attente qui tourne pendant les longs transferts (#481) :
+             un import Takeout peut prendre plusieurs minutes, un simple
+             pourcentage qui avance lentement peut donner l'impression que
+             l'interface est bloquée. -->
+        <p class="text-xs takeout-patience-message" style="color: var(--hc-text-secondary, var(--hc-text))"
+           data-takeout-import-target="patienceMessage"></p>
     </div>
 
 </div>
