@@ -42,6 +42,22 @@ jobs:
           fi
           echo "✅ Ticket référencé."
 
+      # Plusieurs PR/tickets sont restés sans assignee jusqu'à correction
+      # manuelle après coup (session du 2026-09-27) — rend le suivi de qui
+      # travaille sur quoi obligatoire dès l'ouverture de la PR.
+      - name: 👤 Vérifier qu'un assignee est présent
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          COUNT=$(gh pr view "${{ github.event.pull_request.number }}" \
+            --repo "${{ github.repository }}" \
+            --json assignees -q '.assignees | length')
+          if [ "$COUNT" -eq 0 ]; then
+            echo "::error::Aucun assignee sur cette PR — assignez-vous cette PR avant de la soumettre."
+            exit 1
+          fi
+          echo "✅ $COUNT assignee(s) présent(s)."
+
   php:
     runs-on: ubuntu-latest
 
