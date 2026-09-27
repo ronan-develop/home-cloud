@@ -11,7 +11,7 @@ const UPLOAD_ROUTE = '/api/v1/takeout-imports';
  * même stratégie de backoff/timeout, pas de duplication de cette logique.
  */
 export default class extends Controller {
-    static targets = ['input', 'dropzone', 'form', 'progress', 'bar', 'status', 'counts', 'error', 'submit'];
+    static targets = ['input', 'dropzone', 'form', 'fileList', 'progress', 'bar', 'status', 'counts', 'error', 'submit'];
 
     connect() {
         this._poller = null;
@@ -28,6 +28,17 @@ export default class extends Controller {
     onFilesSelected() {
         const files = Array.from(this.inputTarget.files || []);
         this.submitTarget.disabled = files.length === 0;
+
+        // Confirmation visuelle des ZIP sélectionnés avant l'envoi (#458) —
+        // utile en particulier pour un import multi-ZIP (Google Takeout
+        // découpe souvent l'export en plusieurs archives), où il n'y avait
+        // jusqu'ici aucun moyen de vérifier la sélection avant de démarrer.
+        this.fileListTarget.innerHTML = '';
+        files.forEach((file) => {
+            const li = document.createElement('li');
+            li.textContent = file.name;
+            this.fileListTarget.appendChild(li);
+        });
     }
 
     async submit(event) {
@@ -70,7 +81,11 @@ export default class extends Controller {
         this._poller = createBatchPoller({
             batchId: importId,
             fetchStatus: (id) => this._fetchImportStatus(id),
-            onComplete: (status) => this._renderStatus(status),
+            // onProgress est appelé à CHAQUE tick (pending, extracting,
+            // processing, jusqu'au terminal) — sans lui la barre restait
+            // invisible pendant toute la durée de l'import, onComplete
+            // n'étant notifié qu'au tout dernier tick (#458).
+            onProgress: (status) => this._renderStatus(status),
             onError: () => this._showError('Impossible de récupérer la progression'),
         });
 
