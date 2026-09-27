@@ -118,4 +118,38 @@ final class TakeoutStructureParserTest extends TestCase
         $this->assertCount(0, $result->mediaEntries);
         $this->assertSame(0, $result->ignoredCount);
     }
+
+    // #478 : un export Takeout structure ses médias par album Google Photos
+    // (un sous-dossier = un album nommé par l'utilisateur) — cette
+    // information doit être conservée pour recréer les albums côté HomeCloud,
+    // au lieu de tout aplatir dans un seul dossier d'import.
+    public function testExposesAlbumNameFromParentFolder(): void
+    {
+        $this->touch('Google Photos/Vacances 2026/photo1.jpg');
+
+        $result = $this->parser->parse($this->root);
+
+        $this->assertSame('Vacances 2026', $result->mediaEntries[0]->albumName);
+    }
+
+    public function testTreatsPhotosFromYearFolderAsNotAnAlbum(): void
+    {
+        // Google Photos range aussi les médias sans album explicite dans un
+        // dossier technique "Photos from <année>" — jamais une intention
+        // consciente de l'utilisateur, ne doit pas devenir un album.
+        $this->touch('Google Photos/Photos from 2020/photo2.jpg');
+
+        $result = $this->parser->parse($this->root);
+
+        $this->assertNull($result->mediaEntries[0]->albumName);
+    }
+
+    public function testTreatsDirectGooglePhotosRootAsNotAnAlbum(): void
+    {
+        $this->touch('Google Photos/photo3.jpg');
+
+        $result = $this->parser->parse($this->root);
+
+        $this->assertNull($result->mediaEntries[0]->albumName);
+    }
 }

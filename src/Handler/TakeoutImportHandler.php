@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace App\Handler;
 
+use App\Entity\User;
+use App\Interface\Album\AlbumServiceInterface;
 use App\Interface\Folder\DefaultFolderServiceInterface;
 use App\Message\TakeoutImportMessage;
 use App\Repository\ContentFingerprintRepository;
 use App\Repository\TakeoutImportRepository;
+use App\Service\Takeout\TakeoutImportOutcome;
+use App\Service\Takeout\TakeoutMediaEntry;
 use App\Service\Takeout\TakeoutMediaImporter;
 use App\Service\Takeout\TakeoutMetadataReader;
 use App\Service\Takeout\TakeoutStructureParser;
@@ -49,6 +53,7 @@ final class TakeoutImportHandler
         private readonly TakeoutMediaImporter $mediaImporter,
         private readonly DefaultFolderServiceInterface $defaultFolderService,
         private readonly ContentFingerprintRepository $fingerprintRepository,
+        private readonly AlbumServiceInterface $albumService,
         private readonly EntityManagerInterface $em,
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {}
@@ -102,6 +107,14 @@ final class TakeoutImportHandler
             );
             $existingHashes = $this->fingerprintRepository->findExistingHashes($owner, $hashes);
 
+            // Médias groupés par album Google Photos (#478) — null pour un
+            // média sans album explicite (racine, ou dossier technique
+            // "Photos from <année>", cf. TakeoutStructureParser). Les
+            // Album HomeCloud ne peuvent être créés qu'une fois les Media
+            // importés (AlbumService::create() attend des mediaIds), donc
+            // après la boucle d'import, jamais pendant.
+            $mediaIdsByAlbumName = [];
+
             $processedSinceFlush = 0;
             foreach ($structure->mediaEntries as $entry) {
                 $metadata = $entry->metadataPath !== null
@@ -114,6 +127,7 @@ final class TakeoutImportHandler
                     ++$duplicatesSkipped;
                 } else {
                     ++$mediaImported;
+                    $this->collectForAlbum($mediaIdsByAlbumName, $entry, $outcome);
                 }
                 $import->incrementProcessedCount();
 
@@ -124,6 +138,8 @@ final class TakeoutImportHandler
             }
 
             $this->em->flush();
+
+            $this->createAlbums($mediaIdsByAlbumName, $owner);
 
             $import->markCompleted($mediaImported, $duplicatesSkipped, $unrecognizedFiles);
             $this->em->flush();
@@ -137,6 +153,28 @@ final class TakeoutImportHandler
 
             $import->markFailed($e->getMessage(), $mediaImported, $duplicatesSkipped, $unrecognizedFiles);
             $this->em->flush();
+        }
+    }
+
+    /**
+     * @param array<string, list<string>> $mediaIdsByAlbumName
+     */
+    private function collectForAlbum(array &$mediaIdsByAlbumName, TakeoutMediaEntry $entry, TakeoutImportOutcome $outcome): void
+    {
+        if ($entry->albumName === null || $outcome->media === null) {
+            return;
+        }
+
+        $mediaIdsByAlbumName[$entry->albumName][] = (string) $outcome->media->getId();
+    }
+
+    /**
+     * @param array<string, list<string>> $mediaIdsByAlbumName
+     */
+    private function createAlbums(array $mediaIdsByAlbumName, User $owner): void
+    {
+        foreach ($mediaIdsByAlbumName as $albumName => $mediaIds) {
+            $this->albumService->create($albumName, $owner, $mediaIds);
         }
     }
 

@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Tests\Handler;
 
+use App\Entity\Album;
 use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\Media;
 use App\Entity\TakeoutImport;
 use App\Entity\User;
 use App\Handler\TakeoutImportHandler;
+use App\Interface\Album\AlbumServiceInterface;
 use App\Interface\Folder\DefaultFolderServiceInterface;
 use App\Message\TakeoutImportMessage;
 use App\Repository\ContentFingerprintRepository;
@@ -36,6 +38,7 @@ final class TakeoutImportHandlerTest extends TestCase
     private TakeoutMediaImporter $mediaImporter;
     private DefaultFolderServiceInterface $defaultFolderService;
     private ContentFingerprintRepository $fingerprintRepository;
+    private AlbumServiceInterface $albumService;
     private EntityManagerInterface $em;
 
     protected function setUp(): void
@@ -50,6 +53,7 @@ final class TakeoutImportHandlerTest extends TestCase
         $this->mediaImporter = $this->createStub(TakeoutMediaImporter::class);
         $this->defaultFolderService = $this->createStub(DefaultFolderServiceInterface::class);
         $this->fingerprintRepository = $this->createStub(ContentFingerprintRepository::class);
+        $this->albumService = $this->createStub(AlbumServiceInterface::class);
         $this->em = $this->createStub(EntityManagerInterface::class);
     }
 
@@ -76,6 +80,7 @@ final class TakeoutImportHandlerTest extends TestCase
             $this->mediaImporter,
             $this->defaultFolderService,
             $this->fingerprintRepository,
+            $this->albumService,
             $this->em,
             $logger ?? new NullLogger(),
         );
@@ -207,6 +212,67 @@ final class TakeoutImportHandlerTest extends TestCase
             ->method('import')
             ->with($entry, $metadata, $folder, $owner, [])
             ->willReturn(TakeoutImportOutcome::imported(null));
+
+        $this->handler()(new TakeoutImportMessage((string) $import->getId(), ['/tmp/takeout.zip']));
+    }
+
+    // #478 : les médias appartenant à un vrai album Google Photos (nom de
+    // sous-dossier non null, cf. TakeoutStructureParser) doivent être
+    // regroupés dans un Album HomeCloud une fois importés — visible
+    // immédiatement sur /albums, pas seulement dans le dossier plat.
+    public function testCreatesAlbumForMediaGroupedByAlbumName(): void
+    {
+        $owner = new User('owner@example.com', 'Owner');
+        $import = new TakeoutImport($owner);
+        $folder = new Folder('Import Google Photos 2026-09-26', $owner);
+
+        $this->importRepository->method('find')->willReturn($import);
+
+        $entry1 = new TakeoutMediaEntry($this->makeExtractedFile('a'), null, 'Vacances 2026');
+        $entry2 = new TakeoutMediaEntry($this->makeExtractedFile('b'), null, 'Vacances 2026');
+        $this->structureParser->method('parse')
+            ->willReturn(new TakeoutStructureResult([$entry1, $entry2], 0));
+
+        $this->fingerprintRepository->method('findExistingHashes')->willReturn([]);
+        $this->defaultFolderService->method('resolve')->willReturn($folder);
+
+        $media1 = new Media(new File('a.jpg', 'image/jpeg', 10, '2026/09/a.jpg', $folder, $owner), 'photo');
+        $media2 = new Media(new File('b.jpg', 'image/jpeg', 10, '2026/09/b.jpg', $folder, $owner), 'photo');
+        $this->mediaImporter->method('import')
+            ->willReturnOnConsecutiveCalls(
+                TakeoutImportOutcome::imported($media1),
+                TakeoutImportOutcome::imported($media2),
+            );
+
+        $this->albumService = $this->createMock(AlbumServiceInterface::class);
+        $this->albumService->expects($this->once())
+            ->method('create')
+            ->with('Vacances 2026', $owner, [(string) $media1->getId(), (string) $media2->getId()])
+            ->willReturn(new Album('Vacances 2026', $owner));
+
+        $this->handler()(new TakeoutImportMessage((string) $import->getId(), ['/tmp/takeout.zip']));
+    }
+
+    public function testDoesNotCreateAlbumForMediaWithoutAlbumName(): void
+    {
+        $owner = new User('owner@example.com', 'Owner');
+        $import = new TakeoutImport($owner);
+        $folder = new Folder('Import Google Photos 2026-09-26', $owner);
+
+        $this->importRepository->method('find')->willReturn($import);
+
+        $entry = new TakeoutMediaEntry($this->makeExtractedFile(), null, null);
+        $this->structureParser->method('parse')
+            ->willReturn(new TakeoutStructureResult([$entry], 0));
+
+        $this->fingerprintRepository->method('findExistingHashes')->willReturn([]);
+        $this->defaultFolderService->method('resolve')->willReturn($folder);
+
+        $media = new Media(new File('a.jpg', 'image/jpeg', 10, '2026/09/a.jpg', $folder, $owner), 'photo');
+        $this->mediaImporter->method('import')->willReturn(TakeoutImportOutcome::imported($media));
+
+        $this->albumService = $this->createMock(AlbumServiceInterface::class);
+        $this->albumService->expects($this->never())->method('create');
 
         $this->handler()(new TakeoutImportMessage((string) $import->getId(), ['/tmp/takeout.zip']));
     }

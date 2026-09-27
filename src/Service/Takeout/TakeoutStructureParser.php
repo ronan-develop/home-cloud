@@ -25,6 +25,11 @@ class TakeoutStructureParser
 
     private const METADATA_SUFFIX = '.supplemental-metadata.json';
 
+    // Google Photos range les médias sans album explicite dans un dossier
+    // technique "Photos from <année>" — jamais une intention consciente de
+    // l'utilisateur, ne doit jamais devenir un album (#478).
+    private const PHOTOS_FROM_YEAR_PATTERN = '/^Photos from \d{4}$/';
+
     public function parse(string $root): TakeoutStructureResult
     {
         $filesByDir = [];
@@ -48,6 +53,7 @@ class TakeoutStructureParser
         $mediaEntries = [];
 
         foreach ($filesByDir as $dir => $filenames) {
+            $albumName = $this->resolveAlbumName($root, $dir);
             $metadataByMediaName = [];
             $candidateMediaNames = [];
 
@@ -71,10 +77,37 @@ class TakeoutStructureParser
                 $mediaEntries[] = new TakeoutMediaEntry(
                     mediaPath: $dir . '/' . $mediaName,
                     metadataPath: $metadataFilename !== null ? $dir . '/' . $metadataFilename : null,
+                    albumName: $albumName,
                 );
             }
         }
 
         return new TakeoutStructureResult($mediaEntries, $ignoredCount);
+    }
+
+    /**
+     * Un vrai album Google Photos est un sous-dossier nommé directement sous
+     * la racine de l'export (ex: "Google Photos/Vacances 2026/") — jamais un
+     * média directement à la racine, ni un dossier technique "Photos from
+     * <année>" (#478).
+     */
+    private function resolveAlbumName(string $root, string $dir): ?string
+    {
+        $relative = ltrim(substr($dir, strlen($root)), '/');
+        $segments = explode('/', $relative);
+
+        // Un média à la racine du Google Photos exporté (pas de sous-dossier
+        // nommé) n'appartient à aucun album.
+        if (count($segments) < 2) {
+            return null;
+        }
+
+        $candidate = end($segments);
+
+        if (preg_match(self::PHOTOS_FROM_YEAR_PATTERN, $candidate) === 1) {
+            return null;
+        }
+
+        return $candidate;
     }
 }

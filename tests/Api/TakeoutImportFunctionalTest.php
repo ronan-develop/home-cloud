@@ -9,6 +9,7 @@ use App\Entity\TakeoutImport;
 use App\Entity\User;
 use App\Handler\TakeoutImportHandler;
 use App\Message\TakeoutImportMessage;
+use App\Repository\AlbumRepository;
 use App\Repository\FolderRepository;
 use App\Tests\AuthenticatedApiTestCase;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -23,6 +24,12 @@ use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
  */
 final class TakeoutImportFunctionalTest extends AuthenticatedApiTestCase
 {
+    // JPEG 1x1 minimal valide — nécessaire pour que MediaProcessor reconnaisse
+    // un vrai mimeType image/jpeg (contrairement à un contenu texte factice,
+    // détecté text/plain par finfo, qui produit un File sans Media associé
+    // et empêche silencieusement la création d'album, #478).
+    private const MINIMAL_JPEG = '/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDRENDg8QEBEQCgwSExIQEw8QEBD/2wBDAQMDAwQDBAgEBAgQCwkLEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBD/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAj/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=';
+
     private ?string $zipPath = null;
 
     protected function tearDown(): void
@@ -40,7 +47,7 @@ final class TakeoutImportFunctionalTest extends AuthenticatedApiTestCase
 
         $zip = new \ZipArchive();
         $zip->open($zipPath, \ZipArchive::CREATE);
-        $zip->addFromString('Google Photos/Vacances/photo.jpg', 'contenu binaire de test');
+        $zip->addFromString('Google Photos/Vacances/photo.jpg', base64_decode(self::MINIMAL_JPEG));
         $zip->addFromString(
             'Google Photos/Vacances/photo.jpg.supplemental-metadata.json',
             json_encode(['photoTakenTime' => ['timestamp' => (string) (new \DateTimeImmutable('2020-06-15'))->getTimestamp()]]),
@@ -145,6 +152,14 @@ final class TakeoutImportFunctionalTest extends AuthenticatedApiTestCase
         $this->assertNotNull($file);
         $this->assertSame('photo.jpg', $file->getOriginalName());
         $this->assertSame((string) $user->getId(), (string) $file->getOwner()->getId());
+
+        // #478 : "Google Photos/Vacances/photo.jpg" — "Vacances" est un vrai
+        // album Google Photos (pas "Photos from <année>"), doit être recréé
+        // comme Album HomeCloud, immédiatement visible sur /albums.
+        $album = static::getContainer()->get(AlbumRepository::class)
+            ->findOneBy(['name' => 'Vacances', 'owner' => $user]);
+        $this->assertNotNull($album, 'L\'album "Vacances" doit avoir été créé');
+        $this->assertCount(1, $album->getMedias());
     }
 
     public function testReimportingSameZipSkipsAsDuplicate(): void
