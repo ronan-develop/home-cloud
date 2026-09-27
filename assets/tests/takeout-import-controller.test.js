@@ -77,9 +77,13 @@ describe('takeout-import controller (#458)', () => {
         setInputFiles([makeFile('takeout-001.zip')]);
 
         global.fetch = jest.fn()
-            // POST /api/v1/takeout-imports
+            // POST /api/v1/takeout-imports (création, sans fichier)
             .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'pending' }) })
-            // GET immédiat après le POST (rendu initial pending)
+            // POST /api/v1/takeout-imports/import-1/files (1 ZIP)
+            .mockResolvedValueOnce({ ok: true })
+            // POST /api/v1/takeout-imports/import-1/start
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'pending' }) })
+            // GET immédiat après le start (rendu initial pending)
             .mockResolvedValueOnce({ ok: true, json: async () => ({ status: 'pending', processedCount: 0, totalMediaCount: null }) })
             // premier tick du poller : extracting
             .mockResolvedValueOnce({ ok: true, json: async () => ({ status: 'extracting', processedCount: 0, totalMediaCount: null }) });
@@ -93,6 +97,59 @@ describe('takeout-import controller (#458)', () => {
 
         const status = document.querySelector('[data-takeout-import-target="status"]');
         expect(status.textContent).toBe('Extraction des archives…');
+
+        jest.useRealTimers();
+    });
+
+    // #466 : un seul gros POST multi-fichiers dépassait la limite de taille
+    // de requête du serveur mutualisé (413) dès que l'utilisateur
+    // sélectionnait plusieurs ZIP Takeout volumineux d'un coup. Chaque ZIP
+    // doit désormais partir dans sa propre requête, sans rien changer côté
+    // sélection utilisateur (toujours groupée en un clic).
+    test('envoie chaque ZIP dans sa propre requête après création de l\'import', async () => {
+        jest.useFakeTimers({ doNotFake: ['nextTick', 'queueMicrotask'] });
+        setInputFiles([makeFile('takeout-001.zip'), makeFile('takeout-002.zip')]);
+
+        global.fetch = jest.fn()
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'pending' }) })
+            .mockResolvedValueOnce({ ok: true })
+            .mockResolvedValueOnce({ ok: true })
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'pending' }) })
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ status: 'pending', processedCount: 0, totalMediaCount: null }) });
+
+        const button = document.querySelector('[data-takeout-import-target="submit"]');
+        button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        await jest.advanceTimersByTimeAsync(0);
+
+        const calls = global.fetch.mock.calls.map((c) => c[0]);
+        expect(calls).toEqual([
+            '/api/v1/takeout-imports',
+            '/api/v1/takeout-imports/import-1/files',
+            '/api/v1/takeout-imports/import-1/files',
+            '/api/v1/takeout-imports/import-1/start',
+            '/api/v1/takeout-imports/import-1',
+        ]);
+
+        jest.useRealTimers();
+    });
+
+    test('affiche une erreur si l\'envoi d\'un ZIP échoue, sans appeler start', async () => {
+        jest.useFakeTimers({ doNotFake: ['nextTick', 'queueMicrotask'] });
+        setInputFiles([makeFile('takeout-001.zip')]);
+
+        global.fetch = jest.fn()
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'pending' }) })
+            .mockResolvedValueOnce({ ok: false, status: 413 });
+
+        const button = document.querySelector('[data-takeout-import-target="submit"]');
+        button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        await jest.advanceTimersByTimeAsync(0);
+
+        const calls = global.fetch.mock.calls.map((c) => c[0]);
+        expect(calls).toEqual(['/api/v1/takeout-imports', '/api/v1/takeout-imports/import-1/files']);
+
+        const error = document.querySelector('[data-takeout-import-target="error"]');
+        expect(error.hidden).toBe(false);
 
         jest.useRealTimers();
     });

@@ -6,6 +6,7 @@ namespace App\Tests\Api;
 
 use App\Entity\File;
 use App\Entity\TakeoutImport;
+use App\Entity\User;
 use App\Handler\TakeoutImportHandler;
 use App\Message\TakeoutImportMessage;
 use App\Repository\FolderRepository;
@@ -50,22 +51,58 @@ final class TakeoutImportFunctionalTest extends AuthenticatedApiTestCase
         return $zipPath;
     }
 
+    /**
+     * @return array{0: \Symfony\Bundle\FrameworkBundle\KernelBrowser, 1: string} client + importId
+     */
+    private function createImportAndUploadFiles(User $user, array $uploadedFiles): array
+    {
+        $client = $this->createAuthenticatedClient($user);
+        $client->disableReboot();
+
+        $client->request('POST', '/api/v1/takeout-imports');
+        $this->assertResponseStatusCodeSame(201, (string) $client->getResponse()->getContent());
+        $importId = json_decode($client->getResponse()->getContent(), true)['id'];
+
+        foreach ($uploadedFiles as $uploadedFile) {
+            $client->request('POST', "/api/v1/takeout-imports/{$importId}/files", [
+                'extra' => ['files' => ['file' => $uploadedFile]],
+            ]);
+            $this->assertResponseStatusCodeSame(204, (string) $client->getResponse()->getContent());
+        }
+
+        return [$client, $importId];
+    }
+
+    public function testCreateImportReturnsPendingWithoutDispatchingMessage(): void
+    {
+        $user = $this->createUser('takeout-create@example.com');
+
+        $client = $this->createAuthenticatedClient($user);
+        $client->request('POST', '/api/v1/takeout-imports');
+
+        $this->assertResponseStatusCodeSame(201);
+        $data = json_decode($client->getResponse()->getContent(), true);
+        $this->assertSame(TakeoutImport::STATUS_PENDING, $data['status']);
+        $this->assertNotEmpty($data['id']);
+
+        $transport = static::getContainer()->get('messenger.transport.async');
+        $this->assertCount(0, $transport->get(), 'La création seule ne doit dispatcher aucun message');
+    }
+
     public function testUploadDispatchesTakeoutImportMessage(): void
     {
         $user = $this->createUser('takeout-upload@example.com');
         $zipPath = $this->makeTakeoutZip();
         $uploadedFile = new UploadedFile($zipPath, 'takeout-20260101-001.zip', 'application/zip', null, true);
 
-        $client = $this->createAuthenticatedClient($user);
-        $client->request('POST', '/api/v1/takeout-imports', [
-            'extra' => ['files' => ['files' => [$uploadedFile]]],
-        ]);
+        [$client, $importId] = $this->createImportAndUploadFiles($user, [$uploadedFile]);
 
+        $client->request('POST', "/api/v1/takeout-imports/{$importId}/start");
         $this->assertResponseStatusCodeSame(202);
 
         $data = json_decode($client->getResponse()->getContent(), true);
         $this->assertSame(TakeoutImport::STATUS_PENDING, $data['status']);
-        $this->assertNotEmpty($data['id']);
+        $this->assertSame($importId, $data['id']);
 
         $transport = static::getContainer()->get('messenger.transport.async');
         $this->assertCount(1, $transport->get());
@@ -77,12 +114,9 @@ final class TakeoutImportFunctionalTest extends AuthenticatedApiTestCase
         $zipPath = $this->makeTakeoutZip();
         $uploadedFile = new UploadedFile($zipPath, 'takeout-20260101-001.zip', 'application/zip', null, true);
 
-        $client = $this->createAuthenticatedClient($user);
-        $client->request('POST', '/api/v1/takeout-imports', [
-            'extra' => ['files' => ['files' => [$uploadedFile]]],
-        ]);
+        [$client, $importId] = $this->createImportAndUploadFiles($user, [$uploadedFile]);
+        $client->request('POST', "/api/v1/takeout-imports/{$importId}/start");
         $this->assertResponseStatusCodeSame(202);
-        $importId = json_decode($client->getResponse()->getContent(), true)['id'];
 
         /** @var InMemoryTransport $transport */
         $transport = static::getContainer()->get('messenger.transport.async');
@@ -116,15 +150,12 @@ final class TakeoutImportFunctionalTest extends AuthenticatedApiTestCase
     public function testReimportingSameZipSkipsAsDuplicate(): void
     {
         $user = $this->createUser('takeout-dup@example.com');
-        $client = $this->createAuthenticatedClient($user);
-        // Sans ça, le kernel reboote entre les deux requêtes et le transport
-        // in-memory (état de service) perd le premier message dispatché.
-        $client->disableReboot();
 
         // Premier import
         $zipPath1 = $this->makeTakeoutZip();
         $uploadedFile1 = new UploadedFile($zipPath1, 'takeout-20260101-001.zip', 'application/zip', null, true);
-        $client->request('POST', '/api/v1/takeout-imports', ['extra' => ['files' => ['files' => [$uploadedFile1]]]]);
+        [$client, $importId1] = $this->createImportAndUploadFiles($user, [$uploadedFile1]);
+        $client->request('POST', "/api/v1/takeout-imports/{$importId1}/start");
         $this->assertResponseStatusCodeSame(202, (string) $client->getResponse()->getContent());
 
         /** @var InMemoryTransport $transport */
@@ -137,9 +168,15 @@ final class TakeoutImportFunctionalTest extends AuthenticatedApiTestCase
         // Second import du même contenu
         $zipPath2 = $this->makeTakeoutZip();
         $uploadedFile2 = new UploadedFile($zipPath2, 'takeout-20260101-001.zip', 'application/zip', null, true);
-        $client->request('POST', '/api/v1/takeout-imports', ['extra' => ['files' => ['files' => [$uploadedFile2]]]]);
-        $this->assertResponseStatusCodeSame(202, (string) $client->getResponse()->getContent());
+        $client->request('POST', '/api/v1/takeout-imports');
+        $this->assertResponseStatusCodeSame(201, (string) $client->getResponse()->getContent());
         $importId2 = json_decode($client->getResponse()->getContent(), true)['id'];
+        $client->request('POST', "/api/v1/takeout-imports/{$importId2}/files", [
+            'extra' => ['files' => ['file' => $uploadedFile2]],
+        ]);
+        $this->assertResponseStatusCodeSame(204, (string) $client->getResponse()->getContent());
+        $client->request('POST', "/api/v1/takeout-imports/{$importId2}/start");
+        $this->assertResponseStatusCodeSame(202, (string) $client->getResponse()->getContent());
         $pendingEnvelopes = $transport->get();
         $this->assertCount(1, $pendingEnvelopes, 'Le second import doit avoir dispatché son propre message');
         $handler($pendingEnvelopes[0]->getMessage());
@@ -162,13 +199,9 @@ final class TakeoutImportFunctionalTest extends AuthenticatedApiTestCase
         $zipPath = $this->makeTakeoutZip();
         $uploadedFile = new UploadedFile($zipPath, 'takeout-20260101-001.zip', 'application/zip', null, true);
 
-        $client = $this->createAuthenticatedClient($user);
-        $client->disableReboot();
-        $client->request('POST', '/api/v1/takeout-imports', [
-            'extra' => ['files' => ['files' => [$uploadedFile]]],
-        ]);
+        [$client, $importId] = $this->createImportAndUploadFiles($user, [$uploadedFile]);
+        $client->request('POST', "/api/v1/takeout-imports/{$importId}/start");
         $this->assertResponseStatusCodeSame(202);
-        $importId = json_decode($client->getResponse()->getContent(), true)['id'];
 
         /** @var InMemoryTransport $transport */
         $transport = static::getContainer()->get('messenger.transport.async');
@@ -186,12 +219,16 @@ final class TakeoutImportFunctionalTest extends AuthenticatedApiTestCase
         $this->assertSame(TakeoutImport::STATUS_COMPLETED, $data['status']);
     }
 
-    public function testUploadWithoutFilesReturns400(): void
+    public function testStartWithoutFilesReturns400(): void
     {
         $user = $this->createUser('takeout-empty@example.com');
 
         $client = $this->createAuthenticatedClient($user);
-        $client->request('POST', '/api/v1/takeout-imports', ['extra' => ['files' => []]]);
+        $client->request('POST', '/api/v1/takeout-imports');
+        $this->assertResponseStatusCodeSame(201);
+        $importId = json_decode($client->getResponse()->getContent(), true)['id'];
+
+        $client->request('POST', "/api/v1/takeout-imports/{$importId}/start");
 
         $this->assertResponseStatusCodeSame(400);
     }

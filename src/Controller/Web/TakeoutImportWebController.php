@@ -12,8 +12,9 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 /**
  * Page d'import Google Photos Takeout (#327) : sélection du/des ZIP,
  * upload multipart, suivi de la progression par polling — toute la logique
- * métier reste côté TakeoutImportUploadController (API) et le Stimulus
- * controller frontend ; cette page ne fait que rendre le template.
+ * métier reste côté API (TakeoutImportCreateController,
+ * TakeoutImportFileUploadController, TakeoutImportStartController) et le
+ * Stimulus controller frontend ; cette page ne fait que rendre le template.
  */
 #[IsGranted('ROLE_USER')]
 final class TakeoutImportWebController extends AbstractController

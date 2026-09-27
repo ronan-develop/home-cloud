@@ -9,6 +9,7 @@ use App\Entity\File;
 use App\Entity\Folder;
 use App\Entity\Share;
 use App\Entity\ShareLink;
+use App\Entity\TakeoutImport;
 use App\Interface\Auth\AuthenticationResolverInterface;
 use App\Interface\Auth\OwnershipCheckerInterface;
 use Psr\Log\LoggerInterface;
@@ -28,7 +29,7 @@ final readonly class OwnershipChecker implements OwnershipCheckerInterface
         private LoggerInterface $logger,
     ) {}
 
-    public function isOwner(Folder|Album|Share|File|ShareLink $resource): bool
+    public function isOwner(Folder|Album|Share|File|ShareLink|TakeoutImport $resource): bool
     {
         $user = $this->authResolver->getAuthenticatedUser();
 
@@ -50,7 +51,7 @@ final readonly class OwnershipChecker implements OwnershipCheckerInterface
         return $isOwner;
     }
 
-    public function denyUnlessOwner(Folder|Album|Share|File|ShareLink $resource): void
+    public function denyUnlessOwner(Folder|Album|Share|File|ShareLink|TakeoutImport $resource): void
     {
         $user = $this->authResolver->getAuthenticatedUser();
 
