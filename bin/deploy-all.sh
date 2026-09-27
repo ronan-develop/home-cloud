@@ -264,7 +264,10 @@ ENVEOF
 
         info "git pull + composer + cache + migrations + assets (étapes séparées)…"
         DEPLOY_INFO_LINE="<!-- Deployed: $(date '+%Y-%m-%d %H:%M:%S') -->"
-        if run_step "git pull"          "mkdir -p var/log && git pull origin ${GIT_BRANCH}" \
+        # app.built.css vient d'être écrasé par le scp ci-dessus : annuler cette
+        # modification locale avant le pull, sinon git refuse de merger
+        # ("Your local changes ... would be overwritten by merge").
+        if run_step "git pull"          "git checkout -- var/tailwind/app.built.css 2>/dev/null; mkdir -p var/log && git pull origin ${GIT_BRANCH}" \
         && run_step "composer install"  "${COMPOSER_BIN} install --no-interaction --prefer-dist --no-progress --no-dev --no-scripts" \
         && run_step "install-ffmpeg"    "bash bin/install-ffmpeg.sh || echo '⚠ ffmpeg non installé — vignettes vidéo indisponibles'" \
         && run_step "cache:clear"       "${PHP_BIN} bin/console cache:clear --env=prod" \
