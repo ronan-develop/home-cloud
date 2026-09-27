@@ -59,6 +59,7 @@ export function createBatchPoller({
     batchId,
     fetchStatus,
     onComplete,
+    onProgress,
     onError,
     setTimeoutFn = setTimeout,
     clearTimeoutFn = clearTimeout,
@@ -100,6 +101,14 @@ export function createBatchPoller({
         try {
             const status = await fetchStatus(batchId);
             if (stopped) return;
+            // Callback optionnel appelé à CHAQUE tick reçu (y compris le
+            // dernier) — sans lui, un appelant ne peut jamais afficher
+            // l'avancement pendant l'attente, seulement au tout dernier
+            // tick via onComplete (#458, barre de progression Takeout
+            // restée invisible pendant toute la durée de l'import).
+            if (status) {
+                onProgress?.(status);
+            }
             // "failed" (#327, import Google Photos) : terminal comme
             // "completed" — le lot ne progressera plus, inutile de
             // continuer à poller jusqu'au timeout.
