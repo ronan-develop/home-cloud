@@ -86,4 +86,45 @@ final class ChunkedFileAssemblerTest extends TestCase
         self::assertTrue($isComplete);
         self::assertSame('contenu entier', file_get_contents($targetPath));
     }
+
+    // #481 (reprise après fermeture d'onglet) : le front doit pouvoir savoir
+    // où reprendre un fichier partiellement uploadé sans devoir tout renvoyer
+    // depuis 0 — resumeState() expose le dernier chunkIndex confirmé et un
+    // hash du premier chunk déjà écrit, pour que le client vérifie qu'il
+    // reprend bien le même fichier avant de continuer l'écriture en append.
+    public function testResumeStateIsNullWhenNothingWasEverWritten(): void
+    {
+        $assembler = new ChunkedFileAssembler();
+        $targetPath = $this->targetDir . '/takeout.zip';
+
+        self::assertNull($assembler->resumeState($targetPath));
+    }
+
+    public function testResumeStateReflectsLastWrittenChunkForPartialFile(): void
+    {
+        $assembler = new ChunkedFileAssembler();
+        $targetPath = $this->targetDir . '/takeout.zip';
+
+        $assembler->appendChunk($targetPath, 0, 3, 'AAA');
+        $assembler->appendChunk($targetPath, 1, 3, 'BBB');
+
+        $state = $assembler->resumeState($targetPath);
+
+        self::assertNotNull($state);
+        self::assertSame(1, $state['chunkIndex']);
+        self::assertSame(hash('sha256', 'AAABBB'), $state['hashOfFirstChunk']);
+    }
+
+    // Un fichier déjà complet n'a plus de marqueur .progress (supprimé par
+    // appendChunk à la complétion) — resumeState() doit refléter cet état
+    // "rien à reprendre", pas planter sur un .progress absent.
+    public function testResumeStateIsNullOnceFileIsAlreadyComplete(): void
+    {
+        $assembler = new ChunkedFileAssembler();
+        $targetPath = $this->targetDir . '/takeout.zip';
+
+        $assembler->appendChunk($targetPath, 0, 1, 'contenu entier');
+
+        self::assertNull($assembler->resumeState($targetPath));
+    }
 }

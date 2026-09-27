@@ -1,7 +1,7 @@
 import { Controller } from '@hotwired/stimulus';
 import { apiFetch } from '../js/api.js';
 import { createBatchPoller } from '../js/upload-batch.js';
-import { uploadFileInChunks } from '../js/chunked-upload.js';
+import { uploadFileInChunks, hashChunk, CHUNK_SIZE_BYTES } from '../js/chunked-upload.js';
 
 const IMPORTS_ROUTE = '/api/v1/takeout-imports';
 
@@ -77,25 +77,33 @@ export default class extends Controller {
         this.submitTarget.disabled = true;
         this._hideError();
 
+        // #481 : reprise d'un import interrompu par fermeture d'onglet —
+        // avant de créer un nouvel import, chercher si un import "pending"
+        // existe déjà pour l'utilisateur, et pour chaque fichier sélectionné,
+        // si un envoi partiel correspondant (même nom, hash du premier chunk
+        // identique) est déjà présent côté serveur. Sans ça, chaque nouvelle
+        // tentative recrée un import et laisse les chunks déjà envoyés
+        // orphelins côté serveur (nettoyage SSH manuel nécessaire, vécu
+        // deux fois le 2026-09-27).
+        const resumePlan = await this._resolveResumePlan(files);
+
         // Zone de progression affichée dès le début de l'upload (#477) —
         // avec des ZIP Takeout de plusieurs GB découpés en tranches (#466),
         // l'envoi seul peut durer plusieurs minutes ; un bouton simplement
         // grisé sans aucun autre retour ressemblait à un gel de l'interface
-        // (constaté en conditions réelles avec 11 fichiers).
-        //
-        // Deux barres distinctes : la globale suit les fichiers déjà envoyés
-        // en entier, la seconde suit les chunks du fichier en cours — un ZIP
-        // de plusieurs GB tient à lui seul plusieurs dizaines de chunks de
-        // 50 Mo (chunked-upload.js), la barre globale seule restait quasi
-        // figée tout ce temps (constaté en conditions réelles).
+        // (constaté en conditions réelles avec 11 fichiers). Deux barres
+        // distinctes : la globale suit les fichiers déjà envoyés en entier,
+        // la seconde suit les chunks du fichier en cours.
+
         this._showUploadProgress(files.length);
 
         try {
-            const importId = await this._createImport();
+            const importId = resumePlan.importId ?? await this._createImport();
             for (const [index, file] of files.entries()) {
+                const resumeFromChunkIndex = resumePlan.resumeFromChunkIndexByFilename.get(file.name) ?? 0;
                 await this._uploadFile(importId, file, (meta) => {
                     this._renderFileProgress(file.name, meta.chunkIndex + 1, meta.totalChunks);
-                });
+                }, resumeFromChunkIndex);
                 this._renderGlobalProgress(index + 1, files.length);
             }
             this.fileProgressWrapperTarget.hidden = true;
@@ -108,6 +116,54 @@ export default class extends Controller {
             this._showError(err.message || 'Erreur lors de l\'envoi');
             this.submitTarget.disabled = false;
         }
+    }
+
+    /**
+     * @returns {Promise<{ importId: ?string, resumeFromChunkIndexByFilename: Map<string, number> }>}
+     */
+    async _resolveResumePlan(files) {
+        const pendingImport = await this._findPendingImport();
+        if (pendingImport === null) {
+            return { importId: null, resumeFromChunkIndexByFilename: new Map() };
+        }
+
+        const uploadedFiles = await this._fetchFilesStatus(pendingImport.id);
+        const uploadedFilesByName = new Map(uploadedFiles.map((f) => [f.filename, f]));
+
+        const resumeFromChunkIndexByFilename = new Map();
+        for (const file of files) {
+            const uploaded = uploadedFilesByName.get(file.name);
+            if (uploaded === undefined) {
+                continue;
+            }
+            // Vérifie que le premier chunk local correspond bien à ce que le
+            // serveur a déjà écrit avant de reprendre — nom + taille de
+            // fichier seuls ne suffisent pas à exclure une coïncidence
+            // (fichier différent, même nom, taille proche).
+            const firstChunk = file.slice(0, CHUNK_SIZE_BYTES);
+            const localHash = await hashChunk(firstChunk);
+            if (localHash === uploaded.hashOfFirstChunk) {
+                resumeFromChunkIndexByFilename.set(file.name, uploaded.chunkIndex + 1);
+            }
+        }
+
+        return { importId: pendingImport.id, resumeFromChunkIndexByFilename };
+    }
+
+    async _findPendingImport() {
+        const res = await this._authenticatedFetch(`${IMPORTS_ROUTE}/pending`, { method: 'GET' });
+        if (!res.ok) {
+            return null;
+        }
+        return res.json();
+    }
+
+    async _fetchFilesStatus(importId) {
+        const res = await this._authenticatedFetch(`${IMPORTS_ROUTE}/${importId}/files/status`, { method: 'GET' });
+        if (!res.ok) {
+            return [];
+        }
+        return res.json();
     }
 
     _showUploadProgress(totalFiles) {
@@ -172,7 +228,7 @@ export default class extends Controller {
         return data.id;
     }
 
-    async _uploadFile(importId, file, onChunkUploaded) {
+    async _uploadFile(importId, file, onChunkUploaded, resumeFromChunkIndex = 0) {
         await uploadFileInChunks(file, async (blob, meta) => {
             const formData = new FormData();
             formData.append('file', blob);
@@ -187,7 +243,7 @@ export default class extends Controller {
             if (!res.ok) {
                 throw new Error(`Échec de l'envoi de ${file.name} (${res.status})`);
             }
-        }, { onChunkUploaded });
+        }, { onChunkUploaded, resumeFromChunkIndex });
     }
 
     async _startImport(importId) {

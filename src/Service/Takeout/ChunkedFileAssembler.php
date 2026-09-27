@@ -17,6 +17,13 @@ namespace App\Service\Takeout;
  */
 final class ChunkedFileAssembler
 {
+    // Dupliqué depuis CHUNK_SIZE_BYTES de assets/js/chunked-upload.js (garder
+    // synchronisé) : taille du "premier chunk" hashé par resumeState() pour
+    // que le client vérifie qu'il reprend bien le même fichier avant de
+    // continuer l'écriture en append (#481 — reprise après fermeture
+    // d'onglet en cours d'upload).
+    public const CHUNK_SIZE_BYTES = 50 * 1024 * 1024;
+
     /**
      * @return bool true si ce chunk complète le fichier (dernier attendu)
      *
@@ -51,5 +58,27 @@ final class ChunkedFileAssembler
         }
 
         return $isComplete;
+    }
+
+    /**
+     * État de reprise d'un fichier partiellement uploadé, ou null si rien à
+     * reprendre (aucun octet écrit, ou fichier déjà complet — le marqueur
+     * .progress est supprimé par appendChunk() à la complétion).
+     *
+     * @return array{chunkIndex: int, hashOfFirstChunk: ?string}|null
+     */
+    public function resumeState(string $targetPath): ?array
+    {
+        $progressPath = $targetPath . '.progress';
+        if (!is_file($progressPath) || !is_file($targetPath)) {
+            return null;
+        }
+
+        $firstChunkBytes = file_get_contents($targetPath, false, null, 0, self::CHUNK_SIZE_BYTES);
+
+        return [
+            'chunkIndex' => (int) file_get_contents($progressPath),
+            'hashOfFirstChunk' => $firstChunkBytes !== false ? hash('sha256', $firstChunkBytes) : null,
+        ];
     }
 }
