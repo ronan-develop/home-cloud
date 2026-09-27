@@ -113,9 +113,23 @@ export default class extends Controller {
             this._startPolling(importId);
         } catch (err) {
             this._hideUploadProgress();
-            this._showError(err.message || 'Erreur lors de l\'envoi');
+            this._showError(this._describeUploadError(err));
             this.submitTarget.disabled = false;
         }
+    }
+
+    // "Failed to fetch" est le message brut du navigateur pour tout échec
+    // réseau générique (coupure, veille prolongée du PC, DNS...) — trop
+    // technique et anxiogène tel quel. La progression déjà envoyée reste
+    // acquise côté serveur (#481) : le rassurer et l'inviter à relancer,
+    // plutôt qu'un message qui laisse croire à une perte de données.
+    _describeUploadError(err) {
+        if (err instanceof TypeError && /fetch/i.test(err.message)) {
+            return 'Connexion interrompue (mise en veille, coupure réseau...). '
+                + 'Pas d\'inquiétude : ce qui a déjà été envoyé est conservé — '
+                + 'sélectionnez à nouveau les mêmes fichiers et relancez, l\'envoi reprendra là où il s\'est arrêté.';
+        }
+        return err.message || 'Erreur lors de l\'envoi';
     }
 
     /**
