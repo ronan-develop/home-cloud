@@ -3,7 +3,7 @@ import { Controller } from '@hotwired/stimulus';
 /* Cloche topbar : dropdown de la pile unifiée de notifications (messages
  * directs + changelog, #373). Modèle : new_menu_controller.js. */
 export default class extends Controller {
-    static targets = ['button', 'panel'];
+    static targets = ['button', 'panel', 'badge'];
 
     connect() {
         this._onDocumentClick = (e) => {
@@ -82,6 +82,25 @@ export default class extends Controller {
         // pour rester cohérent avec cet état global (#450 — bug réel
         // signalé : lire une entrée changelog vidait tout le panel).
         this._removeAfter(strategy.markAsRead(event), [item]);
+        this._decrementBadge();
+    }
+
+    // La pastille (#468) est rendue une seule fois côté serveur au
+    // chargement de la page (NotificationDropdown.html.twig) — sans ce
+    // décrément, elle restait bloquée à sa valeur initiale jusqu'au
+    // prochain rechargement, incohérente avec le retrait visuel de
+    // l'entrée du panel.
+    _decrementBadge() {
+        if (!this.hasBadgeTarget) {
+            return;
+        }
+
+        const remaining = Math.max(0, parseInt(this.badgeTarget.textContent, 10) - 1);
+        if (remaining === 0) {
+            this.badgeTarget.remove();
+        } else {
+            this.badgeTarget.textContent = String(remaining);
+        }
     }
 
     _removeAfter(fetchPromise, items) {
