@@ -133,6 +133,41 @@ describe('takeout-import controller (#458)', () => {
         jest.useRealTimers();
     });
 
+    // #477 : constaté en conditions réelles avec 11 ZIP Takeout — après le
+    // clic, le bouton devient grisé mais rien n'indique un envoi en cours
+    // pendant potentiellement plusieurs minutes (upload chunké #466/#471).
+    // La zone de progression doit s'afficher dès le début de l'upload, pas
+    // seulement après le "start" (qui déclenche le traitement serveur).
+    test('affiche la progression de l\'upload dès le premier fichier envoyé, avant le start', async () => {
+        jest.useFakeTimers({ doNotFake: ['nextTick', 'queueMicrotask'] });
+        setInputFiles([makeFile('takeout-001.zip'), makeFile('takeout-002.zip')]);
+
+        global.fetch = jest.fn()
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'pending' }) })
+            .mockResolvedValueOnce({ ok: true }) // upload fichier 1
+            .mockResolvedValueOnce({ ok: true }) // upload fichier 2
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'pending' }) })
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ status: 'pending', processedCount: 0, totalMediaCount: null }) });
+
+        const button = document.querySelector('[data-takeout-import-target="submit"]');
+        const progress = document.querySelector('[data-takeout-import-target="progress"]');
+        const status = document.querySelector('[data-takeout-import-target="status"]');
+
+        expect(progress.hidden).toBe(true);
+
+        button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+        // Micro-attente : juste après le clic, avant que le premier upload
+        // ne soit résolu, la zone de progression doit déjà être visible.
+        await Promise.resolve();
+        expect(progress.hidden).toBe(false);
+        expect(status.textContent).toBe('Envoi de 1 / 2 fichiers…');
+
+        await jest.advanceTimersByTimeAsync(0);
+
+        jest.useRealTimers();
+    });
+
     test('affiche une erreur si l\'envoi d\'un ZIP échoue, sans appeler start', async () => {
         jest.useFakeTimers({ doNotFake: ['nextTick', 'queueMicrotask'] });
         setInputFiles([makeFile('takeout-001.zip')]);
