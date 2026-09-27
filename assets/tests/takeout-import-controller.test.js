@@ -28,6 +28,10 @@ describe('takeout-import controller (#458)', () => {
                     <div data-takeout-import-target="bar"></div>
                     <p data-takeout-import-target="status"></p>
                     <p data-takeout-import-target="counts"></p>
+                    <div hidden data-takeout-import-target="fileProgressWrapper">
+                        <div data-takeout-import-target="fileBar"></div>
+                        <p data-takeout-import-target="fileStatus"></p>
+                    </div>
                 </div>
             </div>
         `;
