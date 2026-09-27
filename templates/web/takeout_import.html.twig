@@ -70,6 +70,16 @@
              l'interface est bloquée. -->
         <p class="text-xs takeout-patience-message" style="color: var(--hc-text-secondary, var(--hc-text))"
            data-takeout-import-target="patienceMessage"></p>
+
+        <!-- #482 : une fois le traitement démarré côté serveur (extraction,
+             parsing, import), contrairement à la phase d'upload (#481),
+             fermer l'onglet est sans risque — le traitement continue en
+             arrière-plan et reste consultable au retour sur la page. -->
+        <p class="text-xs" style="color: var(--hc-text-secondary, var(--hc-text))" hidden
+           data-takeout-import-target="safeToCloseMessage">
+            Vous pouvez fermer cet onglet sans risque : l'import continue en arrière-plan.
+            Revenez sur cette page à tout moment pour suivre sa progression.
+        </p>
     </div>
 
 </div>
