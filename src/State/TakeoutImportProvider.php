@@ -10,6 +10,7 @@ use App\ApiResource\TakeoutImportOutput;
 use App\Entity\TakeoutImport;
 use App\Entity\User;
 use App\Repository\TakeoutImportRepository;
+use App\Service\Takeout\TakeoutImportTmpDirLocator;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -24,6 +25,7 @@ final class TakeoutImportProvider implements ProviderInterface
     public function __construct(
         private readonly TakeoutImportRepository $repository,
         private readonly Security $security,
+        private readonly TakeoutImportTmpDirLocator $tmpDirLocator,
     ) {}
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): object|array|null
@@ -55,6 +57,10 @@ final class TakeoutImportProvider implements ProviderInterface
         $output->createdAt = $import->getCreatedAt()->format(\DateTimeInterface::ATOM);
         $output->completedAt = $import->getCompletedAt()?->format(\DateTimeInterface::ATOM);
         $output->errorMessage = $import->getErrorMessage();
+        // Nombre de ZIP déjà (au moins partiellement) reçus — utile pour se
+        // rappeler où on en était en cas de reprise (#481), affiché dans la
+        // liste des imports en attente sur la page.
+        $output->filesUploadedCount = count($this->tmpDirLocator->zipPathsFor($import));
 
         return $output;
     }

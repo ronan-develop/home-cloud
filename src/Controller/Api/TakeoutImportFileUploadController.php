@@ -8,6 +8,7 @@ use App\Entity\TakeoutImport;
 use App\Interface\Auth\OwnershipCheckerInterface;
 use App\Repository\TakeoutImportRepository;
 use App\Service\Takeout\ChunkedFileAssembler;
+use App\Service\Takeout\TakeoutImportTmpDirLocator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -32,7 +33,7 @@ final class TakeoutImportFileUploadController extends AbstractController
         private readonly TakeoutImportRepository $takeoutImportRepository,
         private readonly OwnershipCheckerInterface $ownershipChecker,
         private readonly ChunkedFileAssembler $chunkedFileAssembler,
-        private readonly string $takeoutTmpDir,
+        private readonly TakeoutImportTmpDirLocator $tmpDirLocator,
     ) {}
 
     public function __invoke(string $id, Request $request): Response
@@ -48,7 +49,7 @@ final class TakeoutImportFileUploadController extends AbstractController
         $chunkIndex = (int) $request->request->get('chunkIndex', 0);
         $totalChunks = (int) $request->request->get('totalChunks', 1);
 
-        $importTmpDir = sprintf('%s/%s', $this->takeoutTmpDir, $import->getId()->toRfc4122());
+        $importTmpDir = $this->tmpDirLocator->dirFor($import);
         if (!is_dir($importTmpDir)) {
             mkdir($importTmpDir, 0777, true);
         }

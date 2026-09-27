@@ -21,7 +21,7 @@ const IMPORTS_ROUTE = '/api/v1/takeout-imports';
 export default class extends Controller {
     static targets = [
         'input', 'dropzone', 'form', 'fileList', 'progress', 'bar', 'status', 'counts', 'error', 'submit',
-        'fileProgressWrapper', 'fileBar', 'fileStatus', 'patienceMessage',
+        'fileProgressWrapper', 'fileBar', 'fileStatus', 'patienceMessage', 'pendingList',
     ];
 
     // #481 : messages qui tournent pendant l'upload, pour rassurer sur un
@@ -39,6 +39,12 @@ export default class extends Controller {
     connect() {
         this._poller = null;
         this._patienceInterval = null;
+        // Import ciblé explicitement via le bouton "Reprendre" de la liste
+        // des imports en attente — prioritaire sur la déduction automatique
+        // "le plus récent" (#491) dès que l'utilisateur choisit lui-même
+        // quel import reprendre (nécessaire dès que plusieurs coexistent).
+        this._targetImportId = null;
+        this._renderPendingList();
     }
 
     disconnect() {
@@ -48,6 +54,75 @@ export default class extends Controller {
 
     triggerFilePicker() {
         this.inputTarget.click();
+    }
+
+    // #481 : affiche tous les imports en attente de l'utilisateur, avec
+    // reprise/abandon explicites — sans ça, rien sur la page n'indique
+    // qu'un upload interrompu peut être repris avant que l'utilisateur ne
+    // resélectionne ses fichiers au hasard.
+    async _renderPendingList() {
+        const imports = await this._fetchPendingList();
+        this.pendingListTarget.innerHTML = '';
+
+        imports.forEach((pendingImport) => {
+            this.pendingListTarget.appendChild(this._buildPendingListItem(pendingImport));
+        });
+    }
+
+    async _fetchPendingList() {
+        try {
+            const res = await this._authenticatedFetch(`${IMPORTS_ROUTE}/pending-list`, { method: 'GET' });
+            return res.ok ? await res.json() : [];
+        } catch {
+            // Enrichissement non bloquant de la page : une erreur réseau ici
+            // ne doit jamais empêcher l'utilisateur de démarrer un nouvel
+            // import normalement.
+            return [];
+        }
+    }
+
+    _buildPendingListItem(pendingImport) {
+        const li = document.createElement('li');
+        li.className = 'settings-card flex items-center justify-between gap-3';
+
+        const info = document.createElement('span');
+        const createdAt = new Date(pendingImport.createdAt).toLocaleString();
+        info.textContent = `Import du ${createdAt} — ${pendingImport.filesUploadedCount} fichier(s) déjà reçu(s)`;
+        li.appendChild(info);
+
+        const actions = document.createElement('span');
+        actions.className = 'flex gap-2';
+
+        const resumeButton = document.createElement('button');
+        resumeButton.type = 'button';
+        resumeButton.className = 'btn btn-primary';
+        resumeButton.textContent = 'Reprendre';
+        resumeButton.addEventListener('click', () => this._resumePendingImport(pendingImport.id));
+        actions.appendChild(resumeButton);
+
+        const abandonButton = document.createElement('button');
+        abandonButton.type = 'button';
+        abandonButton.className = 'btn';
+        abandonButton.textContent = 'Abandonner';
+        abandonButton.addEventListener('click', () => this._abandonPendingImport(pendingImport.id, li));
+        actions.appendChild(abandonButton);
+
+        li.appendChild(actions);
+        return li;
+    }
+
+    _resumePendingImport(importId) {
+        this._targetImportId = importId;
+        this.triggerFilePicker();
+    }
+
+    async _abandonPendingImport(importId, listItemElement) {
+        const res = await this._authenticatedFetch(`${IMPORTS_ROUTE}/${importId}`, { method: 'DELETE' });
+        if (!res.ok) {
+            this._showError('Échec de l\'abandon de l\'import');
+            return;
+        }
+        listItemElement.remove();
     }
 
     onFilesSelected() {
@@ -136,12 +211,18 @@ export default class extends Controller {
      * @returns {Promise<{ importId: ?string, resumeFromChunkIndexByFilename: Map<string, number> }>}
      */
     async _resolveResumePlan(files) {
-        const pendingImport = await this._findPendingImport();
-        if (pendingImport === null) {
+        // Import choisi explicitement via le bouton "Reprendre" de la liste
+        // (#481) : prioritaire sur la déduction automatique du plus récent,
+        // seul moyen non ambigu de savoir LEQUEL reprendre dès que plusieurs
+        // imports pending coexistent.
+        const targetImportId = this._targetImportId;
+        this._targetImportId = null;
+        const pendingImportId = targetImportId ?? (await this._findPendingImport())?.id ?? null;
+        if (pendingImportId === null) {
             return { importId: null, resumeFromChunkIndexByFilename: new Map() };
         }
 
-        const uploadedFiles = await this._fetchFilesStatus(pendingImport.id);
+        const uploadedFiles = await this._fetchFilesStatus(pendingImportId);
         const uploadedFilesByName = new Map(uploadedFiles.map((f) => [f.filename, f]));
 
         const resumeFromChunkIndexByFilename = new Map();
@@ -161,7 +242,7 @@ export default class extends Controller {
             }
         }
 
-        return { importId: pendingImport.id, resumeFromChunkIndexByFilename };
+        return { importId: pendingImportId, resumeFromChunkIndexByFilename };
     }
 
     async _findPendingImport() {

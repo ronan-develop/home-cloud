@@ -16,6 +16,7 @@ describe('takeout-import controller (#458)', () => {
     function html() {
         document.body.innerHTML = `
             <div data-controller="takeout-import">
+                <ul data-takeout-import-target="pendingList"></ul>
                 <div data-takeout-import-target="form">
                     <input type="file" hidden data-takeout-import-target="input"
                            data-action="change->takeout-import#onFilesSelected">
@@ -379,5 +380,127 @@ describe('takeout-import controller (#458)', () => {
             const calls = global.fetch.mock.calls.map((c) => c[0]);
             expect(calls).toContain('/api/v1/takeout-imports/import-existing/files');
         });
+    });
+});
+
+// #481 : liste de tous les imports pending de l'utilisateur (pas seulement
+// le plus récent — cas rare mais réel de plusieurs imports simultanés,
+// deux tentatives depuis deux appareils/navigateurs différents), avec
+// reprise/abandon explicites. global.fetch doit être défini AVANT le
+// montage du controller ici (contrairement au describe précédent) car
+// connect() appelle désormais pending-list dès l'attache au DOM.
+describe('liste des imports Takeout en attente (#481)', () => {
+    let application;
+
+    function html() {
+        document.body.innerHTML = `
+            <div data-controller="takeout-import">
+                <ul data-takeout-import-target="pendingList"></ul>
+                <div data-takeout-import-target="form">
+                    <input type="file" hidden data-takeout-import-target="input"
+                           data-action="change->takeout-import#onFilesSelected">
+                    <ul data-takeout-import-target="fileList"></ul>
+                    <button type="button" disabled data-takeout-import-target="submit"
+                            data-action="click->takeout-import#submit">Démarrer</button>
+                    <p hidden data-takeout-import-target="error"></p>
+                </div>
+                <div hidden data-takeout-import-target="progress">
+                    <div data-takeout-import-target="bar"></div>
+                    <p data-takeout-import-target="status"></p>
+                    <p data-takeout-import-target="counts"></p>
+                    <div hidden data-takeout-import-target="fileProgressWrapper">
+                        <div data-takeout-import-target="fileBar"></div>
+                        <p data-takeout-import-target="fileStatus"></p>
+                    </div>
+                    <p data-takeout-import-target="patienceMessage"></p>
+                </div>
+            </div>
+        `;
+    }
+
+    afterEach(() => {
+        application.stop();
+        jest.restoreAllMocks();
+        delete global.fetch;
+    });
+
+    test('affiche une entrée par import pending, avec son nombre de fichiers reçus', async () => {
+        html();
+        global.fetch = jest.fn().mockResolvedValueOnce({
+            ok: true,
+            json: async () => [
+                { id: 'import-1', createdAt: '2026-09-20T10:00:00+00:00', filesUploadedCount: 2 },
+                { id: 'import-2', createdAt: '2026-09-21T10:00:00+00:00', filesUploadedCount: 0 },
+            ],
+        });
+
+        application = Application.start();
+        application.register('takeout-import', TakeoutImportController);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        const items = document.querySelectorAll('[data-takeout-import-target="pendingList"] li');
+        expect(items).toHaveLength(2);
+    });
+
+    test('n\'affiche rien si aucun import pending', async () => {
+        html();
+        global.fetch = jest.fn().mockResolvedValueOnce({ ok: true, json: async () => [] });
+
+        application = Application.start();
+        application.register('takeout-import', TakeoutImportController);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        const items = document.querySelectorAll('[data-takeout-import-target="pendingList"] li');
+        expect(items).toHaveLength(0);
+    });
+
+    test('le bouton Reprendre ouvre le sélecteur de fichiers, ciblant explicitement cet import', async () => {
+        html();
+        global.fetch = jest.fn().mockResolvedValueOnce({
+            ok: true,
+            json: async () => [{ id: 'import-target', createdAt: '2026-09-20T10:00:00+00:00', filesUploadedCount: 1 }],
+        });
+
+        application = Application.start();
+        application.register('takeout-import', TakeoutImportController);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        const input = document.querySelector('[data-takeout-import-target="input"]');
+        const clickSpy = jest.spyOn(input, 'click');
+
+        const resumeButton = document.querySelector('[data-takeout-import-target="pendingList"] button.btn-primary');
+        resumeButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+        expect(clickSpy).toHaveBeenCalled();
+
+        const element = document.querySelector('[data-controller="takeout-import"]');
+        const controller = application.getControllerForElementAndIdentifier(element, 'takeout-import');
+        expect(controller._targetImportId).toBe('import-target');
+    });
+
+    test('le bouton Abandonner supprime l\'import et retire l\'entrée de la liste', async () => {
+        html();
+        global.fetch = jest.fn()
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => [{ id: 'import-abandon', createdAt: '2026-09-20T10:00:00+00:00', filesUploadedCount: 1 }],
+            })
+            .mockResolvedValueOnce({ ok: true }); // DELETE
+
+        application = Application.start();
+        application.register('takeout-import', TakeoutImportController);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        const abandonButton = [...document.querySelectorAll('[data-takeout-import-target="pendingList"] button')]
+            .find((btn) => btn.textContent === 'Abandonner');
+        abandonButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        const calls = global.fetch.mock.calls;
+        expect(calls[1][0]).toBe('/api/v1/takeout-imports/import-abandon');
+        expect(calls[1][1].method).toBe('DELETE');
+
+        const items = document.querySelectorAll('[data-takeout-import-target="pendingList"] li');
+        expect(items).toHaveLength(0);
     });
 });

@@ -7,6 +7,7 @@ namespace App\Controller\Api;
 use App\Interface\Auth\OwnershipCheckerInterface;
 use App\Repository\TakeoutImportRepository;
 use App\Service\Takeout\ChunkedFileAssembler;
+use App\Service\Takeout\TakeoutImportTmpDirLocator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -27,7 +28,7 @@ final class TakeoutImportFilesStatusController extends AbstractController
         private readonly TakeoutImportRepository $takeoutImportRepository,
         private readonly OwnershipCheckerInterface $ownershipChecker,
         private readonly ChunkedFileAssembler $chunkedFileAssembler,
-        private readonly string $takeoutTmpDir,
+        private readonly TakeoutImportTmpDirLocator $tmpDirLocator,
     ) {}
 
     public function __invoke(string $id): Response
@@ -39,8 +40,7 @@ final class TakeoutImportFilesStatusController extends AbstractController
 
         $this->ownershipChecker->denyUnlessOwner($import);
 
-        $importTmpDir = sprintf('%s/%s', $this->takeoutTmpDir, $import->getId()->toRfc4122());
-        $filePaths = glob($importTmpDir . '/*.zip') ?: [];
+        $filePaths = $this->tmpDirLocator->zipPathsFor($import);
 
         $files = [];
         foreach ($filePaths as $filePath) {

@@ -8,6 +8,7 @@ use App\Entity\TakeoutImport;
 use App\Interface\Auth\OwnershipCheckerInterface;
 use App\Message\TakeoutImportMessage;
 use App\Repository\TakeoutImportRepository;
+use App\Service\Takeout\TakeoutImportTmpDirLocator;
 use App\State\TakeoutImportProvider;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -32,7 +33,7 @@ final class TakeoutImportStartController extends AbstractController
         private readonly TakeoutImportProvider $provider,
         private readonly SerializerInterface $serializer,
         private readonly MessageBusInterface $bus,
-        private readonly string $takeoutTmpDir,
+        private readonly TakeoutImportTmpDirLocator $tmpDirLocator,
     ) {}
 
     public function __invoke(string $id): Response
@@ -48,8 +49,7 @@ final class TakeoutImportStartController extends AbstractController
             throw new BadRequestHttpException('This import has already been started');
         }
 
-        $importTmpDir = sprintf('%s/%s', $this->takeoutTmpDir, $import->getId()->toRfc4122());
-        $zipPaths = glob($importTmpDir . '/*.zip') ?: [];
+        $zipPaths = $this->tmpDirLocator->zipPathsFor($import);
         if ($zipPaths === []) {
             throw new BadRequestHttpException('At least one ZIP file must be uploaded before starting the import');
         }
