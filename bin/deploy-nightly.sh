@@ -23,7 +23,11 @@ REPORT_FILE="${3:?chemin_rapport manquant}"
 # (pas celui du profil shell interactif) — "composer"/"php" seuls ne résolvent
 # à rien et font échouer le déploiement en silence (#421, échec réel constaté
 # la nuit du 2026-09-12 : « composer : commande introuvable »).
-PHP_BIN="${DEPLOY_NIGHTLY_PHP_BIN:-/usr/local/bin/php}"
+# -d memory_limit=512M : sur le mutualisé o2switch (LVE CloudLinux), le
+# memory_limit par défaut du php.ini fait tuer cache:clear --env=prod même
+# isolé dans son propre process SSH (vécu 2026-09-27) — la valeur par défaut
+# est trop juste pour la compilation du container Symfony en prod.
+PHP_BIN="${DEPLOY_NIGHTLY_PHP_BIN:-/usr/local/bin/php} -d memory_limit=512M"
 COMPOSER_BIN="${DEPLOY_NIGHTLY_COMPOSER_BIN:-/usr/local/bin/composer}"
 
 cd "$INSTANCE_PATH" || exit 1
@@ -129,11 +133,11 @@ fi
 if run_step "git checkout"       git checkout --force "$REMOTE_SHA" \
 && run_step "composer install"   "$COMPOSER_BIN" install --no-interaction --prefer-dist --no-progress --no-dev --no-scripts \
 && run_step "install-ffmpeg"     bash bin/install-ffmpeg.sh \
-&& run_step "cache:clear"        "$PHP_BIN" bin/console cache:clear --env=prod \
-&& run_step "assets:install"     "$PHP_BIN" bin/console assets:install public --env=prod \
-&& run_step "importmap:install"  "$PHP_BIN" bin/console importmap:install --env=prod \
-&& run_step "migrations"         "$PHP_BIN" bin/console doctrine:migrations:migrate --no-interaction --env=prod \
-&& run_step "asset-map:compile"  "$PHP_BIN" bin/console asset-map:compile; then
+&& run_step "cache:clear"        $PHP_BIN bin/console cache:clear --env=prod \
+&& run_step "assets:install"     $PHP_BIN bin/console assets:install public --env=prod \
+&& run_step "importmap:install"  $PHP_BIN bin/console importmap:install --env=prod \
+&& run_step "migrations"         $PHP_BIN bin/console doctrine:migrations:migrate --no-interaction --env=prod \
+&& run_step "asset-map:compile"  $PHP_BIN bin/console asset-map:compile; then
     rm -f "$IMMINENT_FILE"
     echo "<!-- Deployed: $(date '+%Y-%m-%d %H:%M:%S') -->" > templates/deploy-info.html.twig
     echo "$REMOTE_SHA" > .deployed-sha
