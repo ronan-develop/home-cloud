@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace App\ApiResource;
 
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model;
+use App\Controller\Api\TakeoutImportAbandonController;
 use App\Controller\Api\TakeoutImportCreateController;
 use App\Controller\Api\TakeoutImportFileUploadController;
 use App\Controller\Api\TakeoutImportFilesStatusController;
 use App\Controller\Api\TakeoutImportFindPendingController;
+use App\Controller\Api\TakeoutImportListPendingController;
 use App\Controller\Api\TakeoutImportStartController;
 use App\State\TakeoutImportProvider;
 
@@ -38,6 +41,15 @@ use App\State\TakeoutImportProvider;
             openapi: new Model\Operation(
                 summary: 'Retrouve l\'import Google Photos Takeout en attente le plus récent de l\'utilisateur courant.',
                 description: 'À appeler avant de créer un nouvel import (#481) : si l\'utilisateur a fermé l\'onglet en cours d\'upload, cet import existant doit être repris. Retourne 404 si aucun import "pending" n\'existe.',
+            ),
+        ),
+        new Get(
+            uriTemplate: '/v1/takeout-imports/pending-list',
+            controller: TakeoutImportListPendingController::class,
+            read: false,
+            openapi: new Model\Operation(
+                summary: 'Liste tous les imports Google Photos Takeout en attente de l\'utilisateur courant.',
+                description: 'Distinct de /pending (singulier, le plus récent) : plusieurs imports pending peuvent coexister (deux tentatives depuis deux appareils différents). Affichée sur la page avec reprise/abandon explicites par import (#481).',
             ),
         ),
         new Get(
@@ -88,6 +100,16 @@ use App\State\TakeoutImportProvider;
                 description: 'À appeler une fois tous les ZIP envoyés via POST /v1/takeout-imports/{id}/files. Retourne 202 ; suivre l\'avancement via GET /v1/takeout-imports/{id}.',
             ),
         ),
+        new Delete(
+            uriTemplate: '/v1/takeout-imports/{id}',
+            controller: TakeoutImportAbandonController::class,
+            read: false,
+            output: false,
+            openapi: new Model\Operation(
+                summary: 'Abandonne un import Google Photos Takeout en attente.',
+                description: 'Supprime immédiatement les fichiers déjà uploadés et la ligne en base, sans attendre la purge automatique à 7 jours. Uniquement pour un import "pending" — retourne 400 sinon (#481).',
+            ),
+        ),
     ],
     provider: TakeoutImportProvider::class,
 )]
@@ -102,6 +124,8 @@ final class TakeoutImportOutput
     public ?int $totalMediaCount = null;
     /** Progress bar (#327) : médias déjà traités (importés ou doublons confondus). */
     public int $processedCount = 0;
+    /** Liste des imports en attente (#481) : ZIP déjà (au moins partiellement) reçus pour cet import. */
+    public int $filesUploadedCount = 0;
     public string $createdAt = '';
     public ?string $completedAt = null;
     public ?string $errorMessage = null;

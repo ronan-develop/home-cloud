@@ -36,4 +36,25 @@ class TakeoutImportRepository extends ServiceEntityRepository
             ['createdAt' => 'DESC'],
         );
     }
+
+    // Variante liste (plusieurs onglets/appareils peuvent laisser plusieurs
+    // imports pending simultanés) — utilisée pour les afficher tous sur la
+    // page, avec reprise/abandon explicites par import.
+    /**
+     * @return list<TakeoutImport>
+     */
+    public function findAllPendingByOwner(User $owner): array
+    {
+        return $this->findBy(
+            ['owner' => $owner, 'status' => TakeoutImport::STATUS_PENDING],
+            ['createdAt' => 'DESC'],
+        );
+    }
+
+    public function remove(TakeoutImport $import): void
+    {
+        $em = $this->getEntityManager();
+        $em->remove($import);
+        $em->flush();
+    }
 }

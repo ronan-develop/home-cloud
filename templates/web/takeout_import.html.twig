@@ -15,6 +15,11 @@
         </p>
     </div>
 
+    <!-- #481 : imports interrompus (fermeture d'onglet) en attente de
+         reprise ou d'abandon — vide par défaut, rempli en JS via
+         GET /v1/takeout-imports/pending-list au chargement de la page. -->
+    <ul class="flex flex-col gap-2" data-takeout-import-target="pendingList"></ul>
+
     <div class="settings-card flex flex-col gap-4" data-takeout-import-target="form">
         <label class="flex flex-col items-center justify-center gap-2 p-8 border-2 border-dashed rounded-xl cursor-pointer"
                style="border-color: var(--hc-border)"
