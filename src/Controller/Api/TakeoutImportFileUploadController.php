@@ -7,6 +7,7 @@ namespace App\Controller\Api;
 use App\Entity\TakeoutImport;
 use App\Interface\Auth\OwnershipCheckerInterface;
 use App\Repository\TakeoutImportRepository;
+use App\Service\Takeout\ChunkedFileAssembler;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,10 +16,14 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
- * POST /api/v1/takeout-imports/{id}/files — ajoute un ZIP à un import en
- * attente (#466), un seul fichier par appel. Le front répète cet appel une
- * fois par ZIP sélectionné, pour rester sous la limite de taille de requête
- * du serveur mutualisé (413 constaté avec un seul gros POST multi-fichiers).
+ * POST /api/v1/takeout-imports/{id}/files — ajoute une tranche d'un ZIP à un
+ * import en attente (#466). Un ZIP Google Photos Takeout peut dépasser 512M
+ * (plafond dur de l'hébergement mutualisé o2switch, confirmé non
+ * contournable via .user.ini) — le front découpe chaque fichier en tranches
+ * envoyées séquentiellement (multipart : "file" le contenu binaire du
+ * chunk, "chunkIndex"/"totalChunks" sa position), réassemblées ici via
+ * ChunkedFileAssembler. Un fichier avec un seul chunk (totalChunks=1) reste
+ * le cas trivial d'un envoi non découpé.
  */
 #[AsController]
 final class TakeoutImportFileUploadController extends AbstractController
@@ -26,6 +31,7 @@ final class TakeoutImportFileUploadController extends AbstractController
     public function __construct(
         private readonly TakeoutImportRepository $takeoutImportRepository,
         private readonly OwnershipCheckerInterface $ownershipChecker,
+        private readonly ChunkedFileAssembler $chunkedFileAssembler,
         private readonly string $takeoutTmpDir,
     ) {}
 
@@ -33,18 +39,32 @@ final class TakeoutImportFileUploadController extends AbstractController
     {
         $import = $this->findPendingImportOrFail($id);
 
-        $uploadedFile = $request->files->get('file');
-        if ($uploadedFile === null) {
-            throw new BadRequestHttpException('A ZIP file must be uploaded (multipart field: "file")');
+        $uploadedChunk = $request->files->get('file');
+        if ($uploadedChunk === null) {
+            throw new BadRequestHttpException('A file chunk must be uploaded (multipart field: "file")');
         }
+
+        $filename = (string) $request->request->get('filename', $uploadedChunk->getClientOriginalName());
+        $chunkIndex = (int) $request->request->get('chunkIndex', 0);
+        $totalChunks = (int) $request->request->get('totalChunks', 1);
 
         $importTmpDir = sprintf('%s/%s', $this->takeoutTmpDir, $import->getId()->toRfc4122());
         if (!is_dir($importTmpDir)) {
             mkdir($importTmpDir, 0777, true);
         }
 
-        $filename = sprintf('%d-%s', count(glob($importTmpDir . '/*') ?: []), $uploadedFile->getClientOriginalName());
-        $uploadedFile->move($importTmpDir, $filename);
+        $targetPath = $importTmpDir . '/' . basename($filename);
+
+        try {
+            $this->chunkedFileAssembler->appendChunk(
+                $targetPath,
+                $chunkIndex,
+                $totalChunks,
+                (string) file_get_contents($uploadedChunk->getPathname()),
+            );
+        } catch (\RuntimeException $e) {
+            throw new BadRequestHttpException($e->getMessage());
+        }
 
         return new Response(null, Response::HTTP_NO_CONTENT);
     }
