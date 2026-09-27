@@ -24,6 +24,24 @@ jobs:
           fi
           echo "✅ $COUNT label(s) présent(s)."
 
+      # Sans ticket lié, une PR peut être mergée sans jamais fermer d'issue
+      # ("Development: None yet" côté GitHub) — repéré manuellement après
+      # coup à plusieurs reprises (PR #495, 2026-09-27). Un mot-clé de
+      # fermeture (Closes/Fixes/Resolves #N, insensible à la casse, n'importe
+      # où dans le corps) rend ce lien obligatoire dès l'ouverture de la PR.
+      - name: 🔗 Vérifier qu'un ticket est référencé (Closes/Fixes/Resolves #N)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BODY=$(gh pr view "${{ github.event.pull_request.number }}" \
+            --repo "${{ github.repository }}" \
+            --json body -q '.body')
+          if ! echo "$BODY" | grep -qiE '(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)[[:space:]]+#[0-9]+'; then
+            echo "::error::Aucun ticket référencé dans cette PR — ajoutez 'Closes #<numéro>' (ou Fixes/Resolves) dans le corps, y compris pour un fix mineur (créez le ticket si aucun n'existe déjà)."
+            exit 1
+          fi
+          echo "✅ Ticket référencé."
+
   php:
     runs-on: ubuntu-latest
 
