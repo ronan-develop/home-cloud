@@ -60,20 +60,38 @@ export default class extends Controller {
         this.submitTarget.disabled = true;
         this._hideError();
 
+        // Zone de progression affichée dès le début de l'upload (#477) —
+        // avec des ZIP Takeout de plusieurs GB découpés en tranches (#466),
+        // l'envoi seul peut durer plusieurs minutes ; un bouton simplement
+        // grisé sans aucun autre retour ressemblait à un gel de l'interface
+        // (constaté en conditions réelles avec 11 fichiers).
+        this.formTarget.hidden = true;
+        this.progressTarget.hidden = false;
+        this._renderUploadProgress(0, files.length);
+
         try {
             const importId = await this._createImport();
-            for (const file of files) {
+            for (const [index, file] of files.entries()) {
                 await this._uploadFile(importId, file);
+                this._renderUploadProgress(index + 1, files.length);
             }
             await this._startImport(importId);
 
-            this.formTarget.hidden = true;
-            this.progressTarget.hidden = false;
             this._startPolling(importId);
         } catch (err) {
+            this.formTarget.hidden = false;
+            this.progressTarget.hidden = true;
             this._showError(err.message || 'Erreur lors de l\'envoi');
             this.submitTarget.disabled = false;
         }
+    }
+
+    _renderUploadProgress(uploadedCount, totalCount) {
+        const percent = Math.round((uploadedCount / totalCount) * 100);
+        this.barTarget.style.width = `${percent}%`;
+        this.barTarget.classList.remove('takeout-progress-bar--indeterminate');
+        this.statusTarget.textContent = `Envoi de ${uploadedCount + 1 > totalCount ? totalCount : uploadedCount + 1} / ${totalCount} fichiers…`;
+        this.countsTarget.textContent = '';
     }
 
     async _createImport() {
