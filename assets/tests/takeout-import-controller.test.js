@@ -263,6 +263,33 @@ describe('takeout-import controller (#458)', () => {
         jest.useRealTimers();
     });
 
+    // #481 : une mise en veille prolongée du PC pendant l'upload coupe la
+    // connexion — le navigateur rejette alors le fetch en cours avec un
+    // TypeError générique ("Failed to fetch"), trop technique et anxiogène
+    // tel quel. La progression déjà envoyée reste acquise côté serveur ;
+    // le message doit rassurer et inviter à relancer, pas donner
+    // l'impression d'une perte de données (constaté en conditions réelles).
+    test('affiche un message rassurant (pas le TypeError brut) si la connexion est coupée en cours d\'envoi', async () => {
+        jest.useFakeTimers({ doNotFake: ['nextTick', 'queueMicrotask'] });
+        setInputFiles([makeFile('takeout-001.zip')]);
+
+        global.fetch = jest.fn()
+            .mockResolvedValueOnce({ ok: false, status: 404 }) // GET pending
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'pending' }) })
+            .mockRejectedValueOnce(new TypeError('Failed to fetch'));
+
+        const button = document.querySelector('[data-takeout-import-target="submit"]');
+        button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        await jest.advanceTimersByTimeAsync(0);
+
+        const error = document.querySelector('[data-takeout-import-target="error"]');
+        expect(error.hidden).toBe(false);
+        expect(error.textContent).not.toContain('Failed to fetch');
+        expect(error.textContent.toLowerCase()).toContain('relancez');
+
+        jest.useRealTimers();
+    });
+
     // #481 : reprise d'un upload interrompu par fermeture d'onglet — un
     // import "pending" existant doit être réutilisé (pas de nouvel import
     // créé), et un fichier déjà partiellement uploadé (nom + hash du premier
