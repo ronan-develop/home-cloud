@@ -47,6 +47,17 @@
         </div>
         <p class="font-medium" style="color: var(--hc-text)" data-takeout-import-target="status">En attente…</p>
         <p class="text-sm" style="color: var(--hc-text-secondary, var(--hc-text))" data-takeout-import-target="counts"></p>
+
+        <!-- Progression du fichier en cours d'envoi (chunk par chunk) — un ZIP
+             de plusieurs GB tient à lui seul plusieurs dizaines de chunks,
+             la barre globale seule restait quasi figée pendant tout ce temps. -->
+        <div hidden data-takeout-import-target="fileProgressWrapper" class="flex flex-col gap-1">
+            <div class="takeout-progress-track" style="height: 4px; border-radius: 2px; overflow: hidden; background: var(--hc-border)">
+                <div class="takeout-progress-bar" style="height: 100%; width: 0%; background: var(--hc-accent); opacity: 0.6; transition: width 0.2s ease"
+                     data-takeout-import-target="fileBar"></div>
+            </div>
+            <p class="text-xs" style="color: var(--hc-text-secondary, var(--hc-text))" data-takeout-import-target="fileStatus"></p>
+        </div>
     </div>
 
 </div>

@@ -19,7 +19,10 @@ const IMPORTS_ROUTE = '/api/v1/takeout-imports';
  * la limite.
  */
 export default class extends Controller {
-    static targets = ['input', 'dropzone', 'form', 'fileList', 'progress', 'bar', 'status', 'counts', 'error', 'submit'];
+    static targets = [
+        'input', 'dropzone', 'form', 'fileList', 'progress', 'bar', 'status', 'counts', 'error', 'submit',
+        'fileProgressWrapper', 'fileBar', 'fileStatus',
+    ];
 
     connect() {
         this._poller = null;
@@ -65,33 +68,66 @@ export default class extends Controller {
         // l'envoi seul peut durer plusieurs minutes ; un bouton simplement
         // grisé sans aucun autre retour ressemblait à un gel de l'interface
         // (constaté en conditions réelles avec 11 fichiers).
-        this.formTarget.hidden = true;
-        this.progressTarget.hidden = false;
-        this._renderUploadProgress(0, files.length);
+        //
+        // Deux barres distinctes : la globale suit les fichiers déjà envoyés
+        // en entier, la seconde suit les chunks du fichier en cours — un ZIP
+        // de plusieurs GB tient à lui seul plusieurs dizaines de chunks de
+        // 50 Mo (chunked-upload.js), la barre globale seule restait quasi
+        // figée tout ce temps (constaté en conditions réelles).
+        this._showUploadProgress(files.length);
 
         try {
             const importId = await this._createImport();
             for (const [index, file] of files.entries()) {
-                await this._uploadFile(importId, file);
-                this._renderUploadProgress(index + 1, files.length);
+                await this._uploadFile(importId, file, (meta) => {
+                    this._renderFileProgress(file.name, meta.chunkIndex + 1, meta.totalChunks);
+                });
+                this._renderGlobalProgress(index + 1, files.length);
             }
+            this.fileProgressWrapperTarget.hidden = true;
             await this._startImport(importId);
 
             this._startPolling(importId);
         } catch (err) {
-            this.formTarget.hidden = false;
-            this.progressTarget.hidden = true;
+            this._hideUploadProgress();
             this._showError(err.message || 'Erreur lors de l\'envoi');
             this.submitTarget.disabled = false;
         }
     }
 
-    _renderUploadProgress(uploadedCount, totalCount) {
+    _showUploadProgress(totalFiles) {
+        this.formTarget.hidden = true;
+        this.progressTarget.hidden = false;
+        this.fileProgressWrapperTarget.hidden = true;
+        this._renderGlobalProgress(0, totalFiles);
+    }
+
+    _hideUploadProgress() {
+        this.formTarget.hidden = false;
+        this.progressTarget.hidden = true;
+        this.fileProgressWrapperTarget.hidden = true;
+    }
+
+    _renderGlobalProgress(uploadedCount, totalCount) {
         const percent = Math.round((uploadedCount / totalCount) * 100);
         this.barTarget.style.width = `${percent}%`;
         this.barTarget.classList.remove('takeout-progress-bar--indeterminate');
-        this.statusTarget.textContent = `Envoi de ${uploadedCount + 1 > totalCount ? totalCount : uploadedCount + 1} / ${totalCount} fichiers…`;
+        this.statusTarget.textContent = `Envoi de ${Math.min(uploadedCount + 1, totalCount)} / ${totalCount} fichiers…`;
         this.countsTarget.textContent = '';
+    }
+
+    // Barre masquée pour un fichier à chunk unique : elle sauterait
+    // instantanément à 100% sans jamais montrer de progression réelle,
+    // un simple clignotement inutile pour chaque petit fichier de la liste.
+    _renderFileProgress(filename, uploadedChunks, totalChunks) {
+        if (totalChunks <= 1) {
+            this.fileProgressWrapperTarget.hidden = true;
+            return;
+        }
+        this.fileProgressWrapperTarget.hidden = false;
+        const percent = Math.round((uploadedChunks / totalChunks) * 100);
+        this.fileBarTarget.style.width = `${percent}%`;
+        this.fileStatusTarget.textContent = `${filename} — ${percent}%`;
     }
 
     async _createImport() {
@@ -103,7 +139,7 @@ export default class extends Controller {
         return data.id;
     }
 
-    async _uploadFile(importId, file) {
+    async _uploadFile(importId, file, onChunkUploaded) {
         await uploadFileInChunks(file, async (blob, meta) => {
             const formData = new FormData();
             formData.append('file', blob);
@@ -118,7 +154,7 @@ export default class extends Controller {
             if (!res.ok) {
                 throw new Error(`Échec de l'envoi de ${file.name} (${res.status})`);
             }
-        });
+        }, { onChunkUploaded });
     }
 
     async _startImport(importId) {

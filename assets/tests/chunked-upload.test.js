@@ -68,4 +68,30 @@ describe('uploadFileInChunks', () => {
         expect(CHUNK_SIZE_BYTES).toBeGreaterThan(0);
         expect(CHUNK_SIZE_BYTES).toBeLessThan(512 * 1024 * 1024);
     });
+
+    test('appelle onChunkUploaded après chaque chunk envoyé avec succès', async () => {
+        const file = makeFile('A'.repeat(25));
+        const uploadChunk = jest.fn().mockResolvedValue(undefined);
+        const onChunkUploaded = jest.fn();
+
+        await uploadFileInChunks(file, uploadChunk, { chunkSizeBytes: 10, onChunkUploaded });
+
+        expect(onChunkUploaded).toHaveBeenCalledTimes(3);
+        expect(onChunkUploaded).toHaveBeenNthCalledWith(1, { chunkIndex: 0, totalChunks: 3 });
+        expect(onChunkUploaded).toHaveBeenNthCalledWith(3, { chunkIndex: 2, totalChunks: 3 });
+    });
+
+    test('n\'appelle pas onChunkUploaded pour le chunk qui échoue', async () => {
+        const file = makeFile('A'.repeat(20));
+        const uploadChunk = jest.fn()
+            .mockResolvedValueOnce(undefined)
+            .mockRejectedValueOnce(new Error('413'));
+        const onChunkUploaded = jest.fn();
+
+        await expect(
+            uploadFileInChunks(file, uploadChunk, { chunkSizeBytes: 10, onChunkUploaded }),
+        ).rejects.toThrow('413');
+
+        expect(onChunkUploaded).toHaveBeenCalledTimes(1);
+    });
 });
