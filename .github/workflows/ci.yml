@@ -105,7 +105,14 @@ jobs:
       # serveur. La règle de protection de main interdit tout push direct
       # (y compris depuis GITHUB_TOKEN, aucun bypass configuré ni souhaité,
       # cf. CLAUDE.md « jamais de commit direct sur main ») : on ouvre donc
-      # une PR au lieu de push, à merger manuellement.
+      # une PR au lieu de push.
+      #
+      # --auto merge automatiquement dès que les checks de CETTE PR passent
+      # (labels/GitGuardian, la CI complète php/js n'y tourne pas puisqu'elle
+      # ne modifie que du CSS déjà validé) — évite une intervention manuelle
+      # répétée à chaque merge sur main. --delete-branch supprime la branche
+      # chore/tailwind-rebuild-* juste après, pour ne pas laisser traîner de
+      # branches mortes (non conforme aux conventions du projet).
       - name: 🎨 Proposer le rebuild du CSS Tailwind
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
@@ -129,6 +136,7 @@ jobs:
             --label ci \
             --base main \
             --head "$BRANCH"
+          gh pr merge "$BRANCH" --merge --auto --delete-branch
 
   js:
     runs-on: ubuntu-latest
