@@ -36,15 +36,42 @@ report_line() {
 
 # ── Une connexion/sous-shell par étape, comme bin/deploy-all.sh ─────────────
 FAILED_STEP=""
+# Exit 127 = "commande introuvable" (composer/php absents du PATH cron) : une
+# erreur d'environnement qui échouera identiquement chaque nuit — jamais
+# résolue par un simple retry, contrairement aux autres échecs (réseau,
+# migration transitoire...). Un email disant "aucune action requise" sur ce
+# cas précis a fait dormir un vrai incident 2 semaines sans intervention
+# (instance damien, 2026-09-12 → 2026-09-27) — d'où le statut "critical"
+# dédié, plus honnête, et un ticket GitHub ouvert automatiquement.
+COMMAND_NOT_FOUND_EXIT_CODE=127
+IS_CRITICAL=false
 run_step() {
     local label="$1"
     shift
-    if ! ( "$@" ); then
+    local exit_code=0
+    ( "$@" ) || exit_code=$?
+    if [[ "$exit_code" -ne 0 ]]; then
         echo "✖ ${PRENOM} — échec à l'étape « ${label} »" >&2
         FAILED_STEP="$label"
+        if [[ "$exit_code" -eq "$COMMAND_NOT_FOUND_EXIT_CODE" ]]; then
+            IS_CRITICAL=true
+        fi
         return 1
     fi
     return 0
+}
+
+open_critical_ticket() {
+    local step="$1"
+    if ! command -v gh &>/dev/null; then
+        return 0
+    fi
+    gh issue create \
+        --repo ronan-develop/home-cloud \
+        --title "Déploiement nocturne critique : ${PRENOM} — commande introuvable à l'étape « ${step} »" \
+        --label bug \
+        --body "Le déploiement nocturne sur \`${PRENOM}.lenouvel.me\` a échoué à l'étape **${step}** avec une commande introuvable (exit 127). Cette erreur d'environnement (PATH cron minimal, binaire absent/déplacé) ne se résoudra pas seule — chaque nouvelle tentative nocturne échouera identiquement jusqu'à correction manuelle (vérifier \`DEPLOY_NIGHTLY_PHP_BIN\`/\`DEPLOY_NIGHTLY_COMPOSER_BIN\` ou l'installation du binaire sur cette instance)." \
+        &>/dev/null || echo "⚠ ${PRENOM} : échec de la création automatique du ticket GitHub" >&2
 }
 
 git fetch origin main 2>&1
@@ -116,6 +143,11 @@ if run_step "git checkout"       git checkout --force "$REMOTE_SHA" \
 else
     rm -f "$IMMINENT_FILE"
     echo "${PRENOM} : échec du déploiement, .deployed-sha inchangé." >&2
-    report_line "failed" "${FAILED_STEP:-inconnue}"
+    if [[ "$IS_CRITICAL" == true ]]; then
+        report_line "critical" "${FAILED_STEP:-inconnue}"
+        open_critical_ticket "${FAILED_STEP:-inconnue}"
+    else
+        report_line "failed" "${FAILED_STEP:-inconnue}"
+    fi
     exit 1
 fi

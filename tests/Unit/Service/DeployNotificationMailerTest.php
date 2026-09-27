@@ -128,6 +128,31 @@ final class DeployNotificationMailerTest extends TestCase
         $service->sendDeployReport([]);
     }
 
+    // #421 étape suivante : un échec par commande introuvable (composer/php
+    // absent du PATH cron) ne se résout jamais par un simple retry la nuit
+    // suivante, contrairement à "failed" — le message doit le dire clairement
+    // au lieu de rassurer à tort ("aucune action requise"), cause du silence
+    // de 2 semaines constaté sur l'instance damien (2026-09-12 → 2026-09-27).
+    public function testSendsEmailWhenAtLeastOneInstanceIsCritical(): void
+    {
+        $mailer = $this->createMock(MailerInterface::class);
+        $context = null;
+        $mailer->expects(self::once())->method('send')->willReturnCallback(
+            function (TemplatedEmail $message) use (&$context) {
+                $context = $message->getContext();
+            }
+        );
+
+        $service = $this->makeService($mailer);
+        $service->sendDeployReport([
+            ['instance' => 'damien', 'status' => 'critical', 'step' => 'composer install', 'sha' => null],
+            ['instance' => 'elea', 'status' => 'skipped', 'step' => null, 'sha' => null],
+        ]);
+
+        self::assertSame('critical', $context['results'][0]['status']);
+        self::assertSame('composer install', $context['results'][0]['step']);
+    }
+
     public function testDoesNotThrowWhenRecipientIsEmpty(): void
     {
         $mailer = $this->createMock(MailerInterface::class);
