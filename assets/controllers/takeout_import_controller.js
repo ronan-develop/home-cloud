@@ -1,6 +1,7 @@
 import { Controller } from '@hotwired/stimulus';
 import { apiFetch } from '../js/api.js';
 import { createBatchPoller } from '../js/upload-batch.js';
+import { uploadFileInChunks } from '../js/chunked-upload.js';
 
 const IMPORTS_ROUTE = '/api/v1/takeout-imports';
 
@@ -85,16 +86,21 @@ export default class extends Controller {
     }
 
     async _uploadFile(importId, file) {
-        const formData = new FormData();
-        formData.append('file', file);
+        await uploadFileInChunks(file, async (blob, meta) => {
+            const formData = new FormData();
+            formData.append('file', blob);
+            formData.append('filename', meta.filename);
+            formData.append('chunkIndex', String(meta.chunkIndex));
+            formData.append('totalChunks', String(meta.totalChunks));
 
-        const res = await this._authenticatedFetch(`${IMPORTS_ROUTE}/${importId}/files`, {
-            method: 'POST',
-            body: formData,
+            const res = await this._authenticatedFetch(`${IMPORTS_ROUTE}/${importId}/files`, {
+                method: 'POST',
+                body: formData,
+            });
+            if (!res.ok) {
+                throw new Error(`Échec de l'envoi de ${file.name} (${res.status})`);
+            }
         });
-        if (!res.ok) {
-            throw new Error(`Échec de l'envoi de ${file.name} (${res.status})`);
-        }
     }
 
     async _startImport(importId) {
