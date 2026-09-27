@@ -83,7 +83,7 @@
             "importmap:install": "symfony-cmd"
         },
         "build-assets": [
-            "php bin/console tailwind:build"
+            "php bin/console tailwind:build --minify"
         ],
         "dev-check": [
             "@build-assets",

@@ -27,9 +27,12 @@ final class TailwindBuildTest extends KernelTestCase
         self::assertStringContainsString('.gap-', $cssContent, 'CSS should contain gap utility classes');
         self::assertStringContainsString('.grid', $cssContent, 'CSS should contain .grid utility class');
 
-        // Verify it's not the placeholder (which was only 4 lines)
-        $lineCount = substr_count($cssContent, "\n");
-        self::assertGreaterThan(1000, $lineCount, 'Tailwind CSS should have significant content (>1000 lines), not a placeholder');
+        // Vérifie qu'il ne s'agit pas du placeholder (quelques octets) — un
+        // vrai build (minifié ou non) fait plusieurs dizaines de Ko. Ne
+        // jamais se baser sur le nombre de lignes : le CSS minifié (--minify,
+        // désormais utilisé aussi bien par composer build-assets que par la
+        // CI, cf. #485) tient en une seule ligne malgré un contenu complet.
+        self::assertGreaterThan(10_000, strlen($cssContent), 'Tailwind CSS should have significant content, not a placeholder');
     }
 
     public function testTailwindPlaceholderFileDoesNotExist(): void
