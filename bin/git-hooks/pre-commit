@@ -47,17 +47,17 @@ if git diff --cached --name-only | grep -E '(\.env\.local|\.env\.test\.local|con
 fi
 
 # 4. Rebuild Tailwind si un .twig ou un fichier de style a été touché dans ce
-#    commit. Évite le piège récurrent : TailwindBuildTest échoue en local
-#    parce que var/tailwind/app.built.css n'a pas été régénéré après une
-#    modif de template — jamais commité (la CI génère sa propre version
-#    minifiée), mais doit rester à jour pour que la suite de tests soit
-#    fiable en local sans y penser à chaque fois.
+#    commit, et stage immédiatement le résultat — sans ce `git add`, le
+#    fichier régénéré reste hors du commit qui part (git commit ne prend
+#    que ce qui était stagé avant l'exécution du hook), laissant un
+#    template déjà committé avec un CSS committé périmé/désynchronisé.
 if git diff --cached --name-only | grep -qE '\.twig$|assets/styles/.*\.css$'; then
     echo "🎨 Templates/styles modifiés — rebuild Tailwind..."
     if ! composer build-assets > /tmp/claude-tailwind-rebuild.log 2>&1; then
         echo "❌ ERREUR : rebuild Tailwind a échoué, voir /tmp/claude-tailwind-rebuild.log"
         exit 1
     fi
+    git add var/tailwind/app.built.css
 fi
 
 echo "✅ Vérifications passed. Tu peux continuer."
