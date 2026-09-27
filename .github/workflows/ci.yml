@@ -27,8 +27,7 @@ jobs:
   php:
     runs-on: ubuntu-latest
     permissions:
-      contents: write       # requis pour pousser la branche de rebuild Tailwind (#421)
-      pull-requests: write  # requis pour ouvrir la PR de rebuild Tailwind (#421)
+      contents: write       # requis pour committer le CSS rebuildé sur la branche de la PR
 
     services:
       mysql:
@@ -47,6 +46,12 @@ jobs:
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v5
+        with:
+          # Sur une PR, GitHub checkout par défaut un merge commit éphémère
+          # (fusion PR+base) — le rebuild Tailwind doit committer sur le
+          # vrai dernier commit de la branche source, jamais sur cette
+          # fusion synthétique.
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.ref }}
 
       - name: 🎬 Ensure ffmpeg
         run: ffmpeg -version >/dev/null 2>&1 || { sudo apt-get update && sudo apt-get install -y ffmpeg; }
@@ -99,44 +104,34 @@ jobs:
           APP_SECRET: ${{ secrets.APP_SECRET }}
         run: ./vendor/bin/phpunit --configuration phpunit.dist.xml --colors=always
 
-      # Déploiement nocturne autonome (#421) : le serveur ne build jamais
-      # Tailwind lui-même (mutualisé, résultat peu fiable) — le CSS minifié
-      # est buildé ici, récupéré ensuite par un simple `git checkout` côté
-      # serveur. La règle de protection de main interdit tout push direct
-      # (y compris depuis GITHUB_TOKEN, aucun bypass configuré ni souhaité,
-      # cf. CLAUDE.md « jamais de commit direct sur main ») : on ouvre donc
-      # une PR au lieu de push.
+      # Le serveur o2switch ne build jamais Tailwind lui-même (mutualisé,
+      # résultat peu fiable) — le CSS minifié est buildé ici, récupéré
+      # ensuite par un simple `git checkout` côté serveur au déploiement.
       #
-      # --auto merge automatiquement dès que les checks de CETTE PR passent
-      # (labels/GitGuardian, la CI complète php/js n'y tourne pas puisqu'elle
-      # ne modifie que du CSS déjà validé) — évite une intervention manuelle
-      # répétée à chaque merge sur main. --delete-branch supprime la branche
-      # chore/tailwind-rebuild-* juste après, pour ne pas laisser traîner de
-      # branches mortes (non conforme aux conventions du projet).
-      - name: 🎨 Proposer le rebuild du CSS Tailwind
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      # Committé directement sur la branche SOURCE de la PR (jamais sur
+      # main, qui refuse tout push direct y compris depuis GITHUB_TOKEN,
+      # cf. CLAUDE.md « jamais de commit direct sur main ») : le CSS est
+      # donc déjà à jour au moment du merge, sans PR de rebuild séparée
+      # à traiter après coup (ancienne approche : ouvrait puis auto-mergeait
+      # une PR chore/tailwind-rebuild-* sur main, bruit + branches mortes).
+      # Ignoré sur push direct à main (rebuild déjà fait via la PR qui l'a
+      # mergé) et sur une PR dont la branche vient d'un fork (GITHUB_TOKEN
+      # n'a pas les droits d'écriture dessus).
+      - name: 🎨 Rebuild le CSS Tailwind sur la branche de la PR
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           php bin/console tailwind:build --minify
           if git diff --quiet -- var/tailwind/app.built.css; then
-            echo "CSS inchangé, rien à proposer."
+            echo "CSS inchangé, rien à committer."
             exit 0
           fi
-          BRANCH="chore/tailwind-rebuild-${GITHUB_SHA::7}"
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -b "$BRANCH"
           git add var/tailwind/app.built.css
           git commit -m "🎨 chore(assets): rebuild Tailwind"
-          git push origin "$BRANCH"
-          gh pr create \
-            --title "🎨 chore(assets): rebuild Tailwind" \
-            --body "CSS Tailwind rebuildé automatiquement après le merge de ${GITHUB_SHA::7} sur main." \
-            --label ci \
-            --base main \
-            --head "$BRANCH"
-          gh pr merge "$BRANCH" --merge --auto --delete-branch
+          git push origin "HEAD:${{ github.head_ref }}"
 
   js:
     runs-on: ubuntu-latest
