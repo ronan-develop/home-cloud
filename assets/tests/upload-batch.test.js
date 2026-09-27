@@ -90,6 +90,44 @@ describe('createBatchPoller', () => {
         expect(sched.hasPending()).toBe(false);
     });
 
+    // Import Google Photos Takeout (#458) : sans ce callback, l'appelant ne
+    // peut jamais afficher l'avancement pendant l'attente (extracting,
+    // processing...) — seul onComplete était notifié, au tout dernier tick.
+    test('appelle onProgress à chaque tick intermédiaire, y compris avant le premier backoff', async () => {
+        const sched = manualScheduler();
+        const onProgress = jest.fn();
+        const fetchStatus = jest.fn().mockResolvedValue({ status: 'processing', processed: 1, total: 3 });
+
+        const poller = createBatchPoller({
+            batchId: 'b-1', fetchStatus, onProgress,
+            setTimeoutFn: sched.setTimeoutFn, clearTimeoutFn: sched.clearTimeoutFn,
+        });
+        poller.start();
+        await sched.run();
+        await sched.run();
+
+        expect(onProgress).toHaveBeenCalledTimes(2);
+        expect(onProgress).toHaveBeenNthCalledWith(1, { status: 'processing', processed: 1, total: 3 });
+    });
+
+    test('appelle aussi onProgress sur le tick final (completed), avant onComplete', async () => {
+        const sched = manualScheduler();
+        const calls = [];
+        const onProgress = jest.fn(() => calls.push('progress'));
+        const onComplete = jest.fn(() => calls.push('complete'));
+        const fetchStatus = jest.fn().mockResolvedValue({ status: 'completed', processed: 3, total: 3 });
+
+        const poller = createBatchPoller({
+            batchId: 'b-1', fetchStatus, onProgress, onComplete,
+            setTimeoutFn: sched.setTimeoutFn, clearTimeoutFn: sched.clearTimeoutFn,
+        });
+        poller.start();
+        await sched.run();
+
+        expect(onProgress).toHaveBeenCalledWith({ status: 'completed', processed: 3, total: 3 });
+        expect(calls).toEqual(['progress', 'complete']);
+    });
+
     test('reprogramme tant que le lot n\'est pas terminé (backoff)', async () => {
         const sched = manualScheduler();
         const delays = [];
