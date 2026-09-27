@@ -34,6 +34,7 @@ describe('takeout-import controller (#458)', () => {
                         <p data-takeout-import-target="fileStatus"></p>
                     </div>
                     <p data-takeout-import-target="patienceMessage"></p>
+                    <p hidden data-takeout-import-target="safeToCloseMessage"></p>
                 </div>
             </div>
         `;
@@ -242,6 +243,33 @@ describe('takeout-import controller (#458)', () => {
         jest.useRealTimers();
     });
 
+    // #482 : une fois le traitement démarré côté serveur (extraction,
+    // parsing, import), contrairement à la phase d'upload (#481), fermer
+    // l'onglet est sans risque — le traitement continue en arrière-plan.
+    test('affiche un message rassurant dès le passage au polling : fermer l\'onglet est sans risque', async () => {
+        jest.useFakeTimers({ doNotFake: ['nextTick', 'queueMicrotask'] });
+        setInputFiles([makeFile('takeout-001.zip')]);
+
+        global.fetch = jest.fn()
+            .mockResolvedValueOnce({ ok: false, status: 404 }) // GET pending
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'pending' }) })
+            .mockResolvedValueOnce({ ok: true })
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'pending' }) })
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ status: 'pending', processedCount: 0, totalMediaCount: null }) });
+
+        const button = document.querySelector('[data-takeout-import-target="submit"]');
+        const safeToCloseMessage = document.querySelector('[data-takeout-import-target="safeToCloseMessage"]');
+
+        expect(safeToCloseMessage.hidden).toBe(true);
+
+        button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        await jest.advanceTimersByTimeAsync(0);
+
+        expect(safeToCloseMessage.hidden).toBe(false);
+
+        jest.useRealTimers();
+    });
+
     test('affiche une erreur si l\'envoi d\'un ZIP échoue, sans appeler start', async () => {
         jest.useFakeTimers({ doNotFake: ['nextTick', 'queueMicrotask'] });
         setInputFiles([makeFile('takeout-001.zip')]);
@@ -413,6 +441,7 @@ describe('liste des imports Takeout en attente (#481)', () => {
                         <p data-takeout-import-target="fileStatus"></p>
                     </div>
                     <p data-takeout-import-target="patienceMessage"></p>
+                    <p hidden data-takeout-import-target="safeToCloseMessage"></p>
                 </div>
             </div>
         `;

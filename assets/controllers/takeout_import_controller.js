@@ -21,7 +21,7 @@ const IMPORTS_ROUTE = '/api/v1/takeout-imports';
 export default class extends Controller {
     static targets = [
         'input', 'dropzone', 'form', 'fileList', 'progress', 'bar', 'status', 'counts', 'error', 'submit',
-        'fileProgressWrapper', 'fileBar', 'fileStatus', 'patienceMessage', 'pendingList',
+        'fileProgressWrapper', 'fileBar', 'fileStatus', 'patienceMessage', 'pendingList', 'safeToCloseMessage',
     ];
 
     // #481 : messages qui tournent pendant l'upload, pour rassurer sur un
@@ -185,6 +185,11 @@ export default class extends Controller {
             await this._startImport(importId);
 
             this._stopPatienceMessages();
+            // #482 : à partir d'ici, le traitement est entièrement
+            // asynchrone côté serveur (Messenger) — contrairement à la
+            // phase d'upload qui vient de se terminer (#481, à ne pas
+            // interrompre), fermer l'onglet est désormais sans risque.
+            this.safeToCloseMessageTarget.hidden = false;
             this._startPolling(importId);
         } catch (err) {
             this._hideUploadProgress();
@@ -265,6 +270,7 @@ export default class extends Controller {
         this.formTarget.hidden = true;
         this.progressTarget.hidden = false;
         this.fileProgressWrapperTarget.hidden = true;
+        this.safeToCloseMessageTarget.hidden = true;
         this._renderGlobalProgress(0, totalFiles);
         this._startPatienceMessages();
     }
@@ -273,6 +279,7 @@ export default class extends Controller {
         this.formTarget.hidden = false;
         this.progressTarget.hidden = true;
         this.fileProgressWrapperTarget.hidden = true;
+        this.safeToCloseMessageTarget.hidden = true;
         this._stopPatienceMessages();
     }
 
