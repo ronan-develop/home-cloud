@@ -26,8 +26,6 @@ jobs:
 
   php:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write       # requis pour committer le CSS rebuildé sur la branche de la PR
 
     services:
       mysql:
@@ -48,9 +46,8 @@ jobs:
         uses: actions/checkout@v5
         with:
           # Sur une PR, GitHub checkout par défaut un merge commit éphémère
-          # (fusion PR+base) — le rebuild Tailwind doit committer sur le
-          # vrai dernier commit de la branche source, jamais sur cette
-          # fusion synthétique.
+          # (fusion PR+base) — on teste le vrai dernier commit de la branche
+          # source, jamais cette fusion synthétique.
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.ref }}
 
       - name: 🎬 Ensure ffmpeg
@@ -104,38 +101,31 @@ jobs:
       - name: 🎨 Build Tailwind CSS
         run: php bin/console tailwind:build --minify
 
+      # Le serveur o2switch ne build jamais Tailwind lui-même (mutualisé,
+      # /tmp monté noexec bloque Bun/Tailwind même via var/tmp, testé et
+      # abandonné en mars 2026) — le CSS minifié doit donc être committé
+      # à jour AVANT le push, récupéré ensuite par un simple `git checkout`
+      # côté serveur au déploiement.
+      #
+      # Filet de sécurité : le hook pre-commit local (bin/git-hooks/pre-commit)
+      # rebuild ET stage désormais automatiquement ce fichier dès qu'un
+      # .twig/CSS est modifié — ce check ne devrait donc plus jamais se
+      # déclencher en usage normal. Il couvre uniquement les cas hors hook
+      # (commit --no-verify, machine sans hook installé). Pas de commit
+      # correctif ici : un commit poussé par la CI elle-même déclenchait un
+      # second run CI classé "Action required", bloqué sans approbation
+      # manuelle (vécu PR #489, 2026-09-27).
+      - name: 🎨 Vérifie que le CSS Tailwind committé est à jour
+        run: |
+          if ! git diff --quiet -- var/tailwind/app.built.css; then
+            echo "::error::var/tailwind/app.built.css n'est pas à jour avec les templates/styles de cette branche. Lancez 'composer build-assets', committez le résultat, puis repoussez. (Si vous utilisez le hook pre-commit du projet, ceci ne devrait normalement jamais arriver.)"
+            exit 1
+          fi
+
       - name: 🧪 Run PHPUnit
         env:
           APP_SECRET: ${{ secrets.APP_SECRET }}
         run: ./vendor/bin/phpunit --configuration phpunit.dist.xml --colors=always
-
-      # Le serveur o2switch ne build jamais Tailwind lui-même (mutualisé,
-      # résultat peu fiable) — le CSS minifié est buildé ci-dessus, récupéré
-      # ensuite par un simple `git checkout` côté serveur au déploiement.
-      #
-      # Committé directement sur la branche SOURCE de la PR (jamais sur
-      # main, qui refuse tout push direct y compris depuis GITHUB_TOKEN,
-      # cf. CLAUDE.md « jamais de commit direct sur main ») : le CSS est
-      # donc déjà à jour au moment du merge, sans PR de rebuild séparée
-      # à traiter après coup (ancienne approche : ouvrait puis auto-mergeait
-      # une PR chore/tailwind-rebuild-* sur main, bruit + branches mortes).
-      # Ignoré sur push direct à main (rebuild déjà fait via la PR qui l'a
-      # mergé) et sur une PR dont la branche vient d'un fork (GITHUB_TOKEN
-      # n'a pas les droits d'écriture dessus).
-      - name: 🎨 Committer le CSS Tailwind sur la branche de la PR
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if git diff --quiet -- var/tailwind/app.built.css; then
-            echo "CSS inchangé, rien à committer."
-            exit 0
-          fi
-          git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add var/tailwind/app.built.css
-          git commit -m "🎨 chore(assets): rebuild Tailwind"
-          git push origin "HEAD:${{ github.head_ref }}"
 
   js:
     runs-on: ubuntu-latest

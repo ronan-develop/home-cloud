@@ -21,15 +21,29 @@ const IMPORTS_ROUTE = '/api/v1/takeout-imports';
 export default class extends Controller {
     static targets = [
         'input', 'dropzone', 'form', 'fileList', 'progress', 'bar', 'status', 'counts', 'error', 'submit',
-        'fileProgressWrapper', 'fileBar', 'fileStatus',
+        'fileProgressWrapper', 'fileBar', 'fileStatus', 'patienceMessage',
     ];
+
+    // #481 : messages qui tournent pendant l'upload, pour rassurer sur un
+    // transfert long (plusieurs minutes avec un gros ZIP en chunks) et
+    // rappeler de garder l'onglet ouvert — les chunks déjà envoyés restent
+    // orphelins côté serveur si l'utilisateur ferme trop tôt.
+    static PATIENCE_MESSAGES = [
+        'Ne fermez pas cet onglet pendant l\'envoi…',
+        'L\'envoi continue en arrière-plan, merci de patienter…',
+        'Les gros fichiers peuvent prendre plusieurs minutes…',
+        'Toujours en cours, aucune action nécessaire de votre part…',
+    ];
+    static PATIENCE_MESSAGE_INTERVAL_MS = 4000;
 
     connect() {
         this._poller = null;
+        this._patienceInterval = null;
     }
 
     disconnect() {
         this._poller?.stop();
+        this._stopPatienceMessages();
     }
 
     triggerFilePicker() {
@@ -87,6 +101,7 @@ export default class extends Controller {
             this.fileProgressWrapperTarget.hidden = true;
             await this._startImport(importId);
 
+            this._stopPatienceMessages();
             this._startPolling(importId);
         } catch (err) {
             this._hideUploadProgress();
@@ -100,12 +115,30 @@ export default class extends Controller {
         this.progressTarget.hidden = false;
         this.fileProgressWrapperTarget.hidden = true;
         this._renderGlobalProgress(0, totalFiles);
+        this._startPatienceMessages();
     }
 
     _hideUploadProgress() {
         this.formTarget.hidden = false;
         this.progressTarget.hidden = true;
         this.fileProgressWrapperTarget.hidden = true;
+        this._stopPatienceMessages();
+    }
+
+    _startPatienceMessages() {
+        const messages = this.constructor.PATIENCE_MESSAGES;
+        let index = 0;
+        this.patienceMessageTarget.textContent = messages[index];
+        this._patienceInterval = setInterval(() => {
+            index = (index + 1) % messages.length;
+            this.patienceMessageTarget.textContent = messages[index];
+        }, this.constructor.PATIENCE_MESSAGE_INTERVAL_MS);
+    }
+
+    _stopPatienceMessages() {
+        clearInterval(this._patienceInterval);
+        this._patienceInterval = null;
+        this.patienceMessageTarget.textContent = '';
     }
 
     _renderGlobalProgress(uploadedCount, totalCount) {

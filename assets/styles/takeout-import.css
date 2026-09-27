@@ -16,3 +16,15 @@
   from { background-position: 0 0; }
   to { background-position: 28px 0; }
 }
+
+/* #481 : léger clignotement du message d'attente pendant l'upload, pour
+ * signaler que l'interface est bien vivante malgré un pourcentage qui
+ * avance lentement sur un gros fichier. */
+.takeout-patience-message {
+  animation: takeout-patience-pulse 2s ease-in-out infinite;
+}
+
+@keyframes takeout-patience-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
