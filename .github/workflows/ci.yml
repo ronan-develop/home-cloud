@@ -10,6 +10,8 @@ jobs:
   labels:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write   # requis pour assigner automatiquement assignee/milestone
     steps:
       - name: 🏷️ Vérifier qu'au moins un label est présent
         env:
@@ -41,6 +43,40 @@ jobs:
             exit 1
           fi
           echo "✅ Ticket référencé."
+
+      # Plusieurs PR sont restées sans assignee ni milestone jusqu'à
+      # correction manuelle après coup (session du 2026-09-27). Pas un
+      # blocage (contrairement à labels/ticket ci-dessus) — juste un
+      # remplissage automatique s'ils manquent, pour ne jamais laisser
+      # une PR orpheline sur ces deux champs sans pour autant gêner le flux.
+      - name: 👤🎯 Renseigne assignee et milestone si absents
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          REPO="${{ github.repository }}"
+
+          ASSIGNEE_COUNT=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json assignees -q '.assignees | length')
+          if [ "$ASSIGNEE_COUNT" -eq 0 ]; then
+            AUTHOR=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json author -q '.author.login')
+            gh pr edit "$PR_NUMBER" --repo "$REPO" --add-assignee "$AUTHOR"
+            echo "✅ Assignee ajouté automatiquement : $AUTHOR"
+          else
+            echo "✅ Assignee déjà présent."
+          fi
+
+          MILESTONE=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json milestone -q '.milestone.title // empty')
+          if [ -z "$MILESTONE" ]; then
+            LATEST_OPEN_MILESTONE=$(gh api "repos/$REPO/milestones?state=open&sort=due_on&direction=desc" -q '.[0].title // empty')
+            if [ -n "$LATEST_OPEN_MILESTONE" ]; then
+              gh pr edit "$PR_NUMBER" --repo "$REPO" --milestone "$LATEST_OPEN_MILESTONE"
+              echo "✅ Milestone ajouté automatiquement : $LATEST_OPEN_MILESTONE"
+            else
+              echo "⚠ Aucun milestone ouvert à assigner automatiquement."
+            fi
+          else
+            echo "✅ Milestone déjà présent : $MILESTONE"
+          fi
 
   php:
     runs-on: ubuntu-latest
