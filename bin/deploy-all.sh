@@ -79,7 +79,11 @@ SSH_HOST="lenouvel.me"
 SSH_PORT=22
 GIT_REPO="https://github.com/ronan-develop/home-cloud"
 GIT_BRANCH="main"
-PHP_BIN="/usr/local/bin/php"
+# -d memory_limit=512M : sur le mutualisé o2switch (LVE CloudLinux), le
+# memory_limit par défaut du php.ini fait tuer cache:clear --env=prod même
+# isolé dans son propre process SSH (vécu 2026-09-27) — la valeur par défaut
+# est trop juste pour la compilation du container Symfony en prod.
+PHP_BIN="/usr/local/bin/php -d memory_limit=512M"
 COMPOSER_BIN="composer"
 
 SSH_KEY_OPTS=""

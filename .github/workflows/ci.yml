@@ -96,8 +96,13 @@ jobs:
           php bin/console doctrine:database:create --if-not-exists --env=test
           php bin/console doctrine:migrations:migrate --no-interaction --env=test
 
+      # --minify dès ce build unique : composer build-assets (local) et la CI
+      # produisent désormais le même CSS minifié (#486) — un deuxième build
+      # non-minifié juste pour PHPUnit serait un doublon jeté immédiatement
+      # après (constaté le 2026-09-27 : deux tailwind:build successifs sur
+      # le même code dans le même job).
       - name: 🎨 Build Tailwind CSS
-        run: php bin/console tailwind:build
+        run: php bin/console tailwind:build --minify
 
       - name: 🧪 Run PHPUnit
         env:
@@ -105,7 +110,7 @@ jobs:
         run: ./vendor/bin/phpunit --configuration phpunit.dist.xml --colors=always
 
       # Le serveur o2switch ne build jamais Tailwind lui-même (mutualisé,
-      # résultat peu fiable) — le CSS minifié est buildé ici, récupéré
+      # résultat peu fiable) — le CSS minifié est buildé ci-dessus, récupéré
       # ensuite par un simple `git checkout` côté serveur au déploiement.
       #
       # Committé directement sur la branche SOURCE de la PR (jamais sur
@@ -117,12 +122,11 @@ jobs:
       # Ignoré sur push direct à main (rebuild déjà fait via la PR qui l'a
       # mergé) et sur une PR dont la branche vient d'un fork (GITHUB_TOKEN
       # n'a pas les droits d'écriture dessus).
-      - name: 🎨 Rebuild le CSS Tailwind sur la branche de la PR
+      - name: 🎨 Committer le CSS Tailwind sur la branche de la PR
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          php bin/console tailwind:build --minify
           if git diff --quiet -- var/tailwind/app.built.css; then
             echo "CSS inchangé, rien à committer."
             exit 0
