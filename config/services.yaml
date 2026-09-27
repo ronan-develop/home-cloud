@@ -209,7 +209,11 @@ services:
             $resetPasswordRequestLimiter: '@limiter.reset_password_request'
             $resetPasswordSubmitLimiter: '@limiter.reset_password_submit'
 
-    App\Controller\Api\TakeoutImportUploadController:
+    App\Controller\Api\TakeoutImportFileUploadController:
+        arguments:
+            $takeoutTmpDir: '%app.takeout_tmp_dir%'
+
+    App\Controller\Api\TakeoutImportStartController:
         arguments:
             $takeoutTmpDir: '%app.takeout_tmp_dir%'
 

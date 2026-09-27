@@ -8,16 +8,23 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model;
-use App\Controller\Api\TakeoutImportUploadController;
+use App\Controller\Api\TakeoutImportCreateController;
+use App\Controller\Api\TakeoutImportFileUploadController;
+use App\Controller\Api\TakeoutImportStartController;
 use App\State\TakeoutImportProvider;
 
 /**
  * DTO de sortie pour le suivi d'un import Google Photos Takeout (#327).
  *
- * Le POST accepte un ou plusieurs fichiers `takeout-*.zip` en
- * multipart/form-data et retourne immédiatement l'id de l'import (202) —
- * le traitement réel (extraction, parsing, création des médias) est
- * asynchrone (TakeoutImportHandler via Messenger).
+ * Upload séquentiel en 3 étapes (#466) : un gros POST multipart avec tous les
+ * ZIP dépassait la limite de taille de requête du serveur mutualisé (413) dès
+ * qu'un utilisateur sélectionnait plusieurs fichiers Takeout volumineux d'un
+ * coup. Chaque ZIP est désormais envoyé dans sa propre requête, largement
+ * sous la limite, sans changer l'UX (l'utilisateur sélectionne tout en une
+ * fois, le front enchaîne les requêtes) :
+ *   1. POST /v1/takeout-imports          → crée l'import (pending), pas de fichier
+ *   2. POST /v1/takeout-imports/{id}/files → un seul ZIP par appel, répété
+ *   3. POST /v1/takeout-imports/{id}/start → dispatch le traitement asynchrone
  */
 #[ApiResource(
     shortName: 'TakeoutImport',
@@ -31,12 +38,33 @@ use App\State\TakeoutImportProvider;
         ),
         new Post(
             uriTemplate: '/v1/takeout-imports',
-            controller: TakeoutImportUploadController::class,
+            controller: TakeoutImportCreateController::class,
+            deserialize: false,
+            status: 201,
+            openapi: new Model\Operation(
+                summary: 'Crée un import Google Photos Takeout (sans fichier).',
+                description: 'Retourne 201 avec l\'id de l\'import (statut pending). Envoyer ensuite chaque ZIP via POST /v1/takeout-imports/{id}/files, puis démarrer via POST /v1/takeout-imports/{id}/start.',
+            ),
+        ),
+        new Post(
+            uriTemplate: '/v1/takeout-imports/{id}/files',
+            controller: TakeoutImportFileUploadController::class,
+            deserialize: false,
+            status: 204,
+            output: false,
+            openapi: new Model\Operation(
+                summary: 'Ajoute un fichier ZIP à un import Google Photos Takeout en attente (multipart/form-data).',
+                description: 'Corps `multipart/form-data` : un seul champ `file`. À répéter une fois par ZIP. Retourne 204 sans contenu.',
+            ),
+        ),
+        new Post(
+            uriTemplate: '/v1/takeout-imports/{id}/start',
+            controller: TakeoutImportStartController::class,
             deserialize: false,
             status: 202,
             openapi: new Model\Operation(
-                summary: 'Démarre un import Google Photos Takeout (multipart/form-data).',
-                description: 'Corps `multipart/form-data` : un ou plusieurs champs `files[]` (ZIP takeout-*.zip). Retourne 202 avec l\'id de l\'import à suivre via GET /api/v1/takeout-imports/{id}.',
+                summary: 'Démarre le traitement asynchrone d\'un import Google Photos Takeout.',
+                description: 'À appeler une fois tous les ZIP envoyés via POST /v1/takeout-imports/{id}/files. Retourne 202 ; suivre l\'avancement via GET /v1/takeout-imports/{id}.',
             ),
         ),
     ],

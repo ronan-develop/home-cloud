@@ -2,13 +2,20 @@ import { Controller } from '@hotwired/stimulus';
 import { apiFetch } from '../js/api.js';
 import { createBatchPoller } from '../js/upload-batch.js';
 
-const UPLOAD_ROUTE = '/api/v1/takeout-imports';
+const IMPORTS_ROUTE = '/api/v1/takeout-imports';
 
 /**
  * Page d'import Google Photos Takeout (#327) : upload du/des ZIP puis
  * suivi de la progression par polling (barre + compteurs), en réutilisant
  * le même poller que le suivi de lot d'upload classique (upload-batch.js) —
  * même stratégie de backoff/timeout, pas de duplication de cette logique.
+ *
+ * Upload séquentiel en 3 étapes (#466) : un seul gros POST avec tous les ZIP
+ * dépassait la limite de taille de requête du serveur mutualisé (413) dès
+ * qu'un utilisateur sélectionnait plusieurs Takeout volumineux d'un coup.
+ * L'utilisateur sélectionne toujours tout en une fois ; le front enchaîne
+ * ensuite create → un POST par ZIP → start, chaque fichier restant bien sous
+ * la limite.
  */
 export default class extends Controller {
     static targets = ['input', 'dropzone', 'form', 'fileList', 'progress', 'bar', 'status', 'counts', 'error', 'submit'];
@@ -52,29 +59,57 @@ export default class extends Controller {
         this.submitTarget.disabled = true;
         this._hideError();
 
-        const formData = new FormData();
-        files.forEach((file) => formData.append('files[]', file));
-
         try {
-            const token = await (window.HC?.getToken?.() || Promise.resolve(''));
-            const res = await fetch(UPLOAD_ROUTE, {
-                method: 'POST',
-                headers: token ? { Authorization: `Bearer ${token}` } : {},
-                body: formData,
-            });
-
-            if (!res.ok) {
-                throw new Error(`Échec de l'envoi (${res.status})`);
+            const importId = await this._createImport();
+            for (const file of files) {
+                await this._uploadFile(importId, file);
             }
+            await this._startImport(importId);
 
-            const data = await res.json();
             this.formTarget.hidden = true;
             this.progressTarget.hidden = false;
-            this._startPolling(data.id);
+            this._startPolling(importId);
         } catch (err) {
             this._showError(err.message || 'Erreur lors de l\'envoi');
             this.submitTarget.disabled = false;
         }
+    }
+
+    async _createImport() {
+        const res = await this._authenticatedFetch(IMPORTS_ROUTE, { method: 'POST' });
+        if (!res.ok) {
+            throw new Error(`Échec de la création de l'import (${res.status})`);
+        }
+        const data = await res.json();
+        return data.id;
+    }
+
+    async _uploadFile(importId, file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const res = await this._authenticatedFetch(`${IMPORTS_ROUTE}/${importId}/files`, {
+            method: 'POST',
+            body: formData,
+        });
+        if (!res.ok) {
+            throw new Error(`Échec de l'envoi de ${file.name} (${res.status})`);
+        }
+    }
+
+    async _startImport(importId) {
+        const res = await this._authenticatedFetch(`${IMPORTS_ROUTE}/${importId}/start`, { method: 'POST' });
+        if (!res.ok) {
+            throw new Error(`Échec du démarrage de l'import (${res.status})`);
+        }
+    }
+
+    async _authenticatedFetch(url, options) {
+        const token = await (window.HC?.getToken?.() || Promise.resolve(''));
+        return fetch(url, {
+            ...options,
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
     }
 
     _startPolling(importId) {
@@ -97,7 +132,7 @@ export default class extends Controller {
     }
 
     async _fetchImportStatus(importId) {
-        const res = await apiFetch(`${UPLOAD_ROUTE}/${importId}`, { method: 'GET' });
+        const res = await apiFetch(`${IMPORTS_ROUTE}/${importId}`, { method: 'GET' });
         if (!res.ok) {
             throw new Error(`Statut indisponible (${res.status})`);
         }
