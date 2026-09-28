@@ -74,12 +74,19 @@ final class TakeoutImportHandler
         $unrecognizedFiles = 0;
 
         try {
-            $import->markExtracting();
+            // Progress bar pendant l'extraction (#515) : totalZipCount connu
+            // dès le départ (nombre de ZIP à traiter), extractedZipCount
+            // incrémenté à chaque ZIP extrait — sans ça, le front n'avait
+            // aucune information pendant potentiellement plusieurs minutes
+            // sur des ZIP volumineux.
+            $import->markExtracting(count($message->zipPaths));
             $this->em->flush();
 
             $workDir = sys_get_temp_dir() . '/takeout-import-' . $import->getId()->toRfc4122();
             foreach ($message->zipPaths as $zipPath) {
                 $this->zipExtractor->extract($zipPath, $workDir);
+                $import->incrementExtractedZipCount();
+                $this->em->flush();
             }
 
             $import->markProcessing();
