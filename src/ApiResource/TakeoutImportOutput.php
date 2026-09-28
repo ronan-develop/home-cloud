@@ -124,6 +124,10 @@ final class TakeoutImportOutput
     public ?int $totalMediaCount = null;
     /** Progress bar (#327) : médias déjà traités (importés ou doublons confondus). */
     public int $processedCount = 0;
+    /** Progress bar pendant l'extraction (#515) : total de ZIP à extraire, connu dès le statut "extracting". */
+    public ?int $totalZipCount = null;
+    /** Progress bar pendant l'extraction (#515) : ZIP déjà extraits. */
+    public int $extractedZipCount = 0;
     /** Liste des imports en attente (#481) : ZIP déjà (au moins partiellement) reçus pour cet import. */
     public int $filesUploadedCount = 0;
     public string $createdAt = '';

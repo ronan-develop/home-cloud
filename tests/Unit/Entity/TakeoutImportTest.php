@@ -65,6 +65,38 @@ final class TakeoutImportTest extends TestCase
         $this->assertSame(TakeoutImport::STATUS_EXTRACTING, $import->getStatus());
     }
 
+    // #515 : progression pendant l'extraction — jusqu'ici aucune progression
+    // n'était communiquée pendant toute la phase "extracting", potentiellement
+    // plusieurs minutes sur des ZIP volumineux. markExtracting() reçoit
+    // désormais le nombre total de ZIP à extraire, et extractedZipCount est
+    // incrémenté au fil du handler (même pattern que processedCount/totalMediaCount).
+    public function testMarkExtractingSetsTotalZipCount(): void
+    {
+        $import = new TakeoutImport(new User('owner@example.com', 'Owner'));
+
+        $import->markExtracting(totalZipCount: 11);
+
+        $this->assertSame(11, $import->getTotalZipCount());
+    }
+
+    public function testConstructorInitializesExtractedZipCountToZeroAndTotalToNull(): void
+    {
+        $import = new TakeoutImport(new User('owner@example.com', 'Owner'));
+
+        $this->assertSame(0, $import->getExtractedZipCount());
+        $this->assertNull($import->getTotalZipCount());
+    }
+
+    public function testIncrementExtractedZipCountIncrementsByOne(): void
+    {
+        $import = new TakeoutImport(new User('owner@example.com', 'Owner'));
+
+        $import->incrementExtractedZipCount();
+        $import->incrementExtractedZipCount();
+
+        $this->assertSame(2, $import->getExtractedZipCount());
+    }
+
     public function testMarkProcessingUpdatesStatus(): void
     {
         $import = new TakeoutImport(new User('owner@example.com', 'Owner'));

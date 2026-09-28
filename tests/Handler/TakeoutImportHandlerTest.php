@@ -151,6 +151,49 @@ final class TakeoutImportHandlerTest extends TestCase
         $this->assertSame(2, $import->getUnrecognizedFilesCount());
     }
 
+    // #515 : progression pendant l'extraction — jusqu'ici aucune progression
+    // n'était communiquée pendant la phase "extracting" (potentiellement
+    // plusieurs minutes sur des ZIP volumineux). Le handler doit initialiser
+    // totalZipCount au nombre de ZIP à traiter, et incrémenter
+    // extractedZipCount à chaque ZIP extrait, avant même la fin de la phase.
+    public function testHandlerTracksExtractionProgressAcrossMultipleZips(): void
+    {
+        $owner = new User('owner@example.com', 'Owner');
+        $import = new TakeoutImport($owner);
+        $folder = new Folder('Import Google Photos 2026-09-26', $owner);
+
+        $this->importRepository->method('find')->willReturn($import);
+
+        $this->zipExtractor = $this->createMock(TakeoutZipExtractor::class);
+        $extractedCounts = [];
+        $this->zipExtractor->expects($this->exactly(2))
+            ->method('extract')
+            ->willReturnCallback(function () use ($import, &$extractedCounts) {
+                $extractedCounts[] = $import->getExtractedZipCount();
+            });
+
+        $this->structureParser->method('parse')
+            ->willReturn(new TakeoutStructureResult([], 0));
+
+        $this->fingerprintRepository = $this->createMock(ContentFingerprintRepository::class);
+        $this->fingerprintRepository->method('findExistingHashes')->willReturn([]);
+
+        $this->defaultFolderService = $this->createMock(DefaultFolderServiceInterface::class);
+        $this->defaultFolderService->method('resolve')->willReturn($folder);
+
+        $this->em = $this->createMock(EntityManagerInterface::class);
+        $this->em->expects($this->atLeastOnce())->method('flush');
+
+        $this->handler()(new TakeoutImportMessage((string) $import->getId(), ['/tmp/a.zip', '/tmp/b.zip']));
+
+        // Compteur au moment de chaque extract() : 0 puis 1 — la progression
+        // avance AU FIL de la boucle, pas seulement une fois toute la phase
+        // terminée.
+        $this->assertSame([0, 1], $extractedCounts);
+        $this->assertSame(2, $import->getTotalZipCount());
+        $this->assertSame(2, $import->getExtractedZipCount());
+    }
+
     public function testHandlerCountsDuplicatesSeparatelyFromImported(): void
     {
         $owner = new User('owner@example.com', 'Owner');

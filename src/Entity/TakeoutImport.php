@@ -72,6 +72,21 @@ class TakeoutImport
     #[ORM\Column]
     private int $processedCount = 0;
 
+    /**
+     * Progress bar pendant l'extraction (#515) : nombre de ZIP à extraire,
+     * connu dès le statut "extracting" — contrairement à totalMediaCount qui
+     * n'est connu qu'après le parsing.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?int $totalZipCount = null;
+
+    /**
+     * Progress bar pendant l'extraction (#515) : nombre de ZIP déjà extraits
+     * — incrémenté au fil du Handler, même pattern que processedCount.
+     */
+    #[ORM\Column]
+    private int $extractedZipCount = 0;
+
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
@@ -134,6 +149,21 @@ class TakeoutImport
         ++$this->processedCount;
     }
 
+    public function getTotalZipCount(): ?int
+    {
+        return $this->totalZipCount;
+    }
+
+    public function getExtractedZipCount(): int
+    {
+        return $this->extractedZipCount;
+    }
+
+    public function incrementExtractedZipCount(): void
+    {
+        ++$this->extractedZipCount;
+    }
+
     public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
@@ -149,9 +179,10 @@ class TakeoutImport
         return $this->errorMessage;
     }
 
-    public function markExtracting(): void
+    public function markExtracting(?int $totalZipCount = null): void
     {
         $this->status = self::STATUS_EXTRACTING;
+        $this->totalZipCount = $totalZipCount;
     }
 
     public function markProcessing(?int $totalMediaCount = null): void
