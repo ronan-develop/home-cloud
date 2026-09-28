@@ -153,4 +153,62 @@ final class TakeoutZipExtractorTest extends TestCase
 
         @unlink($invalidPath);
     }
+
+    // #525 : checkpoint d'extraction — sans lui, une coupure en plein milieu
+    // (LVE du mutualisé o2switch, #520/#522) forçait à ré-extraire tout le
+    // ZIP depuis 0, perte de travail potentiellement conséquente sur un ZIP
+    // volumineux à 98% déjà extrait. Même pattern que ChunkedFileAssembler
+    // (#466) : marqueur .progress traçant le dernier index d'entrée extrait
+    // avec succès, plutôt que de déduire la position depuis l'état du disque.
+    public function testResumesExtractionFromLastCheckpointedEntry(): void
+    {
+        $zipPath = $this->makeZip([
+            'a.jpg' => 'contenu a',
+            'b.jpg' => 'contenu b',
+            'c.jpg' => 'contenu c',
+        ]);
+
+        // Simule une coupure après extraction de a.jpg et b.jpg (index 0 et 1),
+        // avec un contenu DIFFÉRENT du ZIP (déjà modifié depuis, ex. par
+        // l'utilisateur) — prouve que l'extraction reprend au lieu de
+        // ré-extraire depuis 0 (sinon ce contenu serait écrasé).
+        file_put_contents($this->workDir . '/a.jpg', 'déjà extrait, ne doit pas être réécrit');
+        file_put_contents($this->workDir . '/b.jpg', 'déjà extrait, ne doit pas être réécrit');
+        file_put_contents($this->workDir . '/.progress', '1');
+
+        $this->extractor->extract($zipPath, $this->workDir);
+
+        $this->assertSame('déjà extrait, ne doit pas être réécrit', file_get_contents($this->workDir . '/a.jpg'));
+        $this->assertSame('déjà extrait, ne doit pas être réécrit', file_get_contents($this->workDir . '/b.jpg'));
+        $this->assertFileExists($this->workDir . '/c.jpg');
+        $this->assertSame('contenu c', file_get_contents($this->workDir . '/c.jpg'));
+
+        @unlink($zipPath);
+    }
+
+    public function testRemovesProgressMarkerOnceExtractionCompletes(): void
+    {
+        $zipPath = $this->makeZip(['a.jpg' => 'contenu a', 'b.jpg' => 'contenu b']);
+
+        $this->extractor->extract($zipPath, $this->workDir);
+
+        $this->assertFileDoesNotExist($this->workDir . '/.progress');
+
+        @unlink($zipPath);
+    }
+
+    public function testDoesNothingWhenAlreadyFullyExtracted(): void
+    {
+        $zipPath = $this->makeZip(['a.jpg' => 'contenu a']);
+
+        $this->extractor->extract($zipPath, $this->workDir);
+        $this->assertFileDoesNotExist($this->workDir . '/.progress');
+
+        // Deuxième appel (retry après un succès déjà acté) : pas de marqueur
+        // .progress, donc rien à reprendre — no-op silencieux, pas d'erreur.
+        $this->extractor->extract($zipPath, $this->workDir);
+        $this->assertSame('contenu a', file_get_contents($this->workDir . '/a.jpg'));
+
+        @unlink($zipPath);
+    }
 }
