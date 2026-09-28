@@ -1,27 +1,29 @@
 {
-  "permissions": {
-    "allow": [
-      "Bash(php bin/phpunit *)",
-      "Bash(php bin/console cache:clear *)",
-      "Bash(composer show *)",
-      "Bash(gh run list *)",
-      "Bash(gh pr checks *)"
-    ]
-  },
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/scripts/pr-watch-trigger.sh",
-            "if": "Bash(gh pr create*)",
-            "async": true,
-            "statusMessage": "Surveillance CI de la PR en arrière-plan..."
-          }
+    "permissions": {
+        "allow": [
+            "Bash(bash bin/deploy-all.sh)",
+            "Bash(php bin/phpunit *)",
+            "Bash(php bin/console cache:clear *)",
+            "Bash(composer show *)",
+            "Bash(gh run list *)",
+            "Bash(gh pr checks *)",
+            "Bash(ssh ron2cuba@lenouvel.me:*)"
         ]
-      }
-    ]
-  }
+    },
+    "hooks": {
+        "PostToolUse": [
+            {
+                "matcher": "Bash",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "bash .claude/scripts/pr-watch-trigger.sh",
+                        "if": "Bash(gh pr create*)",
+                        "async": true,
+                        "statusMessage": "Surveillance CI de la PR en arrière-plan..."
+                    }
+                ]
+            }
+        ]
+    }
 }
