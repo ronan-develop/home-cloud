@@ -73,6 +73,20 @@ final class TakeoutImportWebControllerTest extends WebTestCase
         $this->assertGreaterThan(0, $crawler->filter('[data-takeout-import-target="submit"]')->count());
     }
 
+    // #505 : mise en veille du PC pendant un upload = coupure de connexion
+    // (constaté en conditions réelles le 2026-09-27) — même si la reprise
+    // fonctionne (#491) et le message rassurant aussi (#492), le plus
+    // simple reste d'éviter la coupure en désactivant la veille pour un
+    // gros import.
+    public function testPageRecommendsDisablingSleepForLargeImports(): void
+    {
+        $this->login();
+
+        $crawler = $this->client->request('GET', '/import/takeout');
+
+        $this->assertStringContainsString('veille', strtolower($crawler->filter('body')->text()));
+    }
+
     public function testSidebarLinksToTakeoutImportPage(): void
     {
         $this->login();
