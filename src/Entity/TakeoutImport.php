@@ -29,6 +29,12 @@ class TakeoutImport
     public const STATUS_COMPLETED = 'completed';
     public const STATUS_FAILED = 'failed';
 
+    // #493 : délai avant purge automatique d'un import pending jamais repris
+    // (fichiers déjà uploadés + ligne base) — compromis entre libérer
+    // l'espace disque (ZIP Takeout volumineux) et laisser une marge
+    // confortable pour reprendre après une pause de plusieurs jours.
+    public const PURGE_AFTER_DAYS = 7;
+
     #[ORM\Id]
     #[ORM\Column(type: 'uuid', unique: true)]
     private Uuid $id;

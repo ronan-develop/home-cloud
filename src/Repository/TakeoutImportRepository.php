@@ -57,4 +57,21 @@ class TakeoutImportRepository extends ServiceEntityRepository
         $em->remove($import);
         $em->flush();
     }
+
+    // #493 : candidats à la purge automatique — un import pending jamais
+    // repris au-delà du seuil devient orphelin indéfiniment (ligne base +
+    // dossier var/takeout-tmp/<uuid>/, potentiellement plusieurs Go).
+    /**
+     * @return list<TakeoutImport>
+     */
+    public function findPendingOlderThan(\DateTimeImmutable $threshold): array
+    {
+        return $this->createQueryBuilder('ti')
+            ->where('ti.status = :status')
+            ->andWhere('ti.createdAt < :threshold')
+            ->setParameter('status', TakeoutImport::STATUS_PENDING)
+            ->setParameter('threshold', $threshold)
+            ->getQuery()
+            ->getResult();
+    }
 }
