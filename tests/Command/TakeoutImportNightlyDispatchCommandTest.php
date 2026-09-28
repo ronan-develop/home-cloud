@@ -9,6 +9,7 @@ use App\Entity\TakeoutImport;
 use App\Entity\User;
 use App\Message\TakeoutImportExtractMessage;
 use App\Repository\TakeoutImportRepository;
+use App\Service\Takeout\ServerLoadChecker;
 use App\Service\Takeout\TakeoutImportTmpDirLocator;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Application;
@@ -17,12 +18,15 @@ use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
- * #522 : traiter les imports Takeout la nuit pour limiter la contention sur
- * le mutualisé o2switch — un import volumineux se faisait tuer (SIGKILL) par
- * le LVE même en pleine journée sous forte charge, indépendamment du
- * découpage par ZIP (#520). Cette commande cron nocturne dispatche tous les
- * imports "scheduled" (marqués prêts par TakeoutImportStartController, qui
- * ne dispatche plus immédiatement), un ZIP à la fois comme #520.
+ * #522/#524 : traiter les imports Takeout dès que le serveur est calme,
+ * plutôt que toujours attendre la nuit — un import volumineux se faisait
+ * tuer (SIGKILL) par le LVE du mutualisé o2switch même en pleine journée
+ * sous forte charge, indépendamment du découpage par ZIP (#520). Cette
+ * commande (appelée toutes les 15 min, pas seulement la nuit) vérifie le CPU
+ * via ServerLoadChecker à chaque exécution et dispatche seulement si calme —
+ * comportement dynamique, pas une simple bascule jour/nuit binaire : un
+ * import reste "scheduled" et retenté au cycle suivant tant que le serveur
+ * est chargé, quelle que soit l'heure.
  */
 final class TakeoutImportNightlyDispatchCommandTest extends TestCase
 {
@@ -125,19 +129,56 @@ final class TakeoutImportNightlyDispatchCommandTest extends TestCase
         $bus = $this->createMock(MessageBusInterface::class);
         $bus->expects($this->never())->method('dispatch');
 
-        $tester = $this->commandTester($repository, $tmpDirLocator, $bus);
+        $tester = $this->commandTester($repository, $tmpDirLocator, $bus, $this->calmChecker());
         $tester->execute([]);
 
         $tester->assertCommandIsSuccessful();
         $this->assertStringContainsString('0', $tester->getDisplay());
     }
 
+    // #524 : comportement dynamique, pas une bascule jour/nuit binaire —
+    // tant que le serveur est chargé, un import reste "scheduled" et sera
+    // retenté au prochain cycle (toutes les 15 min), quelle que soit l'heure.
+    public function testDoesNotDispatchAnyImportWhenServerIsNotCalmEnough(): void
+    {
+        $import = $this->makeImport();
+        $import->markScheduled();
+
+        // findAllScheduled() n'est même pas appelée : inutile d'interroger
+        // la base si de toute façon rien ne sera dispatché ce cycle-ci.
+        $repository = $this->createMock(TakeoutImportRepository::class);
+        $repository->expects($this->never())->method('findAllScheduled');
+
+        $tmpDirLocator = new TakeoutImportTmpDirLocator($this->tmpDir);
+
+        $bus = $this->createMock(MessageBusInterface::class);
+        $bus->expects($this->never())->method('dispatch');
+
+        $tester = $this->commandTester($repository, $tmpDirLocator, $bus, $this->loadedChecker());
+        $tester->execute([]);
+
+        $tester->assertCommandIsSuccessful();
+        $this->assertSame(TakeoutImport::STATUS_SCHEDULED, $import->getStatus());
+        $this->assertStringContainsString('trop chargé', $tester->getDisplay());
+    }
+
+    private function calmChecker(): ServerLoadChecker
+    {
+        return new ServerLoadChecker(threshold: 3.0, loadAverageProvider: fn () => [1.0, 1.0, 1.0]);
+    }
+
+    private function loadedChecker(): ServerLoadChecker
+    {
+        return new ServerLoadChecker(threshold: 3.0, loadAverageProvider: fn () => [9.86, 10.45, 10.48]);
+    }
+
     private function commandTester(
         TakeoutImportRepository $repository,
         TakeoutImportTmpDirLocator $tmpDirLocator,
         MessageBusInterface $bus,
+        ?ServerLoadChecker $loadChecker = null,
     ): CommandTester {
-        $command = new TakeoutImportNightlyDispatchCommand($repository, $tmpDirLocator, $bus);
+        $command = new TakeoutImportNightlyDispatchCommand($repository, $tmpDirLocator, $bus, $loadChecker ?? $this->calmChecker());
         $application = new Application();
         $application->addCommand($command);
 

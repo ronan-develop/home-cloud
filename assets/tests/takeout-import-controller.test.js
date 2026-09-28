@@ -110,12 +110,12 @@ describe('takeout-import controller (#458)', () => {
         jest.useRealTimers();
     });
 
-    // #522 : traiter les imports Takeout la nuit pour limiter la contention
-    // sur le mutualisé o2switch — /start ne dispatche plus immédiatement,
-    // l'import reste "scheduled" en attendant le prochain cycle nocturne.
-    // Sans label dédié, l'utilisateur ne saurait pas pourquoi rien ne bouge
-    // potentiellement plusieurs heures.
-    test('affiche un message clair pendant l\'attente du cycle nocturne (scheduled)', async () => {
+    // #522/#524 : traiter les imports Takeout dès que le serveur est calme,
+    // pas seulement la nuit — /start ne dispatche plus immédiatement,
+    // l'import reste "scheduled" jusqu'au prochain cycle où le CPU le
+    // permet (vérifié toutes les 15 min). Sans label dédié, l'utilisateur ne
+    // saurait pas pourquoi rien ne bouge potentiellement pendant un moment.
+    test('affiche un message clair pendant l\'attente d\'un créneau calme (scheduled)', async () => {
         jest.useFakeTimers({ doNotFake: ['nextTick', 'queueMicrotask'] });
         setInputFiles([makeFile('takeout-001.zip')]);
 
@@ -131,7 +131,7 @@ describe('takeout-import controller (#458)', () => {
         await jest.advanceTimersByTimeAsync(0);
 
         const status = document.querySelector('[data-takeout-import-target="status"]');
-        expect(status.textContent).toBe('En attente du traitement nocturne…');
+        expect(status.textContent).toBe('En attente d\'un créneau serveur calme…');
 
         jest.useRealTimers();
     });

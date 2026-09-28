@@ -347,12 +347,17 @@ Quatre tâches quotidiennes tournent en plus du worker Messenger :
 - `app:takeout:purge-abandoned` — purge les imports Takeout `pending`
   abandonnés depuis plus de 7 jours, fichiers disque + ligne base (#493)
 - `app:takeout:nightly-dispatch` — dispatche les imports Takeout `scheduled`
-  (#522) : un import volumineux se faisait tuer (SIGKILL) par le LVE même en
-  pleine journée sous forte charge, indépendamment du découpage par ZIP
-  (#520) ; `TakeoutImportStartController` ne dispatche plus immédiatement, ce
-  cron prend le relais en heure creuse. Placé **après** la fenêtre de
-  déploiement nocturne (1h-2h45, #421) pour ne jamais se faire interrompre par
-  un `cache:clear` en plein traitement (vécu le 2026-09-28).
+  (#522/#524) : un import volumineux se faisait tuer (SIGKILL) par le LVE
+  même en pleine journée sous forte charge, indépendamment du découpage par
+  ZIP (#520) ; `TakeoutImportStartController` ne dispatche plus immédiatement.
+  **Dynamique, pas une simple bascule jour/nuit** (#524) : tourne toutes les
+  15 minutes (pas seulement la nuit) et vérifie le CPU via `ServerLoadChecker`
+  (`/proc/loadavg`, seuil 3.0 calibré empiriquement — un kill a été observé à
+  charge ~10 le 2026-09-28) à chaque exécution ; un import reste `scheduled`
+  et est retenté au cycle suivant tant que le serveur est chargé, quelle que
+  soit l'heure — le fallback nocturne (charge généralement plus basse) reste
+  la voie la plus probable, mais rien n'empêche un démarrage en journée si le
+  serveur est calme.
 
 **Piège LVE mutualisé** (vécu le 2026-09-10, #395/#396) : le compte cPanel
 `ron2cuba` héberge les 7 instances sur un **seul** compte, donc une seule
@@ -368,24 +373,38 @@ minutes par instance**, y compris pour un futur 8ᵉ prénom.
 0 3 * * *  umask 077 && flock -n /home9/ron2cuba/.purge-revoked-<prenom>.lock  /usr/local/bin/php /home9/ron2cuba/<prenom>.lenouvel.me/bin/console app:share-link:purge-revoked --env=prod >> /home9/ron2cuba/<prenom>.lenouvel.me/var/log/share-link-purge.log 2>&1
 30 3 * * * umask 077 && flock -n /home9/ron2cuba/.process-missing-<prenom>.lock /usr/local/bin/php /home9/ron2cuba/<prenom>.lenouvel.me/bin/console app:media:process-missing --env=prod   >> /home9/ron2cuba/<prenom>.lenouvel.me/var/log/media-process-missing.log 2>&1
 0 4 * * *  umask 077 && flock -n /home9/ron2cuba/.takeout-purge-<prenom>.lock   /usr/local/bin/php /home9/ron2cuba/<prenom>.lenouvel.me/bin/console app:takeout:purge-abandoned --env=prod  >> /home9/ron2cuba/<prenom>.lenouvel.me/var/log/takeout-purge-abandoned.log 2>&1
-30 4 * * * umask 077 && flock -n /home9/ron2cuba/.takeout-nightly-dispatch-<prenom>.lock /usr/local/bin/php /home9/ron2cuba/<prenom>.lenouvel.me/bin/console app:takeout:nightly-dispatch --env=prod >> /home9/ron2cuba/<prenom>.lenouvel.me/var/log/takeout-nightly-dispatch.log 2>&1
+<offset>-59/15 * * * * umask 077 && flock -n /home9/ron2cuba/.takeout-nightly-dispatch-<prenom>.lock /usr/local/bin/php /home9/ron2cuba/<prenom>.lenouvel.me/bin/console app:takeout:nightly-dispatch --env=prod >> /home9/ron2cuba/<prenom>.lenouvel.me/var/log/takeout-nightly-dispatch.log 2>&1
 ```
 
 `flock -n` (même pattern que `messenger:consume` ci-dessus) évite qu'une
-exécution encore en cours (rattrapage RAW volumineux) ne chevauche celle de
-la nuit suivante.
+exécution encore en cours ne chevauche la suivante.
 
-Horaires actuels (étalés par pas de 5 min à partir de `0 3` / `30 3` / `0 4` / `30 4`) :
+Horaires `purge-revoked`/`process-missing`/`takeout-purge-abandoned` étalés
+par pas de 5 min à partir de `0 3` / `30 3` / `0 4` (inchangé) :
 
-| Instance | `purge-revoked` | `process-missing` | `takeout-purge-abandoned` | `takeout-nightly-dispatch` |
-|----------|------------------|--------------------|-----------------------------|------------------------------|
-| ronan    | `0 3`            | `30 3`             | `0 4`                       | `30 4`                       |
-| yannick  | `5 3`            | `35 3`             | `5 4`                       | `35 4`                       |
-| coralie  | `10 3`           | `40 3`             | `10 4`                      | `40 4`                       |
-| elea     | `15 3`           | `45 3`             | `15 4`                      | `45 4`                       |
-| corentin | `20 3`           | `50 3`             | `20 4`                      | `50 4`                       |
-| damien   | `25 3`           | `55 3`             | `25 4`                      | `55 4`                       |
-| baptiste | `30 3`           | `0 4`              | `30 4`                      | `0 5`                        |
+| Instance | `purge-revoked` | `process-missing` | `takeout-purge-abandoned` |
+|----------|------------------|--------------------|-----------------------------|
+| ronan    | `0 3`            | `30 3`             | `0 4`                       |
+| yannick  | `5 3`            | `35 3`             | `5 4`                       |
+| coralie  | `10 3`           | `40 3`             | `10 4`                      |
+| elea     | `15 3`           | `45 3`             | `15 4`                      |
+| corentin | `20 3`           | `50 3`             | `20 4`                      |
+| damien   | `25 3`           | `55 3`             | `25 4`                      |
+| baptiste | `30 3`           | `0 4`              | `30 4`                      |
+
+`takeout-nightly-dispatch` tourne toutes les 15 min (`<offset>-59/15 * * * *`),
+24h/24 — étalé par **décalage de minute de départ** entre les 7 instances
+(pas par heure, cf. piège LVE ci-dessous) :
+
+| Instance | Motif cron minute |
+|----------|--------------------|
+| ronan    | `0-59/15`          |
+| yannick  | `1-59/15`          |
+| coralie  | `2-59/15`          |
+| elea     | `3-59/15`          |
+| corentin | `4-59/15`          |
+| damien   | `5-59/15`          |
+| baptiste | `6-59/15`          |
 
 Diagnostic :
 
@@ -396,8 +415,12 @@ tail -20 var/log/takeout-purge-abandoned.log    # dernière purge Takeout
 tail -20 var/log/takeout-nightly-dispatch.log   # dernier dispatch Takeout
 ```
 
-**Critère de bon fonctionnement** : les quatre fichiers de log sont mis à
-jour chaque nuit sur les 7 instances, sans mail d'erreur cron.
+**Critère de bon fonctionnement** : `share-link-purge.log`,
+`media-process-missing.log` et `takeout-purge-abandoned.log` sont mis à jour
+chaque nuit sur les 7 instances ; `takeout-nightly-dispatch.log` est mis à
+jour toutes les 15 min en continu (contenu généralement "Serveur trop
+chargé..." en journée, "N import(s) dispatché(s)" dès qu'un créneau calme
+survient) — sans mail d'erreur cron.
 
 ---
 
