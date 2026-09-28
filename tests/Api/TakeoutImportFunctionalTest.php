@@ -7,8 +7,9 @@ namespace App\Tests\Api;
 use App\Entity\File;
 use App\Entity\TakeoutImport;
 use App\Entity\User;
+use App\Handler\TakeoutImportExtractHandler;
 use App\Handler\TakeoutImportHandler;
-use App\Message\TakeoutImportMessage;
+use App\Message\TakeoutImportExtractMessage;
 use App\Repository\AlbumRepository;
 use App\Repository\FolderRepository;
 use App\Tests\AuthenticatedApiTestCase;
@@ -18,9 +19,15 @@ use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
 /**
  * Test fonctionnel de bout en bout (#327, étape 9/9 du plan) : upload d'un
  * petit ZIP Google Takeout réel → import complet → fichier dans le bon
- * dossier. Le Handler est invoqué manuellement (transport in-memory en
+ * dossier. Les Handlers sont invoqués manuellement (transport in-memory en
  * test, cf. config/packages/messenger.yaml) plutôt que d'attendre un
  * worker, pour un test déterministe.
+ *
+ * #520 : le traitement se fait désormais en 2 étapes (un ZIP par message
+ * TakeoutImportExtractMessage, redispatché en boucle jusqu'à dispatcher
+ * TakeoutImportProcessMessage) — runFullImportPipeline() enchaîne
+ * manuellement les deux handlers jusqu'au message terminal, pour ne pas
+ * dupliquer cette boucle dans chaque test.
  */
 final class TakeoutImportFunctionalTest extends AuthenticatedApiTestCase
 {
@@ -80,6 +87,33 @@ final class TakeoutImportFunctionalTest extends AuthenticatedApiTestCase
         return [$client, $importId];
     }
 
+    /**
+     * Consomme la file "async" en boucle (TakeoutImportExtractMessage puis
+     * TakeoutImportProcessMessage) jusqu'à épuisement — reproduit le
+     * comportement réel d'un worker Messenger qui traiterait chaque message
+     * redispatché l'un après l'autre (#520).
+     */
+    private function runFullImportPipeline(): void
+    {
+        $extractHandler = static::getContainer()->get(TakeoutImportExtractHandler::class);
+        $processHandler = static::getContainer()->get(TakeoutImportHandler::class);
+
+        /** @var InMemoryTransport $transport */
+        $transport = static::getContainer()->get('messenger.transport.async');
+
+        while (($envelopes = $transport->get()) !== []) {
+            $envelope = $envelopes[0];
+            $message = $envelope->getMessage();
+            $transport->ack($envelope);
+
+            if ($message instanceof TakeoutImportExtractMessage) {
+                $extractHandler($message);
+            } else {
+                $processHandler($message);
+            }
+        }
+    }
+
     public function testCreateImportReturnsPendingWithoutDispatchingMessage(): void
     {
         $user = $this->createUser('takeout-create@example.com');
@@ -96,7 +130,7 @@ final class TakeoutImportFunctionalTest extends AuthenticatedApiTestCase
         $this->assertCount(0, $transport->get(), 'La création seule ne doit dispatcher aucun message');
     }
 
-    public function testUploadDispatchesTakeoutImportMessage(): void
+    public function testUploadDispatchesTakeoutImportExtractMessage(): void
     {
         $user = $this->createUser('takeout-upload@example.com');
         $zipPath = $this->makeTakeoutZip();
@@ -125,16 +159,7 @@ final class TakeoutImportFunctionalTest extends AuthenticatedApiTestCase
         $client->request('POST', "/api/v1/takeout-imports/{$importId}/start");
         $this->assertResponseStatusCodeSame(202);
 
-        /** @var InMemoryTransport $transport */
-        $transport = static::getContainer()->get('messenger.transport.async');
-        $envelopes = $transport->get();
-        $this->assertCount(1, $envelopes);
-
-        /** @var TakeoutImportMessage $message */
-        $message = $envelopes[0]->getMessage();
-
-        $handler = static::getContainer()->get(TakeoutImportHandler::class);
-        $handler($message);
+        $this->runFullImportPipeline();
 
         $this->em->clear();
 
@@ -173,12 +198,7 @@ final class TakeoutImportFunctionalTest extends AuthenticatedApiTestCase
         $client->request('POST', "/api/v1/takeout-imports/{$importId1}/start");
         $this->assertResponseStatusCodeSame(202, (string) $client->getResponse()->getContent());
 
-        /** @var InMemoryTransport $transport */
-        $transport = static::getContainer()->get('messenger.transport.async');
-        $handler = static::getContainer()->get(TakeoutImportHandler::class);
-        $firstEnvelope = $transport->get()[0];
-        $handler($firstEnvelope->getMessage());
-        $transport->ack($firstEnvelope);
+        $this->runFullImportPipeline();
 
         // Second import du même contenu
         $zipPath2 = $this->makeTakeoutZip();
@@ -192,9 +212,8 @@ final class TakeoutImportFunctionalTest extends AuthenticatedApiTestCase
         $this->assertResponseStatusCodeSame(204, (string) $client->getResponse()->getContent());
         $client->request('POST', "/api/v1/takeout-imports/{$importId2}/start");
         $this->assertResponseStatusCodeSame(202, (string) $client->getResponse()->getContent());
-        $pendingEnvelopes = $transport->get();
-        $this->assertCount(1, $pendingEnvelopes, 'Le second import doit avoir dispatché son propre message');
-        $handler($pendingEnvelopes[0]->getMessage());
+
+        $this->runFullImportPipeline();
         unlink($zipPath2);
 
         $import2 = $this->em->getRepository(TakeoutImport::class)->find($importId2);
@@ -218,12 +237,7 @@ final class TakeoutImportFunctionalTest extends AuthenticatedApiTestCase
         $client->request('POST', "/api/v1/takeout-imports/{$importId}/start");
         $this->assertResponseStatusCodeSame(202);
 
-        /** @var InMemoryTransport $transport */
-        $transport = static::getContainer()->get('messenger.transport.async');
-        $envelopes = $transport->get();
-
-        $handler = static::getContainer()->get(TakeoutImportHandler::class);
-        $handler($envelopes[0]->getMessage());
+        $this->runFullImportPipeline();
 
         $client->request('GET', '/api/v1/takeout-imports/' . $importId);
 
