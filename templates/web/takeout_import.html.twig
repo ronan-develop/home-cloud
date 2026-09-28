@@ -22,6 +22,13 @@
         <p class="text-xs" style="color: var(--hc-text-secondary, var(--hc-text))">
             Un import interrompu peut être repris dans les 7 jours suivant sa dernière tentative.
         </p>
+        <!-- #505 : une mise en veille du PC pendant l'envoi coupe la
+             connexion (constaté en conditions réelles le 2026-09-27) — la
+             reprise fonctionne malgré tout (#491) mais autant l'éviter pour
+             un gros import, plus simple que de devoir reprendre. -->
+        <p class="text-xs" style="color: var(--hc-text-secondary, var(--hc-text))">
+            Pour un gros import, pensez à désactiver la mise en veille de votre ordinateur pendant l'envoi.
+        </p>
     </div>
 
     <!-- #481 : imports interrompus (fermeture d'onglet) en attente de
