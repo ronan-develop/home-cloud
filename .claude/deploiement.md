@@ -358,9 +358,9 @@ sans stack trace exploitable). **Toujours étaler les horaires d'au moins 5
 minutes par instance**, y compris pour un futur 8ᵉ prénom.
 
 ```bash
-0 3 * * *  flock -n /home9/ron2cuba/.purge-revoked-<prenom>.lock  /usr/local/bin/php /home9/ron2cuba/<prenom>.lenouvel.me/bin/console app:share-link:purge-revoked --env=prod >> /home9/ron2cuba/<prenom>.lenouvel.me/var/log/share-link-purge.log 2>&1
-30 3 * * * flock -n /home9/ron2cuba/.process-missing-<prenom>.lock /usr/local/bin/php /home9/ron2cuba/<prenom>.lenouvel.me/bin/console app:media:process-missing --env=prod   >> /home9/ron2cuba/<prenom>.lenouvel.me/var/log/media-process-missing.log 2>&1
-0 4 * * *  flock -n /home9/ron2cuba/.takeout-purge-<prenom>.lock   /usr/local/bin/php /home9/ron2cuba/<prenom>.lenouvel.me/bin/console app:takeout:purge-abandoned --env=prod  >> /home9/ron2cuba/<prenom>.lenouvel.me/var/log/takeout-purge-abandoned.log 2>&1
+0 3 * * *  umask 077 && flock -n /home9/ron2cuba/.purge-revoked-<prenom>.lock  /usr/local/bin/php /home9/ron2cuba/<prenom>.lenouvel.me/bin/console app:share-link:purge-revoked --env=prod >> /home9/ron2cuba/<prenom>.lenouvel.me/var/log/share-link-purge.log 2>&1
+30 3 * * * umask 077 && flock -n /home9/ron2cuba/.process-missing-<prenom>.lock /usr/local/bin/php /home9/ron2cuba/<prenom>.lenouvel.me/bin/console app:media:process-missing --env=prod   >> /home9/ron2cuba/<prenom>.lenouvel.me/var/log/media-process-missing.log 2>&1
+0 4 * * *  umask 077 && flock -n /home9/ron2cuba/.takeout-purge-<prenom>.lock   /usr/local/bin/php /home9/ron2cuba/<prenom>.lenouvel.me/bin/console app:takeout:purge-abandoned --env=prod  >> /home9/ron2cuba/<prenom>.lenouvel.me/var/log/takeout-purge-abandoned.log 2>&1
 ```
 
 `flock -n` (même pattern que `messenger:consume` ci-dessus) évite qu'une

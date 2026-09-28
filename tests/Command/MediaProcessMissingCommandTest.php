@@ -11,7 +11,10 @@ use App\Interface\File\FileRepositoryInterface;
 use App\Interface\Media\MediaProcessorInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
@@ -85,6 +88,44 @@ final class MediaProcessMissingCommandTest extends TestCase
         $tester->assertCommandIsSuccessful();
     }
 
+    // #504 : audit sécurité crons — sans catch, une exception levée au
+    // milieu du rattrapage (ex. sur le 2e fichier sur 3) remonte à Symfony
+    // Console, stack trace complète dans les logs crontab. Le fichier déjà
+    // traité avant l'exception (MediaProcessor::process() flush
+    // individuellement, cf. commentaire de classe) ne doit pas être perdu —
+    // seule l'erreur doit être catchée et loggée proprement, pas de rollback.
+    public function testCatchesExceptionMidLoopLogsItAndPreservesAlreadyProcessedWork(): void
+    {
+        $files = [$this->createStub(File::class), $this->createStub(File::class), $this->createStub(File::class)];
+
+        $fileRepository = $this->createStub(FileRepositoryInterface::class);
+        $fileRepository->method('findWithoutMedia')->willReturn($this->toGenerator($files));
+
+        $mediaProcessor = $this->createMock(MediaProcessorInterface::class);
+        $callCount = 0;
+        $mediaProcessor->method('process')->willReturnCallback(function () use (&$callCount) {
+            ++$callCount;
+            if ($callCount === 2) {
+                throw new \RuntimeException('Disque plein');
+            }
+
+            return $this->createStub(Media::class);
+        });
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())
+            ->method('error')
+            ->with($this->stringContains('MediaProcessMissingCommand'), $this->arrayHasKey('exception'));
+
+        $tester = $this->commandTester($fileRepository, $mediaProcessor, logger: $logger);
+        $exitCode = $tester->execute([]);
+
+        $this->assertSame(Command::FAILURE, $exitCode);
+        // Le premier fichier (traité avant l'exception au 2e) reste compté :
+        // pas de rollback du travail déjà accompli.
+        $this->assertStringContainsString('1 traité', $tester->getDisplay());
+    }
+
     /**
      * @param list<File> $files
      */
@@ -97,8 +138,14 @@ final class MediaProcessMissingCommandTest extends TestCase
         FileRepositoryInterface $fileRepository,
         MediaProcessorInterface $mediaProcessor,
         ?EntityManagerInterface $entityManager = null,
+        ?LoggerInterface $logger = null,
     ): CommandTester {
-        $command = new MediaProcessMissingCommand($fileRepository, $mediaProcessor, $entityManager ?? $this->createStub(EntityManagerInterface::class));
+        $command = new MediaProcessMissingCommand(
+            $fileRepository,
+            $mediaProcessor,
+            $entityManager ?? $this->createStub(EntityManagerInterface::class),
+            $logger ?? new NullLogger(),
+        );
         $application = new Application();
         $application->addCommand($command);
 

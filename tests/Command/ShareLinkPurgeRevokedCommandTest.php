@@ -8,7 +8,10 @@ use App\Command\ShareLinkPurgeRevokedCommand;
 use App\Entity\ShareLink;
 use App\Interface\Share\ShareLinkRepositoryInterface;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
@@ -37,9 +40,33 @@ final class ShareLinkPurgeRevokedCommandTest extends TestCase
         $this->assertStringContainsString('3', $tester->getDisplay());
     }
 
-    private function commandTester(ShareLinkRepositoryInterface $repository): CommandTester
+    // #504 : audit sécurité crons — sans try/catch, une exception (DB
+    // injoignable, etc.) remonte à Symfony Console qui affiche la stack
+    // trace complète dans les logs crontab (var/log/share-link-purge.log),
+    // risque latent de fuite d'informations (fragments de requête SQL,
+    // chemins serveur). Doit désormais être catchée, loggée proprement
+    // (sans stack trace brute dans la sortie), et retourner FAILURE.
+    public function testCommandCatchesExceptionAndLogsItWithoutLeakingStackTrace(): void
     {
-        $command = new ShareLinkPurgeRevokedCommand($repository);
+        $repository = $this->createMock(ShareLinkRepositoryInterface::class);
+        $repository->method('deleteRevokedOlderThan')
+            ->willThrowException(new \RuntimeException('DATABASE_URL=mysql://user:secret@host/db injoignable'));
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())
+            ->method('error')
+            ->with($this->stringContains('ShareLinkPurgeRevokedCommand'), $this->arrayHasKey('exception'));
+
+        $tester = $this->commandTester($repository, $logger);
+        $exitCode = $tester->execute([]);
+
+        $this->assertSame(Command::FAILURE, $exitCode);
+        $this->assertStringNotContainsString('secret', $tester->getDisplay());
+    }
+
+    private function commandTester(ShareLinkRepositoryInterface $repository, ?LoggerInterface $logger = null): CommandTester
+    {
+        $command = new ShareLinkPurgeRevokedCommand($repository, $logger ?? new NullLogger());
         $application = new Application();
         $application->addCommand($command);
 

@@ -11,7 +11,10 @@ use App\Repository\TakeoutImportRepository;
 use App\Service\Takeout\TakeoutImportAbandoner;
 use App\Service\Takeout\TakeoutImportTmpDirLocator;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
@@ -106,9 +109,45 @@ final class TakeoutImportPurgeAbandonedCommandTest extends TestCase
         $this->assertStringContainsString('0', $tester->getDisplay());
     }
 
-    private function commandTester(TakeoutImportRepository $repository, TakeoutImportAbandoner $abandoner): CommandTester
+    // #504 : audit sécurité crons — sans catch, une exception (ex. échec
+    // suppression disque au milieu d'un lot) remonte à Symfony Console,
+    // stack trace complète dans les logs crontab. Le travail déjà accompli
+    // avant l'exception n'est pas perdu — seule l'erreur est catchée et
+    // loggée, pas de rollback.
+    public function testCatchesExceptionMidLoopLogsItAndPreservesAlreadyProcessedWork(): void
     {
-        $command = new TakeoutImportPurgeAbandonedCommand($repository, $abandoner);
+        $import1 = $this->makeImport();
+        $import2 = $this->makeImport();
+        $locator = new TakeoutImportTmpDirLocator($this->tmpDir);
+
+        $repository = $this->createMock(TakeoutImportRepository::class);
+        $repository->method('findPendingOlderThan')->willReturn([$import1, $import2]);
+        $callCount = 0;
+        $repository->method('remove')->willReturnCallback(function () use (&$callCount) {
+            ++$callCount;
+            if ($callCount === 2) {
+                throw new \RuntimeException('Suppression base échouée');
+            }
+        });
+
+        $abandoner = new TakeoutImportAbandoner($repository, $locator);
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())
+            ->method('error')
+            ->with($this->stringContains('TakeoutImportPurgeAbandonedCommand'), $this->arrayHasKey('exception'));
+
+        $tester = $this->commandTester($repository, $abandoner, $logger);
+        $exitCode = $tester->execute([]);
+
+        $this->assertSame(Command::FAILURE, $exitCode);
+    }
+
+    private function commandTester(
+        TakeoutImportRepository $repository,
+        TakeoutImportAbandoner $abandoner,
+        ?LoggerInterface $logger = null,
+    ): CommandTester {
+        $command = new TakeoutImportPurgeAbandonedCommand($repository, $abandoner, $logger ?? new NullLogger());
         $application = new Application();
         $application->addCommand($command);
 
