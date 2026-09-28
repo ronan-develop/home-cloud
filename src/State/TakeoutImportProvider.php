@@ -22,6 +22,14 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  */
 final class TakeoutImportProvider implements ProviderInterface
 {
+    // #518 : le message d'exception brut (jargon technique, code ZipArchive,
+    // chemins serveur) ne doit jamais être exposé tel quel à l'utilisateur
+    // final — le détail technique complet reste loggé côté serveur
+    // (LoggerInterface dans TakeoutImportHandler/TakeoutImportExtractHandler,
+    // #504), l'entité continue de stocker le message brut (diagnostic admin
+    // via la base) mais l'API n'expose qu'un message générique fixe.
+    private const GENERIC_ERROR_MESSAGE = 'Une erreur est survenue pendant l\'import. Réessayez ou contactez le support.';
+
     public function __construct(
         private readonly TakeoutImportRepository $repository,
         private readonly Security $security,
@@ -58,7 +66,7 @@ final class TakeoutImportProvider implements ProviderInterface
         $output->extractedZipCount = $import->getExtractedZipCount();
         $output->createdAt = $import->getCreatedAt()->format(\DateTimeInterface::ATOM);
         $output->completedAt = $import->getCompletedAt()?->format(\DateTimeInterface::ATOM);
-        $output->errorMessage = $import->getErrorMessage();
+        $output->errorMessage = $import->getErrorMessage() !== null ? self::GENERIC_ERROR_MESSAGE : null;
         // Nombre de ZIP déjà (au moins partiellement) reçus — utile pour se
         // rappeler où on en était en cas de reprise (#481), affiché dans la
         // liste des imports en attente sur la page.

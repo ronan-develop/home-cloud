@@ -264,6 +264,38 @@ final class TakeoutImportFunctionalTest extends AuthenticatedApiTestCase
         $this->assertSame(TakeoutImport::STATUS_COMPLETED, $data['status']);
     }
 
+    // #518 : le message d'exception brut (jargon technique, code ZipArchive,
+    // chemins serveur) ne doit jamais être affiché tel quel à l'utilisateur
+    // final — message générique côté API, détail technique réservé aux logs
+    // serveur (déjà loggé via LoggerInterface, #504).
+    public function testFailedImportExposesGenericMessageNotRawException(): void
+    {
+        $user = $this->createUser('takeout-failed@example.com');
+
+        // Fichier ZIP invalide : déclenche une vraie RuntimeException
+        // technique ("Impossible d'ouvrir ... comme archive ZIP (code X).")
+        // dans TakeoutZipExtractor, exactement le cas visé par le ticket.
+        $invalidZipPath = tempnam(sys_get_temp_dir(), 'hc_invalid_zip_') . '.zip';
+        file_put_contents($invalidZipPath, 'ceci n\'est pas un zip valide');
+        $uploadedFile = new UploadedFile($invalidZipPath, 'takeout-broken.zip', 'application/zip', null, true);
+
+        [$client, $importId] = $this->createImportAndUploadFiles($user, [$uploadedFile]);
+        $client->request('POST', "/api/v1/takeout-imports/{$importId}/start");
+        $this->assertResponseStatusCodeSame(202);
+
+        $this->runFullImportPipeline();
+        unlink($invalidZipPath);
+
+        $client->request('GET', '/api/v1/takeout-imports/' . $importId);
+
+        $this->assertResponseIsSuccessful();
+        $data = json_decode($client->getResponse()->getContent(), true);
+        $this->assertSame(TakeoutImport::STATUS_FAILED, $data['status']);
+        $this->assertStringNotContainsString('ZipArchive', $data['errorMessage']);
+        $this->assertStringNotContainsString($invalidZipPath, $data['errorMessage']);
+        $this->assertSame('Une erreur est survenue pendant l\'import. Réessayez ou contactez le support.', $data['errorMessage']);
+    }
+
     public function testStartWithoutFilesReturns400(): void
     {
         $user = $this->createUser('takeout-empty@example.com');
