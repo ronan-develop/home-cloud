@@ -29,6 +29,15 @@
         <p class="text-xs" style="color: var(--hc-text-secondary, var(--hc-text))">
             Pour un gros import, pensez à désactiver la mise en veille de votre ordinateur pendant l'envoi.
         </p>
+        <!-- #510 : le message rassurant existant (_describeUploadError,
+             assets/controllers/takeout_import_controller.js) n'apparaît
+             qu'après coup, une fois la coupure survenue — rien ne
+             prévenait l'utilisateur à l'avance, avant de démarrer, que le
+             travail déjà fait est conservé et qu'il suffit de
+             resélectionner les mêmes fichiers pour reprendre. -->
+        <p class="text-xs" style="color: var(--hc-text-secondary, var(--hc-text))">
+            En cas de coupure de connexion, le travail déjà effectué est conservé : sélectionnez à nouveau les mêmes fichiers pour reprendre l'import là où il s'est arrêté.
+        </p>
     </div>
 
     <!-- #481 : imports interrompus (fermeture d'onglet) en attente de
