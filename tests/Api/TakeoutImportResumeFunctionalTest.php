@@ -118,6 +118,72 @@ final class TakeoutImportResumeFunctionalTest extends AuthenticatedApiTestCase
         self::assertSame(hash('sha256', 'AAA'), $data[0]['hashOfFirstChunk']);
     }
 
+    // #507 : un fichier déjà entièrement envoyé (plus de marqueur .progress,
+    // supprimé par ChunkedFileAssembler à la complétion) doit quand même
+    // apparaître dans la liste avec complete=true — sans ça, le front ne
+    // peut pas savoir qu'il est déjà acquis et affiche la barre de reprise
+    // repartant de 0 alors que le fichier n'a pas besoin d'être renvoyé.
+    public function testFilesStatusMarksFullyUploadedFileAsComplete(): void
+    {
+        $user = $this->createUser('takeout-resume-complete@example.com');
+        $client = $this->createAuthenticatedClient($user);
+        $client->disableReboot();
+
+        $client->request('POST', '/api/v1/takeout-imports');
+        $this->assertResponseStatusCodeSame(201);
+        $importId = json_decode($client->getResponse()->getContent(), true)['id'];
+
+        $client->request('POST', "/api/v1/takeout-imports/{$importId}/files", [
+            'extra' => [
+                'parameters' => [
+                    'filename' => 'takeout-001.zip',
+                    'chunkIndex' => 0,
+                    'totalChunks' => 1,
+                ],
+                'files' => ['file' => $this->makeChunkFile('contenu entier')],
+            ],
+        ]);
+        $this->assertResponseStatusCodeSame(204);
+
+        $client->request('GET', "/api/v1/takeout-imports/{$importId}/files/status");
+
+        $this->assertResponseStatusCodeSame(200);
+        $data = json_decode($client->getResponse()->getContent(), true);
+        self::assertCount(1, $data);
+        self::assertSame('takeout-001.zip', $data[0]['filename']);
+        self::assertTrue($data[0]['complete']);
+    }
+
+    public function testFilesStatusMarksPartiallyUploadedFileAsIncomplete(): void
+    {
+        $user = $this->createUser('takeout-resume-incomplete@example.com');
+        $client = $this->createAuthenticatedClient($user);
+        $client->disableReboot();
+
+        $client->request('POST', '/api/v1/takeout-imports');
+        $this->assertResponseStatusCodeSame(201);
+        $importId = json_decode($client->getResponse()->getContent(), true)['id'];
+
+        $client->request('POST', "/api/v1/takeout-imports/{$importId}/files", [
+            'extra' => [
+                'parameters' => [
+                    'filename' => 'takeout-001.zip',
+                    'chunkIndex' => 0,
+                    'totalChunks' => 3,
+                ],
+                'files' => ['file' => $this->makeChunkFile('AAA')],
+            ],
+        ]);
+        $this->assertResponseStatusCodeSame(204);
+
+        $client->request('GET', "/api/v1/takeout-imports/{$importId}/files/status");
+
+        $this->assertResponseStatusCodeSame(200);
+        $data = json_decode($client->getResponse()->getContent(), true);
+        self::assertCount(1, $data);
+        self::assertFalse($data[0]['complete']);
+    }
+
     public function testFilesStatusDeniesAccessToNonOwner(): void
     {
         $owner = $this->createUser('takeout-resume-status-owner@example.com');
