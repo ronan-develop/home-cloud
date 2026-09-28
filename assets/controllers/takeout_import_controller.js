@@ -169,17 +169,27 @@ export default class extends Controller {
         // (constaté en conditions réelles avec 11 fichiers). Deux barres
         // distinctes : la globale suit les fichiers déjà envoyés en entier,
         // la seconde suit les chunks du fichier en cours.
-
-        this._showUploadProgress(files.length);
+        //
+        // #507 : à la reprise, les fichiers déjà entièrement envoyés avant
+        // la coupure ne doivent pas faire repartir la barre de 0 — leur
+        // complétude réelle (connue côté serveur via /files/status) sert de
+        // valeur de départ, plutôt que d'attendre qu'ils soient retraités un
+        // par un dans la boucle ci-dessous pour "rattraper" leur progression.
+        this._showUploadProgress(files.length, resumePlan.alreadyCompleteCount);
 
         try {
             const importId = resumePlan.importId ?? await this._createImport();
-            for (const [index, file] of files.entries()) {
+            let uploadedCount = resumePlan.alreadyCompleteCount;
+            for (const file of files) {
+                if (resumePlan.completeFilenames.has(file.name)) {
+                    continue;
+                }
                 const resumeFromChunkIndex = resumePlan.resumeFromChunkIndexByFilename.get(file.name) ?? 0;
                 await this._uploadFile(importId, file, (meta) => {
                     this._renderFileProgress(file.name, meta.chunkIndex + 1, meta.totalChunks);
                 }, resumeFromChunkIndex);
-                this._renderGlobalProgress(index + 1, files.length);
+                uploadedCount += 1;
+                this._renderGlobalProgress(uploadedCount, files.length);
             }
             this.fileProgressWrapperTarget.hidden = true;
             await this._startImport(importId);
@@ -213,7 +223,7 @@ export default class extends Controller {
     }
 
     /**
-     * @returns {Promise<{ importId: ?string, resumeFromChunkIndexByFilename: Map<string, number> }>}
+     * @returns {Promise<{ importId: ?string, resumeFromChunkIndexByFilename: Map<string, number>, completeFilenames: Set<string>, alreadyCompleteCount: number }>}
      */
     async _resolveResumePlan(files) {
         // Import choisi explicitement via le bouton "Reprendre" de la liste
@@ -224,16 +234,30 @@ export default class extends Controller {
         this._targetImportId = null;
         const pendingImportId = targetImportId ?? (await this._findPendingImport())?.id ?? null;
         if (pendingImportId === null) {
-            return { importId: null, resumeFromChunkIndexByFilename: new Map() };
+            return {
+                importId: null,
+                resumeFromChunkIndexByFilename: new Map(),
+                completeFilenames: new Set(),
+                alreadyCompleteCount: 0,
+            };
         }
 
         const uploadedFiles = await this._fetchFilesStatus(pendingImportId);
         const uploadedFilesByName = new Map(uploadedFiles.map((f) => [f.filename, f]));
 
         const resumeFromChunkIndexByFilename = new Map();
+        const completeFilenames = new Set();
         for (const file of files) {
             const uploaded = uploadedFilesByName.get(file.name);
             if (uploaded === undefined) {
+                continue;
+            }
+            // #507 : un fichier déjà entièrement reçu (plus de marqueur
+            // .progress côté serveur) n'a plus besoin d'être renvoyé ni
+            // retraité — sa complétude doit être reflétée immédiatement dans
+            // la barre globale, pas seulement une fois "sauté" dans la boucle.
+            if (uploaded.complete) {
+                completeFilenames.add(file.name);
                 continue;
             }
             // Vérifie que le premier chunk local correspond bien à ce que le
@@ -247,7 +271,12 @@ export default class extends Controller {
             }
         }
 
-        return { importId: pendingImportId, resumeFromChunkIndexByFilename };
+        return {
+            importId: pendingImportId,
+            resumeFromChunkIndexByFilename,
+            completeFilenames,
+            alreadyCompleteCount: completeFilenames.size,
+        };
     }
 
     async _findPendingImport() {
@@ -266,12 +295,12 @@ export default class extends Controller {
         return res.json();
     }
 
-    _showUploadProgress(totalFiles) {
+    _showUploadProgress(totalFiles, alreadyUploadedCount = 0) {
         this.formTarget.hidden = true;
         this.progressTarget.hidden = false;
         this.fileProgressWrapperTarget.hidden = true;
         this.safeToCloseMessageTarget.hidden = true;
-        this._renderGlobalProgress(0, totalFiles);
+        this._renderGlobalProgress(alreadyUploadedCount, totalFiles);
         this._startPatienceMessages();
     }
 

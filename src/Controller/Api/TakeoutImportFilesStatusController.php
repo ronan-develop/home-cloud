@@ -46,12 +46,23 @@ final class TakeoutImportFilesStatusController extends AbstractController
         foreach ($filePaths as $filePath) {
             $state = $this->chunkedFileAssembler->resumeState($filePath);
             if ($state === null) {
+                // Fichier présent sur disque sans marqueur .progress : déjà
+                // entièrement reçu (#507) — signalé complet plutôt qu'omis,
+                // pour que le front sache qu'il n'a pas besoin de le renvoyer
+                // et puisse refléter la complétude réelle dès la reprise.
+                $files[] = [
+                    'filename' => basename($filePath),
+                    'chunkIndex' => null,
+                    'hashOfFirstChunk' => null,
+                    'complete' => true,
+                ];
                 continue;
             }
             $files[] = [
                 'filename' => basename($filePath),
                 'chunkIndex' => $state['chunkIndex'],
                 'hashOfFirstChunk' => $state['hashOfFirstChunk'],
+                'complete' => false,
             ];
         }
 
