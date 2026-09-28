@@ -24,6 +24,11 @@ use Symfony\Component\Uid\Uuid;
 class TakeoutImport
 {
     public const STATUS_PENDING = 'pending';
+    // #522 : import complet (tous les ZIP uploadés), en attente du prochain
+    // cycle nocturne avant de démarrer l'extraction — distinct de "pending"
+    // (encore en cours d'upload, cf. reprise #491) pour ne pas confondre les
+    // deux dans TakeoutImportFindPendingController.
+    public const STATUS_SCHEDULED = 'scheduled';
     public const STATUS_EXTRACTING = 'extracting';
     public const STATUS_PROCESSING = 'processing';
     public const STATUS_COMPLETED = 'completed';
@@ -177,6 +182,11 @@ class TakeoutImport
     public function getErrorMessage(): ?string
     {
         return $this->errorMessage;
+    }
+
+    public function markScheduled(): void
+    {
+        $this->status = self::STATUS_SCHEDULED;
     }
 
     public function markExtracting(?int $totalZipCount = null): void

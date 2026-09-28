@@ -58,6 +58,18 @@ class TakeoutImportRepository extends ServiceEntityRepository
         $em->flush();
     }
 
+    // #522 : imports complets (ZIP tous uploadés) en attente du prochain
+    // cycle nocturne — TakeoutImportStartController marque "scheduled" au
+    // lieu de dispatcher immédiatement, pour ne pas démarrer un traitement
+    // lourd en pleine journée sous forte charge du mutualisé o2switch.
+    /**
+     * @return list<TakeoutImport>
+     */
+    public function findAllScheduled(): array
+    {
+        return $this->findBy(['status' => TakeoutImport::STATUS_SCHEDULED], ['createdAt' => 'ASC']);
+    }
+
     // #493 : candidats à la purge automatique — un import pending jamais
     // repris au-delà du seuil devient orphelin indéfiniment (ligne base +
     // dossier var/takeout-tmp/<uuid>/, potentiellement plusieurs Go).

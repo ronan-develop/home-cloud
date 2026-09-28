@@ -337,15 +337,22 @@ la Galerie avec sa vignette en moins de 5 minutes.
 
 ---
 
-## Crons nocturnes — `purge-revoked`, `process-missing` et `takeout-purge-abandoned`
+## Crons nocturnes — `purge-revoked`, `process-missing`, `takeout-purge-abandoned` et `takeout-nightly-dispatch`
 
-Trois tâches quotidiennes tournent en plus du worker Messenger :
+Quatre tâches quotidiennes tournent en plus du worker Messenger :
 
 - `app:share-link:purge-revoked` — purge les `ShareLink` révoqués (#244)
 - `app:media:process-missing` — rattrapage vignettes/EXIF pour les fichiers
   sans `Media` (#365/#366)
 - `app:takeout:purge-abandoned` — purge les imports Takeout `pending`
   abandonnés depuis plus de 7 jours, fichiers disque + ligne base (#493)
+- `app:takeout:nightly-dispatch` — dispatche les imports Takeout `scheduled`
+  (#522) : un import volumineux se faisait tuer (SIGKILL) par le LVE même en
+  pleine journée sous forte charge, indépendamment du découpage par ZIP
+  (#520) ; `TakeoutImportStartController` ne dispatche plus immédiatement, ce
+  cron prend le relais en heure creuse. Placé **après** la fenêtre de
+  déploiement nocturne (1h-2h45, #421) pour ne jamais se faire interrompre par
+  un `cache:clear` en plein traitement (vécu le 2026-09-28).
 
 **Piège LVE mutualisé** (vécu le 2026-09-10, #395/#396) : le compte cPanel
 `ron2cuba` héberge les 7 instances sur un **seul** compte, donc une seule
@@ -361,23 +368,24 @@ minutes par instance**, y compris pour un futur 8ᵉ prénom.
 0 3 * * *  umask 077 && flock -n /home9/ron2cuba/.purge-revoked-<prenom>.lock  /usr/local/bin/php /home9/ron2cuba/<prenom>.lenouvel.me/bin/console app:share-link:purge-revoked --env=prod >> /home9/ron2cuba/<prenom>.lenouvel.me/var/log/share-link-purge.log 2>&1
 30 3 * * * umask 077 && flock -n /home9/ron2cuba/.process-missing-<prenom>.lock /usr/local/bin/php /home9/ron2cuba/<prenom>.lenouvel.me/bin/console app:media:process-missing --env=prod   >> /home9/ron2cuba/<prenom>.lenouvel.me/var/log/media-process-missing.log 2>&1
 0 4 * * *  umask 077 && flock -n /home9/ron2cuba/.takeout-purge-<prenom>.lock   /usr/local/bin/php /home9/ron2cuba/<prenom>.lenouvel.me/bin/console app:takeout:purge-abandoned --env=prod  >> /home9/ron2cuba/<prenom>.lenouvel.me/var/log/takeout-purge-abandoned.log 2>&1
+30 4 * * * umask 077 && flock -n /home9/ron2cuba/.takeout-nightly-dispatch-<prenom>.lock /usr/local/bin/php /home9/ron2cuba/<prenom>.lenouvel.me/bin/console app:takeout:nightly-dispatch --env=prod >> /home9/ron2cuba/<prenom>.lenouvel.me/var/log/takeout-nightly-dispatch.log 2>&1
 ```
 
 `flock -n` (même pattern que `messenger:consume` ci-dessus) évite qu'une
 exécution encore en cours (rattrapage RAW volumineux) ne chevauche celle de
 la nuit suivante.
 
-Horaires actuels (étalés par pas de 5 min à partir de `0 3` / `30 3` / `0 4`) :
+Horaires actuels (étalés par pas de 5 min à partir de `0 3` / `30 3` / `0 4` / `30 4`) :
 
-| Instance | `purge-revoked` | `process-missing` | `takeout-purge-abandoned` |
-|----------|------------------|--------------------|-----------------------------|
-| ronan    | `0 3`            | `30 3`             | `0 4`                       |
-| yannick  | `5 3`            | `35 3`             | `5 4`                       |
-| coralie  | `10 3`           | `40 3`             | `10 4`                      |
-| elea     | `15 3`           | `45 3`             | `15 4`                      |
-| corentin | `20 3`           | `50 3`             | `20 4`                      |
-| damien   | `25 3`           | `55 3`             | `25 4`                      |
-| baptiste | `30 3`           | `0 4`              | `30 4`                      |
+| Instance | `purge-revoked` | `process-missing` | `takeout-purge-abandoned` | `takeout-nightly-dispatch` |
+|----------|------------------|--------------------|-----------------------------|------------------------------|
+| ronan    | `0 3`            | `30 3`             | `0 4`                       | `30 4`                       |
+| yannick  | `5 3`            | `35 3`             | `5 4`                       | `35 4`                       |
+| coralie  | `10 3`           | `40 3`             | `10 4`                      | `40 4`                       |
+| elea     | `15 3`           | `45 3`             | `15 4`                      | `45 4`                       |
+| corentin | `20 3`           | `50 3`             | `20 4`                      | `50 4`                       |
+| damien   | `25 3`           | `55 3`             | `25 4`                      | `55 4`                       |
+| baptiste | `30 3`           | `0 4`              | `30 4`                      | `0 5`                        |
 
 Diagnostic :
 
@@ -385,9 +393,10 @@ Diagnostic :
 tail -20 var/log/media-process-missing.log      # dernier rattrapage
 tail -20 var/log/share-link-purge.log           # dernière purge
 tail -20 var/log/takeout-purge-abandoned.log    # dernière purge Takeout
+tail -20 var/log/takeout-nightly-dispatch.log   # dernier dispatch Takeout
 ```
 
-**Critère de bon fonctionnement** : les trois fichiers de log sont mis à
+**Critère de bon fonctionnement** : les quatre fichiers de log sont mis à
 jour chaque nuit sur les 7 instances, sans mail d'erreur cron.
 
 ---
