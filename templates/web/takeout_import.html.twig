@@ -38,6 +38,14 @@
         <p class="text-xs" style="color: var(--hc-text-secondary, var(--hc-text))">
             En cas de coupure de connexion, le travail déjà effectué est conservé : sélectionnez à nouveau les mêmes fichiers pour reprendre l'import là où il s'est arrêté.
         </p>
+        <!-- #522 : pour limiter la charge sur le serveur en journée, le
+             traitement d'un import peut être mis en pause et reprendre
+             automatiquement la nuit suivante — sans cette mention,
+             l'utilisateur pourrait croire à un blocage silencieux en voyant
+             son import rester "en attente" plusieurs heures. -->
+        <p class="text-xs" style="color: var(--hc-text-secondary, var(--hc-text))">
+            Pour des raisons techniques (charge du serveur), le traitement de votre import peut être mis en pause et reprendra automatiquement la nuit suivante.
+        </p>
     </div>
 
     <!-- #481 : imports interrompus (fermeture d'onglet) en attente de
