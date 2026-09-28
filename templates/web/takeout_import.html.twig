@@ -13,6 +13,15 @@
             Les photos sont rangées dans un dossier dédié, les métadonnées (date, position)
             sont conservées, et les doublons déjà importés sont automatiquement ignorés.
         </p>
+        <!-- #493 : un import interrompu (fermeture d'onglet en cours d'envoi,
+             #481) reste repris automatiquement tant qu'il n'a pas dépassé
+             TakeoutImport::PURGE_AFTER_DAYS — au-delà, il est purgé
+             automatiquement et un nouvel import repart de 0, sans erreur
+             visible (comportement transparent mais qui pourrait surprendre
+             sans cette mention). -->
+        <p class="text-xs" style="color: var(--hc-text-secondary, var(--hc-text))">
+            Un import interrompu peut être repris dans les 7 jours suivant sa dernière tentative.
+        </p>
     </div>
 
     <!-- #481 : imports interrompus (fermeture d'onglet) en attente de
