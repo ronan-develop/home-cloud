@@ -78,17 +78,17 @@ final class TakeoutImportWebControllerTest extends WebTestCase
     // fonctionne (#491) et le message rassurant aussi (#492), le plus
     // simple reste d'éviter la coupure en désactivant la veille pour un
     // gros import.
-    // #522 : pour limiter la contention sur le mutualisé o2switch, un
-    // traitement peut être différé à la nuit suivante — sans mention
-    // préventive, l'utilisateur pourrait croire à un blocage/bug silencieux
-    // en voyant son import rester "en attente" plusieurs heures.
-    public function testPageExplainsThatProcessingMayBeDeferredToNight(): void
+    // #522/#524 : pour limiter la contention sur le mutualisé o2switch, un
+    // traitement peut être différé jusqu'à un créneau serveur calme — sans
+    // mention préventive, l'utilisateur pourrait croire à un blocage/bug
+    // silencieux en voyant son import rester "en attente".
+    public function testPageExplainsThatProcessingMayBeDeferredForServerLoad(): void
     {
         $this->login();
 
         $crawler = $this->client->request('GET', '/import/takeout');
 
-        $this->assertStringContainsString('nuit', strtolower($crawler->filter('body')->text()));
+        $this->assertStringContainsString('charge du serveur', strtolower($crawler->filter('body')->text()));
     }
 
     public function testPageRecommendsDisablingSleepForLargeImports(): void
