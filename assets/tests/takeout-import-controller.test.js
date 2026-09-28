@@ -110,6 +110,32 @@ describe('takeout-import controller (#458)', () => {
         jest.useRealTimers();
     });
 
+    // #522 : traiter les imports Takeout la nuit pour limiter la contention
+    // sur le mutualisé o2switch — /start ne dispatche plus immédiatement,
+    // l'import reste "scheduled" en attendant le prochain cycle nocturne.
+    // Sans label dédié, l'utilisateur ne saurait pas pourquoi rien ne bouge
+    // potentiellement plusieurs heures.
+    test('affiche un message clair pendant l\'attente du cycle nocturne (scheduled)', async () => {
+        jest.useFakeTimers({ doNotFake: ['nextTick', 'queueMicrotask'] });
+        setInputFiles([makeFile('takeout-001.zip')]);
+
+        global.fetch = jest.fn()
+            .mockResolvedValueOnce({ ok: false, status: 404 })
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'pending' }) })
+            .mockResolvedValueOnce({ ok: true })
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'scheduled' }) })
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ status: 'scheduled', processedCount: 0, totalMediaCount: null }) });
+
+        const button = document.querySelector('[data-takeout-import-target="submit"]');
+        button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        await jest.advanceTimersByTimeAsync(0);
+
+        const status = document.querySelector('[data-takeout-import-target="status"]');
+        expect(status.textContent).toBe('En attente du traitement nocturne…');
+
+        jest.useRealTimers();
+    });
+
     // #515 : jusqu'ici, aucune progression n'était affichée pendant toute la
     // phase "extracting" (barre indéterminée figée), potentiellement
     // plusieurs minutes sur des ZIP volumineux. Le compteur

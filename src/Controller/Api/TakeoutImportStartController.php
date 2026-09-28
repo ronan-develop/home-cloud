@@ -6,7 +6,6 @@ namespace App\Controller\Api;
 
 use App\Entity\TakeoutImport;
 use App\Interface\Auth\OwnershipCheckerInterface;
-use App\Message\TakeoutImportExtractMessage;
 use App\Repository\TakeoutImportRepository;
 use App\Service\Takeout\TakeoutImportTmpDirLocator;
 use App\State\TakeoutImportProvider;
@@ -16,13 +15,18 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 
 /**
- * POST /api/v1/takeout-imports/{id}/start — dispatche le traitement
- * asynchrone une fois tous les ZIP envoyés via
- * TakeoutImportFileUploadController (#466).
+ * POST /api/v1/takeout-imports/{id}/start — marque l'import "scheduled" une
+ * fois tous les ZIP envoyés via TakeoutImportFileUploadController (#466).
+ *
+ * #522 : ne dispatche plus immédiatement le traitement — un import
+ * volumineux se faisait tuer (SIGKILL) par le LVE du mutualisé o2switch même
+ * en pleine journée sous forte charge, indépendamment du découpage par ZIP
+ * (#520). Le dispatch réel est fait par TakeoutImportNightlyDispatchCommand
+ * (cron nocturne), quand la charge partagée du serveur est généralement plus
+ * basse.
  */
 #[AsController]
 final class TakeoutImportStartController extends AbstractController
@@ -32,7 +36,6 @@ final class TakeoutImportStartController extends AbstractController
         private readonly OwnershipCheckerInterface $ownershipChecker,
         private readonly TakeoutImportProvider $provider,
         private readonly SerializerInterface $serializer,
-        private readonly MessageBusInterface $bus,
         private readonly TakeoutImportTmpDirLocator $tmpDirLocator,
     ) {}
 
@@ -54,12 +57,8 @@ final class TakeoutImportStartController extends AbstractController
             throw new BadRequestHttpException('At least one ZIP file must be uploaded before starting the import');
         }
 
-        // #520 : un ZIP à la fois (TakeoutImportExtractHandler redispatche
-        // le reste) plutôt que tous les ZIP dans un seul message — un import
-        // volumineux dépassait la contention LVE du mutualisé o2switch en
-        // extrayant tout d'un coup dans un seul cycle de worker.
-        $firstZipPath = array_shift($zipPaths);
-        $this->bus->dispatch(new TakeoutImportExtractMessage((string) $import->getId(), $firstZipPath, $zipPaths));
+        $import->markScheduled();
+        $this->takeoutImportRepository->save($import);
 
         $output = $this->provider->toOutput($import);
 

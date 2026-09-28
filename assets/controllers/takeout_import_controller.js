@@ -465,6 +465,10 @@ export default class extends Controller {
     _statusLabel(status) {
         const labels = {
             pending: 'En attente…',
+            // #522 : l'import ne démarre plus immédiatement (contention
+            // serveur en journée) — sans ce label, l'utilisateur verrait le
+            // statut brut de l'API sans comprendre pourquoi rien ne bouge.
+            scheduled: 'En attente du traitement nocturne…',
             extracting: 'Extraction des archives…',
             processing: 'Import des médias…',
             completed: 'Import terminé',

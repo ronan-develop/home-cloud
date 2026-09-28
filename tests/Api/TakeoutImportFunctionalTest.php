@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Api;
 
+use App\Command\TakeoutImportNightlyDispatchCommand;
 use App\Entity\File;
 use App\Entity\TakeoutImport;
 use App\Entity\User;
@@ -23,11 +24,16 @@ use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
  * test, cf. config/packages/messenger.yaml) plutôt que d'attendre un
  * worker, pour un test déterministe.
  *
- * #520 : le traitement se fait désormais en 2 étapes (un ZIP par message
+ * #520 : le traitement se fait en 2 étapes (un ZIP par message
  * TakeoutImportExtractMessage, redispatché en boucle jusqu'à dispatcher
  * TakeoutImportProcessMessage) — runFullImportPipeline() enchaîne
  * manuellement les deux handlers jusqu'au message terminal, pour ne pas
  * dupliquer cette boucle dans chaque test.
+ *
+ * #522 : /start ne dispatche plus immédiatement (marque "scheduled") —
+ * runFullImportPipeline() invoque d'abord TakeoutImportNightlyDispatchCommand
+ * (simule le cron nocturne) avant de traiter la queue, pour ne pas dupliquer
+ * cette étape dans chaque test qui veut un import traité de bout en bout.
  */
 final class TakeoutImportFunctionalTest extends AuthenticatedApiTestCase
 {
@@ -95,6 +101,12 @@ final class TakeoutImportFunctionalTest extends AuthenticatedApiTestCase
      */
     private function runFullImportPipeline(): void
     {
+        $nightlyDispatchCommand = static::getContainer()->get(TakeoutImportNightlyDispatchCommand::class);
+        $nightlyDispatchCommand->run(
+            new \Symfony\Component\Console\Input\ArrayInput([]),
+            new \Symfony\Component\Console\Output\NullOutput(),
+        );
+
         $extractHandler = static::getContainer()->get(TakeoutImportExtractHandler::class);
         $processHandler = static::getContainer()->get(TakeoutImportHandler::class);
 
@@ -130,7 +142,11 @@ final class TakeoutImportFunctionalTest extends AuthenticatedApiTestCase
         $this->assertCount(0, $transport->get(), 'La création seule ne doit dispatcher aucun message');
     }
 
-    public function testUploadDispatchesTakeoutImportExtractMessage(): void
+    // #522 : traiter les imports Takeout la nuit pour limiter la contention
+    // sur le mutualisé o2switch — /start ne dispatche plus immédiatement,
+    // marque seulement l'import "scheduled" ; le dispatch réel est fait par
+    // TakeoutImportNightlyDispatchCommand (cron nocturne dédié).
+    public function testStartMarksImportScheduledWithoutDispatchingMessage(): void
     {
         $user = $this->createUser('takeout-upload@example.com');
         $zipPath = $this->makeTakeoutZip();
@@ -142,11 +158,11 @@ final class TakeoutImportFunctionalTest extends AuthenticatedApiTestCase
         $this->assertResponseStatusCodeSame(202);
 
         $data = json_decode($client->getResponse()->getContent(), true);
-        $this->assertSame(TakeoutImport::STATUS_PENDING, $data['status']);
+        $this->assertSame(TakeoutImport::STATUS_SCHEDULED, $data['status']);
         $this->assertSame($importId, $data['id']);
 
         $transport = static::getContainer()->get('messenger.transport.async');
-        $this->assertCount(1, $transport->get());
+        $this->assertCount(0, $transport->get(), 'Le dispatch réel se fait par le cron nocturne, pas immédiatement');
     }
 
     public function testFullImportCreatesFileInDedicatedFolder(): void

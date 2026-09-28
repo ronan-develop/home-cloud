@@ -56,6 +56,21 @@ final class TakeoutImportTest extends TestCase
         $this->assertNull($import->getErrorMessage());
     }
 
+    // #522 : traiter les imports Takeout la nuit pour limiter la contention
+    // sur le mutualisé o2switch (le worker était tué en pleine journée sous
+    // forte charge, même sur un import découpé par ZIP, #520). markScheduled()
+    // marque un import complet (tous les ZIP uploadés) comme prêt à démarrer
+    // au prochain cycle nocturne, distinct de "pending" (encore en cours
+    // d'upload) pour ne pas casser la logique de reprise existante (#491).
+    public function testMarkScheduledUpdatesStatus(): void
+    {
+        $import = new TakeoutImport(new User('owner@example.com', 'Owner'));
+
+        $import->markScheduled();
+
+        $this->assertSame(TakeoutImport::STATUS_SCHEDULED, $import->getStatus());
+    }
+
     public function testMarkExtractingUpdatesStatus(): void
     {
         $import = new TakeoutImport(new User('owner@example.com', 'Owner'));
