@@ -87,6 +87,23 @@ final class TakeoutImportWebControllerTest extends WebTestCase
         $this->assertStringContainsString('veille', strtolower($crawler->filter('body')->text()));
     }
 
+    // #510 : le message rassurant existant (_describeUploadError) n'apparaît
+    // qu'après coup, une fois la coupure survenue — rien ne prévient
+    // l'utilisateur à l'avance, avant de démarrer l'import, que le travail
+    // déjà fait est conservé et qu'il suffit de resélectionner les mêmes
+    // fichiers pour reprendre.
+    public function testPageExplainsHowToResumeBeforeStartingImport(): void
+    {
+        $this->login();
+
+        $crawler = $this->client->request('GET', '/import/takeout');
+
+        $this->assertStringContainsString(
+            'sélectionnez à nouveau les mêmes fichiers',
+            strtolower($crawler->filter('body')->text()),
+        );
+    }
+
     public function testSidebarLinksToTakeoutImportPage(): void
     {
         $this->login();
