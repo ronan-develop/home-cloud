@@ -387,6 +387,42 @@ describe('takeout-import controller (#458)', () => {
             expect(calls).toContain('/api/v1/takeout-imports/import-existing/start');
         });
 
+        // #507 : avec 9 fichiers sur 10 déjà entièrement envoyés avant la
+        // coupure, la barre doit refléter cette complétude réelle dès la
+        // reprise (9/10 immédiatement), pas repartir de 0 pour ne remonter
+        // qu'au fil du traitement (même sauté quasi instantanément) des
+        // fichiers déjà acquis. Le fichier restant reste délibérément en
+        // attente (fetch jamais résolu) pour observer l'état affiché AVANT
+        // tout traitement, pas l'état final une fois la boucle terminée.
+        test('initialise la barre de progression avec les fichiers déjà complets, sans attendre leur traitement', async () => {
+            const completeFile = makeFile('takeout-001.zip', 'contenu entier');
+            const remainingFile = makeFile('takeout-002.zip', 'contenu entier 2');
+            setInputFiles([completeFile, remainingFile]);
+
+            global.fetch = jest.fn()
+                .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-existing', status: 'pending' }) })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => [
+                        { filename: 'takeout-001.zip', chunkIndex: null, hashOfFirstChunk: null, complete: true },
+                    ],
+                })
+                .mockReturnValueOnce(new Promise(() => {})); // upload du fichier restant : jamais résolu
+
+            const button = document.querySelector('[data-takeout-import-target="submit"]');
+            const status = document.querySelector('[data-takeout-import-target="status"]');
+            const bar = document.querySelector('[data-takeout-import-target="bar"]');
+
+            button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+            for (let i = 0; i < 20 && status.textContent === ''; i += 1) {
+                await new Promise((resolve) => setTimeout(resolve, 5));
+            }
+
+            expect(status.textContent).toBe('Envoi de 2 / 2 fichiers…');
+            expect(bar.style.width).toBe('50%');
+        });
+
         test('renvoie depuis 0 si le hash du premier chunk ne correspond pas (fichier différent)', async () => {
             const file = makeFile('takeout-001.zip', 'AAA');
             setInputFiles([file]);
