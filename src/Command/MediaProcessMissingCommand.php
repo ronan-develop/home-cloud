@@ -7,6 +7,7 @@ namespace App\Command;
 use App\Interface\File\FileRepositoryInterface;
 use App\Interface\Media\MediaProcessorInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -37,6 +38,7 @@ final class MediaProcessMissingCommand extends Command
         private readonly FileRepositoryInterface $fileRepository,
         private readonly MediaProcessorInterface $mediaProcessor,
         private readonly EntityManagerInterface $entityManager,
+        private readonly LoggerInterface $logger,
     ) {
         parent::__construct();
     }
@@ -50,18 +52,32 @@ final class MediaProcessMissingCommand extends Command
         $processed = 0;
         $skipped = 0;
 
-        foreach ($files as $file) {
-            if ($this->mediaProcessor->process($file) !== null) {
-                ++$processed;
-            } else {
-                ++$skipped;
+        // #504 : sans catch, une exception levée au milieu de la boucle
+        // (ex. disque plein sur le Nième fichier) remonte à Symfony Console,
+        // stack trace complète dans les logs crontab. Le travail déjà
+        // accompli avant l'exception n'est pas perdu (chaque fichier flush
+        // individuellement, cf. commentaire de classe) — seule l'erreur est
+        // catchée et loggée, pas de rollback.
+        try {
+            foreach ($files as $file) {
+                if ($this->mediaProcessor->process($file) !== null) {
+                    ++$processed;
+                } else {
+                    ++$skipped;
+                }
+
+                $this->entityManager->clear();
             }
 
-            $this->entityManager->clear();
+            $io->writeln(sprintf('%d traité(s), %d ignoré(s) (type non média).', $processed, $skipped));
+
+            return Command::SUCCESS;
+        } catch (\Throwable $e) {
+            $this->logger->error('MediaProcessMissingCommand : échec du rattrapage', ['exception' => $e]);
+            $io->writeln(sprintf('%d traité(s), %d ignoré(s) avant l\'échec.', $processed, $skipped));
+            $io->error('Le rattrapage des vignettes manquantes a échoué.');
+
+            return Command::FAILURE;
         }
-
-        $io->writeln(sprintf('%d traité(s), %d ignoré(s) (type non média).', $processed, $skipped));
-
-        return Command::SUCCESS;
     }
 }

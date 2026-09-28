@@ -6,6 +6,7 @@ namespace App\Command;
 
 use App\Entity\ShareLink;
 use App\Interface\Share\ShareLinkRepositoryInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -25,6 +26,7 @@ final class ShareLinkPurgeRevokedCommand extends Command
 {
     public function __construct(
         private readonly ShareLinkRepositoryInterface $shareLinkRepository,
+        private readonly LoggerInterface $logger,
     ) {
         parent::__construct();
     }
@@ -33,11 +35,23 @@ final class ShareLinkPurgeRevokedCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
 
-        $threshold = (new \DateTimeImmutable())->modify('-' . ShareLink::PURGE_AFTER_DAYS . ' days');
-        $purged = $this->shareLinkRepository->deleteRevokedOlderThan($threshold);
+        // #504 : sans catch, une exception (DB injoignable, etc.) remonte à
+        // Symfony Console qui affiche la stack trace complète dans les logs
+        // crontab — risque de fuite (fragments de requête SQL, chemins
+        // serveur). Loggée ici via le canal applicatif standard, jamais
+        // affichée telle quelle sur la sortie de la commande.
+        try {
+            $threshold = (new \DateTimeImmutable())->modify('-' . ShareLink::PURGE_AFTER_DAYS . ' days');
+            $purged = $this->shareLinkRepository->deleteRevokedOlderThan($threshold);
 
-        $io->writeln(sprintf('%d lien(s) de partage purgé(s).', $purged));
+            $io->writeln(sprintf('%d lien(s) de partage purgé(s).', $purged));
 
-        return Command::SUCCESS;
+            return Command::SUCCESS;
+        } catch (\Throwable $e) {
+            $this->logger->error('ShareLinkPurgeRevokedCommand : échec de la purge', ['exception' => $e]);
+            $io->error('La purge des liens de partage a échoué.');
+
+            return Command::FAILURE;
+        }
     }
 }
