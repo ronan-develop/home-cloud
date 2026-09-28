@@ -420,6 +420,21 @@ export default class extends Controller {
     }
 
     _renderStatus(status) {
+        // #515 : pendant "extracting", la progression connue est
+        // extractedZipCount/totalZipCount (totalMediaCount n'est connu
+        // qu'après le parsing, une fois l'extraction terminée) — sans ça,
+        // la barre restait indéterminée pendant toute cette phase, parfois
+        // plusieurs minutes sur des ZIP volumineux.
+        if (status.status === 'extracting' && status.totalZipCount) {
+            this.barTarget.classList.remove('takeout-progress-bar--indeterminate');
+            const zipPercent = Math.min(100, Math.round((status.extractedZipCount / status.totalZipCount) * 100));
+            this.barTarget.style.width = `${zipPercent}%`;
+            this.statusTarget.textContent = this._statusLabel(status.status);
+            this.countsTarget.textContent = `${status.extractedZipCount} / ${status.totalZipCount} archives extraites`;
+
+            return;
+        }
+
         const total = status.totalMediaCount;
         const processed = status.processedCount || 0;
 

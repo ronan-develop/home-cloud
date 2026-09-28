@@ -54,6 +54,8 @@ final class TakeoutImportProvider implements ProviderInterface
         $output->unrecognizedFilesCount = $import->getUnrecognizedFilesCount();
         $output->totalMediaCount = $import->getTotalMediaCount();
         $output->processedCount = $import->getProcessedCount();
+        $output->totalZipCount = $import->getTotalZipCount();
+        $output->extractedZipCount = $import->getExtractedZipCount();
         $output->createdAt = $import->getCreatedAt()->format(\DateTimeInterface::ATOM);
         $output->completedAt = $import->getCompletedAt()?->format(\DateTimeInterface::ATOM);
         $output->errorMessage = $import->getErrorMessage();

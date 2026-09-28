@@ -110,6 +110,46 @@ describe('takeout-import controller (#458)', () => {
         jest.useRealTimers();
     });
 
+    // #515 : jusqu'ici, aucune progression n'était affichée pendant toute la
+    // phase "extracting" (barre indéterminée figée), potentiellement
+    // plusieurs minutes sur des ZIP volumineux. Le compteur
+    // extractedZipCount/totalZipCount (exposé par le back, #515) doit
+    // maintenant s'afficher dès que le total est connu.
+    test('affiche le nombre d\'archives déjà extraites pendant l\'extraction (extracting)', async () => {
+        jest.useFakeTimers({ doNotFake: ['nextTick', 'queueMicrotask'] });
+        setInputFiles([makeFile('takeout-001.zip')]);
+
+        global.fetch = jest.fn()
+            .mockResolvedValueOnce({ ok: false, status: 404 }) // GET pending
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'pending' }) })
+            .mockResolvedValueOnce({ ok: true })
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'import-1', status: 'pending' }) })
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ status: 'pending', processedCount: 0, totalMediaCount: null }) })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    status: 'extracting',
+                    processedCount: 0,
+                    totalMediaCount: null,
+                    extractedZipCount: 3,
+                    totalZipCount: 11,
+                }),
+            });
+
+        const button = document.querySelector('[data-takeout-import-target="submit"]');
+        button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        await jest.advanceTimersByTimeAsync(0);
+        await jest.advanceTimersByTimeAsync(5000);
+
+        const counts = document.querySelector('[data-takeout-import-target="counts"]');
+        const bar = document.querySelector('[data-takeout-import-target="bar"]');
+        expect(counts.textContent).toBe('3 / 11 archives extraites');
+        expect(bar.style.width).toBe('27%');
+        expect(bar.classList.contains('takeout-progress-bar--indeterminate')).toBe(false);
+
+        jest.useRealTimers();
+    });
+
     // #466 : un seul gros POST multi-fichiers dépassait la limite de taille
     // de requête du serveur mutualisé (413) dès que l'utilisateur
     // sélectionnait plusieurs ZIP Takeout volumineux d'un coup. Chaque ZIP
