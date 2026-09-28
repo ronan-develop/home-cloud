@@ -7,7 +7,7 @@ namespace App\Handler;
 use App\Entity\User;
 use App\Interface\Album\AlbumServiceInterface;
 use App\Interface\Folder\DefaultFolderServiceInterface;
-use App\Message\TakeoutImportMessage;
+use App\Message\TakeoutImportProcessMessage;
 use App\Repository\ContentFingerprintRepository;
 use App\Repository\TakeoutImportRepository;
 use App\Service\Takeout\TakeoutImportOutcome;
@@ -15,18 +15,20 @@ use App\Service\Takeout\TakeoutMediaEntry;
 use App\Service\Takeout\TakeoutMediaImporter;
 use App\Service\Takeout\TakeoutMetadataReader;
 use App\Service\Takeout\TakeoutStructureParser;
-use App\Service\Takeout\TakeoutZipExtractor;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 /**
- * Handler Messenger — orchestration complète d'un import Google Takeout
- * (#327). SRP forcé dès l'écriture (cf. plan-327-takeout-import.md) : ce
- * handler ne fait qu'orchestrer — extraction, parcours, boucle par tranches,
- * statut final — jamais de logique d'import d'un média individuel, déléguée
- * à TakeoutMediaImporter.
+ * Handler Messenger — phase parsing/import d'un import Google Takeout
+ * (#327). Déclenché par TakeoutImportProcessMessage une fois TOUS les ZIP
+ * déjà extraits par TakeoutImportExtractHandler (#520 : l'extraction a été
+ * séparée dans son propre handler, un ZIP par message, pour ne pas dépasser
+ * la contention LVE du mutualisé o2switch sur un import volumineux). SRP
+ * forcé dès l'écriture (cf. plan-327-takeout-import.md) : ce handler ne fait
+ * qu'orchestrer — parcours, boucle par tranches, statut final — jamais de
+ * logique d'import d'un média individuel, déléguée à TakeoutMediaImporter.
  *
  * Efficacité I/O et DB : tous les hashs sont calculés puis vérifiés en un
  * seul appel (findExistingHashes), le flush se fait par tranches (jamais un
@@ -47,7 +49,6 @@ final class TakeoutImportHandler
 
     public function __construct(
         private readonly TakeoutImportRepository $importRepository,
-        private readonly TakeoutZipExtractor $zipExtractor,
         private readonly TakeoutStructureParser $structureParser,
         private readonly TakeoutMetadataReader $metadataReader,
         private readonly TakeoutMediaImporter $mediaImporter,
@@ -58,11 +59,11 @@ final class TakeoutImportHandler
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {}
 
-    public function __invoke(TakeoutImportMessage $message): void
+    public function __invoke(TakeoutImportProcessMessage $message): void
     {
         $import = $this->importRepository->find($message->takeoutImportId);
         if ($import === null) {
-            $this->logger->warning('TakeoutImportMessage : import introuvable', [
+            $this->logger->warning('TakeoutImportProcessMessage : import introuvable', [
                 'takeoutImportId' => $message->takeoutImportId,
             ]);
 
@@ -74,24 +75,10 @@ final class TakeoutImportHandler
         $unrecognizedFiles = 0;
 
         try {
-            // Progress bar pendant l'extraction (#515) : totalZipCount connu
-            // dès le départ (nombre de ZIP à traiter), extractedZipCount
-            // incrémenté à chaque ZIP extrait — sans ça, le front n'avait
-            // aucune information pendant potentiellement plusieurs minutes
-            // sur des ZIP volumineux.
-            $import->markExtracting(count($message->zipPaths));
-            $this->em->flush();
-
-            $workDir = sys_get_temp_dir() . '/takeout-import-' . $import->getId()->toRfc4122();
-            foreach ($message->zipPaths as $zipPath) {
-                $this->zipExtractor->extract($zipPath, $workDir);
-                $import->incrementExtractedZipCount();
-                $this->em->flush();
-            }
-
             $import->markProcessing();
             $this->em->flush();
 
+            $workDir = sys_get_temp_dir() . '/takeout-import-' . $import->getId()->toRfc4122();
             $structure = $this->structureParser->parse($workDir);
             $unrecognizedFiles = $structure->ignoredCount;
 
@@ -153,7 +140,7 @@ final class TakeoutImportHandler
 
             $this->cleanupWorkDir($workDir);
         } catch (\Throwable $e) {
-            $this->logger->error('TakeoutImportMessage : échec de l\'import', [
+            $this->logger->error('TakeoutImportProcessMessage : échec de l\'import', [
                 'takeoutImportId' => $message->takeoutImportId,
                 'error' => $e->getMessage(),
             ]);

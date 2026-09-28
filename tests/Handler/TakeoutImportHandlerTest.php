@@ -13,7 +13,7 @@ use App\Entity\User;
 use App\Handler\TakeoutImportHandler;
 use App\Interface\Album\AlbumServiceInterface;
 use App\Interface\Folder\DefaultFolderServiceInterface;
-use App\Message\TakeoutImportMessage;
+use App\Message\TakeoutImportProcessMessage;
 use App\Repository\ContentFingerprintRepository;
 use App\Repository\TakeoutImportRepository;
 use App\Service\Takeout\TakeoutImportOutcome;
@@ -23,16 +23,22 @@ use App\Service\Takeout\TakeoutMetadata;
 use App\Service\Takeout\TakeoutMetadataReader;
 use App\Service\Takeout\TakeoutStructureParser;
 use App\Service\Takeout\TakeoutStructureResult;
-use App\Service\Takeout\TakeoutZipExtractor;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
+/**
+ * #520 : ce handler ne s'occupe plus que de la phase parsing/import — la
+ * phase extraction (potentiellement volumineuse) a été extraite dans
+ * TakeoutImportExtractHandler (un ZIP par message, testé séparément), pour
+ * ne pas dépasser la contention LVE du mutualisé o2switch sur un import de
+ * plusieurs dizaines de Go. Ce handler suppose que $workDir est déjà
+ * entièrement peuplé par l'extraction terminée.
+ */
 final class TakeoutImportHandlerTest extends TestCase
 {
     private TakeoutImportRepository $importRepository;
-    private TakeoutZipExtractor $zipExtractor;
     private TakeoutStructureParser $structureParser;
     private TakeoutMetadataReader $metadataReader;
     private TakeoutMediaImporter $mediaImporter;
@@ -47,7 +53,6 @@ final class TakeoutImportHandlerTest extends TestCase
         // besoin de vérifier un appel précis (expects()) réassigne la
         // propriété concernée avec un createMock() local avant handler().
         $this->importRepository = $this->createStub(TakeoutImportRepository::class);
-        $this->zipExtractor = $this->createStub(TakeoutZipExtractor::class);
         $this->structureParser = $this->createStub(TakeoutStructureParser::class);
         $this->metadataReader = $this->createStub(TakeoutMetadataReader::class);
         $this->mediaImporter = $this->createStub(TakeoutMediaImporter::class);
@@ -74,7 +79,6 @@ final class TakeoutImportHandlerTest extends TestCase
     {
         return new TakeoutImportHandler(
             $this->importRepository,
-            $this->zipExtractor,
             $this->structureParser,
             $this->metadataReader,
             $this->mediaImporter,
@@ -99,10 +103,10 @@ final class TakeoutImportHandlerTest extends TestCase
     public function testHandlerDoesNothingWhenImportNotFound(): void
     {
         $this->importRepository->method('find')->willReturn(null);
-        $this->zipExtractor = $this->createMock(TakeoutZipExtractor::class);
-        $this->zipExtractor->expects($this->never())->method('extract');
+        $this->structureParser = $this->createMock(TakeoutStructureParser::class);
+        $this->structureParser->expects($this->never())->method('parse');
 
-        $this->handler()(new TakeoutImportMessage('missing-id', ['/tmp/whatever.zip']));
+        $this->handler()(new TakeoutImportProcessMessage('missing-id'));
     }
 
     public function testHandlerImportsMediaAndMarksCompleted(): void
@@ -112,9 +116,6 @@ final class TakeoutImportHandlerTest extends TestCase
         $folder = new Folder('Import Google Photos 2026-09-26', $owner);
 
         $this->importRepository->method('find')->willReturn($import);
-
-        $this->zipExtractor = $this->createMock(TakeoutZipExtractor::class);
-        $this->zipExtractor->expects($this->once())->method('extract');
 
         $entry = new TakeoutMediaEntry($this->makeExtractedFile(), null);
         $this->structureParser->method('parse')
@@ -143,55 +144,12 @@ final class TakeoutImportHandlerTest extends TestCase
         $this->em = $this->createMock(EntityManagerInterface::class);
         $this->em->expects($this->atLeastOnce())->method('flush');
 
-        $this->handler()(new TakeoutImportMessage((string) $import->getId(), ['/tmp/takeout.zip']));
+        $this->handler()(new TakeoutImportProcessMessage((string) $import->getId()));
 
         $this->assertSame(TakeoutImport::STATUS_COMPLETED, $import->getStatus());
         $this->assertSame(1, $import->getMediaImportedCount());
         $this->assertSame(0, $import->getDuplicatesSkippedCount());
         $this->assertSame(2, $import->getUnrecognizedFilesCount());
-    }
-
-    // #515 : progression pendant l'extraction — jusqu'ici aucune progression
-    // n'était communiquée pendant la phase "extracting" (potentiellement
-    // plusieurs minutes sur des ZIP volumineux). Le handler doit initialiser
-    // totalZipCount au nombre de ZIP à traiter, et incrémenter
-    // extractedZipCount à chaque ZIP extrait, avant même la fin de la phase.
-    public function testHandlerTracksExtractionProgressAcrossMultipleZips(): void
-    {
-        $owner = new User('owner@example.com', 'Owner');
-        $import = new TakeoutImport($owner);
-        $folder = new Folder('Import Google Photos 2026-09-26', $owner);
-
-        $this->importRepository->method('find')->willReturn($import);
-
-        $this->zipExtractor = $this->createMock(TakeoutZipExtractor::class);
-        $extractedCounts = [];
-        $this->zipExtractor->expects($this->exactly(2))
-            ->method('extract')
-            ->willReturnCallback(function () use ($import, &$extractedCounts) {
-                $extractedCounts[] = $import->getExtractedZipCount();
-            });
-
-        $this->structureParser->method('parse')
-            ->willReturn(new TakeoutStructureResult([], 0));
-
-        $this->fingerprintRepository = $this->createMock(ContentFingerprintRepository::class);
-        $this->fingerprintRepository->method('findExistingHashes')->willReturn([]);
-
-        $this->defaultFolderService = $this->createMock(DefaultFolderServiceInterface::class);
-        $this->defaultFolderService->method('resolve')->willReturn($folder);
-
-        $this->em = $this->createMock(EntityManagerInterface::class);
-        $this->em->expects($this->atLeastOnce())->method('flush');
-
-        $this->handler()(new TakeoutImportMessage((string) $import->getId(), ['/tmp/a.zip', '/tmp/b.zip']));
-
-        // Compteur au moment de chaque extract() : 0 puis 1 — la progression
-        // avance AU FIL de la boucle, pas seulement une fois toute la phase
-        // terminée.
-        $this->assertSame([0, 1], $extractedCounts);
-        $this->assertSame(2, $import->getTotalZipCount());
-        $this->assertSame(2, $import->getExtractedZipCount());
     }
 
     public function testHandlerCountsDuplicatesSeparatelyFromImported(): void
@@ -220,7 +178,7 @@ final class TakeoutImportHandlerTest extends TestCase
                 TakeoutImportOutcome::imported($media),
             );
 
-        $this->handler()(new TakeoutImportMessage((string) $import->getId(), ['/tmp/takeout.zip']));
+        $this->handler()(new TakeoutImportProcessMessage((string) $import->getId()));
 
         $this->assertSame(TakeoutImport::STATUS_COMPLETED, $import->getStatus());
         $this->assertSame(1, $import->getMediaImportedCount());
@@ -256,7 +214,7 @@ final class TakeoutImportHandlerTest extends TestCase
             ->with($entry, $metadata, $folder, $owner, [])
             ->willReturn(TakeoutImportOutcome::imported(null));
 
-        $this->handler()(new TakeoutImportMessage((string) $import->getId(), ['/tmp/takeout.zip']));
+        $this->handler()(new TakeoutImportProcessMessage((string) $import->getId()));
     }
 
     // #478 : les médias appartenant à un vrai album Google Photos (nom de
@@ -293,7 +251,7 @@ final class TakeoutImportHandlerTest extends TestCase
             ->with('Vacances 2026', $owner, [(string) $media1->getId(), (string) $media2->getId()])
             ->willReturn(new Album('Vacances 2026', $owner));
 
-        $this->handler()(new TakeoutImportMessage((string) $import->getId(), ['/tmp/takeout.zip']));
+        $this->handler()(new TakeoutImportProcessMessage((string) $import->getId()));
     }
 
     public function testDoesNotCreateAlbumForMediaWithoutAlbumName(): void
@@ -317,7 +275,7 @@ final class TakeoutImportHandlerTest extends TestCase
         $this->albumService = $this->createMock(AlbumServiceInterface::class);
         $this->albumService->expects($this->never())->method('create');
 
-        $this->handler()(new TakeoutImportMessage((string) $import->getId(), ['/tmp/takeout.zip']));
+        $this->handler()(new TakeoutImportProcessMessage((string) $import->getId()));
     }
 
     public function testHandlerMarksFailedAndPreservesCountersOnException(): void
@@ -327,12 +285,12 @@ final class TakeoutImportHandlerTest extends TestCase
 
         $this->importRepository->method('find')->willReturn($import);
 
-        $this->zipExtractor->method('extract')->willThrowException(new \RuntimeException('disque plein'));
+        $this->structureParser->method('parse')->willThrowException(new \RuntimeException('disque plein'));
 
         $logger = $this->createMock(LoggerInterface::class);
         $logger->expects($this->once())->method('error');
 
-        $this->handler($logger)(new TakeoutImportMessage((string) $import->getId(), ['/tmp/takeout.zip']));
+        $this->handler($logger)(new TakeoutImportProcessMessage((string) $import->getId()));
 
         $this->assertSame(TakeoutImport::STATUS_FAILED, $import->getStatus());
         $this->assertSame('disque plein', $import->getErrorMessage());

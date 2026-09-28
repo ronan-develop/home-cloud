@@ -9,7 +9,8 @@ framework:
         routing:
             'App\Message\MediaProcessMessage': async
             'App\Message\ShareNotificationMessage': async
-            'App\Message\TakeoutImportMessage': async
+            'App\Message\TakeoutImportExtractMessage': async
+            'App\Message\TakeoutImportProcessMessage': async
 
 when@test:
     framework:

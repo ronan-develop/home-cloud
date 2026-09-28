@@ -6,7 +6,7 @@ namespace App\Controller\Api;
 
 use App\Entity\TakeoutImport;
 use App\Interface\Auth\OwnershipCheckerInterface;
-use App\Message\TakeoutImportMessage;
+use App\Message\TakeoutImportExtractMessage;
 use App\Repository\TakeoutImportRepository;
 use App\Service\Takeout\TakeoutImportTmpDirLocator;
 use App\State\TakeoutImportProvider;
@@ -54,7 +54,12 @@ final class TakeoutImportStartController extends AbstractController
             throw new BadRequestHttpException('At least one ZIP file must be uploaded before starting the import');
         }
 
-        $this->bus->dispatch(new TakeoutImportMessage((string) $import->getId(), $zipPaths));
+        // #520 : un ZIP à la fois (TakeoutImportExtractHandler redispatche
+        // le reste) plutôt que tous les ZIP dans un seul message — un import
+        // volumineux dépassait la contention LVE du mutualisé o2switch en
+        // extrayant tout d'un coup dans un seul cycle de worker.
+        $firstZipPath = array_shift($zipPaths);
+        $this->bus->dispatch(new TakeoutImportExtractMessage((string) $import->getId(), $firstZipPath, $zipPaths));
 
         $output = $this->provider->toOutput($import);
 
