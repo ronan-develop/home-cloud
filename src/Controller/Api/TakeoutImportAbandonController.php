@@ -7,7 +7,7 @@ namespace App\Controller\Api;
 use App\Entity\TakeoutImport;
 use App\Interface\Auth\OwnershipCheckerInterface;
 use App\Repository\TakeoutImportRepository;
-use App\Service\Takeout\TakeoutImportTmpDirLocator;
+use App\Service\Takeout\TakeoutImportAbandoner;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\AsController;
@@ -27,7 +27,7 @@ final class TakeoutImportAbandonController extends AbstractController
     public function __construct(
         private readonly TakeoutImportRepository $takeoutImportRepository,
         private readonly OwnershipCheckerInterface $ownershipChecker,
-        private readonly TakeoutImportTmpDirLocator $tmpDirLocator,
+        private readonly TakeoutImportAbandoner $abandoner,
     ) {}
 
     public function __invoke(string $id): Response
@@ -43,20 +43,8 @@ final class TakeoutImportAbandonController extends AbstractController
             throw new BadRequestHttpException('Only a pending import can be abandoned');
         }
 
-        $this->deleteTmpDir($import);
-        $this->takeoutImportRepository->remove($import);
+        $this->abandoner->abandon($import);
 
         return new Response(null, Response::HTTP_NO_CONTENT);
-    }
-
-    private function deleteTmpDir(TakeoutImport $import): void
-    {
-        $importTmpDir = $this->tmpDirLocator->dirFor($import);
-        if (!is_dir($importTmpDir)) {
-            return;
-        }
-
-        array_map('unlink', glob($importTmpDir . '/*') ?: []);
-        rmdir($importTmpDir);
     }
 }
