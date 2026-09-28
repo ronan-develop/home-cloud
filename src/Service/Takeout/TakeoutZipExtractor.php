@@ -18,6 +18,14 @@ use App\Exception\Takeout\ZipBombDetectedException;
  * ZipArchive::statIndex() AVANT toute extraction réelle — la vérification
  * se fait donc entièrement sur les métadonnées de l'archive, jamais après
  * avoir écrit quoi que ce soit sur disque.
+ *
+ * Checkpoint d'extraction (#525) : extractTo() est un bloc atomique sans
+ * notion de progression — une coupure en plein milieu (LVE du mutualisé
+ * o2switch, #520/#522) forçait à ré-extraire tout le ZIP depuis 0, perte de
+ * travail potentiellement conséquente sur un ZIP volumineux déjà extrait à
+ * 98%. Extraction entrée par entrée à la place, avec un marqueur
+ * `<destinationDir>/.progress` traçant le dernier index extrait avec succès
+ * — même pattern que ChunkedFileAssembler (#466) pour l'upload chunké.
  */
 class TakeoutZipExtractor
 {
@@ -28,7 +36,8 @@ class TakeoutZipExtractor
 
     /**
      * @throws ZipBombDetectedException si l'archive dépasse les seuils de sécurité
-     * @throws \RuntimeException si le fichier n'est pas un ZIP valide
+     * @throws \RuntimeException si le fichier n'est pas un ZIP valide, ou si
+     *                           une entrée échoue à s'extraire
      */
     public function extract(string $zipPath, string $destinationDir): void
     {
@@ -44,9 +53,20 @@ class TakeoutZipExtractor
             mkdir($destinationDir, 0777, true);
         }
 
-        if (!$zip->extractTo($destinationDir)) {
-            $zip->close();
-            throw new \RuntimeException(sprintf('Échec de l\'extraction de "%s" vers "%s".', $zipPath, $destinationDir));
+        $progressPath = $destinationDir . '/.progress';
+        $lastExtractedIndex = is_file($progressPath) ? (int) file_get_contents($progressPath) : -1;
+
+        for ($index = $lastExtractedIndex + 1; $index < $zip->numFiles; ++$index) {
+            if (!$zip->extractTo($destinationDir, [$zip->getNameIndex($index)])) {
+                $zip->close();
+                throw new \RuntimeException(sprintf('Échec de l\'extraction de l\'entrée %d de "%s" vers "%s".', $index, $zipPath, $destinationDir));
+            }
+
+            file_put_contents($progressPath, (string) $index);
+        }
+
+        if (is_file($progressPath)) {
+            unlink($progressPath);
         }
 
         $zip->close();
