@@ -1,0 +1,21 @@
+{% extends 'web/layout.html.twig' %}
+
+{% block title %}{{ topic.title }} — Aide — HomeCloud{% endblock %}
+
+{% block content %}
+
+<div class="max-w-3xl mx-auto flex flex-col gap-6">
+
+    <a href="{{ path('app_help_index') }}" class="text-sm no-underline" style="color: var(--hc-text-secondary, var(--hc-text))">← Retour à l'aide</a>
+
+    <div>
+        <h1 class="text-2xl font-bold" style="color: var(--hc-text)">{{ topic.title }}</h1>
+    </div>
+
+    <div class="settings-card" style="color: var(--hc-text)">
+        {{ topic.contentHtml|raw }}
+    </div>
+
+</div>
+
+{% endblock %}
