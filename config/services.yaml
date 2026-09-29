@@ -255,6 +255,14 @@ when@test:
         App\Service\Monitoring\InstanceMonitoringReporter:
             autowire: true
             public: true
+        # ServerLoadChecker (#524) : sys_getloadavg() réel de la machine de
+        # CI/dev rendait les tests fonctionnels Takeout flaky (échec aléatoire
+        # selon la charge locale au moment du run, constaté le 2026-09-29).
+        # Seuil très haut en test : toujours "calme", déterministe.
+        App\Service\Takeout\ServerLoadChecker:
+            autowire: true
+            arguments:
+                $threshold: 999999.0
         # Rendre FolderMoverInterface public en test (accès direct dans
         # FolderMoverIntegrationTest depuis #439 — plus aucun autowiring
         # implicite depuis que FolderWebController délègue à FolderService)

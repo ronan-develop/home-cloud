@@ -121,6 +121,14 @@
                 Import Google Photos
             </a>
 
+            <a href="{{ path('app_help_index') }}"
+               class="hc-nav-item {{ current_route in ['app_help_index', 'app_help_topic'] ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                Aide
+            </a>
+
             {% if is_broadcast_admin(app.user) %}
             <a href="{{ path('app_admin_users') }}"
                class="hc-nav-item {{ current_route in ['app_admin_users', 'app_broadcast_admin'] ? 'active' : '' }}">

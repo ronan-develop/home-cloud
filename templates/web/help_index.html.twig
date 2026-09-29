@@ -1,0 +1,27 @@
+{% extends 'web/layout.html.twig' %}
+
+{% block title %}Aide — HomeCloud{% endblock %}
+
+{% block content %}
+
+<div class="max-w-3xl mx-auto flex flex-col gap-6">
+
+    <div>
+        <h1 class="text-2xl font-bold" style="color: var(--hc-text)">Aide</h1>
+        <p style="color: var(--hc-text-secondary, var(--hc-text))">
+            Les bases pour utiliser HomeCloud, sujet par sujet.
+        </p>
+    </div>
+
+    <div class="flex flex-col gap-3">
+        {% for topic in topics %}
+            <a href="{{ path('app_help_topic', {slug: topic.slug}) }}" class="settings-card flex flex-col gap-1 no-underline">
+                <span class="font-medium" style="color: var(--hc-text)">{{ topic.title }}</span>
+                <span class="text-sm" style="color: var(--hc-text-secondary, var(--hc-text))">{{ topic.summary }}</span>
+            </a>
+        {% endfor %}
+    </div>
+
+</div>
+
+{% endblock %}
