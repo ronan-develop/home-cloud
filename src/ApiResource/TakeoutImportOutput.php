@@ -9,13 +9,13 @@ use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model;
-use App\Controller\Api\TakeoutImportAbandonController;
-use App\Controller\Api\TakeoutImportCreateController;
-use App\Controller\Api\TakeoutImportFileUploadController;
-use App\Controller\Api\TakeoutImportFilesStatusController;
-use App\Controller\Api\TakeoutImportFindPendingController;
-use App\Controller\Api\TakeoutImportListPendingController;
-use App\Controller\Api\TakeoutImportStartController;
+use App\Controller\Api\Takeout\TakeoutImportAbandonController;
+use App\Controller\Api\Takeout\TakeoutImportCreateController;
+use App\Controller\Api\Takeout\TakeoutImportFileUploadController;
+use App\Controller\Api\Takeout\TakeoutImportFilesStatusController;
+use App\Controller\Api\Takeout\TakeoutImportFindPendingController;
+use App\Controller\Api\Takeout\TakeoutImportListPendingController;
+use App\Controller\Api\Takeout\TakeoutImportStartController;
 use App\State\TakeoutImportProvider;
 
 /**
