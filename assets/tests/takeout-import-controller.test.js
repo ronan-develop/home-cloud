@@ -656,6 +656,7 @@ describe('liste des imports Takeout en attente (#481)', () => {
 
             const item = document.querySelector('[data-takeout-import-target="pendingList"] li');
             expect(item.textContent).toMatch(/quitter cette page/i);
+            expect(item.querySelector('.hc-safe-to-close')).not.toBeNull();
         },
     );
 

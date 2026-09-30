@@ -147,8 +147,7 @@ export default class extends Controller {
         // soi-même démarré un upload avait ce message (#482).
         if (['scheduled', 'extracting', 'processing'].includes(pendingImport.status)) {
             const safeToCloseMessage = document.createElement('p');
-            safeToCloseMessage.className = 'text-xs';
-            safeToCloseMessage.style.color = 'var(--hc-text-secondary, var(--hc-text))';
+            safeToCloseMessage.className = 'text-xs hc-safe-to-close';
             safeToCloseMessage.textContent = 'Le serveur travaille : vous pouvez quitter cette page, l\'import continue en arrière-plan.';
             li.appendChild(safeToCloseMessage);
         }
