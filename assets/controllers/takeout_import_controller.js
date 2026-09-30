@@ -37,20 +37,37 @@ export default class extends Controller {
     ];
     static PATIENCE_MESSAGE_INTERVAL_MS = 4000;
 
+    // #545 (suite) : rafraîchit la liste des imports actifs pour que les
+    // barres par ZIP avancent sans devoir recharger la page — la barre de
+    // l'import "activement ciblé" (juste après Reprendre/Démarrer) a déjà
+    // son propre poller (createBatchPoller), mais la LISTE elle-même
+    // (plusieurs imports à statuts différents, pas de notion de "un seul
+    // batch termine") n'était rafraîchie qu'au chargement initial de la
+    // page. Intervalle volontairement plus long que le poller d'upload
+    // (moins critique de rater quelques secondes ici), pour rester léger
+    // sur le mutualisé o2switch.
+    static PENDING_LIST_REFRESH_MS = 10000;
+
     connect() {
         this._poller = null;
         this._patienceInterval = null;
+        this._pendingListRefreshInterval = null;
         // Import ciblé explicitement via le bouton "Reprendre" de la liste
         // des imports en attente — prioritaire sur la déduction automatique
         // "le plus récent" (#491) dès que l'utilisateur choisit lui-même
         // quel import reprendre (nécessaire dès que plusieurs coexistent).
         this._targetImportId = null;
         this._renderPendingList();
+        this._pendingListRefreshInterval = setInterval(
+            () => this._renderPendingList(),
+            this.constructor.PENDING_LIST_REFRESH_MS,
+        );
     }
 
     disconnect() {
         this._poller?.stop();
         this._stopPatienceMessages();
+        clearInterval(this._pendingListRefreshInterval);
     }
 
     triggerFilePicker() {
