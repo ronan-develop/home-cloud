@@ -22,6 +22,7 @@ export default class extends Controller {
     static targets = [
         'input', 'dropzone', 'form', 'fileList', 'progress', 'bar', 'status', 'counts', 'error', 'submit',
         'fileProgressWrapper', 'fileBar', 'fileStatus', 'patienceMessage', 'pendingList', 'safeToCloseMessage',
+        'zipsProgress',
     ];
 
     // #481 : messages qui tournent pendant l'upload, pour rassurer sur un
@@ -81,24 +82,35 @@ export default class extends Controller {
         }
     }
 
+    // #545 : le bouton "Reprendre" (rouvre le sélecteur de fichiers) n'a de
+    // sens que pour un import "pending" (upload pas terminé) — pour
+    // scheduled/extracting/processing, l'upload est déjà fini, il n'y a rien
+    // à resélectionner. Sans cette distinction, l'utilisateur pouvait croire
+    // qu'il fallait relancer un upload alors qu'un traitement tournait déjà
+    // (doublon constaté en conditions réelles le 2026-09-30).
     _buildPendingListItem(pendingImport) {
         const li = document.createElement('li');
-        li.className = 'settings-card flex items-center justify-between gap-3';
+        li.className = 'settings-card flex flex-col gap-3';
+
+        const header = document.createElement('div');
+        header.className = 'flex items-center justify-between gap-3';
 
         const info = document.createElement('span');
         const createdAt = new Date(pendingImport.createdAt).toLocaleString();
-        info.textContent = `Import du ${createdAt} — ${pendingImport.filesUploadedCount} fichier(s) déjà reçu(s)`;
-        li.appendChild(info);
+        info.textContent = `Import du ${createdAt} — ${this._activeImportStatusLabel(pendingImport)}`;
+        header.appendChild(info);
 
         const actions = document.createElement('span');
         actions.className = 'flex gap-2';
 
-        const resumeButton = document.createElement('button');
-        resumeButton.type = 'button';
-        resumeButton.className = 'btn btn-primary';
-        resumeButton.textContent = 'Reprendre';
-        resumeButton.addEventListener('click', () => this._resumePendingImport(pendingImport.id));
-        actions.appendChild(resumeButton);
+        if (pendingImport.status === 'pending') {
+            const resumeButton = document.createElement('button');
+            resumeButton.type = 'button';
+            resumeButton.className = 'btn btn-primary';
+            resumeButton.textContent = 'Reprendre';
+            resumeButton.addEventListener('click', () => this._resumePendingImport(pendingImport.id));
+            actions.appendChild(resumeButton);
+        }
 
         const abandonButton = document.createElement('button');
         abandonButton.type = 'button';
@@ -107,8 +119,34 @@ export default class extends Controller {
         abandonButton.addEventListener('click', () => this._abandonPendingImport(pendingImport.id, li));
         actions.appendChild(abandonButton);
 
-        li.appendChild(actions);
+        header.appendChild(actions);
+        li.appendChild(header);
+
+        if (pendingImport.status === 'extracting' && pendingImport.zipsProgress?.length) {
+            const zipsList = document.createElement('ul');
+            zipsList.className = 'flex flex-col gap-2';
+            li.appendChild(zipsList);
+            this._renderZipsProgress(pendingImport.zipsProgress, zipsList);
+        }
+
         return li;
+    }
+
+    _activeImportStatusLabel(pendingImport) {
+        switch (pendingImport.status) {
+            case 'pending':
+                return `${pendingImport.filesUploadedCount} fichier(s) déjà reçu(s)`;
+            case 'scheduled':
+                return 'en attente d\'un créneau serveur calme…';
+            case 'extracting':
+                return pendingImport.totalZipCount
+                    ? `extraction en cours (${pendingImport.extractedZipCount} / ${pendingImport.totalZipCount} archives)`
+                    : 'extraction en cours…';
+            case 'processing':
+                return 'traitement des médias en cours…';
+            default:
+                return pendingImport.status;
+        }
     }
 
     _resumePendingImport(importId) {
@@ -419,7 +457,51 @@ export default class extends Controller {
         return res.json();
     }
 
+    // #545 : une barre par ZIP (nom + entrées extraites/totales), pour voir
+    // lequel est en cours et son avancement — sans ça, un import à plusieurs
+    // ZIP n'affichait qu'un pourcentage global agrégé, sans dire lequel
+    // progresse (#546 introduit un batch limité par appel, donc un gros ZIP
+    // peut rester "en cours" plusieurs minutes).
+    _renderZipsProgress(zipsProgress, container = this.zipsProgressTarget) {
+        container.innerHTML = '';
+
+        zipsProgress.forEach((zip) => {
+            const li = document.createElement('li');
+            li.className = 'flex flex-col gap-1';
+
+            const label = document.createElement('p');
+            label.className = 'text-xs';
+            label.style.color = 'var(--hc-text-secondary, var(--hc-text))';
+            const percent = zip.totalEntries > 0 ? Math.round((zip.extractedEntries / zip.totalEntries) * 100) : 0;
+            label.textContent = zip.isComplete
+                ? `${zip.name} — terminé`
+                : `${zip.name} — ${zip.extractedEntries} / ${zip.totalEntries} fichiers (${percent}%)`;
+            li.appendChild(label);
+
+            const track = document.createElement('div');
+            track.className = 'takeout-progress-track';
+            track.style.cssText = 'height: 4px; border-radius: 2px; overflow: hidden; background: var(--hc-border)';
+
+            const bar = document.createElement('div');
+            bar.className = 'takeout-progress-bar';
+            bar.style.cssText = `height: 100%; width: ${percent}%; background: var(--hc-accent); opacity: ${zip.isComplete ? '0.6' : '1'}; transition: width 0.3s ease`;
+            track.appendChild(bar);
+            li.appendChild(track);
+
+            container.appendChild(li);
+        });
+    }
+
     _renderStatus(status) {
+        // #545 : détail par ZIP affiché uniquement pendant l'extraction —
+        // sans intérêt une fois passé à "processing" (tous les ZIP sont
+        // alors forcément complets).
+        if (status.status === 'extracting' && status.zipsProgress) {
+            this._renderZipsProgress(status.zipsProgress);
+        } else if (this.hasZipsProgressTarget) {
+            this.zipsProgressTarget.innerHTML = '';
+        }
+
         // #515 : pendant "extracting", la progression connue est
         // extractedZipCount/totalZipCount (totalMediaCount n'est connu
         // qu'après le parsing, une fois l'extraction terminée) — sans ça,

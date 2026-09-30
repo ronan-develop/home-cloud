@@ -130,6 +130,14 @@ final class TakeoutImportOutput
     public int $extractedZipCount = 0;
     /** Liste des imports en attente (#481) : ZIP déjà (au moins partiellement) reçus pour cet import. */
     public int $filesUploadedCount = 0;
+    /**
+     * Détail de progression par ZIP (#545) : nom, entrées extraites/totales,
+     * complet ou non — une seule barre globale ne montrait pas quel ZIP
+     * était en cours parmi plusieurs, ni son avancement interne.
+     *
+     * @var list<array{name: string, extractedEntries: int, totalEntries: int, isComplete: bool}>
+     */
+    public array $zipsProgress = [];
     public string $createdAt = '';
     public ?string $completedAt = null;
     public ?string $errorMessage = null;

@@ -560,8 +560,8 @@ describe('liste des imports Takeout en attente (#481)', () => {
         global.fetch = jest.fn().mockResolvedValueOnce({
             ok: true,
             json: async () => [
-                { id: 'import-1', createdAt: '2026-09-20T10:00:00+00:00', filesUploadedCount: 2 },
-                { id: 'import-2', createdAt: '2026-09-21T10:00:00+00:00', filesUploadedCount: 0 },
+                { id: 'import-1', status: 'pending', createdAt: '2026-09-20T10:00:00+00:00', filesUploadedCount: 2 },
+                { id: 'import-2', status: 'pending', createdAt: '2026-09-21T10:00:00+00:00', filesUploadedCount: 0 },
             ],
         });
 
@@ -589,7 +589,7 @@ describe('liste des imports Takeout en attente (#481)', () => {
         html();
         global.fetch = jest.fn().mockResolvedValueOnce({
             ok: true,
-            json: async () => [{ id: 'import-target', createdAt: '2026-09-20T10:00:00+00:00', filesUploadedCount: 1 }],
+            json: async () => [{ id: 'import-target', status: 'pending', createdAt: '2026-09-20T10:00:00+00:00', filesUploadedCount: 1 }],
         });
 
         application = Application.start();
@@ -614,7 +614,7 @@ describe('liste des imports Takeout en attente (#481)', () => {
         global.fetch = jest.fn()
             .mockResolvedValueOnce({
                 ok: true,
-                json: async () => [{ id: 'import-abandon', createdAt: '2026-09-20T10:00:00+00:00', filesUploadedCount: 1 }],
+                json: async () => [{ id: 'import-abandon', status: 'pending', createdAt: '2026-09-20T10:00:00+00:00', filesUploadedCount: 1 }],
             })
             .mockResolvedValueOnce({ ok: true }); // DELETE
 

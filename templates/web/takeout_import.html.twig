@@ -86,6 +86,12 @@
         <p class="font-medium" style="color: var(--hc-text)" data-takeout-import-target="status">En attente…</p>
         <p class="text-sm" style="color: var(--hc-text-secondary, var(--hc-text))" data-takeout-import-target="counts"></p>
 
+        <!-- #545 : détail de progression par ZIP (nom, avancement, complet
+             ou non) — la barre globale seule ne montre pas lequel des
+             plusieurs ZIP est en cours ni son propre avancement, rempli
+             dynamiquement en JS depuis zipsProgress. -->
+        <ul class="flex flex-col gap-2" data-takeout-import-target="zipsProgress"></ul>
+
         <!-- Progression du fichier en cours d'envoi (chunk par chunk) — un ZIP
              de plusieurs GB tient à lui seul plusieurs dizaines de chunks,
              la barre globale seule restait quasi figée pendant tout ce temps. -->

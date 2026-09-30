@@ -11,6 +11,7 @@ use App\Entity\TakeoutImport;
 use App\Entity\User;
 use App\Repository\TakeoutImportRepository;
 use App\Service\Takeout\TakeoutImportTmpDirLocator;
+use App\Service\Takeout\TakeoutZipProgressReporter;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -34,6 +35,7 @@ final class TakeoutImportProvider implements ProviderInterface
         private readonly TakeoutImportRepository $repository,
         private readonly Security $security,
         private readonly TakeoutImportTmpDirLocator $tmpDirLocator,
+        private readonly TakeoutZipProgressReporter $zipProgressReporter,
     ) {}
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): object|array|null
@@ -71,6 +73,7 @@ final class TakeoutImportProvider implements ProviderInterface
         // rappeler où on en était en cas de reprise (#481), affiché dans la
         // liste des imports en attente sur la page.
         $output->filesUploadedCount = count($this->tmpDirLocator->zipPathsFor($import));
+        $output->zipsProgress = $this->zipProgressReporter->reportFor($import);
 
         return $output;
     }
