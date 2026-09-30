@@ -40,4 +40,20 @@ class DirectMessageRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    // #533 : "Tout marquer comme lu" — UPDATE bulk plutôt qu'un foreach +
+    // markAsRead() + flush par message (potentiellement des dizaines de
+    // messages non lus d'un coup).
+    public function markAllAsReadForRecipient(User $recipient): void
+    {
+        $this->createQueryBuilder('dm')
+            ->update()
+            ->set('dm.readAt', ':now')
+            ->andWhere('dm.recipient = :userId')
+            ->andWhere('dm.readAt IS NULL')
+            ->setParameter('now', new \DateTimeImmutable(), \Doctrine\DBAL\Types\Types::DATETIME_IMMUTABLE)
+            ->setParameter('userId', $recipient->getId(), 'uuid')
+            ->getQuery()
+            ->execute();
+    }
 }

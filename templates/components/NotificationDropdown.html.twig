@@ -21,6 +21,13 @@
         {% if notificationItems is empty %}
             <p class="hc-notif-empty">Aucune notification pour le moment.</p>
         {% else %}
+            <div class="hc-notif-header">
+                <button type="button"
+                        class="hc-notif-mark-all-read"
+                        data-action="click->notifications#markAllRead">
+                    Tout marquer comme lu
+                </button>
+            </div>
             {% for item in notificationItems %}
                 <a href="{{ item.link }}"
                    class="hc-notif-item hc-notif-item--unread"
