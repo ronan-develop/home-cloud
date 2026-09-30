@@ -51,4 +51,25 @@ final class ServerLoadCheckerTest extends TestCase
 
         $this->assertFalse($checker->isServerCalmEnough());
     }
+
+    // Recalibrage #543 : le seuil de 3.0 était fixé sans tenir compte des 56
+    // cœurs visibles côté conteneur — charge mesurée en usage normal (hors
+    // pic) à ~5-6, largement sous le seuil de kill LVE observé (~10), mais
+    // au-dessus de 3.0. Conséquence en prod : 173/173 tentatives de dispatch
+    // échouées sur ~43h (0% de succès), l'import restait scheduled en
+    // permanence. Nouveau défaut à 8.0 : marge de sécurité réelle sous 10,
+    // tout en laissant les imports démarrer en usage normal du serveur.
+    public function testDefaultThresholdAllowsNormalServerLoad(): void
+    {
+        $checker = new ServerLoadChecker(loadAverageProvider: fn () => [6.2, 6.0, 6.08]);
+
+        $this->assertTrue($checker->isServerCalmEnough());
+    }
+
+    public function testDefaultThresholdStillRejectsLoadNearKillLevel(): void
+    {
+        $checker = new ServerLoadChecker(loadAverageProvider: fn () => [9.86, 10.45, 10.48]);
+
+        $this->assertFalse($checker->isServerCalmEnough());
+    }
 }
