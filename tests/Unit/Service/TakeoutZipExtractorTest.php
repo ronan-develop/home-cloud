@@ -268,4 +268,51 @@ final class TakeoutZipExtractorTest extends TestCase
 
         @unlink($zipPath);
     }
+
+    // #546 (suite) : assertSafeToExtract() bouclait sur TOUTES les entrées
+    // du ZIP à CHAQUE appel — y compris les appels de reprise qui ne
+    // traitent que quelques entrées, réintroduisant exactement le problème
+    // que le batch limité devait résoudre (constaté en conditions réelles :
+    // un ZIP à 1621 entrées continuait de se faire tuer même avec
+    // maxEntriesPerCall=20, le scan de sécurité restant coûteux à chaque
+    // fois). La vérification n'a de sens qu'une fois par ZIP — ses stats ne
+    // changent pas entre deux appels sur le même fichier — donc sautée dès
+    // qu'un .progress existe déjà (signe qu'un premier appel a déjà eu lieu
+    // et validé ce ZIP).
+    public function testSkipsSafetyCheckOnResumedCallWithExistingProgress(): void
+    {
+        $zipPath = $this->makeZip([
+            'a.jpg' => 'contenu a',
+            'suspect.bin' => str_repeat("\0", 1_000_000),
+        ]);
+        // Simule une reprise : a.jpg déjà extrait, .progress présent — un
+        // ZIP bomb "découvert" seulement maintenant ne doit plus bloquer la
+        // reprise (la vérification a déjà eu lieu au tout premier appel).
+        file_put_contents($this->workDir . '/a.jpg', 'contenu a');
+        file_put_contents($this->workDir . '/.progress', '0');
+
+        $extractor = new TakeoutZipExtractor(maxCompressionRatio: 100);
+
+        $isComplete = $extractor->extract($zipPath, $this->workDir);
+
+        $this->assertTrue($isComplete);
+        $this->assertFileExists($this->workDir . '/suspect.bin');
+
+        @unlink($zipPath);
+    }
+
+    public function testStillRunsSafetyCheckOnFirstCallWithoutExistingProgress(): void
+    {
+        $zipPath = $this->makeZip([
+            'legit.jpg' => 'photo normale',
+            'bomb.bin' => str_repeat("\0", 1_000_000),
+        ]);
+        $extractor = new TakeoutZipExtractor(maxCompressionRatio: 100);
+
+        $this->expectException(ZipBombDetectedException::class);
+
+        $extractor->extract($zipPath, $this->workDir);
+
+        @unlink($zipPath);
+    }
 }

@@ -35,6 +35,14 @@ use App\Exception\Takeout\ZipBombDetectedException;
  * l'appelant (TakeoutImportExtractHandler) redispatche alors un nouveau
  * message pour continuer, au lieu d'attendre le prochain cycle
  * nightly-dispatch (jusqu'à 15 min).
+ *
+ * Vérification de sécurité sautée sur reprise (#546 suite) : assertSafeToExtract()
+ * bouclait sur TOUTES les entrées à CHAQUE appel, y compris les reprises qui
+ * ne traitent que maxEntriesPerCall entrées — réintroduisant le problème que
+ * le batch limité devait résoudre (constaté en conditions réelles, un ZIP à
+ * 1621 entrées continuait de se faire tuer). Les stats d'un ZIP ne changent
+ * pas entre deux appels sur le même fichier : la vérification n'a de sens
+ * qu'au tout premier appel (absence de .progress), jamais sur une reprise.
  */
 class TakeoutZipExtractor
 {
@@ -62,14 +70,17 @@ class TakeoutZipExtractor
             throw new \RuntimeException(sprintf('Impossible d\'ouvrir "%s" comme archive ZIP (code %d).', $zipPath, $openResult));
         }
 
-        $this->assertSafeToExtract($zip);
-
         if (!is_dir($destinationDir)) {
             mkdir($destinationDir, 0777, true);
         }
 
         $progressPath = $destinationDir . '/.progress';
-        $lastExtractedIndex = is_file($progressPath) ? (int) file_get_contents($progressPath) : -1;
+        $isFirstCall = !is_file($progressPath);
+        $lastExtractedIndex = $isFirstCall ? -1 : (int) file_get_contents($progressPath);
+
+        if ($isFirstCall) {
+            $this->assertSafeToExtract($zip);
+        }
 
         $extractedThisCall = 0;
         $index = $lastExtractedIndex + 1;
