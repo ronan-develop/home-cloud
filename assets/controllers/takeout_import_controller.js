@@ -139,6 +139,20 @@ export default class extends Controller {
         header.appendChild(actions);
         li.appendChild(header);
 
+        // Constaté en conditions réelles le 2026-09-30 : au rechargement de
+        // la page pendant qu'un import tourne déjà côté serveur, rien
+        // n'indiquait qu'il s'agit d'un traitement serveur (pas d'un upload
+        // en attente de l'utilisateur) et que la page peut être quittée sans
+        // risque — seul le bloc "progress" affiché juste après avoir
+        // soi-même démarré un upload avait ce message (#482).
+        if (['scheduled', 'extracting', 'processing'].includes(pendingImport.status)) {
+            const safeToCloseMessage = document.createElement('p');
+            safeToCloseMessage.className = 'text-xs';
+            safeToCloseMessage.style.color = 'var(--hc-text-secondary, var(--hc-text))';
+            safeToCloseMessage.textContent = 'Le serveur travaille : vous pouvez quitter cette page, l\'import continue en arrière-plan.';
+            li.appendChild(safeToCloseMessage);
+        }
+
         if (pendingImport.status === 'extracting' && pendingImport.zipsProgress?.length) {
             const zipsList = document.createElement('ul');
             zipsList.className = 'flex flex-col gap-2';
