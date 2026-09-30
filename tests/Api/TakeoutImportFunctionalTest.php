@@ -264,6 +264,31 @@ final class TakeoutImportFunctionalTest extends AuthenticatedApiTestCase
         $this->assertSame(TakeoutImport::STATUS_COMPLETED, $data['status']);
     }
 
+    // #545 : détail de progression par ZIP (nom, entrées extraites/totales,
+    // complet ou non) — une seule barre globale ne montrait pas quel ZIP
+    // était en cours parmi plusieurs, ni son avancement interne.
+    public function testGetExposesZipsProgressAfterCompletion(): void
+    {
+        $user = $this->createUser('takeout-zips-progress@example.com');
+        $zipPath = $this->makeTakeoutZip();
+        $uploadedFile = new UploadedFile($zipPath, 'takeout-20260101-001.zip', 'application/zip', null, true);
+
+        [$client, $importId] = $this->createImportAndUploadFiles($user, [$uploadedFile]);
+        $client->request('POST', "/api/v1/takeout-imports/{$importId}/start");
+        $this->assertResponseStatusCodeSame(202);
+
+        $this->runFullImportPipeline();
+
+        $client->request('GET', '/api/v1/takeout-imports/' . $importId);
+
+        $this->assertResponseIsSuccessful();
+        $data = json_decode($client->getResponse()->getContent(), true);
+        $this->assertCount(1, $data['zipsProgress']);
+        $this->assertSame('takeout-20260101-001.zip', $data['zipsProgress'][0]['name']);
+        $this->assertTrue($data['zipsProgress'][0]['isComplete']);
+        $this->assertSame(3, $data['zipsProgress'][0]['totalEntries']);
+    }
+
     // #518 : le message d'exception brut (jargon technique, code ZipArchive,
     // chemins serveur) ne doit jamais être affiché tel quel à l'utilisateur
     // final — message générique côté API, détail technique réservé aux logs
