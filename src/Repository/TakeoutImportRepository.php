@@ -37,18 +37,31 @@ class TakeoutImportRepository extends ServiceEntityRepository
         );
     }
 
-    // Variante liste (plusieurs onglets/appareils peuvent laisser plusieurs
-    // imports pending simultanés) — utilisée pour les afficher tous sur la
-    // page, avec reprise/abandon explicites par import.
+    // #545 : tous les imports non terminaux d'un utilisateur (pending +
+    // scheduled + extracting + processing), affichés sur la page avec
+    // reprise/abandon par import (pending) ou juste un état visuel pour les
+    // autres (déjà en traitement, pas de re-upload possible). Un import
+    // scheduled invisible dans cette liste faisait croire à l'utilisateur
+    // qu'il fallait relancer un nouvel import — constaté en conditions
+    // réelles le 2026-09-30 (doublon d'upload de 23,6 Go).
     /**
      * @return list<TakeoutImport>
      */
-    public function findAllPendingByOwner(User $owner): array
+    public function findAllActiveByOwner(User $owner): array
     {
-        return $this->findBy(
-            ['owner' => $owner, 'status' => TakeoutImport::STATUS_PENDING],
-            ['createdAt' => 'DESC'],
-        );
+        return $this->createQueryBuilder('ti')
+            ->where('ti.owner = :owner')
+            ->andWhere('ti.status IN (:statuses)')
+            ->setParameter('owner', $owner->getId(), 'uuid')
+            ->setParameter('statuses', [
+                TakeoutImport::STATUS_PENDING,
+                TakeoutImport::STATUS_SCHEDULED,
+                TakeoutImport::STATUS_EXTRACTING,
+                TakeoutImport::STATUS_PROCESSING,
+            ])
+            ->orderBy('ti.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
     }
 
     public function remove(TakeoutImport $import): void

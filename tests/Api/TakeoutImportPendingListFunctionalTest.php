@@ -58,6 +58,85 @@ final class TakeoutImportPendingListFunctionalTest extends AuthenticatedApiTestC
         self::assertContains($importId2, $ids);
     }
 
+    // #545 : un import scheduled (upload terminé, en attente de créneau
+    // serveur calme, #522/#524) disparaissait totalement de la liste — le
+    // filtre ne couvrait que "pending" au sens strict (upload en cours).
+    // Sans indication qu'un traitement est déjà en cours, l'utilisateur
+    // relance un import en doublon (constaté en conditions réelles le
+    // 2026-09-30).
+    public function testListsScheduledImport(): void
+    {
+        $user = $this->createUser('takeout-list-scheduled@example.com');
+        $client = $this->createAuthenticatedClient($user);
+        $client->disableReboot();
+        $this->em = static::getContainer()->get(\Doctrine\ORM\EntityManagerInterface::class);
+
+        $client->request('POST', '/api/v1/takeout-imports');
+        $this->assertResponseStatusCodeSame(201);
+        $importId = json_decode($client->getResponse()->getContent(), true)['id'];
+
+        $import = $this->em->getRepository(\App\Entity\TakeoutImport::class)->find(\Symfony\Component\Uid\Uuid::fromString($importId));
+        $import->markScheduled();
+        $this->em->flush();
+
+        $client->request('GET', '/api/v1/takeout-imports/pending-list');
+
+        $this->assertResponseStatusCodeSame(200);
+        $data = json_decode($client->getResponse()->getContent(), true);
+        self::assertCount(1, $data);
+        self::assertSame($importId, $data[0]['id']);
+        self::assertSame('scheduled', $data[0]['status']);
+    }
+
+    public function testListsExtractingImport(): void
+    {
+        $user = $this->createUser('takeout-list-extracting@example.com');
+        $client = $this->createAuthenticatedClient($user);
+        $client->disableReboot();
+        $this->em = static::getContainer()->get(\Doctrine\ORM\EntityManagerInterface::class);
+
+        $client->request('POST', '/api/v1/takeout-imports');
+        $this->assertResponseStatusCodeSame(201);
+        $importId = json_decode($client->getResponse()->getContent(), true)['id'];
+
+        $import = $this->em->getRepository(\App\Entity\TakeoutImport::class)->find(\Symfony\Component\Uid\Uuid::fromString($importId));
+        $import->markExtracting(5);
+        $this->em->flush();
+
+        $client->request('GET', '/api/v1/takeout-imports/pending-list');
+
+        $this->assertResponseStatusCodeSame(200);
+        $data = json_decode($client->getResponse()->getContent(), true);
+        self::assertCount(1, $data);
+        self::assertSame('extracting', $data[0]['status']);
+    }
+
+    public function testDoesNotListCompletedOrFailedImports(): void
+    {
+        $user = $this->createUser('takeout-list-terminal@example.com');
+        $client = $this->createAuthenticatedClient($user);
+        $client->disableReboot();
+        $this->em = static::getContainer()->get(\Doctrine\ORM\EntityManagerInterface::class);
+
+        $client->request('POST', '/api/v1/takeout-imports');
+        $this->assertResponseStatusCodeSame(201);
+        $completedId = json_decode($client->getResponse()->getContent(), true)['id'];
+
+        $client->request('POST', '/api/v1/takeout-imports');
+        $this->assertResponseStatusCodeSame(201);
+        $failedId = json_decode($client->getResponse()->getContent(), true)['id'];
+
+        $repository = $this->em->getRepository(\App\Entity\TakeoutImport::class);
+        $repository->find(\Symfony\Component\Uid\Uuid::fromString($completedId))->markCompleted(10, 0, 0);
+        $repository->find(\Symfony\Component\Uid\Uuid::fromString($failedId))->markFailed('erreur', 0, 0, 0);
+        $this->em->flush();
+
+        $client->request('GET', '/api/v1/takeout-imports/pending-list');
+
+        $this->assertResponseStatusCodeSame(200);
+        self::assertSame([], json_decode($client->getResponse()->getContent(), true));
+    }
+
     public function testNeverListsAnotherUsersImport(): void
     {
         $owner = $this->createUser('takeout-list-owner@example.com');

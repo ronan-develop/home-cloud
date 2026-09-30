@@ -14,12 +14,12 @@ use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\Serializer\SerializerInterface;
 
 /**
- * GET /api/v1/takeout-imports/pending-list — liste tous les imports
- * "pending" de l'utilisateur courant (#481). Distinct de
- * TakeoutImportFindPendingController (singulier, le plus récent) : plusieurs
- * imports pending simultanés restent possibles (deux tentatives depuis deux
- * appareils/navigateurs différents), affichés sur la page avec reprise/
- * abandon explicites par import.
+ * GET /api/v1/takeout-imports/pending-list — liste tous les imports non
+ * terminaux de l'utilisateur courant : pending (#481), scheduled/extracting/
+ * processing (#545). Distinct de TakeoutImportFindPendingController
+ * (singulier, le plus récent, pending strict) : ici plusieurs imports actifs
+ * simultanés restent possibles, affichés sur la page avec reprise (pending
+ * uniquement) ou juste un état visuel pour les autres.
  */
 #[AsController]
 final class TakeoutImportListPendingController extends AbstractController
@@ -35,7 +35,7 @@ final class TakeoutImportListPendingController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
-        $imports = $this->takeoutImportRepository->findAllPendingByOwner($user);
+        $imports = $this->takeoutImportRepository->findAllActiveByOwner($user);
         $outputs = array_map(fn ($import) => $this->provider->toOutput($import), $imports);
 
         return new JsonResponse(
