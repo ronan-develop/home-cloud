@@ -28,3 +28,11 @@
   0%, 100% { opacity: 0.6; }
   50% { opacity: 1; }
 }
+
+/* Message "le serveur travaille, vous pouvez quitter la page" (#482, #555) —
+ * en vert pour ressortir clairement dans la liste des imports actifs, plutôt
+ * que de se fondre dans le texte secondaire gris. */
+.hc-safe-to-close {
+  color: #22c55e;
+  font-weight: 500;
+}
