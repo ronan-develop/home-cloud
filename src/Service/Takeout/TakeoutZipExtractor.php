@@ -26,20 +26,35 @@ use App\Exception\Takeout\ZipBombDetectedException;
  * 98%. Extraction entrée par entrée à la place, avec un marqueur
  * `<destinationDir>/.progress` traçant le dernier index extrait avec succès
  * — même pattern que ChunkedFileAssembler (#466) pour l'upload chunké.
+ *
+ * Batch limité par appel (#543 suite) : même avec le checkpoint, un ZIP à
+ * plusieurs milliers d'entrées peut se faire tuer (SIGKILL LVE) plusieurs
+ * fois de suite avant d'aboutir, chaque tentative perdant le temps déjà
+ * écoulé dans ce même appel PHP. `extract()` s'arrête après
+ * `maxEntriesPerCall` entrées et retourne `false` (extraction incomplète) ;
+ * l'appelant (TakeoutImportExtractHandler) redispatche alors un nouveau
+ * message pour continuer, au lieu d'attendre le prochain cycle
+ * nightly-dispatch (jusqu'à 15 min).
  */
 class TakeoutZipExtractor
 {
     public function __construct(
         private readonly int $maxTotalUncompressedBytes = 20 * 1024 * 1024 * 1024, // 20 Go
         private readonly int $maxCompressionRatio = 100,
+        private readonly int $maxEntriesPerCall = 20,
     ) {}
 
     /**
+     * @return bool true si le ZIP a été entièrement extrait, false s'il reste
+     *              des entrées (limite maxEntriesPerCall atteinte) — à
+     *              rappeler pour continuer, le checkpoint .progress reprendra
+     *              automatiquement là où l'appel précédent s'est arrêté.
+     *
      * @throws ZipBombDetectedException si l'archive dépasse les seuils de sécurité
      * @throws \RuntimeException si le fichier n'est pas un ZIP valide, ou si
      *                           une entrée échoue à s'extraire
      */
-    public function extract(string $zipPath, string $destinationDir): void
+    public function extract(string $zipPath, string $destinationDir): bool
     {
         $zip = new \ZipArchive();
         $openResult = $zip->open($zipPath, \ZipArchive::RDONLY);
@@ -56,13 +71,23 @@ class TakeoutZipExtractor
         $progressPath = $destinationDir . '/.progress';
         $lastExtractedIndex = is_file($progressPath) ? (int) file_get_contents($progressPath) : -1;
 
-        for ($index = $lastExtractedIndex + 1; $index < $zip->numFiles; ++$index) {
+        $extractedThisCall = 0;
+        $index = $lastExtractedIndex + 1;
+
+        for (; $index < $zip->numFiles; ++$index) {
+            if ($extractedThisCall >= $this->maxEntriesPerCall) {
+                $zip->close();
+
+                return false;
+            }
+
             if (!$zip->extractTo($destinationDir, [$zip->getNameIndex($index)])) {
                 $zip->close();
                 throw new \RuntimeException(sprintf('Échec de l\'extraction de l\'entrée %d de "%s" vers "%s".', $index, $zipPath, $destinationDir));
             }
 
             file_put_contents($progressPath, (string) $index);
+            ++$extractedThisCall;
         }
 
         if (is_file($progressPath)) {
@@ -70,6 +95,8 @@ class TakeoutZipExtractor
         }
 
         $zip->close();
+
+        return true;
     }
 
     /**
