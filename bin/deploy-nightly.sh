@@ -134,10 +134,10 @@ if run_step "git checkout"       git checkout --force "$REMOTE_SHA" \
 && run_step "composer install"   "$COMPOSER_BIN" install --no-interaction --prefer-dist --no-progress --no-dev --no-scripts \
 && run_step "install-ffmpeg"     bash bin/install-ffmpeg.sh \
 && run_step "cache:clear"        $PHP_BIN bin/console cache:clear --env=prod \
-&& run_step "assets:install"     $PHP_BIN bin/console assets:install public --env=prod \
-&& run_step "importmap:install"  $PHP_BIN bin/console importmap:install --env=prod \
+&& run_step "assets:install"     bash -c "umask 022 && $PHP_BIN bin/console assets:install public --env=prod" \
+&& run_step "importmap:install"  bash -c "umask 022 && $PHP_BIN bin/console importmap:install --env=prod" \
 && run_step "migrations"         $PHP_BIN bin/console doctrine:migrations:migrate --no-interaction --env=prod \
-&& run_step "asset-map:compile"  $PHP_BIN bin/console asset-map:compile; then
+&& run_step "asset-map:compile"  bash -c "umask 022 && $PHP_BIN bin/console asset-map:compile"; then
     rm -f "$IMMINENT_FILE"
     echo "<!-- Deployed: $(date '+%Y-%m-%d %H:%M:%S') -->" > templates/deploy-info.html.twig
     echo "$REMOTE_SHA" > .deployed-sha
