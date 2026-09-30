@@ -211,4 +211,61 @@ final class TakeoutZipExtractorTest extends TestCase
 
         @unlink($zipPath);
     }
+
+    public function testReturnsTrueWhenFullyExtracted(): void
+    {
+        $zipPath = $this->makeZip(['a.jpg' => 'contenu a']);
+
+        $isComplete = $this->extractor->extract($zipPath, $this->workDir);
+
+        $this->assertTrue($isComplete);
+
+        @unlink($zipPath);
+    }
+
+    // #543 (suite) : un kill LVE peut survenir à tout moment sur un ZIP
+    // volumineux (constaté en conditions réelles — 1621 entrées, tué avant la
+    // fin même avec le checkpoint .progress déjà en place). Limiter le nombre
+    // d'entrées extraites par appel réduit le travail exposé à un kill et
+    // permet au handler de redispatcher rapidement (nouveau message Messenger)
+    // plutôt que d'attendre le prochain cycle nightly-dispatch (15 min).
+    public function testStopsAfterMaxEntriesPerCallAndReturnsFalse(): void
+    {
+        $zipPath = $this->makeZip([
+            'a.jpg' => 'contenu a',
+            'b.jpg' => 'contenu b',
+            'c.jpg' => 'contenu c',
+        ]);
+        $extractor = new TakeoutZipExtractor(maxEntriesPerCall: 2);
+
+        $isComplete = $extractor->extract($zipPath, $this->workDir);
+
+        $this->assertFalse($isComplete);
+        $this->assertFileExists($this->workDir . '/a.jpg');
+        $this->assertFileExists($this->workDir . '/b.jpg');
+        $this->assertFileDoesNotExist($this->workDir . '/c.jpg');
+        $this->assertSame('1', file_get_contents($this->workDir . '/.progress'));
+
+        @unlink($zipPath);
+    }
+
+    public function testResumesAndCompletesAcrossMultipleBatchedCalls(): void
+    {
+        $zipPath = $this->makeZip([
+            'a.jpg' => 'contenu a',
+            'b.jpg' => 'contenu b',
+            'c.jpg' => 'contenu c',
+        ]);
+        $extractor = new TakeoutZipExtractor(maxEntriesPerCall: 2);
+
+        $firstCall = $extractor->extract($zipPath, $this->workDir);
+        $secondCall = $extractor->extract($zipPath, $this->workDir);
+
+        $this->assertFalse($firstCall);
+        $this->assertTrue($secondCall);
+        $this->assertFileExists($this->workDir . '/c.jpg');
+        $this->assertFileDoesNotExist($this->workDir . '/.progress');
+
+        @unlink($zipPath);
+    }
 }

@@ -40,7 +40,7 @@ final class TakeoutImportExtractHandlerTest extends TestCase
         $repository->method('find')->willReturn($import);
 
         $extractor = $this->createMock(TakeoutZipExtractor::class);
-        $extractor->expects($this->once())->method('extract')->with('/tmp/a.zip', $this->anything());
+        $extractor->expects($this->once())->method('extract')->with('/tmp/a.zip', $this->anything())->willReturn(true);
 
         $bus = $this->createMock(MessageBusInterface::class);
         $bus->expects($this->once())
@@ -116,6 +116,7 @@ final class TakeoutImportExtractHandlerTest extends TestCase
         $repository->method('find')->willReturn($import);
 
         $extractor = $this->createStub(TakeoutZipExtractor::class);
+        $extractor->method('extract')->willReturn(true);
 
         $bus = $this->createMock(MessageBusInterface::class);
         $bus->expects($this->once())
@@ -149,6 +150,40 @@ final class TakeoutImportExtractHandlerTest extends TestCase
 
         $handler = new TakeoutImportExtractHandler($repository, $extractor, $bus, $em, new NullLogger());
         $handler(new TakeoutImportExtractMessage('missing-id', '/tmp/a.zip', []));
+    }
+
+    // #543 (suite) : extract() peut retourner false (batch d'entrées limité
+    // atteint, ZIP pas encore entièrement extrait) — le handler doit alors
+    // redispatcher le MÊME zipPath (pas le suivant), sans incrémenter le
+    // compteur de ZIP extraits ni changer le statut, pour laisser le
+    // checkpoint .progress interne à TakeoutZipExtractor reprendre au bon
+    // endroit au prochain appel.
+    public function testRedispatchesSameZipWhenExtractionIncomplete(): void
+    {
+        $import = $this->makeImport();
+
+        $repository = $this->createStub(TakeoutImportRepository::class);
+        $repository->method('find')->willReturn($import);
+
+        $extractor = $this->createStub(TakeoutZipExtractor::class);
+        $extractor->method('extract')->willReturn(false);
+
+        $bus = $this->createMock(MessageBusInterface::class);
+        $bus->expects($this->once())
+            ->method('dispatch')
+            ->with($this->callback(function ($message) {
+                return $message instanceof TakeoutImportExtractMessage
+                    && $message->zipPath === '/tmp/a.zip'
+                    && $message->remainingZipPaths === ['/tmp/b.zip'];
+            }))
+            ->willReturn(new Envelope(new \stdClass()));
+
+        $em = $this->createStub(EntityManagerInterface::class);
+
+        $handler = new TakeoutImportExtractHandler($repository, $extractor, $bus, $em, new NullLogger());
+        $handler(new TakeoutImportExtractMessage((string) $import->getId(), '/tmp/a.zip', ['/tmp/b.zip']));
+
+        $this->assertSame(0, $import->getExtractedZipCount());
     }
 
     public function testCatchesExtractionExceptionMarksImportFailedAndDoesNotDispatchFurther(): void

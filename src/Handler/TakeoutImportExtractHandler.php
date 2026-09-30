@@ -57,7 +57,18 @@ final class TakeoutImportExtractHandler
                 $import->markExtracting(count($message->remainingZipPaths) + 1);
             }
 
-            $this->zipExtractor->extract($message->zipPath, $workDir);
+            $isZipFullyExtracted = $this->zipExtractor->extract($message->zipPath, $workDir);
+
+            if (!$isZipFullyExtracted) {
+                // Batch d'entrées limité atteint (#543) : le ZIP courant
+                // n'est pas fini, on redispatche le MÊME zipPath — le
+                // checkpoint .progress interne à TakeoutZipExtractor reprend
+                // automatiquement à la bonne entrée au prochain appel.
+                $this->bus->dispatch(new TakeoutImportExtractMessage($message->takeoutImportId, $message->zipPath, $message->remainingZipPaths));
+
+                return;
+            }
+
             $import->incrementExtractedZipCount();
             $this->em->flush();
 
