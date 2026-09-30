@@ -634,4 +634,43 @@ describe('liste des imports Takeout en attente (#481)', () => {
         const items = document.querySelectorAll('[data-takeout-import-target="pendingList"] li');
         expect(items).toHaveLength(0);
     });
+
+    // Constaté en conditions réelles le 2026-09-30 : au rechargement de la
+    // page pendant qu'un import tourne déjà côté serveur (extracting,
+    // processing, scheduled), rien n'indique à l'utilisateur qu'il peut
+    // quitter la page — ce message n'existait que dans le bloc "progress"
+    // affiché juste après avoir soi-même démarré un upload (#482), pas dans
+    // la liste des imports actifs rendue au chargement.
+    test.each(['scheduled', 'extracting', 'processing'])(
+        'indique que le serveur travaille et qu\'on peut quitter la page (%s)',
+        async (status) => {
+            html();
+            global.fetch = jest.fn().mockResolvedValueOnce({
+                ok: true,
+                json: async () => [{ id: 'import-1', status, createdAt: '2026-09-20T10:00:00+00:00', filesUploadedCount: 3 }],
+            });
+
+            application = Application.start();
+            application.register('takeout-import', TakeoutImportController);
+            await new Promise((resolve) => setTimeout(resolve, 0));
+
+            const item = document.querySelector('[data-takeout-import-target="pendingList"] li');
+            expect(item.textContent).toMatch(/quitter cette page/i);
+        },
+    );
+
+    test('n\'affiche pas le message serveur pour un import pending (upload pas terminé)', async () => {
+        html();
+        global.fetch = jest.fn().mockResolvedValueOnce({
+            ok: true,
+            json: async () => [{ id: 'import-1', status: 'pending', createdAt: '2026-09-20T10:00:00+00:00', filesUploadedCount: 1 }],
+        });
+
+        application = Application.start();
+        application.register('takeout-import', TakeoutImportController);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        const item = document.querySelector('[data-takeout-import-target="pendingList"] li');
+        expect(item.textContent).not.toMatch(/quitter cette page/i);
+    });
 });
