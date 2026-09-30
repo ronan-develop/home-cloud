@@ -125,4 +125,72 @@ final class DirectMessageRepositoryTest extends KernelTestCase
 
         $this->assertSame(1, $this->repository->countUnreadForUser($freshRecipient));
     }
+
+    // #533 : "Tout marquer comme lu" en un clic — jusqu'ici seul un marquage
+    // unitaire existait (DirectMessageReadWebController), rien n'orchestrait
+    // le marquage en masse de tous les messages non lus d'un destinataire.
+    public function testMarkAllAsReadForRecipientMarksAllUnreadMessages(): void
+    {
+        $sender = $this->createUser('sender-markall@example.com');
+        $recipient = $this->createUser('recipient-markall@example.com');
+
+        $first = new DirectMessage($sender, $recipient, 'Premier', 'Corps');
+        $second = new DirectMessage($sender, $recipient, 'Second', 'Corps');
+        $this->em->persist($first);
+        $this->em->persist($second);
+        $this->em->flush();
+        $this->em->clear();
+
+        $freshRecipient = $this->em->getRepository(User::class)->find($recipient->getId());
+        $this->repository->markAllAsReadForRecipient($freshRecipient);
+        $this->em->clear();
+
+        $freshRecipient = $this->em->getRepository(User::class)->find($recipient->getId());
+        $this->assertSame(0, $this->repository->countUnreadForUser($freshRecipient));
+    }
+
+    public function testMarkAllAsReadForRecipientDoesNotAffectOtherRecipients(): void
+    {
+        $sender = $this->createUser('sender-markall-other@example.com');
+        $recipient = $this->createUser('recipient-markall-mine@example.com');
+        $other = $this->createUser('recipient-markall-other@example.com');
+
+        $mine = new DirectMessage($sender, $recipient, 'Le mien', 'Corps');
+        $theirs = new DirectMessage($sender, $other, 'Le leur', 'Corps');
+        $this->em->persist($mine);
+        $this->em->persist($theirs);
+        $this->em->flush();
+        $this->em->clear();
+
+        $freshRecipient = $this->em->getRepository(User::class)->find($recipient->getId());
+        $this->repository->markAllAsReadForRecipient($freshRecipient);
+        $this->em->clear();
+
+        $freshOther = $this->em->getRepository(User::class)->find($other->getId());
+        $this->assertSame(1, $this->repository->countUnreadForUser($freshOther));
+    }
+
+    public function testMarkAllAsReadForRecipientDoesNotOverwriteAlreadyReadTimestamp(): void
+    {
+        $sender = $this->createUser('sender-markall-keep@example.com');
+        $recipient = $this->createUser('recipient-markall-keep@example.com');
+
+        $alreadyRead = new DirectMessage($sender, $recipient, 'Déjà lu', 'Corps');
+        $alreadyRead->markAsRead();
+        $this->em->persist($alreadyRead);
+        $this->em->flush();
+        $this->em->clear();
+
+        // Rechargé après le premier flush (précision DB, pas microsecondes)
+        // pour comparer contre la même précision après markAllAsReadForRecipient.
+        $originalReadAt = $this->em->getRepository(DirectMessage::class)->find($alreadyRead->getId())->getReadAt();
+        $this->em->clear();
+
+        $freshRecipient = $this->em->getRepository(User::class)->find($recipient->getId());
+        $this->repository->markAllAsReadForRecipient($freshRecipient);
+        $this->em->clear();
+
+        $reloaded = $this->em->getRepository(DirectMessage::class)->find($alreadyRead->getId());
+        $this->assertEquals($originalReadAt, $reloaded->getReadAt());
+    }
 }

@@ -3,7 +3,7 @@ import { Controller } from '@hotwired/stimulus';
 /* Cloche topbar : dropdown de la pile unifiée de notifications (messages
  * directs + changelog, #373). Modèle : new_menu_controller.js. */
 export default class extends Controller {
-    static targets = ['button', 'panel', 'badge'];
+    static targets = ['button', 'panel', 'badge', 'item'];
 
     connect() {
         this._onDocumentClick = (e) => {
@@ -83,6 +83,20 @@ export default class extends Controller {
         // signalé : lire une entrée changelog vidait tout le panel).
         this._removeAfter(strategy.markAsRead(event), [item]);
         this._decrementBadge();
+    }
+
+    // #533 : "Tout marquer comme lu" — orchestre les deux mécanismes de
+    // lecture déjà en place (lastChangelogViewedAt + DirectMessage.readAt)
+    // en un seul appel, puis vide le panel entier d'un coup plutôt qu'un
+    // item à la fois (_removeAfter accepte déjà une liste d'items).
+    markAllRead(event) {
+        event.stopPropagation();
+
+        const items = [...this.itemTargets];
+        this._removeAfter(fetch('/notifications/mark-all-read', { method: 'POST' }), items);
+        if (this.hasBadgeTarget) {
+            this.badgeTarget.remove();
+        }
     }
 
     // La pastille (#468) est rendue une seule fois côté serveur au

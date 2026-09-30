@@ -30,6 +30,26 @@
   text-align: center;
 }
 
+.hc-notif-header {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.4rem 0.75rem;
+  border-bottom: 1px solid var(--hc-border);
+}
+
+.hc-notif-mark-all-read {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.75rem;
+  color: var(--hc-accent);
+  cursor: pointer;
+}
+
+.hc-notif-mark-all-read:hover {
+  text-decoration: underline;
+}
+
 .hc-notif-item {
   display: flex;
   align-items: flex-start;
