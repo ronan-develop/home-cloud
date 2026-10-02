@@ -6,6 +6,16 @@
 
 ---
 
+## 🚧 Dérive schéma/migrations (2026-10-02, #571, branche `chore/571-schema-drift`)
+
+- Audit : base vierge construite depuis les 25 migrations = **un seul écart** avec les entités (défauts `0` de `takeout_imports.processed_count` / `extracted_zip_count`, cosmétique). Les `DROP broadcast_messages` / `DROP users.last_broadcast_seen_at` venaient uniquement de la base de dev locale (jamais créés par aucune migration ni entité, absents de la prod ronan).
+- `options: ['default' => 0]` sur les deux propriétés : l'entité s'aligne sur la base, **aucune migration** (rien à exécuter sur les instances).
+- `SchemaInSyncTest` : échoue si le schéma issu des migrations diverge des entités (vérifié par mutation : rouge avec un champ non migré). La CI construit sa base de test par `migrations:migrate`, donc le test y est fiable.
+- Base de dev nettoyée (table et colonne orphelines, vides) ; commentaires obsolètes « non repris, à traiter séparément » mis à jour dans deux migrations ; consigne `make:migration` ajoutée à `.claude/architecture.md`.
+- Reste : revue, `gh pr create` (label + `Closes #571` + assignee + board), CI verte, merge ; relancer l'audit `schema:update --dump-sql` sur les 6 autres instances une fois réparées (#569).
+
+---
+
 ## ✅ Déploiement : composer en CLI, vérification de vendor/, rollback (2026-10-02, #570, PR #602 mergée)
 
 - Cause de l'incident #569 (6 instances en 500) : composer lancé en PHP CGI par le cron affichait son aide et sortait en 0 ; code déjà mis à jour par `git checkout`, `vendor/` ancien, aucun rollback.
