@@ -19,10 +19,10 @@ final class Version20260926172610 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        // Note : make:migration détecte aussi un drift préexistant sans
-        // rapport avec ce ticket (broadcast_messages / last_broadcast_seen_at,
-        // entité déjà retirée du code mais jamais migrée en base) — non repris
-        // ici volontairement, à traiter séparément.
+        // Note : make:migration détectait aussi des DROP sans rapport avec ce
+        // ticket (broadcast_messages / last_broadcast_seen_at). Audit #571 : ils
+        // viennent uniquement de la base de dev locale — aucune migration ni
+        // entité ne les a jamais créés, et ils n'existent pas en prod. Non repris.
         $this->addSql('CREATE TABLE content_fingerprints (id BINARY(16) NOT NULL, content_hash VARCHAR(64) NOT NULL, first_seen_at DATETIME NOT NULL, owner_id BINARY(16) NOT NULL, INDEX IDX_8973604F7E3C61F9 (owner_id), INDEX idx_content_fingerprints_hash (content_hash), UNIQUE INDEX uniq_owner_content_hash (owner_id, content_hash), PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4');
         $this->addSql('ALTER TABLE content_fingerprints ADD CONSTRAINT FK_8973604F7E3C61F9 FOREIGN KEY (owner_id) REFERENCES users (id)');
     }

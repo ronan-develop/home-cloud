@@ -46,7 +46,7 @@ public function __construct(...)
 
 | Fichier                        | Méthode                                                            |
 |--------------------------------|--------------------------------------------------------------------|
-| Migration                      | `make:migration` **obligatoire** (diff schema/entités automatique) |
+| Migration                      | `make:migration` **obligatoire** (diff schema/entités automatique) — **relire et ne garder que l'évolution voulue** (DROP parasites possibles venant de la base de dev, cf. #571) ; `SchemaInSyncTest` échoue si une entité diverge des migrations |
 | Entité/Controller/Service/Test | Claude génère directement (maker interactif incompatible)          |
 
 ## Pipeline média
