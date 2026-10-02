@@ -17,8 +17,13 @@ use App\Interface\Media\RawPreviewCacheInterface;
  * - Le nom du fichier de cache est dérivé du chemin source, pas stocké en base :
  *   pas de migration ni de champ à maintenir, et le cache reste un détail
  *   d'implémentation qu'on peut vider entièrement sans rien casser.
- * - Le hash aplatit le chemin (qui contient des slashes) en un nom de fichier
- *   unique, ce qui évite au passage toute traversée de répertoire.
+ * - Le hash aplatit le nom en un nom de fichier unique, ce qui évite au passage
+ *   toute traversée de répertoire.
+ * - #609 : le hash porte sur le NOM du fichier source (`<uuid>.<ext>`, stable),
+ *   pas sur son chemin complet, sinon déplacer l'original (app:storage:shard)
+ *   orphelinerait sa preview. Les entrées sont réparties en `previews/<xx>/`
+ *   (xx = 2 premiers caractères du hash) pour rester sous les 20 000 fichiers
+ *   par répertoire de l'hébergeur.
  * - Dégradation gracieuse : un cache illisible ou non inscriptible (disque
  *   plein, droits) fait retomber sur une génération à la volée, jamais sur une
  *   erreur.
@@ -51,7 +56,7 @@ final readonly class RawPreviewCache implements RawPreviewCacheInterface
 
     public function put(string $sourceRelativePath, string $jpegData): void
     {
-        $dir = $this->cacheDir();
+        $dir = dirname($this->pathFor($sourceRelativePath));
 
         if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
             return;
@@ -77,14 +82,35 @@ final readonly class RawPreviewCache implements RawPreviewCacheInterface
      */
     public function evict(string $sourceRelativePath): void
     {
-        $path = $this->pathFor($sourceRelativePath);
-
-        if (is_file($path)) {
-            @unlink($path);
+        foreach ([$this->pathFor($sourceRelativePath), $this->legacyPathFor($sourceRelativePath)] as $path) {
+            if (is_file($path)) {
+                @unlink($path);
+            }
         }
     }
 
+    public function purgeLegacyFlatEntries(): int
+    {
+        $purged = 0;
+
+        foreach (glob($this->cacheDir() . '/*.jpg') ?: [] as $file) {
+            if (@unlink($file)) {
+                ++$purged;
+            }
+        }
+
+        return $purged;
+    }
+
     private function pathFor(string $sourceRelativePath): string
+    {
+        $hash = hash('xxh128', basename($sourceRelativePath));
+
+        return $this->cacheDir() . '/' . substr($hash, 0, 2) . '/' . $hash . '.jpg';
+    }
+
+    /** Format d'avant #609 : à plat, haché sur le chemin complet. */
+    private function legacyPathFor(string $sourceRelativePath): string
     {
         return $this->cacheDir() . '/' . hash('xxh128', $sourceRelativePath) . '.jpg';
     }

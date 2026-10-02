@@ -26,4 +26,12 @@ interface RawPreviewCacheInterface
      * Retire la preview du cache. Sans effet si rien n'est caché.
      */
     public function evict(string $sourceRelativePath): void;
+
+    /**
+     * Supprime les previews de l'ancien format à plat (avant #609), devenues
+     * inatteignables. Le cache se régénère à la demande.
+     *
+     * @return int Nombre de fichiers supprimés
+     */
+    public function purgeLegacyFlatEntries(): int;
 }
