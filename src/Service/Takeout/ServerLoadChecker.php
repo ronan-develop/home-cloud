@@ -45,7 +45,18 @@ final class ServerLoadChecker
 
     public function isServerCalmEnough(): bool
     {
-        $loadAverage = $this->getLoadAverage();
+        return $this->isCalm($this->getLoadAverage());
+    }
+
+    /**
+     * Décision sur une mesure déjà prise (#528) : permet à l'appelant de
+     * mesurer une seule fois et de journaliser la mesure et la décision
+     * sans risque d'incohérence entre deux lectures successives.
+     *
+     * @param array{0: float, 1: float, 2: float}|null $loadAverage
+     */
+    public function isCalm(?array $loadAverage): bool
+    {
         if ($loadAverage === null) {
             return false;
         }

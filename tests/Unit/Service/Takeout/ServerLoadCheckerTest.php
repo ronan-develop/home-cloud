@@ -89,4 +89,15 @@ final class ServerLoadCheckerTest extends TestCase
 
         $this->assertNull($checker->getLoadAverage());
     }
+
+    // #528 : la commande mesure une fois et décide sur cette mesure, pour que
+    // l'issue loguée soit toujours cohérente avec la charge loguée.
+    public function testIsCalmDecidesOnGivenMeasureWithoutReadingAgain(): void
+    {
+        $checker = new ServerLoadChecker(threshold: 3.0, loadAverageProvider: fn () => throw new \LogicException('ne doit pas relire'));
+
+        $this->assertTrue($checker->isCalm([2.9, 9.0, 9.0]));
+        $this->assertFalse($checker->isCalm([3.0, 0.0, 0.0]));
+        $this->assertFalse($checker->isCalm(null));
+    }
 }
