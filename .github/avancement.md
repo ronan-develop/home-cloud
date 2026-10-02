@@ -48,6 +48,17 @@
 
 ---
 
+## 🚧 Rotation des logs applicatifs (2026-10-02, #606, branche `chore/606-log-rotation`)
+
+- Constat : `var/log/messenger.log` à ~50 Mo sur chacune des 7 instances, sans purge ; 1,24 million de lignes dont aucune utile (la bannière du worker, réimprimée à chaque démarrage par le cron toutes les minutes, ~103 000 démarrages).
+- `bin/rotate-logs.sh` : `*.log` > 10 Mo archivé en `.1.gz` (3 archives conservées), puis **tronqué** (le worker garde son descripteur `>>`). Pas d'archivage → pas de troncature ; sort toujours en 0. Mesuré : 50 Mo → 245 Ko, 0,2 s, 3 Mo de mémoire.
+- Appelé en début de `bin/deploy-nightly.sh` (déjà planifié et étalé sur les 7 instances) : aucun nouveau cron, aucune intervention manuelle par serveur. Un échec n'empêche jamais le déploiement.
+- Tests bash : 37/37 (7 pour la rotation dont l'écriture O_APPEND après troncature, 2 d'intégration nocturne).
+- Effectif sur une instance à la nuit suivant celle où elle récupère le script ; purge immédiate possible avec `bash bin/rotate-logs.sh`.
+- Reste : revue, PR (label + `Closes #606` + assignee + board), CI verte, merge ; la purge réelle des 7 instances se constate après un passage nocturne (ou à la demande).
+
+---
+
 ## ✅ Mises à jour composer — Symfony 8.0 → 8.1 (2026-10-02, #538, PR #562 mergée)
 
 - Contraintes `symfony/*` et `extra.symfony.require` passées de `8.0.*` à `8.1.*` (un `composer update` seul n'aurait rien monté). Symfony en 8.1.8, Doctrine ORM 3.7.3, DoctrineBundle 3.3.2, phpunit 13.4.0, twig 3.30, monolog 3.12.1.
