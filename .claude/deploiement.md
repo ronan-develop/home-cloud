@@ -639,6 +639,16 @@ Ce qui est en place depuis, **commun aux trois scripts** (`bin/lib/deploy-common
 - Un correctif du script nocturne n'est actif sur une instance qu'**à la nuit suivant celle où elle l'a récupéré** (le script du cron est celui du disque au lancement). Après un correctif de script, passer par `bash bin/deploy-all.sh` (exécuté depuis le poste) plutôt que d'attendre le cron.
 - Tests : `bash tests/bash/run.sh` (28 tests). Ils ne tournent pas dans la CI.
 
+### Rotation des logs — `bin/rotate-logs.sh` (#606)
+
+Constat du 2026-10-02 : `var/log/messenger.log` atteignait ~50 Mo sur chacune des 7 instances, sans aucune purge. Le worker Messenger (cron toutes les minutes, `>> messenger.log`) réimprime sa bannière à chaque démarrage : le fichier ne contient presque que ce bruit, mais y reçoit aussi les erreurs du worker.
+
+- **Qui l'appelle** : `bin/deploy-nightly.sh`, au tout début (avant toute décision de déploiement : instance à jour, déploiement reporté ou non). Il est déjà planifié et étalé sur les 7 instances : **aucun nouveau cron à poser**. Un échec de rotation est signalé mais ne bloque jamais le déploiement.
+- **Règle** : chaque `var/log/*.log` de plus de 10 Mo (`ROTATE_LOGS_MAX_BYTES`) est archivé dans `<fichier>.1.gz` ; les archives sont décalées, 3 conservées (`ROTATE_LOGS_KEEP`). Mesuré sur un fichier de 50 Mo de bannières : archive de 245 Ko, 0,2 s, 3 Mo de mémoire.
+- **Troncature, pas renommage** : le worker garde son descripteur ouvert (`>>` = O_APPEND) et continue d'écrire au bon endroit sans redémarrage. Quelques lignes écrites entre la copie et la troncature peuvent être perdues. Si l'archivage échoue, le log n'est **pas** tronqué.
+- **Quand ça prend effet** : un correctif de script n'est actif sur une instance qu'à la nuit suivant celle où elle l'a récupéré (le script du cron est celui du disque). Pour purger tout de suite : `bash bin/rotate-logs.sh` dans le dossier de l'instance, ou `bash bin/deploy-all.sh` pour ronan.
+- Les logs en eux-mêmes sont inchangés (niveau, contenu) : réduire le bruit à la source (bannière du worker) reste possible séparément.
+
 ### Crons cPanel — créés et actifs depuis le 2026-09-12
 
 > Vérifié en SSH le 2026-09-12 22h : les 8 crons ci-dessous sont bien

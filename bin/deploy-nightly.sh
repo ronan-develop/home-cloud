@@ -31,6 +31,15 @@ COMPOSER_BIN="$HC_COMPOSER_BIN"
 cd "$INSTANCE_PATH" || exit 1
 mkdir -p var/log
 
+# Rotation des logs (#606) — avant toute décision de déploiement, donc même
+# quand l'instance est à jour ou quand le déploiement est reporté. Ce script est
+# déjà planifié et étalé sur les 7 instances : pas de nouveau cron à poser.
+# Observation pure : un échec ne doit jamais empêcher le déploiement. Lancé via
+# "$BASH" (chemin absolu du bash courant) et non « bash » : indépendant du PATH
+# du cron et des stubs des tests.
+ROTATE_LOGS_SCRIPT="${DEPLOY_NIGHTLY_ROTATE_SCRIPT:-${SCRIPT_DIR}/rotate-logs.sh}"
+"$BASH" "$ROTATE_LOGS_SCRIPT" var/log || echo "⚠ ${PRENOM} : rotation des logs en échec (sans effet sur le déploiement)" >&2
+
 report_line() {
     # <prenom>|<statut>|<étape ou ->|<sha ou ->
     echo "${PRENOM}|${1}|${2:--}|${3:--}" >> "$REPORT_FILE"
