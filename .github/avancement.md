@@ -28,7 +28,7 @@
 
 ---
 
-## 🚧 Admin : charge serveur et imports Takeout différés (2026-10-02, #528, branche `feat/528-admin-charge-takeout`)
+## ✅ Admin : charge serveur et imports Takeout différés (2026-10-02, #528, PR #603 mergée)
 
 - `ServerLoadChecker` expose `getLoadAverage()`, `getThreshold()` et `isCalm(?array)` (décision sur une mesure déjà prise : la commande mesure une fois, l'issue loguée reste cohérente avec la charge loguée).
 - Nouvelle table `takeout_dispatch_log` (entité `TakeoutDispatchLog`) : `app:takeout:nightly-dispatch` y écrit une ligne par cycle de 15 min (`dispatched` / `deferred` / `idle`, load 1/5/15, seuil, nb en attente / dispatchés), puis purge au-delà de 30 jours (un seul `DELETE` indexé, pas de nouveau cron). Les cycles `idle` sont tracés exprès : ils servent d'échantillonnage de charge pour #547. Écriture et purge n'interrompent jamais le dispatch (erreur journalisée seulement).
@@ -36,7 +36,7 @@
 - Page `/admin/takeout-load` (whitelist AdminVoter, lien « Charge Takeout » dans le layout admin) : load courant vs seuil, imports `scheduled` (propriétaire, depuis quand), historique des 50 derniers cycles et part de cycles calmes sur 24 h. Dates affichées en `Europe/Paris`.
 - Migrations : deux, additives (CREATE TABLE + ADD COLUMN nullable). `make:migration` avait généré de la dérive de la base de dev locale (DROP `broadcast_messages`, DROP `users.last_broadcast_seen_at`, CHANGE sur `takeout_imports`) : retirée à la main, à garder en tête pour les prochaines migrations.
 - Suite complète : 1410/1410 verts.
-- Reste : revue, `gh pr create` (label + `Closes #528` + assignee + board), CI verte, merge ; l'échantillonnage ne démarre qu'au déploiement.
+- PR #603 mergée, CI verte. L'échantillonnage de charge ne démarre qu'au déploiement (déploiement exceptionnel prévu, cf. #569).
 
 ---
 
