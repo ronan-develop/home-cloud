@@ -28,7 +28,17 @@ REPORT_FILE="${3:?chemin_rapport manquant}"
 # isolé dans son propre process SSH (vécu 2026-09-27) — la valeur par défaut
 # est trop juste pour la compilation du container Symfony en prod.
 PHP_BIN="${DEPLOY_NIGHTLY_PHP_BIN:-/usr/local/bin/php} -d memory_limit=512M"
-COMPOSER_BIN="${DEPLOY_NIGHTLY_COMPOSER_BIN:-/usr/local/bin/composer}"
+# composer est un script `#!/usr/bin/env php` — sous le PATH minimal du cron,
+# `env` résout "php" vers /usr/bin/php (CGI, le premier dans ce PATH), pas
+# vers le CLI de $PHP_BIN. Invoquer composer.phar explicitement via $PHP_BIN
+# court-circuite ce shebang, plutôt que de compter sur la résolution de env
+# (piège distinct de celui déjà documenté plus haut sur composer/php absents
+# du PATH — ici ils sont présents, mais le MAUVAIS binaire est résolu).
+# Constaté en conditions réelles le 2026-10-02 : composer "réussit" en
+# apparence (exit 0) mais vendor/ reste incomplet (symfony/monolog-bundle
+# absent malgré composer.lock à jour), cache:clear échoue ensuite avec
+# ClassNotFoundError.
+COMPOSER_BIN="${DEPLOY_NIGHTLY_PHP_BIN:-/usr/local/bin/php} ${DEPLOY_NIGHTLY_COMPOSER_PHAR:-/usr/local/bin/composer}"
 
 cd "$INSTANCE_PATH" || exit 1
 mkdir -p var/log
