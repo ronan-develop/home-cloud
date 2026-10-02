@@ -6,6 +6,15 @@
 
 ---
 
+## 🚧 Mises à jour composer — Symfony 8.0 → 8.1 (2026-10-02, #538, branche `chore/538-composer-symfony-8-1`)
+
+- Contraintes `symfony/*` et `extra.symfony.require` passées de `8.0.*` à `8.1.*` (un `composer update` seul n'aurait rien monté). Symfony en 8.1.8, Doctrine ORM 3.7.3, DoctrineBundle 3.3.2, phpunit 13.4.0, twig 3.30, monolog 3.12.1.
+- Hors périmètre, volontairement figés : api-platform 4.3.x, ux-live-component 2.36, ux-twig-component 3.2 + stimulus-bundle 3.2 (`--with-all-dependencies` les montait en 3.5.1, contourné par `--with`), tailwind-bundle 0.12.
+- Transitif notable : `doctrine/collections` 2.6 → 3.1.0 (exigé par orm 3.7, compatible api-platform).
+- Vérifié : suite 1384/1384 identique à la référence avant montée ; simulation du cron (clone, `env -i PATH=/usr/bin:/bin`, `php composer install --no-dev --no-scripts`) : 117 paquets présents dans `vendor/`, `cache:clear --env=prod` OK (4 s, ~100 Mo), `lint:container` OK.
+
+---
+
 ## 🚧 Protection utilisateurs actifs pendant un déploiement — étape 3/3 (2026-09-12, #422, branche `feature/422-deploy-warning-popup`)
 
 - Dernière étape de #422 : popup avec compte à rebours pour un utilisateur déjà connecté au moment où un déploiement devient imminent.
