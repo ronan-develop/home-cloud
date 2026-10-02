@@ -454,3 +454,43 @@ test_pas_de_rollback_si_le_code_en_place_est_deja_la_cible() {
 
     _teardown_fixture
 }
+
+# ── Rotation des logs (#606) ────────────────────────────────────────────────
+# Le script nocturne est déjà planifié et étalé sur les 7 instances : il porte
+# la rotation (pas de nouveau cron à poser à la main sur chaque serveur).
+
+test_rotation_des_logs_meme_si_l_instance_est_a_jour() {
+    _setup_fixture
+    echo "abc1234" > "${FIXTURE_DIR}/instance/.deployed-sha"
+    _write_all_success_stubs "abc1234"
+    head -c 500 /dev/zero | tr '\0' 'x' > "${FIXTURE_DIR}/instance/var/log/messenger.log"
+    export ROTATE_LOGS_MAX_BYTES=100
+
+    _run_nightly
+
+    assert_file_exists "${FIXTURE_DIR}/instance/var/log/messenger.log.1.gz"
+    assert_equals "0" "$(wc -c < "${FIXTURE_DIR}/instance/var/log/messenger.log" | tr -d ' ')" "log vidé"
+    assert_contains "$(_report)" "yannick|skipped"
+
+    unset ROTATE_LOGS_MAX_BYTES
+    _teardown_fixture
+}
+
+test_echec_de_la_rotation_ne_bloque_pas_le_deploiement() {
+    _setup_fixture
+    echo "old0000" > "${FIXTURE_DIR}/instance/.deployed-sha"
+    _write_all_success_stubs "new1111"
+    printf '#!/bin/bash\nexit 1\n' > "${FIXTURE_DIR}/rotate-fails.sh"
+    export DEPLOY_NIGHTLY_ROTATE_SCRIPT="${FIXTURE_DIR}/rotate-fails.sh"
+
+    _run_nightly
+    local exit_code=$?
+
+    assert_equals "0" "$exit_code" "une rotation en échec ne doit pas empêcher le déploiement"
+    assert_contains "$(_report)" "yannick|ok"
+    assert_equals "new1111" "$(cat "${FIXTURE_DIR}/instance/.deployed-sha")"
+
+    unset DEPLOY_NIGHTLY_ROTATE_SCRIPT
+    _teardown_fixture
+}
+
