@@ -392,6 +392,8 @@ par pas de 5 min à partir de `0 3` / `30 3` / `0 4` (inchangé) :
 | damien   | `25 3`           | `55 3`             | `25 4`                      |
 | baptiste | `30 3`           | `0 4`              | `30 4`                      |
 
+> **#528 — historique** : chaque exécution de `takeout-nightly-dispatch` écrit une ligne dans la table `takeout_dispatch_log` (charge mesurée, seuil, issue) et purge les lignes de plus de 30 jours dans la même commande — aucun cron supplémentaire. Consultable dans l'admin : `/admin/takeout-load`.
+
 `takeout-nightly-dispatch` tourne toutes les 15 min (`<offset>-59/15 * * * *`),
 24h/24 — étalé par **décalage de minute de départ** entre les 7 instances
 (pas par heure, cf. piège LVE ci-dessous) :
