@@ -6,6 +6,18 @@
 
 ---
 
+## 🚧 Déploiement : composer en CLI, vérification de vendor/, rollback (2026-10-02, #570, branche `fix/570-deploy-composer-rollback`)
+
+- Cause de l'incident #569 (6 instances en 500) : composer lancé en PHP CGI par le cron affichait son aide et sortait en 0 ; code déjà mis à jour par `git checkout`, `vendor/` ancien, aucun rollback.
+- Le correctif `61ba614` était lui-même cassé : `"$COMPOSER_BIN"` (deux mots) entre guillemets → exit 127 « commande introuvable ». 7 tests bash échouaient déjà sur `main` sans que personne le voie (les tests bash ne tournent pas en CI).
+- `bin/lib/deploy-common.sh` : définition unique de composer (PHP CLI explicite, `memory_limit`) et de la vérification de `vendor/`, sourcée par `deploy-nightly.sh`, `deploy-all.sh` et `deploy.sh`. Plus de `composer` nu dans `bin/`.
+- Vérification de `vendor/` (`composer install --dry-run` → « Nothing to install ») validée avec le vrai composer : présent sur ronan, absent sur yannick (3 paquets manquants listés).
+- Rollback si l'échec précède les migrations (jamais après : état de la base incertain), cible = `HEAD` réellement en place ; rapport `→ code restauré (<sha>)` / `→ ROLLBACK ÉCHOUÉ`.
+- Tests bash : 27/27 (dont 10 nouveaux, 7 réparés). Suite PHP non concernée.
+- Reste : revue, `gh pr create` (label + `Closes #570` + assignee + board), CI verte, merge. Piste proposée : exécuter `tests/bash/run.sh` en CI.
+
+---
+
 ## ✅ Mises à jour composer — Symfony 8.0 → 8.1 (2026-10-02, #538, PR #562 mergée)
 
 - Contraintes `symfony/*` et `extra.symfony.require` passées de `8.0.*` à `8.1.*` (un `composer update` seul n'aurait rien monté). Symfony en 8.1.8, Doctrine ORM 3.7.3, DoctrineBundle 3.3.2, phpunit 13.4.0, twig 3.30, monolog 3.12.1.

@@ -624,6 +624,19 @@ cat .deployed-sha                              # SHA actuellement déployé
 tail -20 var/log/deploy-nightly.log            # dernière tentative
 ```
 
+### Garde-fous : `composer` en CLI, vérification de `vendor/`, rollback (#570)
+
+Incident du 2026-10-02 : le déploiement nocturne a lancé composer avec le PHP **CGI** du PATH cron. Composer a affiché son aide et **sorti en code 0** sans rien installer ; le code avait déjà été mis à jour par `git checkout`, `vendor/` est resté ancien (3 paquets manquants : `monolog/monolog`, `symfony/monolog-bridge`, `symfony/monolog-bundle`) et 6 instances sont passées en HTTP 500.
+
+Ce qui est en place depuis, **commun aux trois scripts** (`bin/lib/deploy-common.sh`, sourcé par `deploy-nightly.sh`, `deploy-all.sh` et `deploy.sh`) :
+
+- **composer via le PHP CLI explicite** : `$HC_PHP -d memory_limit=512M /usr/local/bin/composer install …`. `$HC_COMPOSER_BIN` vaut plusieurs mots : toujours l'utiliser **non quoté** (entre guillemets, bash cherche un exécutable nommé « php composer » et sort en 127). Plus aucun `composer` nu dans `bin/` (test `test_aucun_composer_nu_dans_les_scripts_de_deploiement`).
+- **Vérification de `vendor/`** après `composer install` : `composer install --dry-run --no-dev` doit afficher « Nothing to install, update or remove ». Sinon l'étape « vérification de vendor/ » échoue (validé avec le vrai composer : message présent sur ronan, absent sur une instance à `vendor/` incomplet).
+- **Rollback automatique si l'échec précède les migrations** : `git checkout --force <HEAD d'avant>`, `composer install`, vérification de `vendor/`, `cache:clear`. Le rapport indique `→ code restauré (<sha>)` ou `→ ROLLBACK ÉCHOUÉ …, instance probablement hors service` (alors : intervention manuelle). **Pas de rollback à partir des migrations** : l'état de la base est incertain (migration partielle), un ancien code sur un schéma à moitié migré serait pire. Pas de rollback non plus si `HEAD` est déjà la cible.
+- La cible du rollback est le `HEAD` réellement en place avant l'opération, **pas** `.deployed-sha` (un déploiement interrompu laisse `HEAD` sur le nouveau code alors que `.deployed-sha` reste ancien).
+- Un correctif du script nocturne n'est actif sur une instance qu'**à la nuit suivant celle où elle l'a récupéré** (le script du cron est celui du disque au lancement). Après un correctif de script, passer par `bash bin/deploy-all.sh` (exécuté depuis le poste) plutôt que d'attendre le cron.
+- Tests : `bash tests/bash/run.sh` (27 tests). Ils ne tournent pas dans la CI.
+
 ### Crons cPanel — créés et actifs depuis le 2026-09-12
 
 > Vérifié en SSH le 2026-09-12 22h : les 8 crons ci-dessous sont bien
