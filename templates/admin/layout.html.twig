@@ -45,6 +45,11 @@
                 Santé cron
             </a>
 
+            <a href="{{ path('app_admin_takeout_load') }}"
+               class="hc-admin-nav-item {{ current_route == 'app_admin_takeout_load' ? 'active' : '' }}">
+                Charge Takeout
+            </a>
+
             <a href="{{ path('app_admin_monitoring') }}"
                class="hc-admin-nav-item {{ current_route == 'app_admin_monitoring' ? 'active' : '' }}">
                 Monitoring multi-instances
