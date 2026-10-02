@@ -22,7 +22,7 @@ use Symfony\Component\Uid\Uuid;
  * - Tous les champs sont nullable : l'extraction EXIF peut échouer partiellement
  *   (photo sans GPS, image sans EXIF, GD absent pour le thumbnail…).
  * - Immuable après création : re-traiter = DELETE Media + re-dispatch.
- * - thumbnailPath : chemin relatif dans var/storage/thumbs/{uuid}.jpg
+ * - thumbnailPath : chemin relatif dans var/storage/thumbs/{shard}/{uuid}.jpg (ancien format thumbs/{uuid}.jpg lisible, #609)
  */
 class Media
 {
