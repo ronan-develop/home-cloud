@@ -50,10 +50,18 @@ if [[ "$*" == *"echo OK"* ]]; then
     echo "OK"
 elif [[ "$*" == *'echo $HOME'* ]]; then
     echo "/home9/ron2cuba"
+elif [[ "$*" == *"git rev-parse HEAD"* && "$*" != *".deployed-sha"* ]]; then
+    # HEAD distant avant la mise à jour (sert au rollback, #570)
+    echo "prev1234567"
+fi
+# Échec simulé UNE seule fois sur la première commande contenant le motif
+if [[ -n "${SSH_FAIL_ONCE_PATTERN:-}" && "$*" == *"${SSH_FAIL_ONCE_PATTERN}"* && ! -f "__MARKER__" ]]; then
+    touch "__MARKER__"
+    exit 1
 fi
 exit 0
 EOF
-    sed -i "s|__CALL_LOG__|${CALL_LOG}|" "${STUB_BIN}/ssh"
+    sed -i "s|__CALL_LOG__|${CALL_LOG}|; s|__MARKER__|${FIXTURE_DIR}/ssh-failed-once|g" "${STUB_BIN}/ssh"
     chmod +x "${STUB_BIN}/ssh"
 
     cat > "${STUB_BIN}/scp" <<EOF
@@ -144,6 +152,51 @@ EOF
 
     if [[ "$output" == *"différé au déploiement nocturne"* ]]; then
         fail "--init ne doit jamais différer une instance"
+    fi
+
+    _teardown_routing_fixture
+}
+
+# ── Vérification de vendor/ et rollback (#570) ──────────────────────────────
+
+test_mise_a_jour_verifie_vendor_apres_composer() {
+    _setup_routing_fixture
+    _write_routing_stubs
+
+    bash "${PROJECT_ROOT}/bin/deploy-all.sh" > /dev/null 2>&1
+
+    assert_contains "$(cat "$CALL_LOG")" "Nothing to install, update or remove"
+    assert_contains "$(cat "$CALL_LOG")" "composer install --no-interaction"
+
+    _teardown_routing_fixture
+}
+
+test_echec_avant_migrations_restaure_le_code_precedent() {
+    _setup_routing_fixture
+    _write_routing_stubs
+
+    local output exit_code
+    output=$(SSH_FAIL_ONCE_PATTERN="cache:clear" bash "${PROJECT_ROOT}/bin/deploy-all.sh" 2>&1)
+    exit_code=$?
+
+    assert_equals "1" "$exit_code" "un échec de déploiement doit faire sortir en erreur"
+    assert_contains "$(cat "$CALL_LOG")" "git checkout --force prev1234567"
+    assert_contains "$output" "code restauré (prev123)"
+
+    _teardown_routing_fixture
+}
+
+test_echec_des_migrations_ne_restaure_pas_le_code() {
+    _setup_routing_fixture
+    _write_routing_stubs
+
+    local output exit_code
+    output=$(SSH_FAIL_ONCE_PATTERN="doctrine:migrations:migrate" bash "${PROJECT_ROOT}/bin/deploy-all.sh" 2>&1)
+    exit_code=$?
+
+    assert_equals "1" "$exit_code"
+    if grep -q "git checkout --force prev1234567" "$CALL_LOG"; then
+        fail "pas de restauration du code après un échec de migration (état de la base incertain)"
     fi
 
     _teardown_routing_fixture

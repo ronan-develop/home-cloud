@@ -79,12 +79,14 @@ SSH_HOST="lenouvel.me"
 SSH_PORT=22
 GIT_REPO="https://github.com/ronan-develop/home-cloud"
 GIT_BRANCH="main"
-# -d memory_limit=512M : sur le mutualisé o2switch (LVE CloudLinux), le
-# memory_limit par défaut du php.ini fait tuer cache:clear --env=prod même
-# isolé dans son propre process SSH (vécu 2026-09-27) — la valeur par défaut
-# est trop juste pour la compilation du container Symfony en prod.
-PHP_BIN="/usr/local/bin/php -d memory_limit=512M"
-COMPOSER_BIN="composer"
+# PHP/composer (chemins absolus, composer via PHP CLI explicite, memory_limit)
+# et vérification de vendor/ : une seule définition, partagée avec
+# deploy-nightly.sh (#570). Valeurs de plusieurs mots : utilisées dans des
+# chaînes de commande distantes, jamais comme un seul argument.
+# shellcheck source=lib/deploy-common.sh
+source "${SCRIPT_DIR}/lib/deploy-common.sh" || exit 1
+PHP_BIN="$HC_PHP_BIN"
+COMPOSER_BIN="$HC_COMPOSER_BIN"
 
 SSH_KEY_OPTS=""
 if [[ -n "${SSH_KEY_PATH:-}" && -f "${SSH_KEY_PATH}" ]]; then
@@ -155,6 +157,23 @@ run_step() {
         return 1
     fi
     return 0
+}
+
+# ── Restauration du code précédent (#570) ────────────────────────────────────
+# Appelée seulement si l'échec précède les migrations : après, l'état de la
+# base est incertain (migration partielle) et un ancien code sur un schéma à
+# moitié migré serait pire que le nouveau code.
+rollback_remote() {
+    local sha="$1"
+    warn "${SUBDOMAIN} — restauration du code précédent (${sha:0:7})…"
+    if run_step "rollback git checkout"            "git checkout --force ${sha}" \
+    && run_step "rollback composer install"        "${COMPOSER_BIN} ${HC_COMPOSER_INSTALL_ARGS}" \
+    && run_step "rollback vérification de vendor/" "${HC_VERIFY_VENDOR_SNIPPET}" \
+    && run_step "rollback cache:clear"             "${PHP_BIN} bin/console cache:clear --env=prod"; then
+        success "${SUBDOMAIN} — code restauré (${sha:0:7})"
+    else
+        error "${SUBDOMAIN} — ROLLBACK ÉCHOUÉ, instance probablement hors service : intervention manuelle requise"
+    fi
 }
 
 # ── Build Tailwind une seule fois, hors boucle (#421) ─────────────────────────
@@ -230,7 +249,8 @@ ENVEOF
             continue
         fi
 
-        if run_step "composer install"  "${COMPOSER_BIN} install --no-interaction --prefer-dist --no-progress --no-dev --no-scripts" \
+        if run_step "composer install"  "${COMPOSER_BIN} ${HC_COMPOSER_INSTALL_ARGS}" \
+        && run_step "vérification de vendor/" "${HC_VERIFY_VENDOR_SNIPPET}" \
         && run_step "install-ffmpeg"    "bash bin/install-ffmpeg.sh || echo '⚠ ffmpeg non installé — vignettes vidéo indisponibles'" \
         && run_step "cache:clear"       "${PHP_BIN} bin/console cache:clear --env=prod" \
         && run_step "assets:install"    "${PHP_BIN} bin/console assets:install public --env=prod" \
@@ -271,12 +291,20 @@ ENVEOF
         # app.built.css vient d'être écrasé par le scp ci-dessus : annuler cette
         # modification locale avant le pull, sinon git refuse de merger
         # ("Your local changes ... would be overwritten by merge").
+        # Code réellement en place avant le pull : cible du rollback (#570).
+        PREV_SHA=$(ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" "cd ${DEPLOY_PATH} && git rev-parse HEAD" 2>/dev/null || echo "")
+        CODE_READY=false
         if run_step "git pull"          "git checkout -- var/tailwind/app.built.css 2>/dev/null; mkdir -p var/log && git pull origin ${GIT_BRANCH}" \
-        && run_step "composer install"  "${COMPOSER_BIN} install --no-interaction --prefer-dist --no-progress --no-dev --no-scripts" \
+        && run_step "composer install"  "${COMPOSER_BIN} ${HC_COMPOSER_INSTALL_ARGS}" \
+        && run_step "vérification de vendor/" "${HC_VERIFY_VENDOR_SNIPPET}" \
         && run_step "install-ffmpeg"    "bash bin/install-ffmpeg.sh || echo '⚠ ffmpeg non installé — vignettes vidéo indisponibles'" \
         && run_step "cache:clear"       "${PHP_BIN} bin/console cache:clear --env=prod" \
         && run_step "assets:install"    "${PHP_BIN} bin/console assets:install public --env=prod" \
-        && run_step "importmap:install" "${PHP_BIN} bin/console importmap:install --env=prod" \
+        && run_step "importmap:install" "${PHP_BIN} bin/console importmap:install --env=prod"; then
+            CODE_READY=true
+        fi
+
+        if [[ "$CODE_READY" == true ]] \
         && run_step "migrations"        "${PHP_BIN} bin/console doctrine:migrations:migrate --no-interaction --env=prod" \
         && run_step "asset-map:compile" "${PHP_BIN} bin/console asset-map:compile" \
         && run_step "deploy-info"       "echo '${DEPLOY_INFO_LINE}' > templates/deploy-info.html.twig" \
@@ -287,6 +315,9 @@ ENVEOF
             success "${SUBDOMAIN} — mise à jour OK"
             RESULTS_OK+=("$SUBDOMAIN")
         else
+            if [[ "$CODE_READY" != true && -n "$PREV_SHA" ]]; then
+                rollback_remote "$PREV_SHA"
+            fi
             RESULTS_FAIL+=("$SUBDOMAIN")
         fi
     fi
