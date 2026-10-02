@@ -186,4 +186,25 @@ final class TakeoutImportTest extends TestCase
         $this->assertSame(0, $import->getUnrecognizedFilesCount());
         $this->assertNotNull($import->getCompletedAt());
     }
+
+    // #528 : la page admin affiche "en attente depuis…" — createdAt ne
+    // convient pas (un import peut rester pending des jours avant d'être
+    // scheduled), d'où une date dédiée posée au passage en scheduled.
+    public function testScheduledAtIsNullUntilMarkedScheduled(): void
+    {
+        $import = new TakeoutImport(new User('owner@example.com', 'Owner'));
+
+        $this->assertNull($import->getScheduledAt());
+    }
+
+    public function testMarkScheduledRecordsScheduledAt(): void
+    {
+        $import = new TakeoutImport(new User('owner@example.com', 'Owner'));
+        $before = new \DateTimeImmutable();
+
+        $import->markScheduled();
+
+        $this->assertNotNull($import->getScheduledAt());
+        $this->assertGreaterThanOrEqual($before->getTimestamp(), $import->getScheduledAt()->getTimestamp());
+    }
 }
