@@ -18,7 +18,6 @@
 
 ---
 
-## ✅ Mises à jour composer — Symfony 8.0 → 8.1 (2026-10-02, #538, PR #562 mergée)
 ## 🚧 Admin : charge serveur et imports Takeout différés (2026-10-02, #528, branche `feat/528-admin-charge-takeout`)
 
 - `ServerLoadChecker` expose `getLoadAverage()`, `getThreshold()` et `isCalm(?array)` (décision sur une mesure déjà prise : la commande mesure une fois, l'issue loguée reste cohérente avec la charge loguée).
@@ -31,7 +30,7 @@
 
 ---
 
-## 🚧 Mises à jour composer — Symfony 8.0 → 8.1 (2026-10-02, #538, branche `chore/538-composer-symfony-8-1`)
+## ✅ Mises à jour composer — Symfony 8.0 → 8.1 (2026-10-02, #538, PR #562 mergée)
 
 - Contraintes `symfony/*` et `extra.symfony.require` passées de `8.0.*` à `8.1.*` (un `composer update` seul n'aurait rien monté). Symfony en 8.1.8, Doctrine ORM 3.7.3, DoctrineBundle 3.3.2, phpunit 13.4.0, twig 3.30, monolog 3.12.1.
 - Hors périmètre, volontairement figés : api-platform 4.3.x, ux-live-component 2.36, ux-twig-component 3.2 + stimulus-bundle 3.2 (`--with-all-dependencies` les montait en 3.5.1, contourné par `--with`), tailwind-bundle 0.12.
