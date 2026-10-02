@@ -16,6 +16,14 @@
 
 ---
 
+## 🚧 CI : tests bash des scripts de déploiement (2026-10-02, #605, branche `ci/605-bash-tests-en-ci`)
+
+- Nouveau job `bash` dans `.github/workflows/ci.yml` : `bash tests/bash/run.sh` (28 tests, git/php/ssh/scp mockés) à chaque PR et push sur `main`. Ils ne tournaient pas en CI : 7 échouaient sur `main` depuis le correctif cassé `61ba614` sans que personne le voie (#569, #570).
+- Vérifié dans un clone propre (sans `.deploy-targets`, `.secrets`, `vendor/`, `.env`) : 28/28 verts ; avec un script volontairement cassé la sortie est non nulle, donc le job échoue.
+- Le job n'est pas requis par la protection de branche `main` (labels/php/js) : décision à prendre séparément.
+
+---
+
 ## ✅ Déploiement : composer en CLI, vérification de vendor/, rollback (2026-10-02, #570, PR #602 mergée)
 
 - Cause de l'incident #569 (6 instances en 500) : composer lancé en PHP CGI par le cron affichait son aide et sortait en 0 ; code déjà mis à jour par `git checkout`, `vendor/` ancien, aucun rollback.
