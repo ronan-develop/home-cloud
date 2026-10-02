@@ -74,7 +74,7 @@ class TakeoutImport
      * (contrairement aux compteurs finaux qui restent null tant que
      * l'import n'est pas terminé).
      */
-    #[ORM\Column]
+    #[ORM\Column(options: ['default' => 0])]
     private int $processedCount = 0;
 
     /**
@@ -89,7 +89,7 @@ class TakeoutImport
      * Progress bar pendant l'extraction (#515) : nombre de ZIP déjà extraits
      * — incrémenté au fil du Handler, même pattern que processedCount.
      */
-    #[ORM\Column]
+    #[ORM\Column(options: ['default' => 0])]
     private int $extractedZipCount = 0;
 
     #[ORM\Column]
