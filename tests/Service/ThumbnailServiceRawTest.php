@@ -34,19 +34,16 @@ final class ThumbnailServiceRawTest extends TestCase
 
     protected function tearDown(): void
     {
-        $thumbsDir = $this->storageDir . '/thumbs';
-        if (is_dir($thumbsDir)) {
-            foreach (glob($thumbsDir . '/*') ?: [] as $file) {
-                unlink($file);
-            }
-            rmdir($thumbsDir);
+        if (!isset($this->storageDir) || !is_dir($this->storageDir)) {
+            return;
         }
-        foreach (glob($this->storageDir . '/*') ?: [] as $file) {
-            unlink($file);
+        foreach (new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($this->storageDir, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST,
+        ) as $f) {
+            $f->isDir() ? rmdir($f->getPathname()) : unlink($f->getPathname());
         }
-        if (is_dir($this->storageDir)) {
-            rmdir($this->storageDir);
-        }
+        rmdir($this->storageDir);
     }
 
     /**
@@ -104,7 +101,7 @@ final class ThumbnailServiceRawTest extends TestCase
         $thumb = $service->generate($rawPath);
 
         $this->assertNotNull($thumb, 'Un RAW avec preview embarquée doit produire une vignette');
-        $this->assertStringStartsWith('thumbs/', $thumb);
+        $this->assertMatchesRegularExpression('#^thumbs/[0-9a-f]{2}/[0-9a-f-]{36}\.jpg$#', $thumb, 'Vignette dans un sous-dossier réparti (#609)');
         $this->assertFileExists($this->storageDir . '/' . $thumb);
     }
 

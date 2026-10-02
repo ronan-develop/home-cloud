@@ -11,22 +11,30 @@ Une photo uploadée produit jusqu'à trois fichiers distincts. Les confondre est
 ```text
 DSC_0190.NEF (52,5 Mo)
    │
-   ├── File (BDD) ──── path: "2026/07/xxx.NEF"  →  var/storage/2026/07/xxx.NEF
+   ├── File (BDD) ──── path: "ef/xxx.NEF"  →  var/storage/ef/xxx.NEF
    │      ▲
    │      │ OneToOne
    │      │
-   └── Media (BDD) ─── thumbnailPath: "thumbs/019f...jpg"
+   └── Media (BDD) ─── thumbnailPath: "thumbs/ef/019f...ef.jpg"
                               │
-                              └→ var/storage/thumbs/019f...jpg
+                              └→ var/storage/thumbs/ef/019f...ef.jpg
 ```
 
 | Artefact | Emplacement | Généré | Poids (ex. NEF) |
 |----------|-------------|--------|-----------------|
-| Fichier original | `var/storage/{année}/{mois}/` | à l'upload, conservé tel quel | 52,5 Mo |
-| Vignette (galerie) | `var/storage/thumbs/{uuid}.jpg` | **une fois**, pipeline async | 43 Ko |
-| Preview (plein écran) | `var/storage/previews/{hash}.jpg` | **1ʳᵉ vue**, puis cachée | 1,05 Mo |
+| Fichier original | `var/storage/{shard}/` | à l'upload, conservé tel quel | 52,5 Mo |
+| Vignette (galerie) | `var/storage/thumbs/{shard}/{uuid}.jpg` | **une fois**, pipeline async | 43 Ko |
+| Preview (plein écran) | `var/storage/previews/{xx}/{hash}.jpg` | **1ʳᵉ vue**, puis cachée | 1,05 Mo |
 
-Seule la vignette est référencée en base (`Media::$thumbnailPath`). La preview ne l'est pas : son nom est dérivé du chemin source (voir *Cache des previews*).
+Seule la vignette est référencée en base (`Media::$thumbnailPath`). La preview ne l'est pas : son nom est dérivé du **nom** du fichier source (voir *Cache des previews*).
+
+### Répartition en sous-dossiers (#609)
+
+L'hébergeur (o2switch) interdit plus de **20 000 fichiers dans un même répertoire**. Aucun dossier de stockage ne doit donc grossir avec le volume importé : `StorageShard` range chaque fichier dans `<shard>/`, où `shard` = les **2 derniers caractères hexadécimaux** du nom (partie aléatoire de l'UUID v7 ; son début est un horodatage commun à tout un import). 256 sous-dossiers, ~400 fichiers chacun pour 100 000 photos, sans inode supplémentaire par photo. Pas de date dans le chemin (256 dossiers par mois seraient presque vides sur les petites instances).
+
+- Le chemin est stocké tel quel en base : les anciens fichiers (`AAAA/MM/<uuid>.<ext>`, `thumbs/<uuid>.jpg`) restent lisibles sans rien changer.
+- `StorageService::getAbsolutePath()` et `delete()` retombent sur le chemin réparti si l'ancien n'existe plus (fichier déplacé alors qu'une entité en mémoire porte encore l'ancien chemin).
+- Retour arrière du code possible : l'ancien code relit un fichier réparti, puisqu'il lit le chemin en base.
 
 ---
 
@@ -133,11 +141,12 @@ Préparer une preview coûte ~1 s (décodage, rotation, rééchantillonnage de 4
 
 ### Le nom du cache est dérivé, pas stocké
 
-`hash('xxh128', $cheminSource)` plutôt qu'une colonne en base :
+`hash('xxh128', basename($cheminSource))` (#609 : le **nom**, stable quand l'original est déplacé, et non le chemin complet) rangé dans `previews/<2 premiers caractères du hash>/`, plutôt qu'une colonne en base :
 
 - pas de migration Doctrine ni de champ à maintenir ;
 - le cache reste **jetable** — `rm -rf var/storage/previews/` et tout se régénère ;
-- le hash aplatit le chemin (qui contient des slashes) en un nom de fichier plat, ce qui écarte au passage toute traversée de répertoire.
+- le hash aplatit le nom en un nom de fichier sûr, ce qui écarte au passage toute traversée de répertoire ;
+- les anciennes previews à plat (haché sur le chemin complet) sont inatteignables : `RawPreviewCache::purgeLegacyFlatEntries()` les supprime, elles se régénèrent à la demande.
 
 ### Invalidation
 

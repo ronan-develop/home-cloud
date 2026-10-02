@@ -36,16 +36,16 @@ final class ThumbnailServiceRealRawTest extends TestCase
 
     protected function tearDown(): void
     {
-        $thumbsDir = ($this->storageDir ?? '') . '/thumbs';
-        if (is_dir($thumbsDir)) {
-            foreach (glob($thumbsDir . '/*') ?: [] as $file) {
-                unlink($file);
-            }
-            rmdir($thumbsDir);
+        if (!isset($this->storageDir) || !is_dir($this->storageDir)) {
+            return;
         }
-        if (isset($this->storageDir) && is_dir($this->storageDir)) {
-            rmdir($this->storageDir);
+        foreach (new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($this->storageDir, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST,
+        ) as $f) {
+            $f->isDir() ? rmdir($f->getPathname()) : unlink($f->getPathname());
         }
+        rmdir($this->storageDir);
     }
 
     public function testExtractsFullResolutionPreviewFromRealNef(): void

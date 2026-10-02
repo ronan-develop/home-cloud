@@ -14,7 +14,11 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
  * création des répertoires, déplacement du fichier temporaire.
  *
  * Choix :
- * - Stockage dans `var/storage/{year}/{month}/{uuid}.{ext}`.
+ * - Stockage dans `var/storage/{shard}/{uuid}.{ext}` (#609) : `shard` = 2 derniers
+ *   caractères hexadécimaux de l'UUID, pour qu'aucun répertoire n'approche la limite
+ *   de 20 000 fichiers de l'hébergeur (cf. StorageShard). Les anciens fichiers
+ *   `{year}/{month}/{uuid}.{ext}` restent lisibles tant que `app:storage:shard`
+ *   ne les a pas déplacés.
  * - Retourne un chemin relatif à `var/storage/` pour que l'entité soit
  *   indépendante de l'emplacement absolu du projet.
  * - Pas de lib externe (VichUploader, Flysystem) — contrôle total, dépendances minimales.
@@ -80,8 +84,6 @@ final class StorageService implements StorageServiceInterface
      */
     public function store(UploadedFile $file): array
     {
-        $year = date('Y');
-        $month = date('m');
         $uuid = \Symfony\Component\Uid\Uuid::v7()->toRfc4122();
         $clientExt = strtolower($file->getClientOriginalExtension());
         // Utilise l'extension client si disponible, sinon détecte depuis le contenu (finfo)
@@ -105,13 +107,13 @@ final class StorageService implements StorageServiceInterface
 
         $ext = $neutralized ? 'bin' : $originalExt;
 
-        $subDir = sprintf('%s/%s', $year, $month);
         $filename = sprintf('%s.%s', $uuid, $ext);
+        $relativePath = StorageShard::originalPath($filename);
 
-        $file->move($this->storageDir.'/'.$subDir, $filename);
+        $file->move($this->storageDir.'/'.dirname($relativePath), $filename);
 
         return [
-            'path'       => sprintf('%s/%s', $subDir, $filename),
+            'path'       => $relativePath,
             'neutralized' => $neutralized,
         ];
     }
@@ -150,6 +152,10 @@ final class StorageService implements StorageServiceInterface
     {
         $fullPath = $this->storageDir.'/'.$relativePath;
 
+        if (!file_exists($fullPath)) {
+            $fullPath = $this->storageDir.'/'.StorageShard::shardedPathOf($relativePath);
+        }
+
         if (file_exists($fullPath)) {
             unlink($fullPath);
         }
@@ -167,6 +173,12 @@ final class StorageService implements StorageServiceInterface
     {
         $candidate = $this->storageDir.'/'.$relativePath;
         $resolved  = realpath($candidate);
+
+        // Repli (#609) : un fichier déplacé par app:storage:shard alors que
+        // l'entité en mémoire porte encore l'ancien chemin.
+        if ($resolved === false) {
+            $resolved = realpath($this->storageDir.'/'.StorageShard::shardedPathOf($relativePath));
+        }
 
         if ($resolved === false) {
             return $candidate;

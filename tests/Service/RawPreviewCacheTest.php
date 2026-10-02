@@ -27,16 +27,16 @@ final class RawPreviewCacheTest extends TestCase
 
     protected function tearDown(): void
     {
-        $dir = $this->storageDir . '/previews';
-        if (is_dir($dir)) {
-            foreach (glob($dir . '/*') ?: [] as $file) {
-                unlink($file);
-            }
-            rmdir($dir);
+        if (!is_dir($this->storageDir)) {
+            return;
         }
-        if (is_dir($this->storageDir)) {
-            rmdir($this->storageDir);
+        foreach (new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($this->storageDir, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST,
+        ) as $f) {
+            $f->isDir() ? rmdir($f->getPathname()) : unlink($f->getPathname());
         }
+        rmdir($this->storageDir);
     }
 
     public function testStoresAndReturnsPreview(): void
@@ -87,7 +87,7 @@ final class RawPreviewCacheTest extends TestCase
         $cache = new RawPreviewCache($this->storageDir);
         $cache->put('2026/07/photo.nef', 'jpeg-bytes');
 
-        $files = glob($this->storageDir . '/previews/*') ?: [];
+        $files = glob($this->storageDir . '/previews/*/*.jpg') ?: [];
         $this->assertCount(1, $files);
 
         // Un chemin source contient des slashes : le nom de cache doit être plat,
@@ -95,5 +95,65 @@ final class RawPreviewCacheTest extends TestCase
         $name = basename($files[0]);
         $this->assertStringNotContainsString('/', $name);
         $this->assertStringNotContainsString('..', $name);
+    }
+
+    // ── #609 : répartition en sous-dossiers, clé stable à travers un déplacement ──
+
+    public function testPreviewIsStoredInShardSubdirectory(): void
+    {
+        $cache = new RawPreviewCache($this->storageDir);
+        $cache->put('2026/07/photo.nef', 'jpeg-bytes');
+
+        $this->assertCount(0, glob($this->storageDir . '/previews/*.jpg') ?: [], 'Plus de fichier à plat');
+        $this->assertCount(1, glob($this->storageDir . '/previews/*/*.jpg') ?: []);
+        $this->assertMatchesRegularExpression('#/previews/[0-9a-f]{2}/#', (glob($this->storageDir . '/previews/*/*.jpg') ?: [''])[0]);
+    }
+
+    public function testKeyIsStableWhenSourceIsMovedToShardedPath(): void
+    {
+        $cache = new RawPreviewCache($this->storageDir);
+        $cache->put('2026/07/0192f3a0-7c1b-7d2e-8a4f-1234567890ef.nef', 'jpeg-bytes');
+
+        // app:storage:shard déplace l'original : la preview déjà calculée reste valable.
+        $this->assertSame('jpeg-bytes', $cache->get('ef/0192f3a0-7c1b-7d2e-8a4f-1234567890ef.nef'));
+    }
+
+    public function testEvictFromMovedPathRemovesPreviewCachedUnderLegacyPath(): void
+    {
+        $cache = new RawPreviewCache($this->storageDir);
+        $cache->put('2026/07/0192f3a0-7c1b-7d2e-8a4f-1234567890ef.nef', 'jpeg-bytes');
+
+        $cache->evict('ef/0192f3a0-7c1b-7d2e-8a4f-1234567890ef.nef');
+
+        $this->assertNull($cache->get('2026/07/0192f3a0-7c1b-7d2e-8a4f-1234567890ef.nef'));
+    }
+
+    public function testEvictAlsoRemovesLegacyFlatEntry(): void
+    {
+        $legacyDir = $this->storageDir . '/previews';
+        mkdir($legacyDir, 0755, true);
+        $legacy = $legacyDir . '/' . hash('xxh128', '2026/07/old.nef') . '.jpg';
+        file_put_contents($legacy, 'old-cache');
+
+        (new RawPreviewCache($this->storageDir))->evict('2026/07/old.nef');
+
+        $this->assertFileDoesNotExist($legacy);
+    }
+
+    public function testPurgeLegacyRemovesOnlyFlatEntries(): void
+    {
+        $cache = new RawPreviewCache($this->storageDir);
+        $cache->put('2026/07/new.nef', 'new-cache');
+        file_put_contents($this->storageDir . '/previews/' . hash('xxh128', '2026/07/old.nef') . '.jpg', 'old-cache');
+
+        $this->assertSame(1, $cache->purgeLegacyFlatEntries());
+
+        $this->assertSame('new-cache', $cache->get('2026/07/new.nef'));
+        $this->assertCount(0, glob($this->storageDir . '/previews/*.jpg') ?: []);
+    }
+
+    public function testPurgeLegacyIsSilentWithoutCacheDirectory(): void
+    {
+        $this->assertSame(0, (new RawPreviewCache($this->storageDir))->purgeLegacyFlatEntries());
     }
 }

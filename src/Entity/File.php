@@ -43,7 +43,7 @@ class File
     #[ORM\Column]
     private int $size;
 
-    /** Chemin relatif dans var/storage/ (ex: "2026/02/uuid.pdf") */
+    /** Chemin relatif dans var/storage/ (ex: "ef/uuid.pdf" depuis #609, ancien format "2026/02/uuid.pdf" encore lisible) */
     #[ORM\Column(length: 1024)]
     private string $path;
 
