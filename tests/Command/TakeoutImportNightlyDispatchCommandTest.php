@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace App\Tests\Command;
 
 use App\Command\TakeoutImportNightlyDispatchCommand;
+use App\Entity\TakeoutDispatchLog;
 use App\Entity\TakeoutImport;
 use App\Entity\User;
 use App\Message\TakeoutImportExtractMessage;
+use App\Repository\TakeoutDispatchLogRepository;
 use App\Repository\TakeoutImportRepository;
 use App\Service\Takeout\ServerLoadChecker;
 use App\Service\Takeout\TakeoutImportTmpDirLocator;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Messenger\Envelope;
@@ -177,11 +181,162 @@ final class TakeoutImportNightlyDispatchCommandTest extends TestCase
         TakeoutImportTmpDirLocator $tmpDirLocator,
         MessageBusInterface $bus,
         ?ServerLoadChecker $loadChecker = null,
+        ?TakeoutDispatchLogRepository $logRepository = null,
+        ?LoggerInterface $logger = null,
     ): CommandTester {
-        $command = new TakeoutImportNightlyDispatchCommand($repository, $tmpDirLocator, $bus, $loadChecker ?? $this->calmChecker());
+        $command = new TakeoutImportNightlyDispatchCommand(
+            $repository,
+            $tmpDirLocator,
+            $bus,
+            $loadChecker ?? $this->calmChecker(),
+            $logRepository ?? $this->createStub(TakeoutDispatchLogRepository::class),
+            $logger ?? new NullLogger(),
+        );
         $application = new Application();
         $application->addCommand($command);
 
         return new CommandTester($application->find('app:takeout:nightly-dispatch'));
+    }
+
+    private function busStub(): MessageBusInterface
+    {
+        $bus = $this->createStub(MessageBusInterface::class);
+        $bus->method('dispatch')->willReturn(new Envelope(new \stdClass()));
+
+        return $bus;
+    }
+
+    // #528 : une ligne d'historique par cycle, y compris "idle" (rien en
+    // attente) — c'est aussi l'échantillonnage de charge de #547.
+    public function testLogsIdleCycleWhenNothingScheduled(): void
+    {
+        $repository = $this->createStub(TakeoutImportRepository::class);
+        $repository->method('findAllScheduled')->willReturn([]);
+
+        $logs = [];
+        $logRepository = $this->createMock(TakeoutDispatchLogRepository::class);
+        $logRepository->expects($this->once())->method('save')->willReturnCallback(function (TakeoutDispatchLog $log) use (&$logs) {
+            $logs[] = $log;
+        });
+
+        $tester = $this->commandTester($repository, new TakeoutImportTmpDirLocator($this->tmpDir), $this->busStub(), $this->calmChecker(), $logRepository);
+        $tester->execute([]);
+
+        $this->assertSame(TakeoutDispatchLog::OUTCOME_IDLE, $logs[0]->getOutcome());
+        $this->assertSame([1.0, 1.0, 1.0], $logs[0]->getLoadAverage());
+        $this->assertSame(3.0, $logs[0]->getThreshold());
+        $this->assertSame(0, $logs[0]->getScheduledCount());
+        $this->assertSame(0, $logs[0]->getDispatchedCount());
+    }
+
+    public function testLogsDispatchedCycleWithCounts(): void
+    {
+        $imports = [$this->makeImport(), $this->makeImport()];
+        $tmpDirLocator = new TakeoutImportTmpDirLocator($this->tmpDir);
+        foreach ($imports as $import) {
+            $import->markScheduled();
+            $this->makeZipsFor($tmpDirLocator, $import, ['a.zip']);
+        }
+        $repository = $this->createStub(TakeoutImportRepository::class);
+        $repository->method('findAllScheduled')->willReturn($imports);
+
+        $logs = [];
+        $logRepository = $this->createMock(TakeoutDispatchLogRepository::class);
+        $logRepository->expects($this->once())->method('save')->willReturnCallback(function (TakeoutDispatchLog $log) use (&$logs) {
+            $logs[] = $log;
+        });
+
+        $tester = $this->commandTester($repository, $tmpDirLocator, $this->busStub(), $this->calmChecker(), $logRepository);
+        $tester->execute([]);
+
+        $this->assertSame(TakeoutDispatchLog::OUTCOME_DISPATCHED, $logs[0]->getOutcome());
+        $this->assertSame(2, $logs[0]->getScheduledCount());
+        $this->assertSame(2, $logs[0]->getDispatchedCount());
+    }
+
+    public function testLogsDeferredCycleWithScheduledCountWithoutLoadingImports(): void
+    {
+        $repository = $this->createMock(TakeoutImportRepository::class);
+        $repository->expects($this->never())->method('findAllScheduled');
+        $repository->method('countScheduled')->willReturn(3);
+
+        $logs = [];
+        $logRepository = $this->createMock(TakeoutDispatchLogRepository::class);
+        $logRepository->expects($this->once())->method('save')->willReturnCallback(function (TakeoutDispatchLog $log) use (&$logs) {
+            $logs[] = $log;
+        });
+
+        $tester = $this->commandTester($repository, new TakeoutImportTmpDirLocator($this->tmpDir), $this->busStub(), $this->loadedChecker(), $logRepository);
+        $tester->execute([]);
+
+        $this->assertSame(TakeoutDispatchLog::OUTCOME_DEFERRED, $logs[0]->getOutcome());
+        $this->assertSame([9.86, 10.45, 10.48], $logs[0]->getLoadAverage());
+        $this->assertSame(3, $logs[0]->getScheduledCount());
+        $this->assertSame(0, $logs[0]->getDispatchedCount());
+    }
+
+    public function testLogsDeferredWithNullLoadWhenMeasureUnavailable(): void
+    {
+        $repository = $this->createStub(TakeoutImportRepository::class);
+        $checker = new ServerLoadChecker(threshold: 3.0, loadAverageProvider: fn () => false);
+
+        $logs = [];
+        $logRepository = $this->createStub(TakeoutDispatchLogRepository::class);
+        $logRepository->method('save')->willReturnCallback(function (TakeoutDispatchLog $log) use (&$logs) {
+            $logs[] = $log;
+        });
+
+        $tester = $this->commandTester($repository, new TakeoutImportTmpDirLocator($this->tmpDir), $this->busStub(), $checker, $logRepository);
+        $tester->execute([]);
+
+        $this->assertSame(TakeoutDispatchLog::OUTCOME_DEFERRED, $logs[0]->getOutcome());
+        $this->assertNull($logs[0]->getLoadAverage());
+    }
+
+    public function testPurgesLogsOlderThanRetentionAtEachCycle(): void
+    {
+        $repository = $this->createStub(TakeoutImportRepository::class);
+        $repository->method('findAllScheduled')->willReturn([]);
+
+        $logRepository = $this->createMock(TakeoutDispatchLogRepository::class);
+        $logRepository->expects($this->once())
+            ->method('purgeOlderThan')
+            ->with($this->callback(function (\DateTimeImmutable $threshold): bool {
+                $expected = new \DateTimeImmutable('-' . TakeoutDispatchLog::PURGE_AFTER_DAYS . ' days');
+
+                return abs($threshold->getTimestamp() - $expected->getTimestamp()) < 5;
+            }));
+
+        $tester = $this->commandTester($repository, new TakeoutImportTmpDirLocator($this->tmpDir), $this->busStub(), $this->calmChecker(), $logRepository);
+        $tester->execute([]);
+
+        $tester->assertCommandIsSuccessful();
+    }
+
+    // Rollback : l'historique est de l'observation, jamais une condition du
+    // dispatch — une table indisponible ne doit pas bloquer les imports.
+    public function testStillDispatchesWhenLogWriteFails(): void
+    {
+        $import = $this->makeImport();
+        $import->markScheduled();
+        $tmpDirLocator = new TakeoutImportTmpDirLocator($this->tmpDir);
+        $this->makeZipsFor($tmpDirLocator, $import, ['a.zip']);
+        $repository = $this->createStub(TakeoutImportRepository::class);
+        $repository->method('findAllScheduled')->willReturn([$import]);
+
+        $bus = $this->createMock(MessageBusInterface::class);
+        $bus->expects($this->once())->method('dispatch')->willReturn(new Envelope(new \stdClass()));
+
+        $logRepository = $this->createStub(TakeoutDispatchLogRepository::class);
+        $logRepository->method('save')->willThrowException(new \RuntimeException('table absente'));
+        $logRepository->method('purgeOlderThan')->willThrowException(new \RuntimeException('table absente'));
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->atLeastOnce())->method('error');
+
+        $tester = $this->commandTester($repository, $tmpDirLocator, $bus, $this->calmChecker(), $logRepository, $logger);
+        $tester->execute([]);
+
+        $tester->assertCommandIsSuccessful();
     }
 }

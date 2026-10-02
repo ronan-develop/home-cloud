@@ -83,6 +83,13 @@ class TakeoutImportRepository extends ServiceEntityRepository
         return $this->findBy(['status' => TakeoutImport::STATUS_SCHEDULED], ['createdAt' => 'ASC']);
     }
 
+    // #528 : simple COUNT pour l'historique de dispatch — évite de charger
+    // les entités quand le cycle est reporté (serveur chargé).
+    public function countScheduled(): int
+    {
+        return $this->count(['status' => TakeoutImport::STATUS_SCHEDULED]);
+    }
+
     // #493 : candidats à la purge automatique — un import pending jamais
     // repris au-delà du seuil devient orphelin indéfiniment (ligne base +
     // dossier var/takeout-tmp/<uuid>/, potentiellement plusieurs Go).
