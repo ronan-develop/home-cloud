@@ -56,8 +56,12 @@ if [[ -n "${SSH_KEY_PATH:-}" && -f "$SSH_KEY_PATH" ]]; then
     SSH_KEY_OPTS="-i ${SSH_KEY_PATH}"
 fi
 GIT_BRANCH="main"
-PHP_BIN="/usr/local/bin/php"
-COMPOSER_BIN="composer"
+# PHP/composer en chemin absolu, composer via PHP CLI explicite : définis une
+# seule fois dans bin/lib/deploy-common.sh (#570).
+# shellcheck source=lib/deploy-common.sh
+source "${SCRIPT_DIR}/lib/deploy-common.sh" || exit 1
+PHP_BIN="$HC_PHP_BIN"
+COMPOSER_BIN="$HC_COMPOSER_BIN"
 
 # ── Questionnaire ─────────────────────────────────────────────────────────────
 title "═══════════════════════════════════════"
@@ -189,7 +193,8 @@ if [[ "$UPDATE_MODE" == true ]]; then
     ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
         "cd ${DEPLOY_PATH} && \
          git pull origin main && \
-         ${COMPOSER_BIN} install --no-interaction --prefer-dist --no-progress --no-dev && \
+         ${COMPOSER_BIN} ${HC_COMPOSER_INSTALL_ARGS} && \
+         ( ${HC_VERIFY_VENDOR_SNIPPET} ) && \
          ${PHP_BIN} bin/console cache:clear --env=prod && \
          rm -rf var/cache/prod/* && \
          rm -rf public/assets/* && \
@@ -200,7 +205,7 @@ if [[ "$UPDATE_MODE" == true ]]; then
     { error "❌ Erreur lors du déploiement."; exit 1; }
 else
     info "Mode primo déploiement : clonage repo + setup"
-    ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" "mkdir -p ${DEPLOY_PATH} && cd ${DEPLOY_PATH} && git clone ${GIT_REPO} . && composer install --no-interaction --prefer-dist --no-progress && bash bin/install-ffmpeg.sh || echo '⚠ ffmpeg non installé — vignettes vidéo indisponibles'" && \
+    ssh ${SSH_KEY_OPTS} -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" "mkdir -p ${DEPLOY_PATH} && cd ${DEPLOY_PATH} && git clone ${GIT_REPO} . && ${COMPOSER_BIN} ${HC_COMPOSER_INSTALL_ARGS} && ( ${HC_VERIFY_VENDOR_SNIPPET} ) && bash bin/install-ffmpeg.sh || echo '⚠ ffmpeg non installé — vignettes vidéo indisponibles'" && \
     success "✅ Déploiement réussi !" || \
     { error "❌ Erreur lors du déploiement."; exit 1; }
 fi
