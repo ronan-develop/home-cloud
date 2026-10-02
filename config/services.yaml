@@ -255,6 +255,10 @@ when@test:
         App\Service\Monitoring\InstanceMonitoringReporter:
             autowire: true
             public: true
+        # Rendre TakeoutDispatchLogRepository public en test (accès direct, #528)
+        App\Repository\TakeoutDispatchLogRepository:
+            autowire: true
+            public: true
         # ServerLoadChecker (#524) : sys_getloadavg() réel de la machine de
         # CI/dev rendait les tests fonctionnels Takeout flaky (échec aléatoire
         # selon la charge locale au moment du run, constaté le 2026-09-29).
