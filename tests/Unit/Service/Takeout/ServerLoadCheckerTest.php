@@ -72,4 +72,21 @@ final class ServerLoadCheckerTest extends TestCase
 
         $this->assertFalse($checker->isServerCalmEnough());
     }
+
+    // #528 : la page admin affiche le load average 1/5/15 et le seuil — elle
+    // passe par le checker plutôt que de relire /proc/loadavg elle-même.
+    public function testExposesLoadAverageAndThreshold(): void
+    {
+        $checker = new ServerLoadChecker(threshold: 4.5, loadAverageProvider: fn () => [1.5, 1.2, 1.0]);
+
+        $this->assertSame([1.5, 1.2, 1.0], $checker->getLoadAverage());
+        $this->assertSame(4.5, $checker->getThreshold());
+    }
+
+    public function testLoadAverageIsNullWhenUnavailable(): void
+    {
+        $checker = new ServerLoadChecker(loadAverageProvider: fn () => false);
+
+        $this->assertNull($checker->getLoadAverage());
+    }
 }

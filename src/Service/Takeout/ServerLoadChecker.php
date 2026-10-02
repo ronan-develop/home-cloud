@@ -28,10 +28,25 @@ final class ServerLoadChecker
         private $loadAverageProvider = 'sys_getloadavg',
     ) {}
 
-    public function isServerCalmEnough(): bool
+    /**
+     * @return array{0: float, 1: float, 2: float}|null null si la mesure est indisponible
+     */
+    public function getLoadAverage(): ?array
     {
         $loadAverage = ($this->loadAverageProvider)();
-        if ($loadAverage === false) {
+
+        return $loadAverage === false ? null : $loadAverage;
+    }
+
+    public function getThreshold(): float
+    {
+        return $this->threshold;
+    }
+
+    public function isServerCalmEnough(): bool
+    {
+        $loadAverage = $this->getLoadAverage();
+        if ($loadAverage === null) {
             return false;
         }
 
