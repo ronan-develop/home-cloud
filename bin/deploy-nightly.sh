@@ -19,26 +19,14 @@ PRENOM="${1:?Usage: deploy-nightly.sh <prenom> <chemin_instance> <chemin_rapport
 INSTANCE_PATH="${2:?chemin_instance manquant}"
 REPORT_FILE="${3:?chemin_rapport manquant}"
 
-# Chemins absolus obligatoires : un cron cPanel s'exécute avec un PATH minimal
-# (pas celui du profil shell interactif) — "composer"/"php" seuls ne résolvent
-# à rien et font échouer le déploiement en silence (#421, échec réel constaté
-# la nuit du 2026-09-12 : « composer : commande introuvable »).
-# -d memory_limit=512M : sur le mutualisé o2switch (LVE CloudLinux), le
-# memory_limit par défaut du php.ini fait tuer cache:clear --env=prod même
-# isolé dans son propre process SSH (vécu 2026-09-27) — la valeur par défaut
-# est trop juste pour la compilation du container Symfony en prod.
-PHP_BIN="${DEPLOY_NIGHTLY_PHP_BIN:-/usr/local/bin/php} -d memory_limit=512M"
-# composer est un script `#!/usr/bin/env php` — sous le PATH minimal du cron,
-# `env` résout "php" vers /usr/bin/php (CGI, le premier dans ce PATH), pas
-# vers le CLI de $PHP_BIN. Invoquer composer.phar explicitement via $PHP_BIN
-# court-circuite ce shebang, plutôt que de compter sur la résolution de env
-# (piège distinct de celui déjà documenté plus haut sur composer/php absents
-# du PATH — ici ils sont présents, mais le MAUVAIS binaire est résolu).
-# Constaté en conditions réelles le 2026-10-02 : composer "réussit" en
-# apparence (exit 0) mais vendor/ reste incomplet (symfony/monolog-bundle
-# absent malgré composer.lock à jour), cache:clear échoue ensuite avec
-# ClassNotFoundError.
-COMPOSER_BIN="${DEPLOY_NIGHTLY_PHP_BIN:-/usr/local/bin/php} ${DEPLOY_NIGHTLY_COMPOSER_PHAR:-/usr/local/bin/composer}"
+# PHP/composer en chemin absolu, composer via PHP CLI explicite, vérification
+# de vendor/ : définis une seule fois dans bin/lib/deploy-common.sh (#570).
+# Résolu avant le cd : $0 est relatif au répertoire courant du cron.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/deploy-common.sh
+source "${SCRIPT_DIR}/lib/deploy-common.sh" || exit 1
+PHP_BIN="$HC_PHP_BIN"
+COMPOSER_BIN="$HC_COMPOSER_BIN"
 
 cd "$INSTANCE_PATH" || exit 1
 mkdir -p var/log
@@ -140,12 +128,42 @@ if is_activity_recent; then
     exit 0
 fi
 
+# Code réellement en place avant le checkout (peut différer de .deployed-sha :
+# un déploiement interrompu laisse HEAD sur le nouveau code, #570).
+PREVIOUS_HEAD=$(git rev-parse HEAD 2>/dev/null || echo "")
+
+# Restaure le code précédent et un vendor/ cohérent avec son composer.lock.
+# Appelée seulement quand l'échec survient AVANT les migrations : après, l'état
+# de la base est incertain (migration partielle) et un ancien code sur un schéma
+# à moitié migré serait pire que le nouveau code.
+ROLLBACK_NOTE=""
+rollback_code() {
+    local sha="$1"
+    local original_failed_step="$FAILED_STEP"
+    echo "↩ ${PRENOM} — restauration du code précédent (${sha:0:7})" >&2
+    if run_step "rollback git checkout" git checkout --force "$sha" \
+    && run_step "rollback composer install" $COMPOSER_BIN $HC_COMPOSER_INSTALL_ARGS \
+    && run_step "rollback vérification de vendor/" hc_verify_vendor \
+    && run_step "rollback cache:clear" $PHP_BIN bin/console cache:clear --env=prod; then
+        ROLLBACK_NOTE=" → code restauré (${sha:0:7})"
+    else
+        ROLLBACK_NOTE=" → ROLLBACK ÉCHOUÉ à « ${FAILED_STEP} », instance probablement hors service"
+    fi
+    FAILED_STEP="$original_failed_step"
+}
+
+CODE_READY=false
 if run_step "git checkout"       git checkout --force "$REMOTE_SHA" \
-&& run_step "composer install"   "$COMPOSER_BIN" install --no-interaction --prefer-dist --no-progress --no-dev --no-scripts \
+&& run_step "composer install"   $COMPOSER_BIN $HC_COMPOSER_INSTALL_ARGS \
+&& run_step "vérification de vendor/" hc_verify_vendor \
 && run_step "install-ffmpeg"     bash bin/install-ffmpeg.sh \
 && run_step "cache:clear"        $PHP_BIN bin/console cache:clear --env=prod \
 && run_step "assets:install"     bash -c "umask 022 && $PHP_BIN bin/console assets:install public --env=prod" \
-&& run_step "importmap:install"  bash -c "umask 022 && $PHP_BIN bin/console importmap:install --env=prod" \
+&& run_step "importmap:install"  bash -c "umask 022 && $PHP_BIN bin/console importmap:install --env=prod"; then
+    CODE_READY=true
+fi
+
+if [[ "$CODE_READY" == true ]] \
 && run_step "migrations"         $PHP_BIN bin/console doctrine:migrations:migrate --no-interaction --env=prod \
 && run_step "asset-map:compile"  bash -c "umask 022 && $PHP_BIN bin/console asset-map:compile"; then
     rm -f "$IMMINENT_FILE"
@@ -156,12 +174,18 @@ if run_step "git checkout"       git checkout --force "$REMOTE_SHA" \
     exit 0
 else
     rm -f "$IMMINENT_FILE"
-    echo "${PRENOM} : échec du déploiement, .deployed-sha inchangé." >&2
+    # Rollback seulement si l'échec précède les migrations ET qu'il y a un
+    # code différent à restaurer (si HEAD est déjà la cible, un second
+    # checkout n'améliorerait rien).
+    if [[ "$CODE_READY" != true && -n "$PREVIOUS_HEAD" && "$PREVIOUS_HEAD" != "$REMOTE_SHA" ]]; then
+        rollback_code "$PREVIOUS_HEAD"
+    fi
+    echo "${PRENOM} : échec du déploiement${ROLLBACK_NOTE}, .deployed-sha inchangé." >&2
     if [[ "$IS_CRITICAL" == true ]]; then
-        report_line "critical" "${FAILED_STEP:-inconnue}"
+        report_line "critical" "${FAILED_STEP:-inconnue}${ROLLBACK_NOTE}"
         open_critical_ticket "${FAILED_STEP:-inconnue}"
     else
-        report_line "failed" "${FAILED_STEP:-inconnue}"
+        report_line "failed" "${FAILED_STEP:-inconnue}${ROLLBACK_NOTE}"
     fi
     exit 1
 fi
