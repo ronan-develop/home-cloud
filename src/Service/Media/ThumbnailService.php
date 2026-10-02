@@ -7,6 +7,7 @@ namespace App\Service\Media;
 use App\Exception\Video\VideoThumbnailExtractionException;
 use App\Interface\Media\ExifThumbnailExtractorInterface;
 use App\Interface\VideoThumbnailExtractorInterface;
+use App\Service\File\StorageShard;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use RonanLenouvel\RawPreviewExtractor\Exception\RawPreviewExtractorException;
@@ -23,7 +24,7 @@ use RonanLenouvel\RawPreviewExtractor\RawPreviewExtractorInterface;
  * - Utilise l'extension PHP native GD (disponible sur o2switch et la plupart des hébergements).
  * - Retourne null si GD est absent ou si la génération échoue — le Media est quand même
  *   créé, juste sans thumbnail.
- * - Thumbnail stocké dans var/storage/thumbs/{uuid}.jpg (JPEG q=80 pour équilibre taille/qualité).
+ * - Thumbnail stocké dans var/storage/thumbs/{shard}/{uuid}.jpg (répartition #609, JPEG q=80 pour équilibre taille/qualité).
  * - Taille max : 320px de large, hauteur proportionnelle.
  * - Les fichiers source sont stockés en clair — lecture directe sans déchiffrement.
  * - Fichiers RAW (CR2/CR3/NEF/ARW/DNG) : GD ne sait pas les décoder. On extrait
@@ -47,7 +48,7 @@ class ThumbnailService
      * Génère un thumbnail et retourne son chemin relatif, ou null si impossible.
      *
      * @param string $absolutePath Chemin absolu de l'image source (stockée en clair sur disque)
-     * @return string|null         Chemin relatif du thumbnail (ex: "thumbs/uuid.jpg") ou null
+     * @return string|null         Chemin relatif du thumbnail (ex: "thumbs/ef/uuid.jpg") ou null
      */
     public function generate(string $absolutePath): ?string
     {
@@ -216,14 +217,15 @@ class ThumbnailService
         imagecopyresampled($thumb, $source, 0, 0, 0, 0, $thumbW, $thumbH, $srcW, $srcH);
         imagedestroy($source);
 
-        $thumbDir = $this->storageDir.'/thumbs';
+        $uuid = \Symfony\Component\Uid\Uuid::v7()->toRfc4122();
+        $filename = $uuid.'.jpg';
+        $relativePath = StorageShard::thumbnailPath($filename);
+        $fullPath = $this->storageDir.'/'.$relativePath;
+
+        $thumbDir = dirname($fullPath);
         if (!is_dir($thumbDir)) {
             mkdir($thumbDir, 0755, true);
         }
-
-        $uuid = \Symfony\Component\Uid\Uuid::v7()->toRfc4122();
-        $filename = $uuid.'.jpg';
-        $fullPath = $thumbDir.'/'.$filename;
 
         $saved = imagejpeg($thumb, $fullPath, self::THUMB_QUALITY);
         imagedestroy($thumb);
@@ -232,7 +234,7 @@ class ThumbnailService
             return null;
         }
 
-        return 'thumbs/'.$filename;
+        return $relativePath;
     }
 
     /**
