@@ -13,7 +13,7 @@
 - `bin/lib/deploy-common.sh` : définition unique de composer (PHP CLI explicite, `memory_limit`) et de la vérification de `vendor/`, sourcée par `deploy-nightly.sh`, `deploy-all.sh` et `deploy.sh`. Plus de `composer` nu dans `bin/`.
 - Vérification de `vendor/` (`composer install --dry-run` → « Nothing to install ») validée avec le vrai composer : présent sur ronan, absent sur yannick (3 paquets manquants listés).
 - Rollback si l'échec précède les migrations (jamais après : état de la base incertain), cible = `HEAD` réellement en place ; rapport `→ code restauré (<sha>)` / `→ ROLLBACK ÉCHOUÉ`.
-- Tests bash : 27/27 (dont 10 nouveaux, 7 réparés). Suite PHP non concernée.
+- Tests bash : 28/28 (dont 11 nouveaux, 7 réparés). Suite PHP non concernée.
 - Reste : revue, `gh pr create` (label + `Closes #570` + assignee + board), CI verte, merge. Piste proposée : exécuter `tests/bash/run.sh` en CI.
 
 ---

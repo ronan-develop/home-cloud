@@ -635,7 +635,7 @@ Ce qui est en place depuis, **commun aux trois scripts** (`bin/lib/deploy-common
 - **Rollback automatique si l'échec précède les migrations** : `git checkout --force <HEAD d'avant>`, `composer install`, vérification de `vendor/`, `cache:clear`. Le rapport indique `→ code restauré (<sha>)` ou `→ ROLLBACK ÉCHOUÉ …, instance probablement hors service` (alors : intervention manuelle). **Pas de rollback à partir des migrations** : l'état de la base est incertain (migration partielle), un ancien code sur un schéma à moitié migré serait pire. Pas de rollback non plus si `HEAD` est déjà la cible.
 - La cible du rollback est le `HEAD` réellement en place avant l'opération, **pas** `.deployed-sha` (un déploiement interrompu laisse `HEAD` sur le nouveau code alors que `.deployed-sha` reste ancien).
 - Un correctif du script nocturne n'est actif sur une instance qu'**à la nuit suivant celle où elle l'a récupéré** (le script du cron est celui du disque au lancement). Après un correctif de script, passer par `bash bin/deploy-all.sh` (exécuté depuis le poste) plutôt que d'attendre le cron.
-- Tests : `bash tests/bash/run.sh` (27 tests). Ils ne tournent pas dans la CI.
+- Tests : `bash tests/bash/run.sh` (28 tests). Ils ne tournent pas dans la CI.
 
 ### Crons cPanel — créés et actifs depuis le 2026-09-12
 
