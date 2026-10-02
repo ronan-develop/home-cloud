@@ -28,10 +28,36 @@ final class ServerLoadChecker
         private $loadAverageProvider = 'sys_getloadavg',
     ) {}
 
-    public function isServerCalmEnough(): bool
+    /**
+     * @return array{0: float, 1: float, 2: float}|null null si la mesure est indisponible
+     */
+    public function getLoadAverage(): ?array
     {
         $loadAverage = ($this->loadAverageProvider)();
-        if ($loadAverage === false) {
+
+        return $loadAverage === false ? null : $loadAverage;
+    }
+
+    public function getThreshold(): float
+    {
+        return $this->threshold;
+    }
+
+    public function isServerCalmEnough(): bool
+    {
+        return $this->isCalm($this->getLoadAverage());
+    }
+
+    /**
+     * Décision sur une mesure déjà prise (#528) : permet à l'appelant de
+     * mesurer une seule fois et de journaliser la mesure et la décision
+     * sans risque d'incohérence entre deux lectures successives.
+     *
+     * @param array{0: float, 1: float, 2: float}|null $loadAverage
+     */
+    public function isCalm(?array $loadAverage): bool
+    {
+        if ($loadAverage === null) {
             return false;
         }
 

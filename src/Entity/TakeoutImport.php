@@ -95,6 +95,14 @@ class TakeoutImport
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
+    /**
+     * Posée par markScheduled() (#528) : permet d'afficher depuis quand un
+     * import attend un créneau calme. Null pour les imports passés en
+     * scheduled avant cette colonne, et pour tout autre statut.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $scheduledAt = null;
+
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $completedAt = null;
 
@@ -174,6 +182,11 @@ class TakeoutImport
         return $this->createdAt;
     }
 
+    public function getScheduledAt(): ?\DateTimeImmutable
+    {
+        return $this->scheduledAt;
+    }
+
     public function getCompletedAt(): ?\DateTimeImmutable
     {
         return $this->completedAt;
@@ -187,6 +200,7 @@ class TakeoutImport
     public function markScheduled(): void
     {
         $this->status = self::STATUS_SCHEDULED;
+        $this->scheduledAt = new \DateTimeImmutable();
     }
 
     public function markExtracting(?int $totalZipCount = null): void

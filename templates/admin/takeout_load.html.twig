@@ -1,0 +1,101 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Charge Takeout — Administration{% endblock %}
+
+{% block content %}
+<h1 class="hc-admin-page-title">Charge serveur et imports Takeout différés</h1>
+
+<h2>Charge actuelle</h2>
+<table class="hc-admin-table hc-takeout-load-current">
+    <tbody>
+        {% if loadAverage is null %}
+            <tr>
+                <th>Load average</th>
+                <td>Mesure indisponible — le dispatch est reporté par prudence.</td>
+            </tr>
+        {% else %}
+            <tr>
+                <th>Load average 1 / 5 / 15 min</th>
+                <td>{{ loadAverage[0]|number_format(2, ',', ' ') }} / {{ loadAverage[1]|number_format(2, ',', ' ') }} / {{ loadAverage[2]|number_format(2, ',', ' ') }}</td>
+            </tr>
+        {% endif %}
+        <tr>
+            <th>Seuil de dispatch (1 min)</th>
+            <td>{{ threshold|number_format(2, ',', ' ') }}</td>
+        </tr>
+        <tr>
+            <th>État</th>
+            <td>{{ isCalm ? 'Serveur calme : les imports en attente démarrent au prochain cycle.' : 'Serveur trop chargé : dispatch reporté.' }}</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Imports en attente d'un créneau calme</h2>
+{% if scheduledImports is empty %}
+    <p>Aucun import en attente.</p>
+{% else %}
+    <table class="hc-admin-table hc-takeout-load-scheduled">
+        <thead>
+            <tr>
+                <th>Propriétaire</th>
+                <th>En attente depuis</th>
+                <th>ZIP</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for import in scheduledImports %}
+                <tr>
+                    <td>{{ import.owner.email }}</td>
+                    <td>
+                        {% if import.scheduledAt %}
+                            {{ import.scheduledAt|date('d/m/Y H:i', 'Europe/Paris') }}
+                        {% else %}
+                            {{ import.createdAt|date('d/m/Y H:i', 'Europe/Paris') }} (date de création, planification non datée)
+                        {% endif %}
+                    </td>
+                    <td>{{ import.totalZipCount ?? '—' }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
+<h2>Historique des dispatches</h2>
+{% if recentLogs is empty %}
+    <p>Aucun cycle enregistré pour l'instant.</p>
+{% else %}
+    <p class="hc-takeout-load-summary">
+        Sur les dernières 24 h : {{ cycles24h }} cycle(s),
+        {% if calmRate24h is not null %}{{ calmRate24h }} % avec un serveur assez calme pour dispatcher.{% else %}aucune donnée.{% endif %}
+    </p>
+    <table class="hc-admin-table hc-takeout-load-history">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Résultat</th>
+                <th>Load 1 min</th>
+                <th>Seuil</th>
+                <th>En attente</th>
+                <th>Dispatchés</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in recentLogs %}
+                <tr>
+                    <td>{{ log.createdAt|date('d/m/Y H:i', 'Europe/Paris') }}</td>
+                    <td>
+                        {% if log.outcome == 'dispatched' %}Démarré (calme)
+                        {% elseif log.outcome == 'deferred' %}Reporté (chargé)
+                        {% else %}Rien en attente{% endif %}
+                    </td>
+                    <td>{{ log.loadAverage is null ? '—' : log.loadAverage[0]|number_format(2, ',', ' ') }}</td>
+                    <td>{{ log.threshold|number_format(2, ',', ' ') }}</td>
+                    <td>{{ log.scheduledCount }}</td>
+                    <td>{{ log.dispatchedCount }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p>Les {{ recentLogs|length }} derniers cycles sont affichés ; l'historique est conservé 30 jours.</p>
+{% endif %}
+{% endblock %}

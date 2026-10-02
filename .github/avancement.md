@@ -6,7 +6,7 @@
 
 ---
 
-## 🚧 Déploiement : composer en CLI, vérification de vendor/, rollback (2026-10-02, #570, branche `fix/570-deploy-composer-rollback`)
+## ✅ Déploiement : composer en CLI, vérification de vendor/, rollback (2026-10-02, #570, PR #602 mergée)
 
 - Cause de l'incident #569 (6 instances en 500) : composer lancé en PHP CGI par le cron affichait son aide et sortait en 0 ; code déjà mis à jour par `git checkout`, `vendor/` ancien, aucun rollback.
 - Le correctif `61ba614` était lui-même cassé : `"$COMPOSER_BIN"` (deux mots) entre guillemets → exit 127 « commande introuvable ». 7 tests bash échouaient déjà sur `main` sans que personne le voie (les tests bash ne tournent pas en CI).
@@ -14,7 +14,19 @@
 - Vérification de `vendor/` (`composer install --dry-run` → « Nothing to install ») validée avec le vrai composer : présent sur ronan, absent sur yannick (3 paquets manquants listés).
 - Rollback si l'échec précède les migrations (jamais après : état de la base incertain), cible = `HEAD` réellement en place ; rapport `→ code restauré (<sha>)` / `→ ROLLBACK ÉCHOUÉ`.
 - Tests bash : 28/28 (dont 11 nouveaux, 7 réparés). Suite PHP non concernée.
-- Reste : revue, `gh pr create` (label + `Closes #570` + assignee + board), CI verte, merge. Piste proposée : exécuter `tests/bash/run.sh` en CI.
+- PR #602 mergée, CI verte. Reste hors périmètre : exécuter `tests/bash/run.sh` en CI. Les 6 instances en 500 (#569) restent à aligner par le déploiement exceptionnel.
+
+---
+
+## 🚧 Admin : charge serveur et imports Takeout différés (2026-10-02, #528, branche `feat/528-admin-charge-takeout`)
+
+- `ServerLoadChecker` expose `getLoadAverage()`, `getThreshold()` et `isCalm(?array)` (décision sur une mesure déjà prise : la commande mesure une fois, l'issue loguée reste cohérente avec la charge loguée).
+- Nouvelle table `takeout_dispatch_log` (entité `TakeoutDispatchLog`) : `app:takeout:nightly-dispatch` y écrit une ligne par cycle de 15 min (`dispatched` / `deferred` / `idle`, load 1/5/15, seuil, nb en attente / dispatchés), puis purge au-delà de 30 jours (un seul `DELETE` indexé, pas de nouveau cron). Les cycles `idle` sont tracés exprès : ils servent d'échantillonnage de charge pour #547. Écriture et purge n'interrompent jamais le dispatch (erreur journalisée seulement).
+- `TakeoutImport::scheduledAt` (migration) posée par `markScheduled()` pour afficher « en attente depuis » ; repli sur `createdAt` signalé dans l'UI pour les imports déjà scheduled avant la colonne.
+- Page `/admin/takeout-load` (whitelist AdminVoter, lien « Charge Takeout » dans le layout admin) : load courant vs seuil, imports `scheduled` (propriétaire, depuis quand), historique des 50 derniers cycles et part de cycles calmes sur 24 h. Dates affichées en `Europe/Paris`.
+- Migrations : deux, additives (CREATE TABLE + ADD COLUMN nullable). `make:migration` avait généré de la dérive de la base de dev locale (DROP `broadcast_messages`, DROP `users.last_broadcast_seen_at`, CHANGE sur `takeout_imports`) : retirée à la main, à garder en tête pour les prochaines migrations.
+- Suite complète : 1410/1410 verts.
+- Reste : revue, `gh pr create` (label + `Closes #528` + assignee + board), CI verte, merge ; l'échantillonnage ne démarre qu'au déploiement.
 
 ---
 
